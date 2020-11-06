@@ -9,13 +9,19 @@
 ##' Monolix Controller for nlmixr
 ##'
 ##' @param nbSSDoses Number of steady state doses (default 7)
+##' @param stiff Use the stiff ODE solver
 ##' @return
 ##' @author Matthew Fidler
 ##' @export
-monolixControl <- function(nbSSDoses=7) {
+monolixControl <- function(nbSSDoses=7,
+                           stiff=FALSE, addProp = c("combined2", "combined1")) {
   checkmate::assertIntegerish(nbSSDoses, lower=1, max.len=1)
-  list(nbSSDoses=as.integer(nbSSDoses))
+  checkmate::assertLogical(stiff, max.len=1)
+  list(nbSSDoses=as.integer(nbSSDoses), stiff=stiff,
+       addProp=match.arg(addProp))
 }
+
+.monolixErrs <- c()
 
 ##' This constructs the data->monolix header mapping & regressors
 ##'
@@ -34,7 +40,7 @@ monolixMapData <- function(data, uif) {
   regressors <- RxODE::rxModelVars(uif$rxode)$params
   covariates <- uif$saem.all.covs
   .env <- environment()
-  .env$.regressor <- c(paste0("input={", paste(regressors, collapse=", "), "}"))
+  .env$.regressor <- c(paste0("input={", paste(c(regressors, .monolixErrs), collapse=", "), "}"))
   .headers <- sapply(names(data), function(x) {
     if (tolower(x) == "id") return("id")
     if (tolower(x) == "dv") return("observation")
@@ -180,7 +186,7 @@ nlmixrEst.monolix <- function(env, ...){
       }
       .v <- .rxMcnt[.ret]
       if (is.na(.v)) {
-        return(.ret)
+        return(gsub("[.]", "__", .ret))
       } else {
         return(.v)
       }
@@ -525,6 +531,81 @@ rxToMonolix <- function(x) {
   return(.rxToMonolix(eval(parse(text = paste0("quote({", x, "})")))))
 }
 
+## FIXME these can be saved and retreived if rxToMonolix(.v) is run first
+monolixTlag <- function(states) {
+  rep("0.0", length(states))
+}
+
+monolixP <- function(states){
+  rep("1.0", length(states))
+}
+
+monolixGetErr0 <- function(cond, type, uif, control) {
+  .ini <- as.data.frame(uif$ini)
+  .ini <- .ini[which(.ini$condition == cond), ]
+  if (type == 1) { # Constant
+    .tmp <- .ini$name
+    .tmp <- rxToMonolix(.tmp)
+    assignInMyNamespace(".monolixErrs", c(.monolixErrs, .tmp))
+    return(paste0("constant(", .tmp, ")"))
+  } else if (type == 2) { # Proportional
+    .tmp <- .ini$name
+    .tmp <- rxToMonolix(.tmp)
+    assignInMyNamespace(".monolixErrs", c(.monolixErrs, .tmp))
+    return(paste0("proportional(", .tmp, ")"))
+  } else if (type == 3) { # additive + proportional
+    .add <- .ini[.ini$err == "add", "name"]
+    .add <- rxToMonolix(.add)
+    .prop <- .ini[.ini$err == "prop", "name"]
+    .prop <- rxToMonolix(.prop)
+    assignInMyNamespace(".monolixErrs", c(.monolixErrs, .add, .prop))
+    return(paste0(control$addProp, "(", .add, ",", .prop, ")"))
+  } else if (type == 4) { # additive + power
+    stop("distribution not supported in monolix")
+  } else if (type == 5) { # pow
+    stop("distribution not supported in monolix")
+  } else if (type >= 6) { ## + lambda
+    stop("distribution not supported in monolix")
+  }
+}
+
+monolixGetErr <- function(resMod, uif, control) {
+  assignInMyNamespace(".monolixErrs", c())
+  .idx <- seq_along(resMod)
+  sapply(.idx, function(.i){
+    monolixGetErr0(names(resMod)[.i], setNames(resMod[.i], NULL), uif, control)
+  })
+}
+
+monolixModelTxt <- function(uif, data, control=monolixControl()) {
+  .v <- uif$rxode
+  .mv <- RxODE::rxModelVars(.v)
+  seq_along(.mv$state)
+  ## Run this before monolixMapData to populate errors in input={}
+  .resMod <- uif$saem.res.mod
+  .def <- paste(paste0(names(.resMod), "_pred= {distribution = normal, prediction = ", names(.resMod), ", errorModel=",
+                       monolixGetErr(.resMod, uif, control), "}"), collapse="\n")
+  ## Now map data
+  .map <- monolixMapData(data, uif)
+  .mod <- rxToMonolix(.v)
+
+  paste0("DESCRIPTION:\n",
+         paste0("model translated from babelmixr and nlmixr function ", uif$model.name, "\n\n"),
+         "[LONGITUDINAL]\n",
+         .map$regressors,
+         ifelse(control$stiff, "\n\nodeType = stiff", ""),
+         "\n\nPK:\n; Define compartment(s)\n",
+         paste(paste0("compartment(cmt=", seq_along(.mv$state), ", amount=", .mv$state, ")"), collapse="\n"),
+         paste("\n\n;Define depot compartment information\n"),
+         paste(paste0("depot(type=1, target=", .mv$state, ", Tlag=", monolixTlag(.mv$state), ", p=", monolixP(.mv$state), ")"), collapse="\n"),
+         "\n\nEQUATION:\n",gsub("\n\n+", "\n",.mod),
+         "\n\nDEFINITION:\n",
+         ## FIXME distribution should be able to be defined
+         .def,
+         "\n\nOUTPUT:\n",
+         "output={", paste(paste0(names(.resMod), "_pred"), collapse=", "), "}\n"
+         )
+}
 
 
 

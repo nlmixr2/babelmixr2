@@ -14,5 +14,6 @@ Suggests:
 Depends: 
     nlmixr
 Imports: 
-    RxODE
+    RxODE,
+    checkmate
 RoxygenNote: 7.1.1
