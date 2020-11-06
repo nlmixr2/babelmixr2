@@ -1,4 +1,4 @@
-test_that("multiplication works", {
+test_that("model to input information", {
 
   pk.turnover.emax3 <- function() {
     ini({
@@ -127,3 +127,38 @@ test_that("multiplication works", {
 })
 
 
+
+test_that("monolix dsl", {
+  expect_equal(rxToMonolix("sqrt(a)"), "sqrt(a)")
+  expect_equal(rxToMonolix("max(a,b)"), "max(a,b)")
+  expect_error(rxToMonolix("max(a,b,c)"))
+  expect_error(rxToMonolix("max(a)"))
+  expect_equal(rxToMonolix("sum(a,b,c,d)"), "((a)+(b)+(c)+(d))")
+  expect_equal(rxToMonolix("prod(a,b,c,d)"), "((a)*(b)*(c)*(d))")
+  expect_equal(rxToMonolix("a<-1+b"), "a = 1+b")
+  expect_equal(rxToMonolix("a~1+b"), "a = 1+b")
+  expect_equal(rxToMonolix("a=1+b"), "a = 1+b")
+  expect_equal(rxToMonolix("expit(a)"), "1/(1+exp(-(a)))")
+  expect_equal(rxToMonolix("expit(a,b)"), "(1.0-(b))*(1/(1+exp(-(a))))+(b)")
+  expect_equal(rxToMonolix("expit(a,b,c)"), "((c)-(b))*(1/(1+exp(-(a))))+(b)")
+  expect_equal(rxToMonolix("logit(a)"), "-log(1/(a)-1)")
+  expect_equal(rxToMonolix("logit(a,b)"), "-log(1/(((a)-(b))/(1.0-(b)))-1)")
+  expect_equal(rxToMonolix("logit(a,b,c)"), "-log(1/(((a)-(b))/((c)-(b)))-1)")
+  expect_equal(rxToMonolix("probitInv(a)"), "normcdf(a)")
+  expect_equal(rxToMonolix("probitInv(a,b)"), "(1.0-(b))*(normcdf(a))+(b)")
+  expect_equal(rxToMonolix("probitInv(a,b,c)"), "((c)-(b))*(normcdf(a))+(b)")
+  expect_equal(rxToMonolix("probit(a)"), "probit(a)")
+  expect_equal(rxToMonolix("probit(a,b)"), "probit(((a)-(b))/(1.0-(b)))")
+  expect_equal(rxToMonolix("probit(a,b,c)"), "probit(((a)-(b))/((c)-(b)))")
+  expect_equal(rxToMonolix("d/dt(depot)=-depot*kel"), "ddt_depot = - depot*kel")
+  expect_equal(rxToMonolix("depot(0)=50"), "depot_0 = 50")
+  expect_equal(rxToMonolix("f(depot)=3"), ";f defined in PK section")
+  expect_equal(rxToMonolix("a**b"), "a^b")
+  expect_equal(rxToMonolix("if (a<=b){c=1} else if (a==4) {c=2} else {c=4}"), "if a<=b\n  c = 1\nelseif a==4\n  c = 2\nelse \n  c = 4\nend\n")
+  expect_equal(rxToMonolix("if (a<=b){c=1} else if (a==4) {c=2} else if (a==30) {c=4} else {c=100}"), "if a<=b\n  c = 1\nelseif a==4\n  c = 2\nelseif a==30\n  c = 4\nelse \n  c = 100\nend\n")
+  expect_equal(rxToMonolix("if (a<=b){c=1} else if (a==4) {c=2}"), "if a<=b\n  c = 1\nelseif a==4\n  c = 2\nend\n")
+  expect_equal(rxToMonolix("if (a<=b){c=1}"), "if a<=b\n  c = 1\nend\n")
+  expect_equal(rxToMonolix("time"), "t")
+  expect_error(rxToMonolix("NA"))
+  expect_error(rxToMonolix("newind"))
+})
