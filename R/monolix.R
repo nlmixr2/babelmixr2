@@ -575,6 +575,8 @@ monolixP <- function(states){
   })
 }
 
+.monolixGetErr <- list()
+
 monolixGetErr0 <- function(cond, type, uif, control) {
   .ini <- as.data.frame(uif$ini)
   .ini <- .ini[which(.ini$condition == cond), ]
@@ -582,23 +584,33 @@ monolixGetErr0 <- function(cond, type, uif, control) {
     .tmp <- .ini$name
     .tmp <- rxToMonolix(.tmp)
     assignInMyNamespace(".monolixErrs", c(.monolixErrs, .tmp))
+    .lst <- .monolixGetErr
+    .lst[[length(.lst) + 1]] <- data.frame(name=.ini$name, errName=.tmp)
+    assignInMyNamespace(".monolixGetErr", .lst)
     return(paste0("constant(", .tmp, ")"))
   } else if (type == 2) { # Proportional
     .tmp <- .ini$name
     .tmp <- rxToMonolix(.tmp)
+    .lst <- .monolixGetErr
+    .lst[[length(.lst) + 1]] <- data.frame(name=.ini$name, errName=.tmp)
+    assignInMyNamespace(".monolixGetErr", .lst)
     assignInMyNamespace(".monolixErrs", c(.monolixErrs, .tmp))
     return(paste0("proportional(", .tmp, ")"))
   } else if (type == 3) { # additive + proportional
     .add <- .ini[.ini$err == "add", "name"]
     .add <- rxToMonolix(.add)
+    .lst <- .monolixGetErr
+    .lst[[length(.lst) + 1]] <- data.frame(name=.ini[.ini$err == "add", "name"], errName=.add)
     .prop <- .ini[.ini$err == "prop", "name"]
     .prop <- rxToMonolix(.prop)
+    .lst[[length(.lst) + 1]] <- data.frame(name=.ini[.ini$err == "prop", "name"], errName=.prop)
     assignInMyNamespace(".monolixErrs", c(.monolixErrs, .add, .prop))
+    assignInMyNamespace(".monolixGetErr", .lst)
     return(paste0(control$addProp, "(", .add, ",", .prop, ")"))
   } else if (type == 4) { # additive + power
-    stop("distribution not supported in monolix")
+    stop("distribution not supported in monolix<->nlmixr")
   } else if (type == 5) { # pow
-    stop("distribution not supported in monolix")
+    stop("distribution not supported in monolix<->nlmixr")
   } else if (type >= 6) { ## + lambda
     stop("distribution not supported in monolix")
   }
@@ -606,6 +618,7 @@ monolixGetErr0 <- function(cond, type, uif, control) {
 
 monolixGetErr <- function(resMod, uif, control) {
   assignInMyNamespace(".monolixErrs", c())
+  assignInMyNamespace(".monolixGetErr", list())
   .idx <- seq_along(resMod)
   sapply(.idx, function(.i){
     monolixGetErr0(names(resMod)[.i], setNames(resMod[.i], NULL), uif, control)
@@ -799,9 +812,8 @@ monolixDataFile <- function(lst, uif, data, control=monolixControl()) {
 
 #
 
-monolixModelParameter <- function(.df) {
-  ## FIXME Cov
-  ## Fixme resid parameters
+monolixModelParameter <- function(.df, .dfError) {
+  ## FIXME Cov?
   paste0("\n\n<PARAMETER>\n",
          paste(setNames(sapply(seq_along(.df$theta), function(.i){
            .typical <- .df$typical[.i]
@@ -813,6 +825,11 @@ monolixModelParameter <- function(.df) {
              .ret <- paste0(.ret, "\n", .sd, " = {value=", .val, ", method=MLE}")
            }
            return(.ret)
+         }), NULL), collapse="\n"),"\n",
+         paste(setNames(sapply(seq_along(.dfError$name), function(.i){
+           .errName <- .dfError$errName[.i]
+           .val <- .dfError$est[.i]
+           paste0(.errName, " = {value=", .val, ", method=MLE}")
          }), NULL), collapse="\n"),
          "\n\n")
 }
@@ -865,7 +882,11 @@ monolixModelTxt <- function(uif, data, control=monolixControl()) {
   .df <- merge(.df, .dft, by="eta", all.x=TRUE)
   .df$sdEst <- sqrt(.df$sdEst)
   .lst$df <- .df
-  .lst$parameter <- monolixModelParameter(.df)
+  .dfError <- do.call(rbind, .monolixGetErr)
+  .dft <- as.data.frame(uif$ini)[, c("name", "est")]
+  .dfError <- merge(.dfError, .dft, by="name")
+  .lst$dfError <- .dfError
+  .lst$parameter <- monolixModelParameter(.df, .dfError)
   .vals <- c(.df$typical, .df$sd)
   .vals <- .vals[!is.na(.vals)]
   .lst$model <- paste0("<MODEL>\n\n[INDIVIDUAL]\ninput = {", paste(.vals, collapse=", "), "}\n\n",
@@ -879,7 +900,7 @@ monolixModelTxt <- function(uif, data, control=monolixControl()) {
                          "\nexploratoryinterval = ", control$exploratoryinterval, "\n")
 
   ## FIXME <FIT>
-  .lst$mlxtran <- paste0(.lst$datafile, .lst$model, # fit
+  .lst$mlxtran <- paste0(.lst$datafile, "\n", .lst$model, # fit
                          .lst$parameter, .lst$monolix)
   return(.lst)
 }
