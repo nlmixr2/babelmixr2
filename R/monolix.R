@@ -9,8 +9,13 @@
 ##' Monolix Controller for nlmixr
 ##'
 ##' @param nbSSDoses Number of steady state doses (default 7)
-##' @param stiff Use the stiff ODE solver
-##' @return
+##' @param stiff boolean for using the stiff ODE solver
+##' @param exploratoryautostop logical to turn on or off exploratory phase auto-stop of SAEM (default 250)
+##' @param exploratoryiterations Number of iterations for exploratory phase (default 250)
+##' @param exploratoryinterval Minimum number of interation in the exploratory phase (default 200)
+##' @param simulatedannealingiterations Number of burn in iterations
+##' @inheritParams nlmixr::foceiControl
+##' @return A monolix control object
 ##' @author Matthew Fidler
 ##' @export
 ##' @importFrom nlmixr nlmixrEst
@@ -18,11 +23,27 @@
 ##' @importFrom stats na.omit setNames
 ##' @importFrom utils assignInMyNamespace
 monolixControl <- function(nbSSDoses=7,
-                           stiff=FALSE, addProp = c("combined2", "combined1")) {
+                           stiff=FALSE,
+                           addProp = c("combined2", "combined1"),
+                           exploratoryautostop=FALSE,
+                           exploratoryiterations=250,
+                           simulatedannealingiterations=250,
+                           exploratoryinterval=200) {
   checkmate::assertIntegerish(nbSSDoses, lower=1, max.len=1)
   checkmate::assertLogical(stiff, max.len=1)
-  list(nbSSDoses=as.integer(nbSSDoses), stiff=stiff,
-       addProp=match.arg(addProp))
+  checkmate::assertLogical(simulatedannealingiterations, max.len=1, lower=1)
+  checkmate::assertLogical(exploratoryautostop, max.len=1, lower=1)
+  checkmate::assertLogical(exploratoryiterations, max.len=1, lower=1)
+  checkmate::assertLogical(exploratoryinterval, max.len=1, lower=1)
+  .ret <- list(nbSSDoses=as.integer(nbSSDoses), stiff=stiff,
+               addProp=match.arg(addProp),
+               exploratoryautostop=exploratoryautostop,
+               exploratoryiterations=exploratoryiterations,
+               simulatedannealingiterations=simulatedannealingiterations,
+               exploratoryinterval=exploratoryinterval
+               )
+  class(.ret) <- "monolixControl"
+  .ret
 }
 
 .monolixErrs <- c()
@@ -30,9 +51,7 @@ monolixControl <- function(nbSSDoses=7,
 ##' This constructs the data->monolix header mapping & regressors
 ##'
 ##' @param data Input dataset
-##' @param regressors Character vector of model based regressors
-##' @param covariates Character vector of covariates.  If the covariates are
-##'   factors, assume they are categorical.  Otherwise assume continuous.
+##' @param uif  Parsed nlmixr user interface function
 ##' @return list with (header=monolix header specification, regressor=monolix regressor specification)
 ##' @author Matthew Fidler
 monolixMapData <- function(data, uif) {
@@ -44,7 +63,7 @@ monolixMapData <- function(data, uif) {
   regressors <- RxODE::rxModelVars(uif$rxode)$params
   covariates <- uif$saem.all.covs
   .env <- environment()
-  .env$.regressor <- c(paste0("input={", paste(c(regressors, .monolixErrs), collapse=", "), "}"))
+  .env$.regressor <- c(paste0("input={", paste(regressors, collapse=", "), "}"))
   .headers <- sapply(names(data), function(x) {
     if (tolower(x) == "id") return("id")
     if (tolower(x) == "dv") return("observation")
@@ -576,7 +595,7 @@ monolixGetErr <- function(resMod, uif, control) {
     if (identical(x[[1]], quote(`{`))) {
       assignInMyNamespace(".toMonolixDef", list())
       .x2 <- x[-1]
-      .ret <- list(paste0("DEFINITION:\n", paste(lapply(.x2, function(x) {
+      .ret <- list(paste0("\n\nDEFINITION:\n", paste(lapply(.x2, function(x) {
         .toMonolixDefinition(x, mu.ref)
       }), collapse = "\n")), do.call(rbind, .toMonolixDef))
       return(.ret)
@@ -760,7 +779,7 @@ monolixDataFile <- function(lst, uif, data, control=monolixControl()) {
 monolixModelParameter <- function(.df) {
   ## FIXME Cov
   ## Fixme resid parameters
-  paste0("<PARAMETER>\n",
+  paste0("\n\n<PARAMETER>\n",
          paste(setNames(sapply(seq_along(.df$theta), function(.i){
            .typical <- .df$typical[.i]
            .val <- .df$thetaEst[.i]
@@ -771,11 +790,14 @@ monolixModelParameter <- function(.df) {
              .ret <- paste0(.ret, "\n", .sd, " = {value=", .val, ", method=MLE}")
            }
            return(.ret)
-         }), NULL), collapse="\n")
-         )
+         }), NULL), collapse="\n"),
+         "\n\n")
 }
 
 monolixModelTxt <- function(uif, data, control=monolixControl()) {
+  if (inherits(control, "monolixControl")) {
+    control <- do.call(monolixControl, control)
+  }
   .v <- uif$rxode
   .mv <- RxODE::rxModelVars(.v)
   ## Run this before monolixMapData to populate errors in input={}
@@ -787,8 +809,10 @@ monolixModelTxt <- function(uif, data, control=monolixControl()) {
   .mod <- rxToMonolix(.v)
 
   .lst <- .map
+  .lst$data.md5 <- digest::digest(data)
+  .lst$file <- paste0(uif$model.name, "-", digest::digest(list(control, .lst$data.md5)))
   .lst$txt <- paste0("DESCRIPTION:\n",
-         paste0("model translated from babelmixr and nlmixr function ", uif$model.name, "\n\n"),
+         paste0("model translated from babelmixr and nlmixr function ", uif$model.name, " to ", .lst$file, ".txt\n\n"),
          "[LONGITUDINAL]\n",
          .map$regressors,
          ifelse(control$stiff, "\n\nodeType = stiff", ""),
@@ -797,12 +821,10 @@ monolixModelTxt <- function(uif, data, control=monolixControl()) {
          paste("\n\n;Define depot compartment information\n"),
          paste(paste0("depot(type=1, target=", .mv$state, ", Tlag=", monolixTlag(.mv$state), ", p=", monolixP(.mv$state), ")"), collapse="\n"),
          "\n\nEQUATION:\n",gsub("\n\n+", "\n",.mod),
-         "\n\nDEFINITION:\n",
-         .def,
          "\n\nOUTPUT:\n",
          "output={", paste(paste0(names(.resMod), "_pred"), collapse=", "), "}\n"
          )
-  .lst$data.md5 <- digest::digest(data)
+
   .lst <- monolixDataFile(.lst, uif, data, control=control)
   .definition <- .toMonolixDefinition(body(uif$saem.pars), uif$mu.ref)
   .df <- .definition[[2]]
@@ -823,8 +845,19 @@ monolixModelTxt <- function(uif, data, control=monolixControl()) {
   .lst$parameter <- monolixModelParameter(.df)
   .vals <- c(.df$typical, .df$sd)
   .vals <- .vals[!is.na(.vals)]
-  .lst$individual <- paste0("[INDIVIDUAL]\ninput = {", paste(.vals, collapse=", "), "}\n\n",
-                            .definition[[1]], "\n")
+  .lst$model <- paste0("<MODEL>\n\n[INDIVIDUAL]\ninput = {", paste(.vals, collapse=", "), "}\n\n",
+                       .definition[[1]], "\n\n[LONGITUDINAL]\ninput={", paste(.monolixErrs, collapse=", "), "}\n\nfile='", .lst$file,
+                       ".txt'\n\nDEFINITION:\n",
+                       .def)
+  .lst$monolix <- paste0("<MONOLIX>\n\n[TASKS]\npopulationParameters()\nindividualParameters(method = {conditionalMean, conditionalMode})\nfim(method = Linearization)\nlogLikelihood(method = Linearization)\nplotResult(method = {outputplot, indfits, obspred, residualsscatter, residualsdistribution, parameterdistribution, covariatemodeldiagnosis, randomeffects, covariancemodeldiagnosis, saemresults })\n\n[SETTINGS]\nGLOBAL:\nexportpath = '", .lst$file, "'\n\nPOPULATION:\nexploratoryautostop = ",
+                         ifelse(control$exploratoryautostop, "yes", "no"),
+                         "\nexploratoryiterations = ", control$simulatedannealingiterations,
+                         "\nsimulatedannealingiterations = ", control$simulatedannealingiterations,
+                         "\nexploratoryinterval = ", control$exploratoryinterval, "\n")
+
+  ## FIXME <FIT>
+  .lst$mlxtran <- paste0(.lst$datafile, .lst$model, # fit
+                         .lst$parameter, .lst$monolix)
   return(.lst)
 }
 

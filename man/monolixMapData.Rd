@@ -9,10 +9,7 @@ monolixMapData(data, uif)
 \arguments{
 \item{data}{Input dataset}
 
-\item{regressors}{Character vector of model based regressors}
-
-\item{covariates}{Character vector of covariates.  If the covariates are
-factors, assume they are categorical.  Otherwise assume continuous.}
+\item{uif}{Parsed nlmixr user interface function}
 }
 \value{
 list with (header=monolix header specification, regressor=monolix regressor specification)

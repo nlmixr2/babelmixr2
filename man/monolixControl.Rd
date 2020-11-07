@@ -7,16 +7,36 @@
 monolixControl(
   nbSSDoses = 7,
   stiff = FALSE,
-  addProp = c("combined2", "combined1")
+  addProp = c("combined2", "combined1"),
+  exploratoryautostop = FALSE,
+  exploratoryiterations = 250,
+  simulatedannealingiterations = 250,
+  exploratoryinterval = 200
 )
 }
 \arguments{
 \item{nbSSDoses}{Number of steady state doses (default 7)}
 
-\item{stiff}{Use the stiff ODE solver}
+\item{stiff}{boolean for using the stiff ODE solver}
+
+\item{addProp}{one of "combined1" and "combined2"; These are the
+  two forms of additive+proportional errors supported by
+  monolix/nonmem:
+
+combined1: transform(y)=transform(f)+(a+b*f^c)*eps
+
+combined2: transform(y)=transform(f)+(a^2+b^2*f^(2c))*eps}
+
+\item{exploratoryautostop}{logical to turn on or off exploratory phase auto-stop of SAEM (default 250)}
+
+\item{exploratoryiterations}{Number of iterations for exploratory phase (default 250)}
+
+\item{simulatedannealingiterations}{Number of burn in iterations}
+
+\item{exploratoryinterval}{Minimum number of interation in the exploratory phase (default 200)}
 }
 \value{
-
+A monolix control object
 }
 \description{
 Monolix Controller for nlmixr
