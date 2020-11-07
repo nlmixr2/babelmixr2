@@ -31,10 +31,10 @@ monolixControl <- function(nbSSDoses=7,
                            exploratoryinterval=200) {
   checkmate::assertIntegerish(nbSSDoses, lower=1, max.len=1)
   checkmate::assertLogical(stiff, max.len=1)
-  checkmate::assertLogical(simulatedannealingiterations, max.len=1, lower=1)
-  checkmate::assertLogical(exploratoryautostop, max.len=1, lower=1)
-  checkmate::assertLogical(exploratoryiterations, max.len=1, lower=1)
-  checkmate::assertLogical(exploratoryinterval, max.len=1, lower=1)
+  checkmate::assertIntegerish(simulatedannealingiterations, max.len=1, lower=1)
+  checkmate::assertLogical(exploratoryautostop, max.len=1)
+  checkmate::assertIntegerish(exploratoryiterations, max.len=1, lower=1)
+  checkmate::assertIntegerish(exploratoryinterval, max.len=1, lower=1)
   .ret <- list(nbSSDoses=as.integer(nbSSDoses), stiff=stiff,
                addProp=match.arg(addProp),
                exploratoryautostop=exploratoryautostop,
@@ -199,6 +199,9 @@ nlmixrEst.monolix <- function(env, ...){
 # "logit" in monolix isn't as flexible as nlmixr
 # "probit" in monolix isn't as flexible as nlmixr
 
+.monolixTlag <- c()
+.monolixP <- c()
+
 .rxToMonolix <- function(x) {
   if (is.name(x) || is.atomic(x)) {
     if (is.character(x)) {
@@ -219,6 +222,8 @@ nlmixrEst.monolix <- function(env, ...){
     if (identical(x[[1]], quote(`(`))) {
       return(paste0("(", .rxToMonolix(x[[2]]), ")"))
     } else if (identical(x[[1]], quote(`{`))) {
+      assignInMyNamespace(".monolixTlag", c())
+      assignInMyNamespace(".monolixP", c())
       .x2 <- x[-1]
       .ret <- paste(lapply(.x2, function(x) {
         .rxToMonolix(x)
@@ -310,6 +315,16 @@ nlmixrEst.monolix <- function(env, ...){
       identical(x[[1]], quote(`<-`)) ||
         identical(x[[1]], quote(`~`))) {
       if (any(as.character(x[[2]])[1] == c("alag", "lag", "F", "f", "rate", "dur"))) {
+        if (any(as.character(x[[2]])[1] == c("alag", "lag"))) {
+          .state <- as.character(x[[2]][[2]])
+          .extra <- .rxToMonolix(x[[3]])
+          assignInMyNamespace(".monolixTlag", c(.monolixTlag, setNames(.extra, .state)))
+        }
+        if (any(as.character(x[[2]])[1] == c("F", "f"))) {
+          .state <- as.character(x[[2]][[2]])
+          .extra <- .rxToMonolix(x[[3]])
+          assignInMyNamespace(".monolixP", c(.monolixP, setNames(.extra, .state)))
+        }
         return(paste0(";", as.character(x[[2]])[1], " defined in PK section"))
       }
       .var <- .rxToMonolix(x[[2]])
@@ -545,11 +560,19 @@ rxToMonolix <- function(x) {
 
 ## FIXME these can be saved and retreived if rxToMonolix(.v) is run first
 monolixTlag <- function(states) {
-  rep("0.0", length(states))
+  sapply(states, function(state) {
+    .cur <- .monolixTlag[state]
+    if (is.na(.cur)) return("0.0")
+    .cur
+  })
 }
 
 monolixP <- function(states){
-  rep("1.0", length(states))
+  sapply(states, function(state) {
+    .cur <- .monolixP[state]
+    if (is.na(.cur)) return("1.0")
+    .cur
+  })
 }
 
 monolixGetErr0 <- function(cond, type, uif, control) {
@@ -796,7 +819,7 @@ monolixModelParameter <- function(.df) {
 
 monolixModelTxt <- function(uif, data, control=monolixControl()) {
   if (inherits(control, "monolixControl")) {
-    control <- do.call(monolixControl, control)
+    control <-do.call(monolixControl, control)
   }
   .v <- uif$rxode
   .mv <- RxODE::rxModelVars(.v)
@@ -834,7 +857,7 @@ monolixModelTxt <- function(uif, data, control=monolixControl()) {
   .w <- which(.df$trans == "logNormal")
   if (length(.w) > 0) .df$thetaEst[.w] <- exp(.df$thetaEst[.w])
   .w <- which(.df$trans == "logitNormal")
-  if (length(.w) > 0) .df$thetaEst[.w] <- sapply(.w, function(.i){RxODE::expit(.df$thetaEst[.i], .df$low[.w], .df$hi[.w])})
+  if (length(.w) > 0) .df$thetaEst[.w] <- sapply(.w, function(.i){RxODE::expit(.df$thetaEst[.i], .df$low[.i], .df$hi[.i])})
   .w <- which(.df$trans == "probitNormal")
   if (length(.w) > 0) .df$thetaEst[.w] <- sapply(.w, function(.i){RxODE::probitInv(.df$thetaEst[.i])})
   .dft <- as.data.frame(uif$ini)[, c("name", "est")]
