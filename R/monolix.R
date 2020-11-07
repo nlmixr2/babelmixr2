@@ -584,9 +584,9 @@ monolixGetErr <- function(resMod, uif, control) {
     if (identical(x[[1]], quote(`{`))) {
       assignInMyNamespace(".toMonolixDef", list())
       .x2 <- x[-1]
-      .ret <- paste0("DEFINITION:\n", paste(lapply(.x2, function(x) {
+      .ret <- list(paste0("DEFINITION:\n", paste(lapply(.x2, function(x) {
         .toMonolixDefinition(x, mu.ref)
-      }), collapse = "\n"))
+      }), collapse = "\n")), do.call(rbind, .toMonolixDef))
       return(.ret)
     } else if (identical(x[[1]], quote(`=`))) {
       .var <- as.character(x[[2]])
