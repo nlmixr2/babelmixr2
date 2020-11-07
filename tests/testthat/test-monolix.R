@@ -161,6 +161,7 @@ test_that("monolix dsl", {
   expect_equal(rxToMonolix("time"), "t")
   expect_error(rxToMonolix("NA"))
   expect_error(rxToMonolix("newind"))
+  expect_equal(rxToMonolix("log1pmx(a)"), "(log(1+a)-(a))")
 
   pk.turnover.emax3 <- function() {
     ini({
@@ -231,27 +232,27 @@ test_that("monolix dsl", {
   tmp <- body(fun)
   mu.ref <- uif$mu.ref
 
-  expect_equal(.toMonolixDefinition(tmp, mu.ref),
+  expect_equal(babelmixr:::.toMonolixDefinition(tmp, mu.ref),
                readRDS("test-monolix-definition-1.rds"))
 
   mu.ref <- mu.ref[-2]
 
-  expect_equal(.toMonolixDefinition(tmp, mu.ref),
+  expect_equal(babelmixr:::.toMonolixDefinition(tmp, mu.ref),
                readRDS("test-monolix-definition-2.rds"))
 
   mu.ref <- mu.ref[-6]
 
-  expect_equal(.toMonolixDefinition(tmp, mu.ref),
+  expect_equal(babelmixr:::.toMonolixDefinition(tmp, mu.ref),
                readRDS("test-monolix-definition-3.rds"))
 
   mu.ref <- mu.ref[-5]
 
-  expect_equal(.toMonolixDefinition(tmp, mu.ref),
+  expect_equal(babelmixr:::.toMonolixDefinition(tmp, mu.ref),
                readRDS("test-monolix-definition-4.rds"))
 
   mu.ref <- mu.ref[-4]
 
-  expect_equal(.toMonolixDefinition(tmp, mu.ref),
+  expect_equal(babelmixr:::.toMonolixDefinition(tmp, mu.ref),
                readRDS("test-monolix-definition-5.rds"))
 
   fun <- function(){
@@ -268,7 +269,7 @@ test_that("monolix dsl", {
   tmp <- body(fun)
   mu.ref <- uif$mu.ref
 
-  expect_equal(.toMonolixDefinition(tmp, mu.ref),
+  expect_equal(babelmixr:::.toMonolixDefinition(tmp, mu.ref),
                readRDS("test-monolix-definition-6.rds"))
 
   fun <- function(){
@@ -285,7 +286,7 @@ test_that("monolix dsl", {
   tmp <- body(fun)
   mu.ref <- uif$mu.ref
 
-  expect_equal(.toMonolixDefinition(tmp, mu.ref),
+  expect_equal(babelmixr:::.toMonolixDefinition(tmp, mu.ref),
                readRDS("test-monolix-definition-7.rds"))
 
 })

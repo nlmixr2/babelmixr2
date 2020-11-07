@@ -13,6 +13,10 @@
 ##' @return
 ##' @author Matthew Fidler
 ##' @export
+##' @importFrom nlmixr nlmixrEst
+##' @importFrom methods is
+##' @importFrom stats na.omit setNames
+##' @importFrom utils assignInMyNamespace
 monolixControl <- function(nbSSDoses=7,
                            stiff=FALSE, addProp = c("combined2", "combined1")) {
   checkmate::assertIntegerish(nbSSDoses, lower=1, max.len=1)
@@ -298,12 +302,7 @@ nlmixrEst.monolix <- function(env, ...){
       }
     } else if (identical(x[[1]], quote(`log1pmx`))) {
       if (length(x == 2)) {
-        if (.isEnv) {
-          .lastCall <- envir$..curCall
-          envir$..curCall <- c(envir$..curCall, "log")
-        }
-        .a <- .rxToSE(x[[2]], envir = envir)
-        if (.isEnv) envir$..curCall <- .lastCall
+        .a <- .rxToMonolix(x[[2]])
         return(paste0("(log(1+", .a, ")-(", .a, "))"))
       } else {
         stop("'log1pmx' only takes 1 argument", call. = FALSE)
@@ -315,10 +314,6 @@ nlmixrEst.monolix <- function(env, ...){
       ## From HERE
       if (length(x) == 4) {
         ## pnorm(q, mean, sd)
-        if (.isEnv) {
-          .lastCall <- envir$..curCall
-          envir$..currCall <- c(envir$..curCall, "erf")
-        }
         .q <- .rxToMonolix(x[[2]])
         .mean <- .rxToMonolix(x[[3]])
         .sd <- .rxToMonolix(x[[4]])

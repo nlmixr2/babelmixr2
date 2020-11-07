@@ -42,6 +42,7 @@
 #' # Run the function
 #' nlmixr_trans(f)
 #' @author Richard Hooijmaijers with contributions from Matt Fidler
+#' @export
 nlmixr_trans <- function(func){
   parsef  <- nlmixr::nlmixr(func)
 

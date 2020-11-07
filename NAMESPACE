@@ -2,3 +2,10 @@
 
 S3method(nlmixrEst,monolix)
 export(monolixControl)
+export(nlmixr_trans)
+export(rxToMonolix)
+importFrom(methods,is)
+importFrom(nlmixr,nlmixrEst)
+importFrom(stats,na.omit)
+importFrom(stats,setNames)
+importFrom(utils,assignInMyNamespace)

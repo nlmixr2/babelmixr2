@@ -12,9 +12,12 @@ LazyData: true
 Suggests: 
     testthat
 Depends: 
-    nlmixr
+    nlmixr,
+    R (>= 3.5)
 Imports: 
     RxODE,
     checkmate,
-    digest
+    digest,
+    methods,
+    stringi
 RoxygenNote: 7.1.1

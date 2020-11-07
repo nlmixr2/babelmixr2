@@ -4,10 +4,16 @@
 \alias{monolixControl}
 \title{Monolix Controller for nlmixr}
 \usage{
-monolixControl(nbSSDoses = 7)
+monolixControl(
+  nbSSDoses = 7,
+  stiff = FALSE,
+  addProp = c("combined2", "combined1")
+)
 }
 \arguments{
 \item{nbSSDoses}{Number of steady state doses (default 7)}
+
+\item{stiff}{Use the stiff ODE solver}
 }
 \value{
 
