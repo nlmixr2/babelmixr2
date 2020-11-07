@@ -310,10 +310,7 @@ nlmixrEst.monolix <- function(env, ...){
     } else if ((identical(x[[1]], quote(`pnorm`))) |
                  (identical(x[[1]], quote(`normcdf`))) |
                  (identical(x[[1]], quote(`phi`)))) {
-      #########################
-      ## From HERE
       if (length(x) == 4) {
-        ## pnorm(q, mean, sd)
         .q <- .rxToMonolix(x[[2]])
         .mean <- .rxToMonolix(x[[3]])
         .sd <- .rxToMonolix(x[[4]])
@@ -697,41 +694,6 @@ monolixModelParameter <- function(uif) {
   return(.ret0)
 }
 
-
-monolixModelTxt <- function(uif, data, control=monolixControl()) {
-  .v <- uif$rxode
-  .mv <- RxODE::rxModelVars(.v)
-  ## Run this before monolixMapData to populate errors in input={}
-  .resMod <- uif$saem.res.mod
-  .def <- paste(paste0(names(.resMod), "_pred= {distribution = normal, prediction = ", names(.resMod), ", errorModel=",
-                       monolixGetErr(.resMod, uif, control), "}"), collapse="\n")
-  ## Now map data
-  .map <- monolixMapData(data, uif)
-  .mod <- rxToMonolix(.v)
-
-  .lst <- .map
-  .lst$txt <- paste0("DESCRIPTION:\n",
-         paste0("model translated from babelmixr and nlmixr function ", uif$model.name, "\n\n"),
-         "[LONGITUDINAL]\n",
-         .map$regressors,
-         ifelse(control$stiff, "\n\nodeType = stiff", ""),
-         "\n\nPK:\n; Define compartment(s)\n",
-         paste(paste0("compartment(cmt=", seq_along(.mv$state), ", amount=", .mv$state, ")"), collapse="\n"),
-         paste("\n\n;Define depot compartment information\n"),
-         paste(paste0("depot(type=1, target=", .mv$state, ", Tlag=", monolixTlag(.mv$state), ", p=", monolixP(.mv$state), ")"), collapse="\n"),
-         "\n\nEQUATION:\n",gsub("\n\n+", "\n",.mod),
-         "\n\nDEFINITION:\n",
-         ## FIXME distribution should be able to be defined
-         .def,
-         "\n\nOUTPUT:\n",
-         "output={", paste(paste0(names(.resMod), "_pred"), collapse=", "), "}\n"
-         )
-  .lst$data.md5 <- digest::digest(data)
-  .lst <- monolixDataFile(.lst, uif, data, control=control)
-  .lst$definition <- .toMonolixDefinition(body(uif$saem.pars), uif$mu.ref)
-  return(.lst)
-}
-
 monolixDataContent <- function(lst, uif, control=monolixControl()) {
   .headerType <- lst$headerType
   paste(sapply(seq_along(.headerType), function(.i) {
@@ -793,6 +755,78 @@ monolixDataFile <- function(lst, uif, data, control=monolixControl()) {
 }
 
 
+#
+
+monolixModelParameter <- function(.df) {
+  ## FIXME Cov
+  ## Fixme resid parameters
+  paste0("<PARAMETER>\n",
+         paste(setNames(sapply(seq_along(.df$theta), function(.i){
+           .typical <- .df$typical[.i]
+           .val <- .df$thetaEst[.i]
+           .ret <- paste0(.typical, " = {value=", .val, ", method=MLE}")
+           .sd <- .df$sd[.i]
+           if (!is.na(.sd)) {
+             .sdEst <- .df$sdEst[.i]
+             .ret <- paste0(.ret, "\n", .sd, " = {value=", .val, ", method=MLE}")
+           }
+           return(.ret)
+         }), NULL), collapse="\n")
+         )
+}
+
+monolixModelTxt <- function(uif, data, control=monolixControl()) {
+  .v <- uif$rxode
+  .mv <- RxODE::rxModelVars(.v)
+  ## Run this before monolixMapData to populate errors in input={}
+  .resMod <- uif$saem.res.mod
+  .def <- paste(paste0(names(.resMod), "_pred= {distribution = normal, prediction = ", names(.resMod), ", errorModel=",
+                       monolixGetErr(.resMod, uif, control), "}"), collapse="\n")
+  ## Now map data
+  .map <- monolixMapData(data, uif)
+  .mod <- rxToMonolix(.v)
+
+  .lst <- .map
+  .lst$txt <- paste0("DESCRIPTION:\n",
+         paste0("model translated from babelmixr and nlmixr function ", uif$model.name, "\n\n"),
+         "[LONGITUDINAL]\n",
+         .map$regressors,
+         ifelse(control$stiff, "\n\nodeType = stiff", ""),
+         "\n\nPK:\n; Define compartment(s)\n",
+         paste(paste0("compartment(cmt=", seq_along(.mv$state), ", amount=", .mv$state, ")"), collapse="\n"),
+         paste("\n\n;Define depot compartment information\n"),
+         paste(paste0("depot(type=1, target=", .mv$state, ", Tlag=", monolixTlag(.mv$state), ", p=", monolixP(.mv$state), ")"), collapse="\n"),
+         "\n\nEQUATION:\n",gsub("\n\n+", "\n",.mod),
+         "\n\nDEFINITION:\n",
+         .def,
+         "\n\nOUTPUT:\n",
+         "output={", paste(paste0(names(.resMod), "_pred"), collapse=", "), "}\n"
+         )
+  .lst$data.md5 <- digest::digest(data)
+  .lst <- monolixDataFile(.lst, uif, data, control=control)
+  .definition <- .toMonolixDefinition(body(uif$saem.pars), uif$mu.ref)
+  .df <- .definition[[2]]
+  .dft <- as.data.frame(uif$ini)[, c("name", "est")]
+  names(.dft) <- c("theta", "thetaEst")
+  .df <- merge(.df, .dft, by="theta")
+  .w <- which(.df$trans == "logNormal")
+  if (length(.w) > 0) .df$thetaEst[.w] <- exp(.df$thetaEst[.w])
+  .w <- which(.df$trans == "logitNormal")
+  if (length(.w) > 0) .df$thetaEst[.w] <- sapply(.w, function(.i){RxODE::expit(.df$thetaEst[.i], .df$low[.w], .df$hi[.w])})
+  .w <- which(.df$trans == "probitNormal")
+  if (length(.w) > 0) .df$thetaEst[.w] <- sapply(.w, function(.i){RxODE::probitInv(.df$thetaEst[.i])})
+  .dft <- as.data.frame(uif$ini)[, c("name", "est")]
+  names(.dft) <- c("eta", "sdEst")
+  .df <- merge(.df, .dft, by="eta", all.x=TRUE)
+  .df$sdEst <- sqrt(.df$sdEst)
+  .lst$df <- .df
+  .lst$parameter <- monolixModelParameter(.df)
+  .vals <- c(.df$typical, .df$sd)
+  .vals <- .vals[!is.na(.vals)]
+  .lst$individual <- paste0("[INDIVIDUAL]\ninput = {", paste(.vals, collapse=", "), "}\n\n",
+                            .definition[[1]], "\n")
+  return(.lst)
+}
 
 
 
