@@ -21,3 +21,4 @@ Imports:
     methods,
     stringi
 RoxygenNote: 7.1.1
+Config/testthat/edition: 3
