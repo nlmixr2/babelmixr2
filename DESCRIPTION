@@ -15,5 +15,6 @@ Depends:
     nlmixr
 Imports: 
     RxODE,
-    checkmate
+    checkmate,
+    digest
 RoxygenNote: 7.1.1

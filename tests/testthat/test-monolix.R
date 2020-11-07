@@ -122,7 +122,7 @@ test_that("model to input information", {
                list(headerType = c(ID = "id", TIME = "ignore", DV = "observation",
                                    AMT = "amount", EVID = "evid", CMT = "obsid",
                                    WT = "regressor"),
-                    regressors = "input={v, emax, ec50, e0, kout, ktr, ka, cl}\nWT = {use=regressor}"))
+                    regressors = "input={v, emax, ec50, e0, kout, cl, WT, ktr, ka}\nWT = {use=regressor}"))
 
 })
 
@@ -217,6 +217,41 @@ test_that("monolix dsl", {
 
   uif <- nlmixr(pk.turnover.emax3)
 
+  fun <- function(){
+    ktr = exp(tktr)
+    ka = exp(tka)
+    cl = exp(tcl)
+    v = exp(tv)
+    emax = expit(temax, -0.5, 2)
+    ec50 = probitInv(tec50)
+    kout = tkout
+    e0 = exp(te0)
+  }
 
+  tmp <- body(fun)
+  mu.ref <- uif$mu.ref
+
+  expect_equal(.toMonolixDefinition(tmp, mu.ref),
+               "DEFINITION:\nktr = {distribution=logNormal, typical=ktr_pop, sd=omega_ktr}\nka = {distribution=logNormal, typical=ka_pop, sd=omega_ka}\ncl = {distribution=logNormal, typical=cl_pop, sd=omega_cl}\nv = {distribution=logNormal, typical=v_pop, sd=omega_v}\nemax = {distribution=logitNormal, min=-0.5, max=2, typical=emax_pop, sd=omega_emax}\nec50 = {distribution=probitNormal, typical=ec50_pop, sd=omega_ec50}\nkout = {distribution=normal, typical=kout_pop, sd=omega_kout}\ne0 = {distribution=logNormal, typical=e0_pop, sd=omega_e0}")
+
+  mu.ref <- mu.ref[-2]
+
+  expect_equal(.toMonolixDefinition(tmp, mu.ref),
+               "DEFINITION:\nktr = {distribution=logNormal, typical=ktr_pop, sd=omega_ktr}\nka = {distribution=logNormal, typical=ka_pop, no-variability}\ncl = {distribution=logNormal, typical=cl_pop, sd=omega_cl}\nv = {distribution=logNormal, typical=v_pop, sd=omega_v}\nemax = {distribution=logitNormal, min=-0.5, max=2, typical=emax_pop, sd=omega_emax}\nec50 = {distribution=probitNormal, typical=ec50_pop, sd=omega_ec50}\nkout = {distribution=normal, typical=kout_pop, sd=omega_kout}\ne0 = {distribution=logNormal, typical=e0_pop, sd=omega_e0}")
+
+  mu.ref <- mu.ref[-6]
+
+  expect_equal(.toMonolixDefinition(tmp, mu.ref),
+               "DEFINITION:\nktr = {distribution=logNormal, typical=ktr_pop, sd=omega_ktr}\nka = {distribution=logNormal, typical=ka_pop, no-variability}\ncl = {distribution=logNormal, typical=cl_pop, sd=omega_cl}\nv = {distribution=logNormal, typical=v_pop, sd=omega_v}\nemax = {distribution=logitNormal, min=-0.5, max=2, typical=emax_pop, sd=omega_emax}\nec50 = {distribution=probitNormal, typical=ec50_pop, sd=omega_ec50}\nkout = {distribution=normal, typical=kout_pop, no-variability}\ne0 = {distribution=logNormal, typical=e0_pop, sd=omega_e0}")
+
+  mu.ref <- mu.ref[-5]
+
+  expect_equal(.toMonolixDefinition(tmp, mu.ref),
+               "DEFINITION:\nktr = {distribution=logNormal, typical=ktr_pop, sd=omega_ktr}\nka = {distribution=logNormal, typical=ka_pop, no-variability}\ncl = {distribution=logNormal, typical=cl_pop, sd=omega_cl}\nv = {distribution=logNormal, typical=v_pop, sd=omega_v}\nemax = {distribution=logitNormal, min=-0.5, max=2, typical=emax_pop, sd=omega_emax}\nec50 = {distribution=probitNormal, typical=ec50_pop, no-variability}\nkout = {distribution=normal, typical=kout_pop, no-variability}\ne0 = {distribution=logNormal, typical=e0_pop, sd=omega_e0}")
+
+  mu.ref <- mu.ref[-4]
+
+  expect_equal(.toMonolixDefinition(tmp, mu.ref),
+               "DEFINITION:\nktr = {distribution=logNormal, typical=ktr_pop, sd=omega_ktr}\nka = {distribution=logNormal, typical=ka_pop, no-variability}\ncl = {distribution=logNormal, typical=cl_pop, sd=omega_cl}\nv = {distribution=logNormal, typical=v_pop, sd=omega_v}\nemax = {distribution=logitNormal, min=-0.5, max=2, typical=emax_pop, no-variability}\nec50 = {distribution=probitNormal, typical=ec50_pop, no-variability}\nkout = {distribution=normal, typical=kout_pop, no-variability}\ne0 = {distribution=logNormal, typical=e0_pop, sd=omega_e0}")
 
 })

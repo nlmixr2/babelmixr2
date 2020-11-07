@@ -55,6 +55,7 @@ monolixMapData <- function(data, uif) {
     if (tolower(x) == "ss") return("ss")
     if (tolower(x) == "ii") return("ii")
     if (tolower(x) == "addl") return("addl")
+    if (tolower(x) == "occ") return("occ")
     if (any(x == regressors)) {
       .env$.regressor <- c(.env$.regressor, paste0(x, " = {use=regressor}"))
       return("regressor")
@@ -577,10 +578,134 @@ monolixGetErr <- function(resMod, uif, control) {
   })
 }
 
+.toMonolixDef <- list()
+.toMonolixDefinition <- function(x, mu.ref) {
+  if (is.call(x)) {
+    if (identical(x[[1]], quote(`{`))) {
+      assignInMyNamespace(".toMonolixDef", list())
+      .x2 <- x[-1]
+      .ret <- paste0("DEFINITION:\n", paste(lapply(.x2, function(x) {
+        .toMonolixDefinition(x, mu.ref)
+      }), collapse = "\n"))
+      return(.ret)
+    } else if (identical(x[[1]], quote(`=`))) {
+      .var <- as.character(x[[2]])
+      .start <- paste0(.var, " = ")
+      .x3 <- x[[3]]
+      .muRef <- unlist(mu.ref)
+      .eta <- names(.muRef)
+      .muRef <- setNames(.muRef, NULL)
+      if (length(.x3) >= 2){
+        if (identical(.x3[[1]], quote(`exp`))) {
+          .theta <- as.character(.x3[[2]])
+          .w <- which(.muRef == .theta)
+          .start <- paste0(.start, "{distribution=logNormal, typical=", .var, "_pop, ")
+          if (length(.w) == 1) {
+            .md <- .toMonolixDef
+            .md[[length(.md) + 1]] <- data.frame(var=.var, theta=.theta, typical=paste0(.var, "_pop"),
+                                                 eta=.eta[.w], sd=paste0("omega_", .var),
+                                                 trans="logNormal", low=0, hi=1, stringsAsFactors = FALSE)
+            assignInMyNamespace(".toMonolixDef", .md)
+            .start <- paste0(.start, "sd=omega_", .var, "}")
+            return(.start)
+          } else {
+            .md <- .toMonolixDef
+            .md[[length(.md) + 1]] <- data.frame(var=.var, theta=.theta, typical=paste0(.var, "_pop"), eta=NA_character_,
+                                                 sd=NA_character_, trans="logNormal", low=0, hi=1, stringsAsFactors = FALSE)
+            assignInMyNamespace(".toMonolixDef", .md)
+            .start <- paste0(.start, "no-variability}")
+            return(.start)
+          }
+        } else if (identical(.x3[[1]], quote(`expit`))) {
+          .theta <- as.character(.x3[[2]])
+          .w <- which(.muRef == .theta)
+          .start <- paste0(.start, "{distribution=logitNormal, min=",
+                           ifelse(length(.x3) >= 3, paste(eval(.x3[[3]])), "0.0"))
+          .start <- paste0(.start, ", max=", ifelse(length(.x3) >= 4, paste(eval(.x3[[4]])), "1.0"))
+          .start <- paste0(.start, ", typical=", .var, "_pop, ")
+          if (length(.w) == 1) {
+            .md <- .toMonolixDef
+            .md[[length(.md) + 1]] <- data.frame(var=.var, theta=.theta, typical=paste0(.var, "_pop"), eta=.eta[.w], sd=paste0("omega_", .var),
+                                                 trans="logitNormal", low=ifelse(length(.x3) >= 3, eval(.x3[[3]]), 0.0),
+                                                 hi=ifelse(length(.x3) >= 4, eval(.x3[[4]]), 1.0), stringsAsFactors = FALSE)
+            assignInMyNamespace(".toMonolixDef", .md)
+            .start <- paste0(.start, "sd=omega_", .var, "}")
+            return(.start)
+          } else {
+            .md <- .toMonolixDef
+            .md[[length(.md) + 1]] <- data.frame(var=.var, theta=.theta, typical=paste0(.var, "_pop"), eta=NA_character_, sd=NA_character_,
+                                                 trans="logitNormal", low=ifelse(length(.x3) >= 3, eval(.x3[[3]]), 0.0),
+                                                 hi=ifelse(length(.x3) >= 4, eval(.x3[[4]]), 1.0),
+                                                 stringsAsFactors = FALSE)
+            assignInMyNamespace(".toMonolixDef", .md)
+            .start <- paste0(.start, "no-variability}")
+            return(.start)
+          }
+          return(.start)
+        } else if (identical(.x3[[1]], quote(`probitInv`))) {
+          if (length(.x3) != 2) stop("'probitInv' cannot have more than 1 argument for a monolix model")
+          .theta <- as.character(.x3[[2]])
+          .w <- which(.muRef == .theta)
+          .start <- paste0(.start, "{distribution=probitNormal, typical=", .var, "_pop, ")
+          if (length(.w) == 1) {
+            .md <- .toMonolixDef
+            .md[[length(.md) + 1]] <- data.frame(var=.var, theta=.theta, typical=paste0(.var, "_pop"), eta=.eta[.w], sd=paste0("omega_", .var),
+                                                 trans="probitNormal", low=0.0, hi=1.0,
+                                                 stringsAsFactors = FALSE)
+            assignInMyNamespace(".toMonolixDef", .md)
+            .start <- paste0(.start, "sd=omega_", .var, "}")
+            return(.start)
+          } else {
+            .md <- .toMonolixDef
+            .md[[length(.md) + 1]] <- data.frame(var=.var, theta=.theta, typical=paste0(.var, "_pop"), eta=NA_character_, sd=NA_character_,
+                                                 trans="probitNormal", low=0.0, hi=1.0,
+                                                 stringsAsFactors = FALSE)
+            assignInMyNamespace(".toMonolixDef", .md)
+            .start <- paste0(.start, "no-variability}")
+            return(.start)
+          }
+          return(.start)
+        }
+      } else {
+        .start <- paste0(.start, "{distribution=normal, typical=", .var, "_pop, ")
+        .theta <- as.character(.x3)
+        .w <- which(.muRef == .theta)
+        if (length(.w) == 1) {
+          .md <- .toMonolixDef
+          .md[[length(.md) + 1]] <- data.frame(var=.var, theta=.theta, typical=paste0(.var, "_pop"), eta=.eta[.w], sd=paste0("omega_", .var),
+                                               trans="normal", low=0.0, hi=1.0,
+                                               stringsAsFactors = FALSE)
+          assignInMyNamespace(".toMonolixDef", .md)
+          .start <- paste0(.start, "sd=omega_", .var, "}")
+          return(.start)
+        } else {
+          .md <- .toMonolixDef
+          .md[[length(.md) + 1]] <- data.frame(var=.var, theta=.theta, typical=paste0(.var, "_pop"), eta=NA_character_, sd=NA_character_,
+                                               trans="normal", low=0.0, hi=1.0,
+                                               stringsAsFactors = FALSE)
+          assignInMyNamespace(".toMonolixDef", .md)
+          .start <- paste0(.start, "no-variability}")
+          return(.start)
+        }
+      }
+    }
+  }
+}
+
+monolixModelParameter <- function(uif) {
+  .mu <- uif$nmodel$mu.ref
+  .ret <- do.call(rbind, lapply(names(.mu), function(x) {
+    data.frame(theta = .mu[[x]], eta = x, stringsAsFactors = FALSE)
+  }))
+  .ret0 <- merge(data.frame(name=.ret$theta), as.data.frame(uif$ini)[, c("name", "est")])
+  names(.ret0)[1] <- "theta"
+  return(.ret0)
+}
+
+
 monolixModelTxt <- function(uif, data, control=monolixControl()) {
   .v <- uif$rxode
   .mv <- RxODE::rxModelVars(.v)
-  seq_along(.mv$state)
   ## Run this before monolixMapData to populate errors in input={}
   .resMod <- uif$saem.res.mod
   .def <- paste(paste0(names(.resMod), "_pred= {distribution = normal, prediction = ", names(.resMod), ", errorModel=",
@@ -589,7 +714,8 @@ monolixModelTxt <- function(uif, data, control=monolixControl()) {
   .map <- monolixMapData(data, uif)
   .mod <- rxToMonolix(.v)
 
-  paste0("DESCRIPTION:\n",
+  .lst <- .map
+  .lst$txt <- paste0("DESCRIPTION:\n",
          paste0("model translated from babelmixr and nlmixr function ", uif$model.name, "\n\n"),
          "[LONGITUDINAL]\n",
          .map$regressors,
@@ -605,6 +731,70 @@ monolixModelTxt <- function(uif, data, control=monolixControl()) {
          "\n\nOUTPUT:\n",
          "output={", paste(paste0(names(.resMod), "_pred"), collapse=", "), "}\n"
          )
+  .lst$data.md5 <- digest::digest(data)
+  .lst <- monolixDataFile(.lst, uif, data, control=control)
+  .lst$definition <- .toMonolixDefinition(body(uif$saem.pars), uif$mu.ref)
+  return(.lst)
+}
+
+monolixDataContent <- function(lst, uif, control=monolixControl()) {
+  .headerType <- lst$headerType
+  paste(sapply(seq_along(.headerType), function(.i) {
+    .type <- setNames(.headerType[.i], NULL)
+    .col <- names(.headerType)[.i]
+    if (.type == "id") {
+      return(paste0(.col, " = {use=identifier}"))
+    } else if (.type == "amount") {
+      return(paste0(.col, " = {use=amount}"))
+    } else if (.type == "evid") {
+      return(paste0(.col, " = {use=eventidentifier}"))
+    } else if (.type == "mdv") {
+      return(paste0(.col, " = {use=missingdependentvariable}"))
+    } else if (.type == "occ") {
+      return(paste0(.col, " = {use=occasion}"))
+    } else if (.type == "cens") {
+      return(paste0(.col, " = {use=censored}"))
+    } else if (.type == "limit") {
+      return(paste0(.col, " = {use=limit}"))
+    } else if (.type == "catcov") {
+      return(paste0(.col, " = {use=covariate, type=categorical}"))
+    } else if (.type == "contcov") {
+      return(paste0(.col, " = {use=covariate, type=continuous}"))
+    } else if (.type == "regressor") {
+      return(paste0(.col, " = {use=regressor}"))
+    } else if (.type == "admid") {
+      return(paste0(.col, " = {use=administration}"))
+    } else if (.type == "ii") {
+      return(paste0(.col, " = {use=interdoseinterval}"))
+    } else if (.type == "addl") {
+      return(paste0(.col, " = {use=additionaldose}"))
+    } else if (.type == "ss") {
+      return(paste0(.col, " = {use=steadystate, nbdoses=", control$nbSSDoses, "}"))
+    } else if (.type == "rate") {
+      return(paste0(.col, " = {use=rate}"))
+    } else if (.type == "tinf") {
+      return(paste0(.col, " = {use=infusiontime}"))
+    } else if (.type == "observation") {
+      # With one observation
+      return(paste0(.col, " = {use=observation, name=", .col, ", type=continuous}"))
+      # With more than one observation
+      #return(paste0(.col, " = {use=observation, name={", .col, "}, yname={'2','6'},type={continuous}}"))
+    } else {
+      return("")
+    }
+  }), collapse="\n")
+}
+
+monolixDataFile <- function(lst, uif, data, control=monolixControl()) {
+  .lst <- lst
+  .lst$datafile <- paste0("<DATAFILE>\n\n[FILEINFO]\n",
+                          "file='", lst$data.md5, ".csv'\n",
+                          "zdelimiter = comma\n",
+                          "header = {", paste(names(data), collapse=", "), "}\n\n",
+                          "[CONTENT]\n",
+                          gsub("\n+", "\n", monolixDataContent(lst, uif, control))
+                          )
+  return(.lst)
 }
 
 
