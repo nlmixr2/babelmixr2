@@ -101,7 +101,6 @@ monolixMapData <- function(data, uif) {
 ##'
 ##' @param ... Other parameters
 ##'
-##' @export
 nlmixrEst.monolix <- function(env, ...){
   with(env, {
     ## obj$env$.curTv needs to be reset
