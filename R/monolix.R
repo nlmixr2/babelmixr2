@@ -562,6 +562,7 @@ rxToMonolix <- function(x) {
 monolixTlag <- function(states) {
   sapply(states, function(state) {
     .cur <- .monolixTlag[state]
+    if (length(.cur) == 0) return("0.0")
     if (is.na(.cur)) return("0.0")
     .cur
   })
@@ -570,6 +571,7 @@ monolixTlag <- function(states) {
 monolixP <- function(states){
   sapply(states, function(state) {
     .cur <- .monolixP[state]
+    if (length(.cur) == 0) return("1.0")
     if (is.na(.cur)) return("1.0")
     .cur
   })
@@ -751,7 +753,9 @@ monolixModelParameter <- function(uif) {
 
 monolixDataContent <- function(lst, uif, control=monolixControl()) {
   .headerType <- lst$headerType
-  paste(sapply(seq_along(.headerType), function(.i) {
+  .obs <- ""
+  .env <- environment()
+  .ret <- paste(sapply(seq_along(.headerType), function(.i) {
     .type <- setNames(.headerType[.i], NULL)
     .col <- names(.headerType)[.i]
     if (.type == "id") {
@@ -788,6 +792,13 @@ monolixDataContent <- function(lst, uif, control=monolixControl()) {
       return(paste0(.col, " = {use=infusiontime}"))
     } else if (.type == "observation") {
       # With one observation
+      .predDf <- uif$nmodel$predDf
+      if (length(.predDf$cmt) > 1) {
+        return(paste0(.col, " = {use=observation, name={", paste(paste0("y_", .predDf$cmt), collapse=", "), "},yname={",
+                      paste(paste0("'", .predDf$cmt, "'"), collapse=", "), "},type={",
+                      paste(rep("continuous", length(.predDf$cmt)), collapse=", "), "}}"))
+      }
+      assign(".obs", .col, .env)
       return(paste0(.col, " = {use=observation, name=", .col, ", type=continuous}"))
       # With more than one observation
       #return(paste0(.col, " = {use=observation, name={", .col, "}, yname={'2','6'},type={continuous}}"))
@@ -795,16 +806,19 @@ monolixDataContent <- function(lst, uif, control=monolixControl()) {
       return("")
     }
   }), collapse="\n")
+  return(list(obs=.obs, ret=.ret))
 }
 
 monolixDataFile <- function(lst, uif, data, control=monolixControl()) {
   .lst <- lst
+  .cnt <- monolixDataContent(lst, uif, control)
+  .lst$obs <- .cnt$obs
   .lst$datafile <- paste0("<DATAFILE>\n\n[FILEINFO]\n",
                           "file='", lst$data.md5, ".csv'\n",
                           "zdelimiter = comma\n",
                           "header = {", paste(names(data), collapse=", "), "}\n\n",
                           "[CONTENT]\n",
-                          gsub("\n+", "\n", monolixDataContent(lst, uif, control))
+                          gsub("\n+", "\n", .cnt$ret)
                           )
   return(.lst)
 }
@@ -813,7 +827,8 @@ monolixDataFile <- function(lst, uif, data, control=monolixControl()) {
 #
 
 monolixModelParameter <- function(.df, .dfError) {
-  ## FIXME Cov?
+  ## FIXME Covariance estimates?
+  #F FIXME Covariate estimates?
   paste0("\n\n<PARAMETER>\n",
          paste(setNames(sapply(seq_along(.df$theta), function(.i){
            .typical <- .df$typical[.i]
@@ -832,6 +847,19 @@ monolixModelParameter <- function(.df, .dfError) {
            paste0(.errName, " = {value=", .val, ", method=MLE}")
          }), NULL), collapse="\n"),
          "\n\n")
+}
+
+monolixModelFit <- function(uif, obs) {
+  .predDf <- uif$nmodel$predDf
+  if (length(.predDf$cmt) > 1) {
+    return(paste0("\n\n<FIT>\n",
+                  "data = {", paste(paste0("y_", .predDf$cmt), collapse=", "), "}\n",
+                  "model = {", paste(paste0(.predDf$cond, "_pred"), collapse=", "), "}\n"))
+  }
+  paste0("\n\n<FIT>\n",
+         "data = ", obs, "\n",
+         "model = ", obs, "\n")
+
 }
 
 monolixModelTxt <- function(uif, data, control=monolixControl()) {
@@ -899,8 +927,10 @@ monolixModelTxt <- function(uif, data, control=monolixControl()) {
                          "\nsimulatedannealingiterations = ", control$simulatedannealingiterations,
                          "\nexploratoryinterval = ", control$exploratoryinterval, "\n")
 
+  .lst$fit <- monolixModelFit(uif, .lst$obs)
+
   ## FIXME <FIT>
-  .lst$mlxtran <- paste0(.lst$datafile, "\n", .lst$model, # fit
+  .lst$mlxtran <- paste0(.lst$datafile, "\n", .lst$model, .lst$fit,
                          .lst$parameter, .lst$monolix)
   return(.lst)
 }
