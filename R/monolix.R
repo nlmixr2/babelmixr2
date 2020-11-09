@@ -18,7 +18,7 @@
 ##' @return A monolix control object
 ##' @author Matthew Fidler
 ##' @export
-##' @importFrom nlmixr nlmixrEst
+##' @importFrom nlmixr nlmixr
 ##' @importFrom methods is
 ##' @importFrom stats na.omit setNames
 ##' @importFrom utils assignInMyNamespace
@@ -929,10 +929,38 @@ monolixModelTxt <- function(uif, data, control=monolixControl()) {
 
   .lst$fit <- monolixModelFit(uif, .lst$obs)
 
-  ## FIXME <FIT>
   .lst$mlxtran <- paste0(.lst$datafile, "\n", .lst$model, .lst$fit,
                          .lst$parameter, .lst$monolix)
   return(.lst)
+}
+##' Converts nlmixr to monolix
+##'
+##' @param uif User interface function or parsed function from nlmixr
+##' @param data Data for nlmixr
+##' @param control Monolix control
+##' @return Nothing; Writes files for monolix to run
+##' @author Matthew Fidler
+##' @export
+nlmixrToMonolix <- function(uif, data, control=monolixControl()){
+  if (!inherits(uif, "nlmixrUI")) {
+    uif <- nlmixr::nlmixr(uif)
+  }
+  .lst <- monolixModelTxt(uif, data, control=control)
+  .mlx <- paste0(.lst$file, ".mlxtran")
+  cli::alert_info("writing mlxtran file to {.mlx}")
+  writeLines(.lst$mlxtran, .mlx)
+  .txt <- paste0(.lst$file, ".txt")
+  cli::alert_info("writing monolix model txt file to {.txt}")
+  writeLines(.lst$txt, .txt)
+  .data <- paste0(tmp$data.md5, ".csv")
+  if (!file.exists(.data)) {
+    cli::alert_info("writing data to {.data}")
+    data.table::fwrite(data, .data)
+  }
+  .rds <- paste0(.lst$file, ".rds")
+  cli::alert_info("writing monolix translation information to {.rds}")
+  saveRDS(list(uif=uif, data=data, control=control, lst=.lst), .rds)
+  return(invisible())
 }
 
 
