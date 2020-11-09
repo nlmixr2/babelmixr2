@@ -814,7 +814,7 @@ monolixDataFile <- function(lst, uif, data, control=monolixControl()) {
   .lst$obs <- .cnt$obs
   .lst$datafile <- paste0("<DATAFILE>\n\n[FILEINFO]\n",
                           "file='", lst$data.md5, ".csv'\n",
-                          "zdelimiter = comma\n",
+                          "delimiter = comma\n",
                           "header = {", paste(names(data), collapse=", "), "}\n\n",
                           "[CONTENT]\n",
                           gsub("\n+", "\n", .cnt$ret)
