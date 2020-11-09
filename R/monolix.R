@@ -932,6 +932,14 @@ monolixModelTxt <- function(uif, data, control=monolixControl()) {
                          .lst$parameter, .lst$monolix)
   return(.lst)
 }
+.nlmixrMonolixLastProject <- ""
+
+##' Get the last babelmix nlmixr project exported
+##'
+##' @export
+nlmixrMonolixLastProject <- function(){
+  return(.nlmixrMonolixLastProject)
+}
 ##' Converts nlmixr to monolix
 ##'
 ##' @param uif User interface function or parsed function from nlmixr
@@ -946,20 +954,33 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
   }
   .lst <- monolixModelTxt(uif, data, control=control)
   .mlx <- paste0(.lst$file, ".mlxtran")
+  assignInMyNamespace(".nlmixrMonolixLastProject", .mlx)
   cli::alert_info("writing mlxtran file to {.mlx}")
   writeLines(.lst$mlxtran, .mlx)
   .txt <- paste0(.lst$file, ".txt")
-  cli::alert_info("writing monolix model txt file to {.txt}")
+  ## cli::alert_info("writing monolix model txt file to {.txt}")
+  message(paste0("writing monolix model txt file to ", .txt))
   writeLines(.lst$txt, .txt)
   .data <- paste0(tmp$data.md5, ".csv")
   if (!file.exists(.data)) {
-    cli::alert_info("writing data to {.data}")
+    message(paste0("writing data to ", .data))
+    ## cli::alert_info("writing data to {.data}")
     data.table::fwrite(data, .data)
   }
   .rds <- paste0(.lst$file, ".rds")
-  cli::alert_info("writing monolix translation information to {.rds}")
+  message(paste0("writing monolix translation information to ", .rds))
   saveRDS(list(uif=uif, data=data, control=control, lst=.lst), .rds)
   return(invisible())
+}
+
+runMonolix <- function(project=nlmixrMonolixLastProject()) {
+  bquote({
+    library(lixoftConnectors)
+    initializeLixoftConnectors(software="monolix")
+    loadProject(projectFile = .(project))
+    runPopulationParameterEstimation()
+
+  })
 }
 
 
