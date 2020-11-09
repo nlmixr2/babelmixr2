@@ -949,7 +949,7 @@ nlmixrMonolixLastProject <- function(){
 ##' @author Matthew Fidler
 ##' @export
 nlmixrToMonolix <- function(uif, data, control=monolixControl()){
-  name <- as.character(deparse(uif))
+  name <- as.character(substitute(uif))
   if (!inherits(uif, "nlmixrUI")) {
     uif <- nlmixr::nlmixr(uif)
   }
