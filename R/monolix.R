@@ -953,6 +953,7 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
   if (!inherits(uif, "nlmixrUI")) {
     uif <- nlmixr::nlmixr(uif)
   }
+  if(!any(tolower(names(data)) == "dv")) stop("need dv in data", call.=FALSE)
   .lst <- monolixModelTxt(uif, data, control=control, name=name)
   .mlx <- paste0(.lst$file, ".mlxtran")
   assignInMyNamespace(".nlmixrMonolixLastProject", .mlx)
