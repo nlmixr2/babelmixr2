@@ -212,7 +212,14 @@ nlmixrEst.monolix <- function(env, ...){
       }
       .v <- .rxMcnt[.ret]
       if (is.na(.v)) {
-        return(gsub("[.]", "__", .ret))
+        if (is.numeric(.ret)) {
+          return(.ret)
+        } else if (regexpr("(?:-)?(?:(?:0|(?:[1-9][0-9]*))|(?:(?:[0-9]+\\.[0-9]*)|(?:[0-9]*\\.[0-9]+))(?:(?:[Ee](?:[+\\-])?[0-9]+))?|[0-9]+[Ee](?:[\\-+])?[0-9]+)",
+                           .ret, perl=TRUE) != -1) {
+          return(.ret)
+        } else {
+          return(gsub("[.]", "__", .ret))
+        }
       } else {
         return(.v)
       }
@@ -958,7 +965,7 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
   .mlx <- paste0(.lst$file, ".mlxtran")
   assignInMyNamespace(".nlmixrMonolixLastProject", .mlx)
   ## cli::alert_info("writing mlxtran file to {.mlx}")
-  message("writing mlxtran file to", .mlx)
+  message("writing mlxtran file to ", .mlx)
   writeLines(.lst$mlxtran, .mlx)
   .txt <- paste0(.lst$file, ".txt")
   ## cli::alert_info("writing monolix model txt file to {.txt}")

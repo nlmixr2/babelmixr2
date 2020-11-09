@@ -163,6 +163,9 @@ test_that("monolix dsl", {
   expect_error(rxToMonolix("newind"))
   expect_equal(rxToMonolix("log1pmx(a)"), "(log(1+a)-(a))")
 
+  expect_equal(rxToMonolix("4.3"), "4.3")
+  expect_equal(rxToMonolix("add.sd"), "add__sd")
+
   pk.turnover.emax3 <- function() {
     ini({
       tktr <- log(1)
