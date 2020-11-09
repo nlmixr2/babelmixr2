@@ -861,7 +861,7 @@ monolixModelFit <- function(uif, obs) {
 
 }
 
-monolixModelTxt <- function(uif, data, control=monolixControl()) {
+monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
   if (inherits(control, "monolixControl")) {
     control <-do.call(monolixControl, control)
   }
@@ -877,7 +877,7 @@ monolixModelTxt <- function(uif, data, control=monolixControl()) {
 
   .lst <- .map
   .lst$data.md5 <- digest::digest(data)
-  .lst$file <- paste0(uif$model.name, "-", digest::digest(list(control, .lst$data.md5)))
+  .lst$file <- paste0(ifelse(missing(name), uif$model.name, name), "-", digest::digest(list(control, .lst$data.md5)))
   .lst$txt <- paste0("DESCRIPTION:\n",
          paste0("model translated from babelmixr and nlmixr function ", uif$model.name, " to ", .lst$file, ".txt\n\n"),
          "[LONGITUDINAL]\n",
@@ -949,10 +949,11 @@ nlmixrMonolixLastProject <- function(){
 ##' @author Matthew Fidler
 ##' @export
 nlmixrToMonolix <- function(uif, data, control=monolixControl()){
+  name <- as.character(deparse(uif))
   if (!inherits(uif, "nlmixrUI")) {
     uif <- nlmixr::nlmixr(uif)
   }
-  .lst <- monolixModelTxt(uif, data, control=control)
+  .lst <- monolixModelTxt(uif, data, control=control, name=name)
   .mlx <- paste0(.lst$file, ".mlxtran")
   assignInMyNamespace(".nlmixrMonolixLastProject", .mlx)
   ## cli::alert_info("writing mlxtran file to {.mlx}")
