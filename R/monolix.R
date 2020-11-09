@@ -962,7 +962,7 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
   ## cli::alert_info("writing monolix model txt file to {.txt}")
   message(paste0("writing monolix model txt file to ", .txt))
   writeLines(.lst$txt, .txt)
-  .data <- paste0(tmp$data.md5, ".csv")
+  .data <- paste0(.lst$data.md5, ".csv")
   if (!file.exists(.data)) {
     message(paste0("writing data to ", .data))
     ## cli::alert_info("writing data to {.data}")
