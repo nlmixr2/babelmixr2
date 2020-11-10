@@ -799,6 +799,8 @@ monolixDataContent <- function(lst, uif, control=monolixControl()) {
       return(paste0(.col, " = {use=rate}"))
     } else if (.type == "tinf") {
       return(paste0(.col, " = {use=infusiontime}"))
+    } else if (.type == "obsid") {
+      return(paste0(.col, " = {use=observationtype}"))
     } else if (.type == "observation") {
       # With one observation
       .predDf <- uif$nmodel$predDf
@@ -808,7 +810,7 @@ monolixDataContent <- function(lst, uif, control=monolixControl()) {
                       paste(rep("continuous", length(.predDf$cmt)), collapse=", "), "}}"))
       }
       assign(".obs", .col, .env)
-      return(paste0(.col, " = {use=observation, name=", .col, ", type=continuous}"))
+      return(paste0(.col, " = {use=observation, name=", .col, ", yname={'", .predDf$cmt, "'}, type=continuous}"))
       # With more than one observation
       #return(paste0(.col, " = {use=observation, name={", .col, "}, yname={'2','6'},type={continuous}}"))
     } else {
