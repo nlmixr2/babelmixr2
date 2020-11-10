@@ -801,6 +801,8 @@ monolixDataContent <- function(lst, uif, control=monolixControl()) {
       return(paste0(.col, " = {use=infusiontime}"))
     } else if (.type == "obsid") {
       return(paste0(.col, " = {use=observationtype}"))
+    } else if (.type == "time") {
+      return(paste0(.col, " = {use=time}"))
     } else if (.type == "observation") {
       # With one observation
       .predDf <- uif$nmodel$predDf
