@@ -967,7 +967,7 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
   .rds <- paste0(.lst$file, ".rds")
   if (file.exists(.rds)){
     .lst2 <- readRDS(.rds)
-    if (.lst$digest == .lst2$digest) {
+    if (.lst$digest == .lst2$lst$digest) {
       message("the monolix model is current with the nlmixr model; remove ", .rds," to regenerate")
       return(invisible())
     }
