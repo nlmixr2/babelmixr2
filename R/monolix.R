@@ -760,7 +760,7 @@ monolixModelParameter <- function(uif) {
   return(.ret0)
 }
 
-monolixDataContent <- function(lst, uif, control=monolixControl()) {
+monolixDataContent <- function(lst, uif, data, control=monolixControl()) {
   .headerType <- lst$headerType
   .obs <- ""
   .env <- environment()
@@ -811,10 +811,29 @@ monolixDataContent <- function(lst, uif, control=monolixControl()) {
                       paste(paste0("'", .predDf$cmt, "'"), collapse=", "), "},type={",
                       paste(rep("continuous", length(.predDf$cmt)), collapse=", "), "}}"))
       }
-      assign(".obs", .col, .env)
-      return(paste0(.col, " = {use=observation, name=", .col, ", yname={'", .predDf$cmt, "'}, type=continuous}"))
       # With more than one observation
       #return(paste0(.col, " = {use=observation, name={", .col, "}, yname={'2','6'},type={continuous}}"))
+      assign(".obs", .col, .env)
+      .w <- which(tolower(names(data)) == "evid")
+      .wc <- which(tolower(names(data)) == "cmt")
+      if (length(.wc) == 1) {
+        if (length(.w) == 1) {
+          .cmt <- unique(data[data[, .w] == 0, .wc])
+          if (length(.cmt) == 1){
+            return(paste0(.col, " = {use=observation, name=", .col, ", yname={'", .cmt, "'}, type=continuous}"))
+          }
+        } else {
+          .w <- which(tolower(names(data)) == "mdv")
+          if (length(.w) == 1) {
+            .cmt <- unique(data[data[, .w] == 0, .wc])
+            if (length(.cmt) == 1){
+              return(paste0(.col, " = {use=observation, name=", .col, ", yname={'", .cmt, "'}, type=continuous}"))
+            }
+          }
+        }
+        stop("more than one compartment for observations, should be a multiple endpoint model", call.=FALSE)
+      }
+      return(paste0(.col, " = {use=observation, name=", .col, ", type=continuous}"))
     } else {
       return("")
     }
@@ -824,7 +843,7 @@ monolixDataContent <- function(lst, uif, control=monolixControl()) {
 
 monolixDataFile <- function(lst, uif, data, control=monolixControl()) {
   .lst <- lst
-  .cnt <- monolixDataContent(lst, uif, control)
+  .cnt <- monolixDataContent(lst, uif, data, control)
   .lst$obs <- .cnt$obs
   .lst$datafile <- paste0("<DATAFILE>\n\n[FILEINFO]\n",
                           "file='", lst$data.md5, ".csv'\n",
