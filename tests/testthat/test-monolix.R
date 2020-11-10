@@ -56,7 +56,7 @@ test_that("model to input information", {
   uif <- nlmixr(pk.turnover.emax3)
 
   expect_equal(babelmixr:::monolixMapData(theo_sd, uif),
-               list(headerType = c(ID = "id", TIME = "ignore", DV = "observation",
+               list(headerType = c(ID = "id", TIME = "time", DV = "observation",
                                    AMT = "amount", EVID = "evid", CMT = "obsid", WT = "ignore"),
                     regressors = "input={v, emax, ec50, e0, kout, ktr, ka, cl}"))
 
@@ -119,7 +119,7 @@ test_that("model to input information", {
 
 
   expect_equal(babelmixr:::monolixMapData(theo_sd, uif),
-               list(headerType = c(ID = "id", TIME = "ignore", DV = "observation",
+               list(headerType = c(ID = "id", TIME = "time", DV = "observation",
                                    AMT = "amount", EVID = "evid", CMT = "obsid",
                                    WT = "regressor"),
                     regressors = "input={v, emax, ec50, e0, kout, cl, WT, ktr, ka}\nWT = {use=regressor}"))

@@ -79,7 +79,8 @@ monolixMapData <- function(data, uif) {
     if (tolower(x) == "ii") return("ii")
     if (tolower(x) == "addl") return("addl")
     if (tolower(x) == "occ") return("occ")
-    if (any(x == regressors)) {
+    if (tolower(x) == "time") return("time")
+    if (any(tolower(x) == tolower(regressors))) {
       .env$.regressor <- c(.env$.regressor, paste0(x, " = {use=regressor}"))
       return("regressor")
     }
@@ -896,7 +897,7 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
          paste(paste0("depot(type=1, target=", .mv$state, ", Tlag=", monolixTlag(.mv$state), ", p=", monolixP(.mv$state), ")"), collapse="\n"),
          "\n\nEQUATION:\n",gsub("\n\n+", "\n",.mod),
          "\n\nOUTPUT:\n",
-         "output={", paste(paste0(names(.resMod), "_pred"), collapse=", "), "}\n"
+         "output={", paste(names(.resMod), collapse=", "), "}\n"
          )
 
   .lst <- monolixDataFile(.lst, uif, data, control=control)
