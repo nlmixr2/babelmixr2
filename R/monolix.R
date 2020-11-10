@@ -1012,10 +1012,9 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
           }
         }
         ## Monolix final parameters are not on the original nlmixr scale
-        .final <- merge(merge(.lst2$lst$df,
-                              .populationParameters[,.(typical=parameter,thetaEstF=value)], all.x=TRUE),
-                        .populationParameters[,.(sd=parameter,sdEstF=value)],
-                        all.x=TRUE)
+        .f1 <- setNames(as.data.frame(.populationParameters)[,c("parameter", "value")], c("typical", "thetaEstF"))
+        .f2 <- setNames(as.data.frame(.populationParameters)[,c("parameter", "value")], c("sd", "sdEstF"))
+        .final <- merge(merge(.lst2$lst$df, .f1, all.x=TRUE), .f2, all.x=TRUE)
         .final$varF <- .final$sdEstF^2
         .final$thetaF <- sapply(seq_along(.final$theta), function(i){
           .trans <- .final[i, "trans"]
