@@ -993,8 +993,132 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
   if (file.exists(.rds)){
     .lst2 <- readRDS(.rds)
     if (.lst$digest == .lst2$lst$digest) {
+      .nlmixr <- paste0(.lst$file, "-nlmixr.rds")
+      if (file.exists(.nlmixr)) {
+        return(readRDS(.nlmixr))
+      }
+      .populationParameters <- file.path(getwd(), .lst$file, "populationParameters.txt")
+      if (file.exists(.populationParameters)) {
+        .populationParameters <- data.table::fread(.populationParameters)
+        .individualParameters <- data.table::fread(file.path(getwd(), .lst$file, "IndividualParameters", "estimatedRandomEffects.txt"))
+        ## Can be SA or Lin
+        .covarianceEstimation <- file.path(getwd(), .lst$file, "FisherInformation", "covarianceEstimatesLin.txt")
+        if (file.exists(.covarianceEstimation)) {
+          .covarianceEstimation <- data.table::fread(.covarianceEstimation)
+        } else {
+          .covarianceEstimation <- file.path(getwd(), .lst$file, "FisherInformation", "covarianceEstimatesSA.txt")
+          if (file.exists(.covarianceEstimation)) {
+            .covarianceEstimation <- data.table::fread(.covarianceEstimation)
+          }
+        }
+        ## Monolix final parameters are not on the original nlmixr scale
+        .final <- merge(merge(.lst2$lst$df,
+                              .populationParameters[,.(typical=parameter,thetaEstF=value)], all.x=TRUE),
+                        .populationParameters[,.(sd=parameter,sdEstF=value)],
+                        all.x=TRUE)
+        .final$varF <- .final$sdEstF^2
+        .final$thetaF <- sapply(seq_along(.final$theta), function(i){
+          .trans <- .final[i, "trans"]
+          if (.trans == "logNormal") {
+            return(log(.final$thetaEstF[i]))
+          } else if (.trans == "logitNormal") {
+            return(RODE::logit(.final$thetaEstF[i], .final$low[i], final$hi[i]))
+          } else if (.trans == "probitNormal") {
+            return(RODE::probit(.final$thetaEstF[i]))
+          }
+        })
+        ## Now that they are merged with the original translation
+        ## table, transform them to be on the same scale
+        .ini <- as.data.frame(uif$ini)
+        .ini$est <- sapply(seq_along(.ini$ntheta), function(i) {
+          .name <- .ini$name[i]
+          .w <- which(.final$theta == .name)
+          if (length(.w) == 1) {
+            return(.final$thetaF[.w])
+          }
+          .w <- which(.final$eta == .name)
+          if (length(.w) == 1) {
+            return(.final$varF[.w])
+          }
+          .namem <- eval(parse(text=paste0("rxToMonolix(", .name, ")")))
+          .w <- which(.namem == .populationParameters$parameter)
+          if (length(.w) == 1){
+            return(.populationParameters$value[.w])
+          }
+          message("cannot find ", .name)
+          return(NA_real_)
+        })
+        class(.ini) <- c("nlmixrBounds", "data.frame")
+        .uif <- uif
+        .uif$ini <- .ini
+
+        # ETAS in  eta_parameterName_SAEM
+        .etas <- .final$sd
+        .etas <- .etas[!is.na(.etas)]
+        .etas <- c("id", gsub("omega_(.*)", "eta_\\1_SAEM", .etas))
+        .etas <- as.data.frame(.individualParameters)[, .etas]
+        names(.etas) <- sapply(names(.etas), function(.n) {
+          if (.n == "id") return("id")
+          .n <- sub("eta_(.*)_SAEM", "omega_\\1", .n)
+          .w <- which(.final$sd == .n)
+          if (length(.w) == 1){
+            return(.final$eta[.w])
+          }
+          stop("cannot determine nlmixr ETAs from monolix output")
+        })
+        .etaMat <- as.matrix(.etas[, paste(.ini$name[which(.ini$neta1 == .ini$neta2)])])
+        .ctl <- list()
+        .ctl$covMethod <- ""
+        .ctl$maxOuterIterations <- 0
+        .ctl$maxInnerIterations <- 0
+        .ctl$scaleTo <- 0
+        .ctl$addProp <- control$addProp
+        .ctl$method <- "liblsoda"
+        .ctl <- do.call(nlmixr::foceiControl, .ctl)
+        if (any(names(.ctl) == "singleOde")){
+          if (control$singleOde) {
+            .mod <- uif$focei.rx1
+            .pars <- NULL
+          } else {
+            .mod <- uif$rxode.pred
+            .pars <- uif$theta.pars
+          }
+        } else {
+          .mod <- uif$rxode.pred
+          .pars <- uif$theta.pars
+        }
+        .env <- new.env(parent = emptyenv())
+        .env$method <- "Monolix"
+        .env$extra <- " (babelmixr)"
+        .data2 <- data
+        .allCovs <- tolower(.uif$all.covs)
+        names(.data2) <- sapply(names(.data2), function(x){
+          .w <- which(tolower(x) == .allCovs)
+          if (length(.w) == 1) return(.uif$all.covs[.w])
+          if (tolower(x) == "ytype") return("ytypeOld")
+          return(x)
+        })
+        .nlmixrFit <- foceiFit(
+          data = .data2, inits = .uif$focei.inits, PKpars = .pars,
+          model = .mod, pred = function() {
+            return(nlmixr_pred)
+          }, err = .uif$error,
+          lower = .uif$focei.lower,
+          upper = .uif$focei.upper,
+          thetaNames = .uif$focei.names,
+          etaNames = .uif$eta.names,
+          etaMat = .etaMat,
+          env = .env,
+          fixed = uif$focei.fixed,
+          control = .ctl
+        )
+        saveRDS(.nlmixrFit, .nlmixr)
+        return(.nlmixrFit)
+      }
       message("the monolix model is current with the nlmixr model; remove ", .rds," to regenerate")
       return(invisible())
+    } else {
+      message("regenerating monolix files because data or model have changed")
     }
   }
   .mlx <- paste0(.lst$file, ".mlxtran")
