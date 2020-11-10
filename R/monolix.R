@@ -885,7 +885,8 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
 
   .lst <- .map
   .lst$data.md5 <- digest::digest(data)
-  .lst$file <- paste0(ifelse(missing(name), uif$model.name, name), "-", digest::digest(list(control, .lst$data.md5)))
+  .lst$file <- paste0(ifelse(missing(name), uif$model.name, name))
+  .lst$digest <- digest::digest(list(control, .lst$data.md5))
   .lst$txt <- paste0("DESCRIPTION:\n",
          paste0("model translated from babelmixr and nlmixr function ", uif$model.name, " to ", .lst$file, ".txt\n\n"),
          "[LONGITUDINAL]\n",
@@ -963,6 +964,14 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
   }
   if(!any(tolower(names(data)) == "dv")) stop("need dv in data", call.=FALSE)
   .lst <- monolixModelTxt(uif, data, control=control, name=name)
+  .rds <- paste0(.lst$file, ".rds")
+  if (file.exists(.rds)){
+    .lst2 <- readRDS(.rds)
+    if (.lst$digest == .lst2$digest) {
+      message("the monolix model is current with the nlmixr model; remove ", .rds," to regenerate")
+      return(invisible())
+    }
+  }
   .mlx <- paste0(.lst$file, ".mlxtran")
   assignInMyNamespace(".nlmixrMonolixLastProject", .mlx)
   ## cli::alert_info("writing mlxtran file to {.mlx}")
