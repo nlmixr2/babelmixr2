@@ -820,14 +820,14 @@ monolixDataContent <- function(lst, uif, data, control=monolixControl()) {
         if (length(.w) == 1) {
           .cmt <- unique(data[data[, .w] == 0, .wc])
           if (length(.cmt) == 1){
-            return(paste0(.col, " = {use=observation, name=", .col, ", yname={'", .cmt, "'}, type=continuous}"))
+            return(paste0(.col, " = {use=observation, name=", .col, ", yname='", .cmt, "', type=continuous}"))
           }
         } else {
           .w <- which(tolower(names(data)) == "mdv")
           if (length(.w) == 1) {
             .cmt <- unique(data[data[, .w] == 0, .wc])
             if (length(.cmt) == 1){
-              return(paste0(.col, " = {use=observation, name=", .col, ", yname={'", .cmt, "'}, type=continuous}"))
+              return(paste0(.col, " = {use=observation, name=", .col, ", yname='", .cmt, "', type=continuous}"))
             }
           }
         }
