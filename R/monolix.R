@@ -593,7 +593,7 @@ monolixGetErr0 <- function(cond, type, uif, control) {
   .ini <- .ini[which(.ini$condition == cond), ]
   if (type == 1) { # Constant
     .tmp <- as.character(.ini$name)
-    .tmp <- rxToMonolix(.tmp)
+    .tmp <- eval(parse(text=paste0("rxToMonolix(", .tmp, ")")))
     assignInMyNamespace(".monolixErrs", c(.monolixErrs, .tmp))
     .lst <- .monolixGetErr
     .lst[[length(.lst) + 1]] <- data.frame(name=.ini$name, errName=.tmp)
@@ -601,7 +601,7 @@ monolixGetErr0 <- function(cond, type, uif, control) {
     return(paste0("constant(", .tmp, ")"))
   } else if (type == 2) { # Proportional
     .tmp <- as.character(.ini$name)
-    .tmp <- rxToMonolix(.tmp)
+    .tmp <- eval(parse(text=paste0("rxToMonolix(", .tmp, ")")))
     .lst <- .monolixGetErr
     .lst[[length(.lst) + 1]] <- data.frame(name=.ini$name, errName=.tmp)
     assignInMyNamespace(".monolixGetErr", .lst)
@@ -609,11 +609,11 @@ monolixGetErr0 <- function(cond, type, uif, control) {
     return(paste0("proportional(", .tmp, ")"))
   } else if (type == 3) { # additive + proportional
     .add <- .ini[.ini$err == "add", "name"]
-    .add <- rxToMonolix(.add)
+    .add <- eval(parse(text=paste0("rxToMonolix(", .add, ")")))
     .lst <- .monolixGetErr
     .lst[[length(.lst) + 1]] <- data.frame(name=.ini[.ini$err == "add", "name"], errName=.add)
     .prop <- .ini[.ini$err == "prop", "name"]
-    .prop <- rxToMonolix(.prop)
+    .prop <- eval(parse(text=paste0("rxToMonolix(", .prop, ")")))
     .lst[[length(.lst) + 1]] <- data.frame(name=.ini[.ini$err == "prop", "name"], errName=.prop)
     assignInMyNamespace(".monolixErrs", c(.monolixErrs, .add, .prop))
     assignInMyNamespace(".monolixGetErr", .lst)
