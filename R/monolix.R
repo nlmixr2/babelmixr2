@@ -80,8 +80,10 @@ monolixMapData <- function(data, uif) {
     if (tolower(x) == "addl") return("addl")
     if (tolower(x) == "occ") return("occ")
     if (tolower(x) == "time") return("time")
-    if (any(tolower(x) == tolower(regressors))) {
-      .env$.regressor <- c(.env$.regressor, paste0(x, " = {use=regressor}"))
+    .w <- which(tolower(x) == tolower(regressors))
+    if (length(.w) == 1) {
+      .env$.regressor <- c(.env$.regressor,
+                           paste0(regressors[.w], " = {use=regressor}"))
       return("regressor")
     }
     if (any(x == covariates)) {
@@ -590,7 +592,7 @@ monolixGetErr0 <- function(cond, type, uif, control) {
   .ini <- as.data.frame(uif$ini)
   .ini <- .ini[which(.ini$condition == cond), ]
   if (type == 1) { # Constant
-    .tmp <- .ini$name
+    .tmp <- as.character(.ini$name)
     .tmp <- rxToMonolix(.tmp)
     assignInMyNamespace(".monolixErrs", c(.monolixErrs, .tmp))
     .lst <- .monolixGetErr
@@ -598,7 +600,7 @@ monolixGetErr0 <- function(cond, type, uif, control) {
     assignInMyNamespace(".monolixGetErr", .lst)
     return(paste0("constant(", .tmp, ")"))
   } else if (type == 2) { # Proportional
-    .tmp <- .ini$name
+    .tmp <- as.character(.ini$name)
     .tmp <- rxToMonolix(.tmp)
     .lst <- .monolixGetErr
     .lst[[length(.lst) + 1]] <- data.frame(name=.ini$name, errName=.tmp)
@@ -865,7 +867,7 @@ monolixModelFit <- function(uif, obs) {
   }
   paste0("\n\n<FIT>\n",
          "data = ", obs, "\n",
-         "model = ", obs, "\n")
+         "model = ", paste0(.predDf$cond, "_pred"), "\n")
 
 }
 
