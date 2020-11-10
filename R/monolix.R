@@ -848,7 +848,7 @@ monolixModelParameter <- function(.df, .dfError) {
            .sd <- .df$sd[.i]
            if (!is.na(.sd)) {
              .sdEst <- .df$sdEst[.i]
-             .ret <- paste0(.ret, "\n", .sd, " = {value=", .val, ", method=MLE}")
+             .ret <- paste0(.ret, "\n", .sd, " = {value=", .sdEst, ", method=MLE}")
            }
            return(.ret)
          }), NULL), collapse="\n"),"\n",
