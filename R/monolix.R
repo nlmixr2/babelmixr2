@@ -935,7 +935,7 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
                        .definition[[1]], "\n\n[LONGITUDINAL]\ninput={", paste(.monolixErrs, collapse=", "), "}\n\nfile='", .lst$file,
                        ".txt'\n\nDEFINITION:\n",
                        .def)
-  .lst$monolix <- paste0("<MONOLIX>\n\n[TASKS]\npopulationParameters()\nindividualParameters(method = {conditionalMean, conditionalMode})\nfim(method = Linearization)\nlogLikelihood(method = Linearization)\nplotResult(method = {outputplot, indfits, obspred, residualsscatter, residualsdistribution, parameterdistribution, covariatemodeldiagnosis, randomeffects, covariancemodeldiagnosis, saemresults })\n\n[SETTINGS]\nGLOBAL:\nexportpath = '", .lst$file, "'\n\nPOPULATION:\nexploratoryautostop = ",
+  .lst$monolix <- paste0("<MONOLIX>\n\n[TASKS]\npopulationParameters()\nindividualParameters(method = {conditionalMean, conditionalMode})\nfim(method = Linearization)\nlogLikelihood(method = Linearization)\nplotResult(method = {outputplot, indfits, obspred, residualsscatter, residualsdistribution, parameterdistribution, covariatemodeldiagnosis, randomeffects, covariancemodeldiagnosis, saemresults })\n\n[SETTINGS]\nGLOBAL:\nexportpath = '", file.path(getwd(), .lst$file), "'\n\nPOPULATION:\nexploratoryautostop = ",
                          ifelse(control$exploratoryautostop, "yes", "no"),
                          "\nexploratoryiterations = ", control$simulatedannealingiterations,
                          "\nsimulatedannealingiterations = ", control$simulatedannealingiterations,
