@@ -865,18 +865,37 @@ monolixModelParameter <- function(.df, .dfError) {
          paste(setNames(sapply(seq_along(.df$theta), function(.i){
            .typical <- .df$typical[.i]
            .val <- .df$thetaEst[.i]
-           .ret <- paste0(.typical, " = {value=", .val, ", method=MLE}")
+           .fixed <- .df$thetaFixed[.i]
+           .ret <- paste0(.typical, " = {value=", .val)
+           if (.fixed) {
+             .ret <- paste0(.ret, ", method=FIXED}")
+           } else {
+             .ret <- paste0(.ret, ", method=MLE}")
+           }
            .sd <- .df$sd[.i]
            if (!is.na(.sd)) {
              .sdEst <- .df$sdEst[.i]
-             .ret <- paste0(.ret, "\n", .sd, " = {value=", .sdEst, ", method=MLE}")
+             .fixed <- .df$sdFixed[.i]
+             .ret <- paste0(.ret, "\n", .sd, " = {value=", .sdEst)
+             if (.fixed) {
+               .ret <- paste0(.ret, ", method=FIXED}")
+             } else {
+               .ret <- paste0(.ret, ", method=MLE}")
+             }
            }
            return(.ret)
          }), NULL), collapse="\n"),"\n",
          paste(setNames(sapply(seq_along(.dfError$name), function(.i){
            .errName <- .dfError$errName[.i]
            .val <- .dfError$est[.i]
-           paste0(.errName, " = {value=", .val, ", method=MLE}")
+           .fixed <- .dfError$fix[.i]
+           .ret <- paste0(.errName, " = {value=", .val)
+           if (.fixed) {
+             .ret <- paste0(.ret, ", method=FIXED}")
+           } else {
+             .ret <- paste0(.ret, ", method=MLE}")
+           }
+           return(.ret)
          }), NULL), collapse="\n"),
          "\n\n")
 }
@@ -929,8 +948,8 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
   .lst <- monolixDataFile(.lst, uif, data, control=control)
   .definition <- .toMonolixDefinition(body(uif$saem.pars), uif$mu.ref)
   .df <- .definition[[2]]
-  .dft <- as.data.frame(uif$ini)[, c("name", "est")]
-  names(.dft) <- c("theta", "thetaEst")
+  .dft <- as.data.frame(uif$ini)[, c("name", "est", "fix")]
+  names(.dft) <- c("theta", "thetaEst", "thetaFixed")
   .df <- merge(.df, .dft, by="theta")
   .w <- which(.df$trans == "logNormal")
   if (length(.w) > 0) .df$thetaEst[.w] <- exp(.df$thetaEst[.w])
@@ -938,13 +957,13 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
   if (length(.w) > 0) .df$thetaEst[.w] <- sapply(.w, function(.i){RxODE::expit(.df$thetaEst[.i], .df$low[.i], .df$hi[.i])})
   .w <- which(.df$trans == "probitNormal")
   if (length(.w) > 0) .df$thetaEst[.w] <- sapply(.w, function(.i){RxODE::probitInv(.df$thetaEst[.i])})
-  .dft <- as.data.frame(uif$ini)[, c("name", "est")]
-  names(.dft) <- c("eta", "sdEst")
+  .dft <- as.data.frame(uif$ini)[, c("name", "est", "fix")]
+  names(.dft) <- c("eta", "sdEst", "sdFixed")
   .df <- merge(.df, .dft, by="eta", all.x=TRUE)
   .df$sdEst <- sqrt(.df$sdEst)
   .lst$df <- .df
   .dfError <- do.call(rbind, .monolixGetErr)
-  .dft <- as.data.frame(uif$ini)[, c("name", "est")]
+  .dft <- as.data.frame(uif$ini)[, c("name", "est", "fix")]
   .dfError <- merge(.dfError, .dft, by="name")
   .lst$dfError <- .dfError
   .lst$parameter <- monolixModelParameter(.df, .dfError)
