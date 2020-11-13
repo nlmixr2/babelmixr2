@@ -967,7 +967,7 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
   .lst <- .map
   .lst$data.md5 <- digest::digest(data)
   .lst$file <- paste0(ifelse(missing(name), uif$model.name, name))
-  .lst$digest <- digest::digest(list(control, .lst$data.md5))
+  .lst$digest <- digest::digest(list(control, .lst$data.md5, control))
   .lst$txt <- paste0("DESCRIPTION:\n",
          paste0("model translated from babelmixr and nlmixr function ", uif$model.name, " to ", .lst$file, ".txt\n\n"),
          "[LONGITUDINAL]\n",
