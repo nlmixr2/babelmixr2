@@ -1,4 +1,6 @@
 
+
+
 ##
 ## observationTypes (list): A list giving the type of each observation present in the data file. If there is only one y-type, the corresponding observation name can be omitted.
 ## The possible observation types are "continuous", "discrete", and "event".
@@ -26,21 +28,56 @@ monolixControl <- function(nbSSDoses=7,
                            stiff=FALSE,
                            addProp = c("combined2", "combined1"),
                            exploratoryautostop=FALSE,
+                           smoothingautostop=FALSE,
+                           simulatedannealing=TRUE,
+                           burniniterations=5,
+                           smoothingiterations=200,
                            exploratoryiterations=250,
                            simulatedannealingiterations=250,
-                           exploratoryinterval=200) {
-  checkmate::assertIntegerish(nbSSDoses, lower=1, max.len=1)
+                           exploratoryinterval=200,
+                           exploratoryalpha=0.0,
+                           omegatau=0.95,
+                           errormodeltau=0.95,
+                           optimizationiterations=20,
+                           optimizationtolerance=0.0001,
+                           variability=c("none", "firstStage", "decreasing")) {
+
   checkmate::assertLogical(stiff, max.len=1)
-  checkmate::assertIntegerish(simulatedannealingiterations, max.len=1, lower=1)
   checkmate::assertLogical(exploratoryautostop, max.len=1)
+  checkmate::assertLogical(smoothingautostop, max.len=1)
+  checkmate::assertLogical(simulatedannealing, max.len=1)
+
+  checkmate::assertIntegerish(burniniterations, max.len=1, lower=1)
+  checkmate::assertIntegerish(exploratoryiterations, max.len=1, lower=1)
+  checkmate::assertIntegerish(simulatedannealingiterations, max.len=1, lower=1)
+  checkmate::assertIntegerish(nbSSDoses, lower=1, max.len=1)
   checkmate::assertIntegerish(exploratoryiterations, max.len=1, lower=1)
   checkmate::assertIntegerish(exploratoryinterval, max.len=1, lower=1)
+  checkmate::assertIntegerish(smoothingiterations, max.len=1, lower=1)
+  checkmate::assertIntegerish(optimizationiterations, max.len=1, lower=1)
+
+  checkmate::assertNumeric(exploratoryalpha, lower=0.0, upper=1.0)
+  checkmate::assertNumeric(omegatau, lower=0.0, upper=1.0)
+  checkmate::assertNumeric(errormodeltau, lower=0.0, upper=1.0)
+  checkmate::assertNumeric(optimizationtolerance, lower=0.0)
+  if (optimizationtolerance == 0) stop("'optimizationtolerance' has to be above zero")
+
   .ret <- list(nbSSDoses=as.integer(nbSSDoses), stiff=stiff,
-               addProp=match.arg(addProp),
                exploratoryautostop=exploratoryautostop,
+               smoothingautostop=smoothingautostop,
+               addProp=match.arg(addProp),
+               burniniterations=burniniterations,
                exploratoryiterations=exploratoryiterations,
                simulatedannealingiterations=simulatedannealingiterations,
-               exploratoryinterval=exploratoryinterval
+               exploratoryinterval=exploratoryinterval,
+               smoothingiterations=smoothingiterations,
+               exploratoryalpha=exploratoryalpha,
+               omegatau=omegatau,
+               errormodeltau=errormodeltau,
+               exploratoryiterations=exploratoryiterations,
+               optimizationiterations=optimizationiterations,
+               optimizationtolerance=optimizationtolerance,
+               variability=match.arg(variability)
                )
   class(.ret) <- "monolixControl"
   .ret
@@ -975,9 +1012,18 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
                        .def)
   .lst$monolix <- paste0("<MONOLIX>\n\n[TASKS]\npopulationParameters()\nindividualParameters(method = {conditionalMean, conditionalMode})\nfim(method = Linearization)\nlogLikelihood(method = Linearization)\nplotResult(method = {outputplot, indfits, obspred, residualsscatter, residualsdistribution, parameterdistribution, covariatemodeldiagnosis, randomeffects, covariancemodeldiagnosis, saemresults })\n\n[SETTINGS]\nGLOBAL:\nexportpath = '", file.path(getwd(), .lst$file), "'\n\nPOPULATION:\nexploratoryautostop = ",
                          ifelse(control$exploratoryautostop, "yes", "no"),
-                         "\nexploratoryiterations = ", control$simulatedannealingiterations,
+                         "\nsmoothingautostop = ", ifelse(control$smoothingautostop, "yes", "no"),
+                         "\nburniniterations = ", control$burniniterations,
+                         "\nexploratoryiterations = ", control$exploratoryingiterations,
                          "\nsimulatedannealingiterations = ", control$simulatedannealingiterations,
-                         "\nexploratoryinterval = ", control$exploratoryinterval, "\n")
+                         "\nsmoothingiterations = ", control$smoothingiterations,
+                         "\nexploratoryalpha = ", control$exploratoryalpha,
+                         "\nsimulatedannealingiterations = ", control$simulatedannealingiterations,
+                         ifelse(control$variability == "none", "", paste0("\nvariability = ", control$variability)),
+                         "\nexploratoryinterval = ", control$exploratoryinterval,
+                         "\nomegatau = ", control$omegatau,
+                         "\nerrormodeltau = ", control$errormodeltau,
+                         "\n")
 
   .lst$fit <- monolixModelFit(uif, .lst$obs)
 
