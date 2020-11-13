@@ -1013,7 +1013,7 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
                          ifelse(control$exploratoryautostop, "yes", "no"),
                          "\nsmoothingautostop = ", ifelse(control$smoothingautostop, "yes", "no"),
                          "\nburniniterations = ", control$burniniterations,
-                         "\nexploratoryiterations = ", control$exploratoryingiterations,
+                         "\nexploratoryiterations = ", control$exploratoryiterations,
                          "\nsimulatedannealingiterations = ", control$simulatedannealingiterations,
                          "\nsmoothingiterations = ", control$smoothingiterations,
                          "\nexploratoryalpha = ", control$exploratoryalpha,
