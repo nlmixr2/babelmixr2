@@ -1129,17 +1129,17 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
         })
         .wid <- which(tolower(names(data)) == "id")
         if (length(.wid) == 1) {
-          .etas <- merge(data.frame(id=data[, .wid]), .etas, all=TRUE)
+          .etas <- merge(data.frame(id=unique(data[, .wid])), .etas, by="id", all.x=TRUE)
           .etas[is.na(.etas)] <- 0
           .etas <- .etas[order(.etas$id), ]
         }
         .etaMat <- as.matrix(.etas[, paste(.ini$name[which(.ini$neta1 == .ini$neta2)])])
         .nid <- length(unique(data[, .wid]));
         print(.nid)
-        print(dim(.etaMat)[1])
+        print(dim(.etaMat))
         if (.nid != dim(.etaMat)[1]) {
           message("possibly corrupted run, remove ", .rds, " and associated directory to possibly fix")
-          stop("number of IDs (", .nid, "not equal to number of rows of eta matrix (", dim(.etaMat)[1])
+          stop("number of IDs (", .nid, ") not equal to number of rows of eta matrix (", dim(.etaMat)[1])
         }
 
         .ctl <- list()
