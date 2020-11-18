@@ -1128,11 +1128,20 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
           stop("cannot determine nlmixr ETAs from monolix output")
         })
         .wid <- which(tolower(names(data)) == "id")
-        if (.wid == 1) {
-          .etas <- merge(data.frame(id=.wid), .etas, all.x=TRUE)
+        if (length(.wid) == 1) {
+          .etas <- merge(data.frame(id=data[, .wid]), .etas, all=TRUE)
           .etas[is.na(.etas)] <- 0
+          .etas <- .etas[order(.etas$id), ]
         }
         .etaMat <- as.matrix(.etas[, paste(.ini$name[which(.ini$neta1 == .ini$neta2)])])
+        .nid <- length(unique(data[, .wid]));
+        print(.nid)
+        print(dim(.etaMat)[1])
+        if (.nid != dim(.etaMat)[1]) {
+          message("possibly corrupted run, remove ", .rds, " and associated directory to possibly fix")
+          stop("number of IDs (", .nid, "not equal to number of rows of eta matrix (", dim(.etaMat)[1])
+        }
+
         .ctl <- list()
         .ctl$covMethod <- ""
         .ctl$maxOuterIterations <- 0
