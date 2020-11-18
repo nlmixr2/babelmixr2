@@ -1,6 +1,4 @@
 
-
-
 ##
 ## observationTypes (list): A list giving the type of each observation present in the data file. If there is only one y-type, the corresponding observation name can be omitted.
 ## The possible observation types are "continuous", "discrete", and "event".
@@ -1129,6 +1127,11 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
           }
           stop("cannot determine nlmixr ETAs from monolix output")
         })
+        .wid <- which(tolower(names(data)) == "id")
+        if (.wid == 1) {
+          .etas <- merge(data.frame(id=.wid), .etas, all.x=TRUE)
+          .etas[is.na(.etas)] <- 0
+        }
         .etaMat <- as.matrix(.etas[, paste(.ini$name[which(.ini$neta1 == .ini$neta2)])])
         .ctl <- list()
         .ctl$covMethod <- ""
