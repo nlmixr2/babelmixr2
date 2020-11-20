@@ -1200,6 +1200,10 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
         return(.nlmixrFit)
       }
       message("the monolix model is current with the nlmixr model; remove ", .rds," to regenerate")
+      .status <- getOption("babelmixr.monolix.status", "")
+      if (.status != "") {
+        system(.status)
+      }
       return(invisible())
     } else {
       message("regenerating monolix files because data or model have changed")
