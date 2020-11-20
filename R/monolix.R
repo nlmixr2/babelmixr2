@@ -10,10 +10,17 @@
 ##'
 ##' @param nbSSDoses Number of steady state doses (default 7)
 ##' @param stiff boolean for using the stiff ODE solver
-##' @param exploratoryautostop logical to turn on or off exploratory phase auto-stop of SAEM (default 250)
-##' @param exploratoryiterations Number of iterations for exploratory phase (default 250)
-##' @param exploratoryinterval Minimum number of interation in the exploratory phase (default 200)
+##' @param exploratoryautostop logical to turn on or off exploratory
+##'   phase auto-stop of SAEM (default 250)
+##' @param exploratoryiterations Number of iterations for exploratory
+##'   phase (default 250)
+##' @param exploratoryinterval Minimum number of interation in the
+##'   exploratory phase (default 200)
 ##' @param simulatedannealingiterations Number of burn in iterations
+##' @param runCommand is a shell command to run monolix; You can
+##'   specfy the default by
+##'   \code{options("babelmixr.monolix"="runMonolix \%s")} where the \code{"\%s"}
+##'   represents the monolix project file.
 ##' @inheritParams nlmixr::foceiControl
 ##' @return A monolix control object
 ##' @author Matthew Fidler
@@ -38,7 +45,8 @@ monolixControl <- function(nbSSDoses=7,
                            errormodeltau=0.95,
                            optimizationiterations=20,
                            optimizationtolerance=0.0001,
-                           variability=c("none", "firstStage", "decreasing")) {
+                           variability=c("none", "firstStage", "decreasing"),
+                           runCommand=getOption("babelmixr.monolix", "")) {
 
   checkmate::assertLogical(stiff, max.len=1)
   checkmate::assertLogical(exploratoryautostop, max.len=1)
@@ -60,6 +68,8 @@ monolixControl <- function(nbSSDoses=7,
   checkmate::assertNumeric(optimizationtolerance, lower=0.0)
   if (optimizationtolerance == 0) stop("'optimizationtolerance' has to be above zero")
 
+  if (runCommand != "") checkmate::assertCharacter(runCommand, pattern="%s", min.len=1, max.len=1)
+
   .ret <- list(nbSSDoses=as.integer(nbSSDoses), stiff=stiff,
                exploratoryautostop=exploratoryautostop,
                smoothingautostop=smoothingautostop,
@@ -74,7 +84,8 @@ monolixControl <- function(nbSSDoses=7,
                exploratoryiterations=exploratoryiterations,
                optimizationiterations=optimizationiterations,
                optimizationtolerance=optimizationtolerance,
-               variability=match.arg(variability)
+               variability=match.arg(variability),
+               runCommand=runCommand
                )
   class(.ret) <- "monolixControl"
   .ret
@@ -1134,9 +1145,7 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
           .etas <- .etas[order(.etas$id), ]
         }
         .etaMat <- as.matrix(.etas[, paste(.ini$name[which(.ini$neta1 == .ini$neta2)])])
-        .nid <- length(unique(data[, .wid]));
-        print(.nid)
-        print(dim(.etaMat))
+        .nid <- length(unique(data[, .wid]))
         if (.nid != dim(.etaMat)[1]) {
           message("possibly corrupted run, remove ", .rds, " and associated directory to possibly fix")
           stop("number of IDs (", .nid, ") not equal to number of rows of eta matrix (", dim(.etaMat)[1])
@@ -1214,20 +1223,11 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
   .rds <- paste0(.lst$file, ".rds")
   message(paste0("writing monolix translation information to ", .rds))
   saveRDS(list(uif=uif, data=data, control=control, lst=.lst), .rds)
+  if (control$runCommand != "") {
+    system(sprintf(control$runCommand, .mlx))
+  }
   return(invisible())
 }
-
-runMonolix <- function(project=nlmixrMonolixLastProject()) {
-  bquote({
-    library(lixoftConnectors)
-    initializeLixoftConnectors(software="monolix")
-    loadProject(projectFile = .(project))
-    runPopulationParameterEstimation()
-
-  })
-}
-
-
 
 ## lixoftConnectors::newProject(data = list(dataFile = "/path/to/data/file.txt",
 ##                                          headerTypes = c("IGNORE","OBSERVATION"),

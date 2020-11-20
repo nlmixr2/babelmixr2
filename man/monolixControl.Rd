@@ -9,9 +9,20 @@ monolixControl(
   stiff = FALSE,
   addProp = c("combined2", "combined1"),
   exploratoryautostop = FALSE,
+  smoothingautostop = FALSE,
+  simulatedannealing = TRUE,
+  burniniterations = 5,
+  smoothingiterations = 200,
   exploratoryiterations = 250,
   simulatedannealingiterations = 250,
-  exploratoryinterval = 200
+  exploratoryinterval = 200,
+  exploratoryalpha = 0,
+  omegatau = 0.95,
+  errormodeltau = 0.95,
+  optimizationiterations = 20,
+  optimizationtolerance = 1e-04,
+  variability = c("none", "firstStage", "decreasing"),
+  runCommand = getOption("babelmixr.monolix", "")
 )
 }
 \arguments{
@@ -27,13 +38,21 @@ combined1: transform(y)=transform(f)+(a+b*f^c)*eps
 
 combined2: transform(y)=transform(f)+(a^2+b^2*f^(2c))*eps}
 
-\item{exploratoryautostop}{logical to turn on or off exploratory phase auto-stop of SAEM (default 250)}
+\item{exploratoryautostop}{logical to turn on or off exploratory
+phase auto-stop of SAEM (default 250)}
 
-\item{exploratoryiterations}{Number of iterations for exploratory phase (default 250)}
+\item{exploratoryiterations}{Number of iterations for exploratory
+phase (default 250)}
 
 \item{simulatedannealingiterations}{Number of burn in iterations}
 
-\item{exploratoryinterval}{Minimum number of interation in the exploratory phase (default 200)}
+\item{exploratoryinterval}{Minimum number of interation in the
+exploratory phase (default 200)}
+
+\item{runCommand}{is a shell command to run monolix; You can
+specfy the default by
+\code{options("babelmixr.monolix"="runMonolix \%s")} where the \code{"\%s"}
+represents the monolix project file.}
 }
 \value{
 A monolix control object
