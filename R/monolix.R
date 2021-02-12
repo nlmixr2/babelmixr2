@@ -1061,6 +1061,8 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
     uif <- nlmixr::nlmixr(uif)
   }
   if(!any(tolower(names(data)) == "dv")) stop("need dv in data", call.=FALSE)
+  .wid <- which(tolower(names(data)) == "id")
+  names(data)[.wid] <- "id"
   .lst <- monolixModelTxt(uif, data, control=control, name=name)
   .rds <- paste0(.lst$file, ".rds")
   if (file.exists(.rds)){
