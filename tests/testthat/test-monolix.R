@@ -472,3 +472,130 @@ test_that("<FIT>", {
   expect_equal(v, "dv = {use=observation, name={y_5, y_6},yname={'5', '6'},type={continuous, continuous}}")
 
 })
+
+
+
+pk.turnover.emax3 <- function() {
+  ini({
+    tktr <- log(1)
+    tka <- log(1)
+    tcl <- log(0.1)
+    tv <- log(10)
+    ##
+    eta.ktr ~ 1
+    eta.ka ~ 1
+    eta.cl ~ 2
+    eta.v ~ 1
+    prop.err <- 0.1
+    pkadd.err <- 0.1
+    ##
+    temax <- logit(0.8)
+    tec50 <- log(0.5)
+    tkout <- log(0.05)
+    te0 <- log(100)
+    ##
+    eta.emax ~ .5
+    eta.ec50  ~ .5
+    eta.kout ~ .5
+    eta.e0 ~ .5
+    ##
+    pdadd.err <- 10
+  })
+  model({
+    ktr <- exp(tktr + eta.ktr)
+    ka <- exp(tka + eta.ka)
+    cl <- exp(tcl + eta.cl)
+    v <- exp(tv + eta.v)
+    emax = expit(temax+eta.emax)
+    ec50 =  exp(tec50 + eta.ec50)
+    kout = exp(tkout + eta.kout)
+    e0 = exp(te0 + eta.e0)
+    ##
+    DCP = center/v
+    PD=1-emax*DCP/(ec50+DCP)
+    ##
+    effect(0) = e0
+    kin = e0*kout
+    ##
+    d/dt(depot) = -ktr * depot
+    d/dt(gut) =  ktr * depot -ka * gut
+    d/dt(center) =  ka * gut - cl / v * center
+    d/dt(effect) = kin*PD -kout*effect
+    ##
+    cp = center / v
+    cp ~ prop(prop.err) + add(pkadd.err)
+    effect ~ add(pdadd.err) | pca
+  })
+}
+
+nlmixrToMonolix(pk.turnover.emax3, warfarin)
+
+
+mod1 <- function() {
+  ini({
+
+    t.EC50 <- log(36)
+    t.EmaxA <- log(1.0)
+    t.EmaxB <- log(1)
+
+    eta.emaxa ~ 0.2
+    eta.emaxb ~ 0.2
+
+    t.R0 <- log(196)
+    eta.R0 ~ 0.2
+
+    t.Rnorm <- log(197)
+    eta.Rnorm ~ 0.2
+
+    t.t12a <-fix(log(3.5))
+    t.t12b <-fix(log(6.5))
+
+    t.kl <- 0.00171
+    eta.kl ~ 0.2
+
+    prop.sd <- 0.3
+
+  })
+  model({
+    EmaxA = exp(t.EmaxA + eta.emaxa)
+    EmaxB = exp(t.EmaxB + eta.emaxb)
+    t12a = exp(t.t12a)
+    t12b = exp(t.t12b)
+    R0 = exp(t.R0+eta.R0)
+    kl = exp(t.kl+eta.kl)
+    Rnorm = exp(t.Rnorm+eta.Rnorm)
+    EC50 = exp(t.EC50)
+    # Parameter relationship types
+    V = 4.4*1e-6
+    #====== PK part of the model
+    if (trtn == 1) {
+      t12 = t12b*24
+      Emax = EmaxB
+    } else {
+      t12 = t12a*24
+      Emax = EmaxA
+    }
+
+    k = log(2)/(t12)
+    # PK model definition
+    d/dt(central) = -central*k
+    Cc = central/V
+
+    #====== PD part of the model
+
+    #initial values
+    R(0) = R0
+
+
+    #ODE for the response
+    d/dt(R) = kl*R*(1-R/R0-Emax*Cc/(EC50+Cc))
+
+    Rf = Rnorm + R
+    Rf ~ prop(prop.sd)
+  })
+}
+
+
+dat <- warfarin
+dat$trtn <- 1
+nlmixrToMonolix(mod1, dat)
