@@ -1140,7 +1140,7 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
         })
         .wid <- which(tolower(names(data)) == "id")
         if (length(.wid) == 1) {
-          .etas <- merge(data.frame(id=unique(data[, .wid])), .etas, by.x=names(data)[.wid], by.y="id", all.x=TRUE)
+          .etas <- merge(data.frame(id=unique(data[, .wid])), .etas, by="id", all.x=TRUE)
           .etas[is.na(.etas)] <- 0
           .etas <- .etas[order(.etas$id), ]
         }
