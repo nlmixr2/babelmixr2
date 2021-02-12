@@ -1060,6 +1060,7 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
   if (!inherits(uif, "nlmixrUI")) {
     uif <- nlmixr::nlmixr(uif)
   }
+  data <- as.data.frame(data)
   if(!any(tolower(names(data)) == "dv")) stop("need dv in data", call.=FALSE)
   .wid <- which(tolower(names(data)) == "id")
   names(data)[.wid] <- "id"
