@@ -1210,6 +1210,15 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
       .status <- getOption("babelmixr.monolix.status", "")
       if (.status != "") {
         system(.status)
+        # nvs specific errors
+        .files <- list.files(pattern=paste0(name, "[.]e"))
+        if (length(.files) > 0) {
+          for (.f in .files){
+            message("file:", .f)
+            message("================================================================================\n")
+            message(paste(suppressWarnings(readLines(.f)), collapse="\n"))
+          }
+        }
       }
       return(invisible())
     } else {
