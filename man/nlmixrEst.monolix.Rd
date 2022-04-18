@@ -4,7 +4,7 @@
 \alias{nlmixrEst.monolix}
 \title{Monolix estimation routine}
 \usage{
-\method{nlmixrEst}{monolix}(env, ...)
+nlmixrEst.monolix(env, ...)
 }
 \arguments{
 \item{env}{nlmixr environment}

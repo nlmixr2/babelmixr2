@@ -31,8 +31,8 @@ monolixControl(
 \item{stiff}{boolean for using the stiff ODE solver}
 
 \item{addProp}{one of "combined1" and "combined2"; These are the
-  two forms of additive+proportional errors supported by
-  monolix/nonmem:
+two forms of additive+proportional errors supported by
+monolix/nonmem:
 
 combined1: transform(y)=transform(f)+(a+b*f^c)*eps
 

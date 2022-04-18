@@ -11,3 +11,6 @@ withr::with_libpaths("~/nlmixr2libs", {
   require(nlmixr2)
 }, action="prefix")
 
+
+
+devtools::load_all()

@@ -12,10 +12,10 @@ LazyData: true
 Suggests: 
     testthat
 Depends: 
-    nlmixr,
+    nlmixr2,
     R (>= 3.5)
 Imports: 
-    RxODE,
+    rxode2,
     checkmate,
     digest,
     methods,

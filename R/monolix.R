@@ -21,7 +21,7 @@
 ##'   specfy the default by
 ##'   \code{options("babelmixr.monolix"="runMonolix \%s")} where the \code{"\%s"}
 ##'   represents the monolix project file.
-##' @inheritParams nlmixr::foceiControl
+##' @inheritParams nlmixr2::foceiControl
 ##' @return A monolix control object
 ##' @author Matthew Fidler
 ##' @export
@@ -105,7 +105,7 @@ monolixMapData <- function(data, uif) {
   ## "limit", "regressor","admid", "rate", "tinf", "ss", "ii", "addl",
   ## "date", "ignore".
   ##' Generate the monolix input line
-  regressors <- RxODE::rxModelVars(uif$rxode)$params
+  regressors <- rxode2::rxModelVars(uif$rxode)$params
   covariates <- uif$saem.all.covs
   .env <- environment()
   .env$.regressor <- c(paste0("input={", paste(regressors, collapse=", "), "}"))
@@ -963,7 +963,7 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
     control <-do.call(monolixControl, control)
   }
   .v <- uif$rxode
-  .mv <- RxODE::rxModelVars(.v)
+  .mv <- rxode2::rxModelVars(.v)
   ## Run this before monolixMapData to populate errors in input={}
   .resMod <- uif$saem.res.mod
   .def <- paste(paste0(names(.resMod), "_pred= {distribution = normal, prediction = ", names(.resMod), ", errorModel=",
@@ -999,9 +999,9 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
   .w <- which(.df$trans == "logNormal")
   if (length(.w) > 0) .df$thetaEst[.w] <- exp(.df$thetaEst[.w])
   .w <- which(.df$trans == "logitNormal")
-  if (length(.w) > 0) .df$thetaEst[.w] <- sapply(.w, function(.i){RxODE::expit(.df$thetaEst[.i], .df$low[.i], .df$hi[.i])})
+  if (length(.w) > 0) .df$thetaEst[.w] <- sapply(.w, function(.i){rxode2::expit(.df$thetaEst[.i], .df$low[.i], .df$hi[.i])})
   .w <- which(.df$trans == "probitNormal")
-  if (length(.w) > 0) .df$thetaEst[.w] <- sapply(.w, function(.i){RxODE::probitInv(.df$thetaEst[.i])})
+  if (length(.w) > 0) .df$thetaEst[.w] <- sapply(.w, function(.i){rxode2::probitInv(.df$thetaEst[.i])})
   .dft <- as.data.frame(uif$ini)[, c("name", "est", "fix")]
   names(.dft) <- c("eta", "sdEst", "sdFixed")
   .df <- merge(.df, .dft, by="eta", all.x=TRUE)
@@ -1058,7 +1058,7 @@ nlmixrMonolixLastProject <- function(){
 nlmixrToMonolix <- function(uif, data, control=monolixControl()){
   name <- as.character(substitute(uif))
   if (!inherits(uif, "nlmixrUI")) {
-    uif <- nlmixr::nlmixr(uif)
+    uif <- nlmixr2::nlmixr2(uif)
   }
   data <- as.data.frame(data)
   if(!any(tolower(names(data)) == "dv")) stop("need dv in data", call.=FALSE)
@@ -1165,7 +1165,7 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
         .ctl$scaleTo <- 0
         .ctl$addProp <- control$addProp
         .ctl$method <- "liblsoda"
-        .ctl <- do.call(nlmixr::foceiControl, .ctl)
+        .ctl <- do.call(nlmixr2::foceiControl, .ctl)
         if (any(names(.ctl) == "singleOde")){
           if (control$singleOde) {
             .mod <- uif$focei.rx1

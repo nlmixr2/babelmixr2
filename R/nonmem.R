@@ -44,7 +44,7 @@
 #' @author Richard Hooijmaijers with contributions from Matt Fidler
 #' @export
 nlmixr_trans <- function(func){
-  parsef  <- nlmixr::nlmixr(func)
+  parsef  <- nlmixr2::nlmixr2(func)
 
   # Get odes and additional formulas for des block
   desb    <- trimws(unlist(strsplit(parsef$nmodel$rxode,"\n")))
