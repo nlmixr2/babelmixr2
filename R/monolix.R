@@ -25,7 +25,7 @@
 ##' @return A monolix control object
 ##' @author Matthew Fidler
 ##' @export
-##' @importFrom nlmixr nlmixr
+##' @importFrom nlmixr2 nlmixr2
 ##' @importFrom methods is
 ##' @importFrom stats na.omit setNames
 ##' @importFrom utils assignInMyNamespace
