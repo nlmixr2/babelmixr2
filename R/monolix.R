@@ -96,17 +96,17 @@ monolixControl <- function(nbSSDoses=7,
 ##' This constructs the data->monolix header mapping & regressors
 ##'
 ##' @param data Input dataset
-##' @param uif  Parsed nlmixr user interface function
+##' @param ui Parsed 'nlmixr2' user interface function
 ##' @return list with (header=monolix header specification, regressor=monolix regressor specification)
 ##' @author Matthew Fidler
-monolixMapData <- function(data, uif) {
+monolixMapData <- function(data, ui) {
   ## Monolix header types "id", "time", "observation", "amount",
   ## "contcov", "catcov", "occ", "evid", "mdv", "obsid", "cens",
   ## "limit", "regressor","admid", "rate", "tinf", "ss", "ii", "addl",
   ## "date", "ignore".
   ##' Generate the monolix input line
-  regressors <- rxode2::rxModelVars(uif$rxode)$params
-  covariates <- uif$saem.all.covs
+  regressors <- (eval(ui$saemModel0))$params
+  covariates <- ui$allCovs
   .env <- environment()
   .env$.regressor <- c(paste0("input={", paste(regressors, collapse=", "), "}"))
   .headers <- sapply(names(data), function(x) {
@@ -141,22 +141,6 @@ monolixMapData <- function(data, uif) {
     return("ignore")
   })
   return(list(headerType=.headers, regressors=paste(.env$.regressor, collapse="\n")))
-}
-
-##' Monolix estimation routine
-##'
-##' @param env nlmixr environment
-##'
-##' @param ... Other parameters
-##'
-nlmixrEst.monolix <- function(env, ...){
-  with(env, {
-    ## obj$env$.curTv needs to be reset
-    if (length(uif$noMuEtas) > 0) {
-      stop(sprintf("Cannot run Monolix since some of the parameters are not mu-referenced (%s)", paste(uif$noMuEtas, collapse = ", ")),
-           call.=FALSE)
-    }
-  })
 }
 
 ################################################################################

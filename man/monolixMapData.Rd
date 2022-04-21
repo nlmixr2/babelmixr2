@@ -4,7 +4,7 @@
 \alias{monolixMapData}
 \title{This constructs the data->monolix header mapping & regressors}
 \usage{
-monolixMapData(data, uif)
+monolixMapData(data, ui)
 }
 \arguments{
 \item{data}{Input dataset}
