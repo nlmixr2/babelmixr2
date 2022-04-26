@@ -12,7 +12,6 @@ LazyData: true
 Suggests: 
     testthat
 Depends: 
-    nlmixr2,
     R (>= 3.5)
 Imports: 
     rxode2,

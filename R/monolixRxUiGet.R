@@ -1,5 +1,5 @@
 
-.isPureMuRef <- function(expr, muRefCurEval) {
+.getPureMuRef <- function(expr, muRefCurEval) {
   # probitInv
   # expit
   # logit
@@ -10,21 +10,24 @@
         identical(expr[[1]], quote(`<-`))) {
     if (is.call(expr[[3]])) {
       .call <- expr[[3]]
-      .char <- as.character(.call[[2]])
+      .char <- as.character(expr[[2]])
       .callName <- as.character(.call[[1]])
-      .w <- which(muRefCurEval$parameter == .char)
+      .w <- which(muRefCurEval$parameter == as.character(.call[[2]]))
       if (length(.w) == 1L) {
         if (muRefCurEval$curEval[.w] == .callName) {
           # This is an additive mu reference expression
           # c(tcl="cl")
           .low <- muRefCurEval$low[.w]
           .hi <- muRefCurEval$hi[.w]
-          if (is.na(.low) && length(.call) == 2) {
-            return(setNames(as.character(.call[[2]]), .char))
-          } else if (!is.na(.low) && is.na(.hi) && length(.call) == 3 && .call[[3]] == .low) {
-            return(setNames(as.character(.call[[2]]), .char))
-          } else if (!is.na(.low) && !is.na(.hi) && length(.call) == 1 && .call[[3]] == .low && .call[[4]] == .hi) {
-            return(setNames(as.character(.call[[2]]), .char))
+          if (length(.call) == 2) {
+            return(setNames(.char, as.character(.call[[2]])))
+          } else if (length(.call) == 3 && .call[[3]] == ifelse(is.na(.low), 0, .low)) {
+            return(setNames(.char, as.character(.call[[2]])))
+          } else if (length(.call) == 4 &&
+                       .call[[3]] == ifelse(is.na(.low), 0, .low) &&
+                       .call[[4]] == ifelse(is.na(.hi), 1, .hi) &&
+                       TRUE) {
+            return(setNames(.char, as.character(.call[[2]])))
           }
         }
       }
