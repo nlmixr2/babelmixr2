@@ -4,6 +4,7 @@
 \name{reexports}
 \alias{reexports}
 \alias{rxModelVars}
+\alias{rxUiGet}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -11,6 +12,6 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
-  \item{rxode2}{\code{\link[rxode2]{rxModelVars}}}
+  \item{rxode2}{\code{\link[rxode2]{rxModelVars}}, \code{\link[rxode2]{rxUiGet}}}
 }}
 
