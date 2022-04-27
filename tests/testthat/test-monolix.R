@@ -21,68 +21,71 @@ test_that("pure mu reference parsing", {
 
 
   expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0, 1)),
-                            muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                    low=NA_character_, hi=NA_character_)),
+                             muRefCurEval=data.frame(parameter="tcl", curEval="expit",
+                                                     low=NA_character_, hi=NA_character_)),
                c(tcl="cl"))
 
 
-    expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0, 2)),
-                            muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                    low=NA_character_, hi=NA_character_)),
-                 NULL)
+  expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0, 2)),
+                             muRefCurEval=data.frame(parameter="tcl", curEval="expit",
+                                                     low=NA_character_, hi=NA_character_)),
+               NULL)
 
 
-    expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0, 2)),
-                               muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                       low=0, hi=2)),
-                 c(tcl="cl"))
+  expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0, 2)),
+                             muRefCurEval=data.frame(parameter="tcl", curEval="expit",
+                                                     low=0, hi=2)),
+               c(tcl="cl"))
 
 
-    expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0.5, 1)),
-                            muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                    low=NA_character_, hi=NA_character_)),
-                 NULL)
+  expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0.5, 1)),
+                             muRefCurEval=data.frame(parameter="tcl", curEval="expit",
+                                                     low=NA_character_, hi=NA_character_)),
+               NULL)
 
-    expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0.5, 1)),
-                               muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                       low=0.5, hi=NA_character_)),
-                 c(tcl="cl"))
-
-
-    expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0.5)),
-                               muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                       low=0.5, hi=NA_character_)),
-                 c(tcl="cl"))
+  expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0.5, 1)),
+                             muRefCurEval=data.frame(parameter="tcl", curEval="expit",
+                                                     low=0.5, hi=NA_character_)),
+               c(tcl="cl"))
 
 
-    expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0.5)),
-                               muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                       low=0.4, hi=NA_character_)),
-                 NULL)
+  expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0.5)),
+                             muRefCurEval=data.frame(parameter="tcl", curEval="expit",
+                                                     low=0.5, hi=NA_character_)),
+               c(tcl="cl"))
 
-    expect_equal(.getPureMuRef(quote(cl <- expit(tcl)),
-                               muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                       low=0, hi=1)),
-                 c(tcl="cl"))
 
-    expect_equal(.getPureMuRef(quote(cl <- expit(tcl)),
-                               muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                       low=NA_real_, hi=1)),
-                 c(tcl="cl"))
+  expect_equal(.getPureMuRef(quote(cl <- expit(tcl, 0.5)),
+                             muRefCurEval=data.frame(parameter="tcl", curEval="expit",
+                                                     low=0.4, hi=NA_character_)),
+               NULL)
 
-    expect_equal(.getPureMuRef(quote(cl <- expit(tcl)),
+  expect_equal(.getPureMuRef(quote(cl <- expit(tcl)),
+                             muRefCurEval=data.frame(parameter="tcl", curEval="expit",
+                                                     low=0, hi=1)),
+               c(tcl="cl"))
+
+  expect_equal(.getPureMuRef(quote(cl <- expit(tcl)),
+                             muRefCurEval=data.frame(parameter="tcl", curEval="expit",
+                                                     low=NA_real_, hi=1)),
+               c(tcl="cl"))
+
+  expect_equal(.getPureMuRef(quote(cl <- expit(tcl)),
                                muRefCurEval=data.frame(parameter="tcl", curEval="expit",
                                                        low=0, hi=NA_real_)),
-                 c(tcl="cl"))
+               c(tcl="cl"))
 
-
-
+  expect_equal(.getPureMuRef(quote(cl(0) <- tcl),
+                             muRefCurEval=data.frame(parameter="tcl", curEval="",
+                                                     low=NA_real_, hi=NA_real_)),
+               NULL)
 
 })
 
 
 test_that("turnover mu-reference extraction", {
-    pk.turnover.emax3 <- function() {
+
+  pk.turnover.emax3 <- function() {
     ini({
       tktr <- log(1)
       tka <- log(1)
@@ -107,6 +110,9 @@ test_that("turnover mu-reference extraction", {
       eta.e0 ~ .5
       ##
       pdadd.err <- 10
+      ##
+      tdepot <- 1
+      eta.depot ~ 0.1
     })
     model({
       ktr <- exp(tktr + eta.ktr)
@@ -125,6 +131,7 @@ test_that("turnover mu-reference extraction", {
       kin = e0*kout
       ##
       d/dt(depot) = -ktr * depot
+      depot(0) = tdepot + eta.depot
       d/dt(gut) =  ktr * depot -ka * gut
       d/dt(center) =  ka * gut - cl / v * center
       d/dt(effect) = kin*PD -kout*effect

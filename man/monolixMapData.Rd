@@ -9,7 +9,7 @@ monolixMapData(data, ui)
 \arguments{
 \item{data}{Input dataset}
 
-\item{uif}{Parsed nlmixr user interface function}
+\item{ui}{Parsed 'nlmixr2' user interface function}
 }
 \value{
 list with (header=monolix header specification, regressor=monolix regressor specification)

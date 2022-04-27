@@ -30,6 +30,30 @@ monolixControl(
 
 \item{stiff}{boolean for using the stiff ODE solver}
 
+\item{addProp}{specifies the type of additive plus proportional
+  errors, the one where standard deviations add (combined1) or the
+  type where the variances add (combined2).
+
+The combined1 error type can be described by the following equation:
+
+  y = f + (a + b*f^c)*err
+
+The combined2 error model can be described by the following equation:
+
+ y = f + sqrt(a^2 + b^2*(f^c)^2)*err
+
+ Where:
+
+ - y represents the observed value
+
+ - f represents the predicted value
+
+ - a  is the additive standard deviation
+
+ - b is the proportional/power standard deviation
+
+ - c is the power exponent (in the proportional case c=1)}
+
 \item{exploratoryautostop}{logical to turn on or off exploratory
 phase auto-stop of SAEM (default 250)}
 
