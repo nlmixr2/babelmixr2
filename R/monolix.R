@@ -1,4 +1,3 @@
-
 ##
 ## observationTypes (list): A list giving the type of each observation present in the data file. If there is only one y-type, the corresponding observation name can be omitted.
 ## The possible observation types are "continuous", "discrete", and "event".
@@ -889,7 +888,7 @@ monolixDataFile <- function(lst, uif, data, control=monolixControl()) {
 
 monolixModelParameter <- function(.df, .dfError) {
   ## FIXME Covariance estimates?
-  #F FIXME Covariate estimates?
+  ## FIXME Covariate estimates?
   paste0("\n\n<PARAMETER>\n",
          paste(setNames(sapply(seq_along(.df$theta), function(.i){
            .typical <- .df$typical[.i]
