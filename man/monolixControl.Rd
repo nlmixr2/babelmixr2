@@ -22,7 +22,7 @@ monolixControl(
   optimizationiterations = 20,
   optimizationtolerance = 1e-04,
   variability = c("none", "firstStage", "decreasing"),
-  runCommand = getOption("babelmixr.monolix", "")
+  runCommand = getOption("babelmixr2.monolix", "")
 )
 }
 \arguments{
@@ -67,7 +67,7 @@ exploratory phase (default 200)}
 
 \item{runCommand}{is a shell command to run monolix; You can
 specfy the default by
-\code{options("babelmixr.monolix"="runMonolix \%s")} where the \code{"\%s"}
+\code{options("babelmixr2.monolix"="runMonolix \%s")} where the \code{"\%s"}
 represents the monolix project file.}
 }
 \value{
