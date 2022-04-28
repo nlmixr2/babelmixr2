@@ -18,7 +18,7 @@
 ##' @param simulatedannealingiterations Number of burn in iterations
 ##' @param runCommand is a shell command to run monolix; You can
 ##'   specfy the default by
-##'   \code{options("babelmixr.monolix"="runMonolix \%s")} where the \code{"\%s"}
+##'   \code{options("babelmixr2.monolix"="runMonolix \%s")} where the \code{"\%s"}
 ##'   represents the monolix project file.
 ##' @inheritParams nlmixr2::foceiControl
 ##' @return A monolix control object
@@ -45,7 +45,7 @@ monolixControl <- function(nbSSDoses=7,
                            optimizationiterations=20,
                            optimizationtolerance=0.0001,
                            variability=c("none", "firstStage", "decreasing"),
-                           runCommand=getOption("babelmixr.monolix", "")) {
+                           runCommand=getOption("babelmixr2.monolix", "")) {
 
   checkmate::assertLogical(stiff, max.len=1)
   checkmate::assertLogical(exploratoryautostop, max.len=1)
@@ -960,7 +960,7 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
   .lst$file <- paste0(ifelse(missing(name), uif$model.name, name))
   .lst$digest <- digest::digest(list(control, .lst$data.md5, control))
   .lst$txt <- paste0("DESCRIPTION:\n",
-         paste0("model translated from babelmixr and nlmixr function ", uif$model.name, " to ", .lst$file, ".txt\n\n"),
+         paste0("model translated from babelmixr2 and nlmixr2 function ", uif$model.name, " to ", .lst$file, ".txt\n\n"),
          "[LONGITUDINAL]\n",
          .map$regressors,
          ifelse(control$stiff, "\n\nodeType = stiff", ""),
@@ -1163,7 +1163,7 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
         }
         .env <- new.env(parent = emptyenv())
         .env$method <- "Monolix"
-        .env$extra <- " (babelmixr)"
+        .env$extra <- " (babelmixr2)"
         .data2 <- data
         .allCovs <- tolower(.uif$all.covs)
         names(.data2) <- sapply(names(.data2), function(x){
@@ -1190,7 +1190,7 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
         return(.nlmixrFit)
       }
       message("the monolix model is current with the nlmixr model; remove ", .rds," to regenerate")
-      .status <- getOption("babelmixr.monolix.status", "")
+      .status <- getOption("babelmixr2.monolix.status", "")
       if (.status != "") {
         system(.status)
         # nvs specific errors
