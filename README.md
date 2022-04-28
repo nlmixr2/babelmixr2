@@ -1,26 +1,25 @@
 
-# babelmixr
+# babelmixr2
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/nlmixrdevelopment/babelmixr/workflows/R-CMD-check/badge.svg)](https://github.com/nlmixrdevelopment/babelmixr/actions)
 <!-- badges: end -->
 
-The goal of babelmixr is to convert nlmixr syntax to other commonly
+The goal of babelmixr2 is to convert nlmixr2 syntax to other commonly
 used tools.
 
 ## Installation
 
-If decide to submit to CRAN, you can install the released version of
+If we decide to submit to CRAN, you can install the released version of
 babelmixr from [CRAN](https://CRAN.R-project.org) with:
 
 ``` r
-install.packages("babelmixr")
+install.packages("babelmixr2")
 ```
 
 Otherwise you can always install from github:
 
 ```r
-remotes::install_github("nlmixrdevelopment/babelmixr")
+remotes::install_github("nlmixr2/babelmixr")
 ```
 
 ## Example
