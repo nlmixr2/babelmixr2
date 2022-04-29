@@ -111,6 +111,9 @@
 #' @export
 rxUiGet.getSplitMuModel <- function(x, ...) {
   .ui <- x[[1]]
+  if (exists("getSplitModel", .ui)) {
+    return(get("getSplitModel", .ui))
+  }
   .pureMuRef <- NULL
   .ret <- nlmixr2est::.saemDropMuRefFromModel(.ui)
   for (.i in seq_along(.ret)) {
@@ -135,10 +138,13 @@ rxUiGet.getSplitMuModel <- function(x, ...) {
     .var <- setNames(.muRef[.i], NULL)
     .createMuRefPkBlock(.var, .est, .ui$muRefCurEval)
   })
-  list(muRefDef=.muRef,
-       pureMuRef=.pureMuRef,
-       taintMuRef=.taintMuRef,
-       modelWithDrop=.ret)
+  assign("getSplitModel",
+         list(muRefDef=.muRef,
+              pureMuRef=.pureMuRef,
+              taintMuRef=.taintMuRef,
+              modelWithDrop=.ret),
+         envir=.ui)
+  get("getSplitModel", .ui)
 }
 
 

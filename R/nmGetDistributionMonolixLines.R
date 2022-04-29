@@ -38,6 +38,8 @@ nmGetDistributionMonolixLines.rxUi <- function(line) {
   })
 }
 
+.monolixResponses <- NULL
+
 #' @rdname nmGetDistributionMonolixLines
 #' @export
 nmGetDistributionMonolixLines.norm <- function(line) {
@@ -49,6 +51,8 @@ nmGetDistributionMonolixLines.norm <- function(line) {
   }
   .var <- str2lang(.pred1[["var"]])
   .varp <- str2lang(paste0("rx_pred_", .pred1[["var"]]))
+  assignInMyNamespace(".monolixResponses",
+                      c(.monolixResponses, .varp))
   return(list(bquote(.(.varp) <- .(.var))))
 }
 
