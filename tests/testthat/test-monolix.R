@@ -83,6 +83,19 @@ test_that("pure mu reference parsing", {
 })
 
 
+test_that("distribution switch", {
+  expect_equal(.mlxTranCurEvalToDistribution("exp"),
+               "logNormal")
+  expect_equal(.mlxTranCurEvalToDistribution("expit"),
+               "logitNormal")
+  expect_equal(.mlxTranCurEvalToDistribution("probitInv"),
+               "probitNormal")
+  expect_equal(.mlxTranCurEvalToDistribution(""),
+               "normal")
+  expect_error(.mlxTranCurEvalToDistribution("log"))
+})
+
+
 test_that("turnover mu-reference extraction", {
 
   pk.turnover.emax3 <- function() {
