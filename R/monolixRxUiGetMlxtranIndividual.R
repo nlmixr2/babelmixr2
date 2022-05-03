@@ -101,8 +101,6 @@
   paste0("r(", .par1, ", ", .par2, ")=", .cor)
 }
 
-
-
 .mlxtranIndividualCor <- function(ui, muRefs) {
   .eta <- ui$iniDf[!(is.na(ui$iniDf$neta1)),, drop=FALSE]
   if (length(.eta$neta1) == 0L) stop("need eta for monolix model",
