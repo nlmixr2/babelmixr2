@@ -81,7 +81,14 @@
           .mlxTranGetVaraibility(var, est, muRefTable)),
         collapse=", "), "}")
 }
-
+#' Get individualn mu ref eta monolix names
+#'
+#' @param ui roxde2 ui
+#' @param num eta number
+#' @param muRef mu-reference theta to monolix variables
+#' @return monolix variable for eta
+#' @author Matthew L. Fidler
+#' @noRd
 .mlxtranGetIndividualMuRefEtaMonolixName <- function(ui, num, muRef) {
   .iniDf <- ui$iniDf
   .etaName <- .iniDf[which(.iniDf$neta1 == num & .iniDf$neta2 == num), "name"]
@@ -92,7 +99,15 @@
   stop("only should get eta names where the mu referencing is known",
        call.=FALSE)
 }
-
+#' Get individual correlation definition for var1 and var2
+#'
+#' @param ui rxode2 ui
+#' @param num1 eta number 1
+#' @param num2 eta number 2
+#' @param muRef Mu reference number
+#' @return Gives the correlation definition, ie r(p1, p2)=corr_p1_p2
+#' @author Matthew L. Fidler
+#' @noRd
 .mlxtranGetIndividualCorDefinition <- function(ui, num1, num2, muRef) {
   .par1 <- .mlxtranGetIndividualMuRefEtaMonolixName(ui, num1, muRef)
   .par2 <- .mlxtranGetIndividualMuRefEtaMonolixName(ui, num2, muRef)
@@ -100,7 +115,13 @@
   assignInMyNamespace(".mlxTranInputForIndividual", c(.mlxTranInputForIndividual, .cor))
   paste0("r(", .par1, ", ", .par2, ")=", .cor)
 }
-
+#' Get individual correlation statement (if needed)
+#'
+#' @param ui rxode2 ui
+#' @param muRefs Mu reference to monolix varaible
+#' @return the correlation= statement in monolix
+#' @author Matthew L. Fidler
+#' @noRd
 .mlxtranIndividualCor <- function(ui, muRefs) {
   .eta <- ui$iniDf[!(is.na(ui$iniDf$neta1)),, drop=FALSE]
   if (length(.eta$neta1) == 0L) stop("need eta for monolix model",
