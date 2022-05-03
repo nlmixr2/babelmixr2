@@ -82,6 +82,44 @@
         collapse=", "), "}")
 }
 
+.mlxtranGetIndividualMuRefEtaMonolixName <- function(ui, num, muRef) {
+  .iniDf <- ui$iniDf
+  .etaName <- .iniDf[which(.iniDf$neta1 == num & .iniDf$neta2 == num), "name"]
+  .w <- which(ui$muRefTable$eta == .etaName)
+  if (length(.w) == 1) {
+    return(setNames(muRef[ui$muRefTable$theta[.w]], NULL))
+  }
+  stop("only should get eta names where the mu referencing is known",
+       call.=FALSE)
+}
+
+.mlxtranGetIndividualCorDefinition <- function(ui, num1, num2, muRef) {
+  .par1 <- .mlxtranGetIndividualMuRefEtaMonolixName(ui, num1, muRef)
+  .par2 <- .mlxtranGetIndividualMuRefEtaMonolixName(ui, num2, muRef)
+  .cor <- paste0("corr_", .par1, "_", .par2)
+  assignInMyNamespace(".mlxTranInputForIndividual", c(.mlxTranInputForIndividual, .cor))
+  paste0("r(", .par1, ", ", .par2, ")=", .cor)
+}
+
+
+
+.mlxtranIndividualCor <- function(ui, muRefs) {
+  .eta <- ui$iniDf[!(is.na(ui$iniDf$neta1)),, drop=FALSE]
+  if (length(.eta$neta1) == 0L) stop("need eta for monolix model",
+                                     call.=FALSE)
+  .w <- which(.eta$neta1 != .eta$neta2)
+  if (length(.w) > 0) {
+    .eta <- .eta[.w, ]
+    return(paste0("correlation = {",
+                  paste(c("level=id",
+                          vapply(seq_along(.eta$neta1), function(i) {
+                            .cur <- .eta[i, ]
+                            .mlxtranGetIndividualCorDefinition(ui, .cur$neta1, .cur$neta2, muRef)
+                          }, character(1), USE.NAMES=TRUE)), collapse=", "), "}"))
+  }
+  ""
+}
+
 #' @export
 rxUiGet.mlxtranModelIndividual <- function(x, ...) {
   .ui <- x[[1]]
@@ -94,6 +132,8 @@ rxUiGet.mlxtranModelIndividual <- function(x, ...) {
     .mlxtranIndividualDef(.var, .est, .ui$muRefCurEval, .ui$muRefTable)
   }, character(1), USE.NAMES=FALSE)
   .def <- paste(.def, collapse="\n")
+  .cor <- .mlxtranIndividualCor(ui, muRefs)
+  if (.cor != "") .def <- paste0(.def, "\n", .cor)
   paste0("[INDIVIDUAL]\n",
          "input={", paste(.mlxTranInputForIndividual, collapse=", "), "}\n\n",
          "DEFINITION:\n",
