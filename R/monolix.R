@@ -4,9 +4,6 @@
 ##
 ## nbSSDoses [optional](int): Number of doses (if there is a SS column).
 
-
-
-
 .monolixErrs <- c()
 
 ##' This constructs the data->monolix header mapping & regressors
@@ -531,55 +528,6 @@ monolixP <- function(states){
   })
 }
 
-.monolixGetErr <- list()
-
-monolixGetErr0 <- function(cond, type, uif, control) {
-  .ini <- as.data.frame(uif$ini)
-  .ini <- .ini[which(.ini$condition == cond), ]
-  if (type == 1) { # Constant
-    .tmp <- as.character(.ini$name)
-    .tmp <- eval(parse(text=paste0("rxToMonolix(", .tmp, ")")))
-    assignInMyNamespace(".monolixErrs", c(.monolixErrs, .tmp))
-    .lst <- .monolixGetErr
-    .lst[[length(.lst) + 1]] <- data.frame(name=.ini$name, errName=.tmp)
-    assignInMyNamespace(".monolixGetErr", .lst)
-    return(paste0("constant(", .tmp, ")"))
-  } else if (type == 2) { # Proportional
-    .tmp <- as.character(.ini$name)
-    .tmp <- eval(parse(text=paste0("rxToMonolix(", .tmp, ")")))
-    .lst <- .monolixGetErr
-    .lst[[length(.lst) + 1]] <- data.frame(name=.ini$name, errName=.tmp)
-    assignInMyNamespace(".monolixGetErr", .lst)
-    assignInMyNamespace(".monolixErrs", c(.monolixErrs, .tmp))
-    return(paste0("proportional(", .tmp, ")"))
-  } else if (type == 3) { # additive + proportional
-    .add <- .ini[.ini$err == "add", "name"]
-    .add <- eval(parse(text=paste0("rxToMonolix(", .add, ")")))
-    .lst <- .monolixGetErr
-    .lst[[length(.lst) + 1]] <- data.frame(name=.ini[.ini$err == "add", "name"], errName=.add)
-    .prop <- .ini[.ini$err == "prop", "name"]
-    .prop <- eval(parse(text=paste0("rxToMonolix(", .prop, ")")))
-    .lst[[length(.lst) + 1]] <- data.frame(name=.ini[.ini$err == "prop", "name"], errName=.prop)
-    assignInMyNamespace(".monolixErrs", c(.monolixErrs, .add, .prop))
-    assignInMyNamespace(".monolixGetErr", .lst)
-    return(paste0(control$addProp, "(", .add, ",", .prop, ")"))
-  } else if (type == 4) { # additive + power
-    stop("distribution not supported in monolix<->nlmixr")
-  } else if (type == 5) { # pow
-    stop("distribution not supported in monolix<->nlmixr")
-  } else if (type >= 6) { ## + lambda
-    stop("distribution not supported in monolix")
-  }
-}
-
-monolixGetErr <- function(resMod, uif, control) {
-  assignInMyNamespace(".monolixErrs", c())
-  assignInMyNamespace(".monolixGetErr", list())
-  .idx <- seq_along(resMod)
-  sapply(.idx, function(.i){
-    monolixGetErr0(names(resMod)[.i], setNames(resMod[.i], NULL), uif, control)
-  })
-}
 
 .toMonolixDef <- list()
 .toMonolixDefinition <- function(x, mu.ref) {
