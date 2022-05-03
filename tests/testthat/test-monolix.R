@@ -83,16 +83,37 @@ test_that("pure mu reference parsing", {
 })
 
 
-test_that("distribution switch", {
+test_that("individual distribution switch", {
   expect_equal(.mlxTranCurEvalToDistribution("exp"),
-               "logNormal")
+               "distribution=logNormal")
   expect_equal(.mlxTranCurEvalToDistribution("expit"),
-               "logitNormal")
+               "distribution=logitNormal")
   expect_equal(.mlxTranCurEvalToDistribution("probitInv"),
-               "probitNormal")
+               "distribution=probitNormal")
   expect_equal(.mlxTranCurEvalToDistribution(""),
-               "normal")
+               "distribution=normal")
   expect_error(.mlxTranCurEvalToDistribution("log"))
+})
+
+test_that("can determine if parameter is population only", {
+  .df <- data.frame(theta = c("tktr", "tka", "tcl", "tv", "tkout", "te0", "tdepot"),
+                    eta = c("eta.ktr", "eta.ka", "eta.cl", "eta.v", "eta.kout", "eta.e0", "eta.depot"),
+                    level="id")
+  expect_true(.mlxTranIsPopOnly("temax", .df))
+  expect_false(.mlxTranIsPopOnly("tka", .df))
+})
+
+test_that("get variability component", {
+
+  .df <- data.frame(theta = c("tktr", "tka", "tcl", "tv", "tkout", "te0", "tdepot"),
+                    eta = c("eta.ktr", "eta.ka", "eta.cl", "eta.v", "eta.kout", "eta.e0", "eta.depot"),
+                    level="id")
+  expect_equal(.mlxTranGetVaraibility("emax", "temax", .df),
+               "no-variability")
+
+  expect_equal(.mlxTranGetVaraibility("ka", "tka", .df),
+               "sd=omega_ka")
+
 })
 
 
@@ -118,7 +139,6 @@ test_that("turnover mu-reference extraction", {
       te0 <- log(100)
       ##
       eta.emax ~ .5
-      eta.ec50  ~ .5
       eta.kout ~ .5
       eta.e0 ~ .5
       ##
@@ -133,7 +153,7 @@ test_that("turnover mu-reference extraction", {
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
       emax = expit(temax+eta.emax)
-      ec50 =  exp(tec50 + eta.ec50)
+      ec50 =  exp(tec50)
       kout = exp(tkout + eta.kout)
       e0 = te0 + eta.e0
       ##

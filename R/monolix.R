@@ -884,7 +884,7 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
   .lst$fit <- monolixModelFit(uif, .lst$obs)
 
   .lst$mlxtran <- paste0(.lst$datafile, "\n", .lst$model, .lst$fit,
-                         .lst$parameter, .lst$monolix)
+                          .lst$parameter, .lst$monolix)
   return(.lst)
 }
 .nlmixrMonolixLastProject <- ""

@@ -1,0 +1,102 @@
+#' mlxtran switch distributions
+#'
+#' @param curEval Current evaluation
+#' @return Monolix distribution type
+#' @author Matthew L. Fidler
+#' @noRd
+.mlxTranCurEvalToDistribution <- function(curEval) {
+  .ret <- switch(ifelse(curEval == "", "add", curEval),
+                 exp="logNormal",
+                 expit="logitNormal",
+                 probitInv="probitNormal",
+                 add="normal",
+                 NA_character_)
+  if (is.na(.ret))
+    stop(paste0("monolix translation of '", curEval, "' is unknown"),
+         call.=FALSE)
+  paste0("distribution=", .ret)
+}
+#' Determine if the estimate is a Population estimate only
+#'
+#' @param est Estimated value
+#' @param muRefTable Mu ref table
+#' @return `TRUE` for population only estimates
+#' @author Matthew L. Fidler
+#' @noRd
+.mlxTranIsPopOnly <- function(est, muRefTable) {
+  !(est %in% muRefTable$theta)
+}
+
+.mlxTranInputForIndividual <- NULL
+
+#' Get the omega variability component name
+#'
+#' @param var monolix variable name
+#' @param est typical value estimation variable name
+#' @param muRefTable Mu reference table
+#' @return monolix sd=expression or no-variability
+#' @author Matthew L. Fidler
+#' @noRd
+.mlxTranGetVaraibility <- function(var, est, muRefTable) {
+  if (.mlxTranIsPopOnly(est, muRefTable)) {
+    "no-variability"
+  } else {
+    assignInMyNamespace(".mlxTranInputForIndividual",
+                        c(.mlxTranInputForIndividual, paste0("omega_", var)))
+    paste0("sd=omega_", var)
+  }
+}
+
+.mlxTranGetLimits <- function(curEval, .low, .hi) {
+  if (curEval == "expit") {
+    c(paste0("min=", ifelse(is.na(.low), "0", .low)),
+      paste0("max=", ifelse(is.na(.hi), "1", .hi)))
+  } else {
+    NULL
+  }
+
+}
+#' Get the mlxtran individual estimate for the mu-referenced variables
+#'
+#' @param var Monolix modeled variable
+#' @param est Theta estimated variable
+#' @param muRefCurEval This is the mu reference current evaluation
+#'   function
+#' @param muRefTable This is the mu-reference table
+#' @return A single line that gives the individual definition
+#' @author Matthew L. Fidler
+#' @noRd
+.mlxtranIndividualDef <- function(var, est, muRefCurEval, muRefTable) {
+  .w <- which(muRefCurEval$parameter == est)
+  if (length(.w) != 1) stop("duplicate/missing parameter in `muRefCurEval`", call.=FALSE)
+  .curEval <- muRefCurEval$curEval[.w]
+  .low <- muRefCurEval$low[.w]
+  .hi <- muRefCurEval$hi[.w]
+  if (is.na(.low) && !is.na(.hi)) .low <- 0
+  assignInMyNamespace(".mlxTranInputForIndividual",
+                      c(.mlxTranInputForIndividual, paste0(var, "_pop")))
+  paste0(var, " = {", paste(c(.mlxTranCurEvalToDistribution(.curEval),
+          .mlxTranGetLimits(.curEval, .low, .hi),
+          paste0("typical=", var, "_pop"),
+          .mlxTranGetVaraibility(var, est, muRefTable)),
+        collapse=", "), "}")
+}
+
+#' @export
+rxUiGet.mlxtranModelIndividual <- function(x, ...) {
+  .ui <- x[[1]]
+  .split <- rxUiGet.getSplitMuModel(x, ...)
+  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  assignInMyNamespace(".mlxTranInputForIndividual", NULL)
+  .def <- vapply(seq_along(.muRef), function(.i){
+    .est <- names(.muRef)[.i]
+    .var <- setNames(.muRef[.i], NULL)
+    .mlxtranIndividualDef(.var, .est, .ui$muRefCurEval, .ui$muRefTable)
+  }, character(1), USE.NAMES=FALSE)
+  .def <- paste(.def, collapse="\n")
+  paste0("[INDIVIDUAL]\n",
+         "input={", paste(.mlxTranInputForIndividual, collapse=", "), "}\n\n",
+         "DEFINITION:\n",
+         .def
+         )
+}
