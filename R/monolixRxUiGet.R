@@ -2,8 +2,15 @@
 #' @export
 rxUiGet.monolixModelFileName <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, ".txt")
+  file.path(getwd(), paste0(.ui$modelName, ".txt"))
 }
+
+#' @export
+rxUiGet.monolixExportPath <- function(x, ...) {
+  .ui <- x[[1]]
+  file.path(getwd(), .ui$modelName)
+}
+
 
 #' @export
 rxUiGet.mlxtranModel <- function(x, ...) {
