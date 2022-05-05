@@ -1,16 +1,18 @@
 
 #' @export
-rxUiGet.monolixModelFileName <- function(x, ...) {
-  .ui <- x[[1]]
-  file.path(getwd(), paste0(.ui$modelName, ".txt"))
-}
-
-#' @export
 rxUiGet.monolixExportPath <- function(x, ...) {
   .ui <- x[[1]]
   file.path(getwd(), .ui$modelName)
 }
 
+#' @export
+rxUiGet.monolixModelFileName <- function(x, ...) {
+  paste0(rxUiGet.rxUiGet.monolixExportPath(x, ...), ".txt")
+}
+#' @export
+rxUiGet.monolixDataFile <- function(x, ...) {
+  paste0(rxUiGet.rxUiGet.monolixExportPath(x, ...), ".csv")
+}
 
 #' @export
 rxUiGet.mlxtranModel <- function(x, ...) {

@@ -29,7 +29,7 @@ rxUiGet.monolixModel <- function(x, ...) {
          "\n\nPK:\n; Define compartment(s)\n",
          paste(paste0("compartment(cmt=", seq_along(.mv$state), ", amount=", .mv$state, ")"), collapse="\n"),
          paste("\n\n;Define depot compartment information\n"),
-         paste(paste0("depot(type=1, target=", .mv$state, ", Tlag=", monolixTlag(.mv$state), ", p=", monolixP(.mv$state), ")"), collapse="\n"),
+         paste(paste0("depot(type=", seq_along(.mv$state), ", target=", .mv$state, ", Tlag=", monolixTlag(.mv$state), ", p=", monolixP(.mv$state), ")"), collapse="\n"),
          "\n\nEQUATION:\n", .mod,
          "\n\nOUTPUT:\noutput={",
          paste(.monolixResponses, collapse=", "), "}\n")

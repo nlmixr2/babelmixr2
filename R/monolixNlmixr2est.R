@@ -23,7 +23,7 @@
   .data <- env$data
   .ret <- new.env(parent=emptyenv())
   .ret$table <- env$table
-  nlmixr2est::.foceiPreProcessData(.data, .ret, .ui)
+  .ret$monolixData <- nlmixr2extra::nlmixrDataToMonolixfunction(.ui, .data, table=env$table)
   # Now make sure time varying covariates are not considered
   # mu-referenced items
   .et <- rxode2::etTrans(.ret$dataSav, .ui$mv0, addCmt=TRUE)
@@ -52,6 +52,7 @@
       rm(list="timeVaryingCovariates", envir=ui)
     }
   })
+
 }
 
 nlmixr2Est.monolix <- function(env, ...) {
