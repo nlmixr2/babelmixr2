@@ -16,7 +16,7 @@ rxUiGet.mlxtranParameter <- function(x, ...) {
   .iniDf <- .ui$iniDf
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
 
-  paste0("\n\n<PARAMETER>\n",paste(vapply(seq_along(.iniDf$name), function(i) {
+  paste0("<PARAMETER>\n",paste(vapply(seq_along(.iniDf$name), function(i) {
     .cur <- .iniDf[i, ]
     if (is.na(.cur$neta1)) {
       if (is.na(.cur$err)) {
