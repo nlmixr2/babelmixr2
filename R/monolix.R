@@ -1109,3 +1109,4 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
 ##             mapping = list("1" = "y1", "2" = "y2"))
 ## modelFile <- './oral1_1cpt_kaVCl.txt'
 ## newProject(modelFile = modelFile, data = data)
+

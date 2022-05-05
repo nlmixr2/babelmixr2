@@ -1,5 +1,5 @@
 #' @export
-rxUiGet.mlxtranModelMonolix <- function(x, ...) {
+rxUiGet.mlxtranMonolix <- function(x, ...) {
   .ui <- x[[1]]
   .r <- c(
     "<MONOLIX>",

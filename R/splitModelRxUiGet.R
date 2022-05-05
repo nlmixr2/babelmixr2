@@ -117,7 +117,7 @@ rxUiGet.getSplitMuModel <- function(x, ...) {
   .pureMuRef <- NULL
   .ret <- nlmixr2est::.saemDropMuRefFromModel(.ui)
   for (.i in seq_along(.ret)) {
-    .c <- .getPureMuRef(.ret[[.i]], ui$muRefCurEval)
+    .c <- .getPureMuRef(.ret[[.i]], .ui$muRefCurEval)
     if (!is.null(.c)) {
       .pureMuRef <- c(.pureMuRef, .c)
       .ret[[.i]] <- quote(`_drop`)
@@ -125,6 +125,13 @@ rxUiGet.getSplitMuModel <- function(x, ...) {
   }
   # Now get the "tainted" mu-referenced values
   .allPars <- .ui$saemParamsToEstimate
+  .covInfo <- .ui$saemInParsAndMuRefCovariates
+  .covDataFrame <- .ui$saemMuRefCovariateDataFrame
+  if (length(.covDataFrame$theta) > 0 && length(.covInfo$covars) > 0) {
+    # drop mu-referenced covariate estimates here..
+    .covPar <- .covDataFrame[.covDataFrame$covariate %in% .covInfo$covars, "covariateParameter"]
+    .allPars <- setdiff(.allPars, .covPar)
+  }
   .taintMuRef <- setdiff(.allPars, names(.pureMuRef))
   if (length(.taintMuRef) > 0) {
     .taintMuRef <- setNames(paste0("rx__", .taintMuRef), .taintMuRef)

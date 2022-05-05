@@ -27,6 +27,7 @@
   !(est %in% muRefTable$theta)
 }
 
+
 .mlxTranInputForIndividual <- NULL
 
 #' Get the omega variability component name
@@ -54,7 +55,26 @@
   } else {
     NULL
   }
-
+}
+#' Get mlxtran mu reference covariate definitions
+#'
+#' @param var Monolix modeled variable
+#' @param est Monolix estimated variable
+#' @param muRefCovariateDataFrame Mu referenced covariate data frame
+#' @return covariate and coefficient expressions for mu-referenced
+#'   covariates. NULL otherwise
+#' @author Matthew L. Fidler
+#' @noRd
+.mlxTranGetMuRefCovariate <- function(var, est, muRefCovariateDataFrame) {
+  if (is.null(muRefCovariateDataFrame)) return(NULL)
+  .covs <- muRefCovariateDataFrame[muRefCovariateDataFrame == est, ]
+  if (length(.covs$covariate) == 0) return(NULL)
+  .cov <- paste0("covariate = {", paste(.covs$covariate, collapse=", "), "}")
+  .coef <- paste0("beta_", var, "_", .covs$covariate)
+  assignInMyNamespace(".mlxTranInputForIndividual",
+                      c(.mlxTranInputForIndividual, .coef))
+  .coef <- paste0("coefficient = {", paste(.coef, collapse=", "), "}")
+  c(.cov, .coef)
 }
 #' Get the mlxtran individual estimate for the mu-referenced variables
 #'
@@ -63,10 +83,11 @@
 #' @param muRefCurEval This is the mu reference current evaluation
 #'   function
 #' @param muRefTable This is the mu-reference table
+#' @param muRefCovariateDataFrame mu-ref covariate data frame
 #' @return A single line that gives the individual definition
 #' @author Matthew L. Fidler
 #' @noRd
-.mlxtranIndividualDef <- function(var, est, muRefCurEval, muRefTable) {
+.mlxtranIndividualDef <- function(var, est, muRefCurEval, muRefTable, muRefCovariateDataFrame) {
   .w <- which(muRefCurEval$parameter == est)
   if (length(.w) != 1) stop("duplicate/missing parameter in `muRefCurEval`", call.=FALSE)
   .curEval <- muRefCurEval$curEval[.w]
@@ -78,10 +99,11 @@
   paste0(var, " = {", paste(c(.mlxTranCurEvalToDistribution(.curEval),
           .mlxTranGetLimits(.curEval, .low, .hi),
           paste0("typical=", var, "_pop"),
+          .mlxTranGetMuRefCovariate(var, est, muRefCovariateDataFrame),
           .mlxTranGetVaraibility(var, est, muRefTable)),
         collapse=", "), "}")
 }
-#' Get individualn mu ref eta monolix names
+#' Get individual mu ref eta monolix names
 #'
 #' @param ui roxde2 ui
 #' @param num eta number
@@ -145,13 +167,14 @@ rxUiGet.mlxtranModelIndividual <- function(x, ...) {
   .split <- rxUiGet.getSplitMuModel(x, ...)
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   assignInMyNamespace(".mlxTranInputForIndividual", NULL)
+  .muRefCov <- .ui$saemMuRefCovariateDataFrame
   .def <- vapply(seq_along(.muRef), function(.i){
     .est <- names(.muRef)[.i]
     .var <- setNames(.muRef[.i], NULL)
-    .mlxtranIndividualDef(.var, .est, .ui$muRefCurEval, .ui$muRefTable)
+    .mlxtranIndividualDef(.var, .est, .ui$muRefCurEval, .ui$muRefTable, .muRefCov)
   }, character(1), USE.NAMES=FALSE)
   .def <- paste(.def, collapse="\n")
-  .cor <- .mlxtranIndividualCor(ui, muRefs)
+  .cor <- .mlxtranIndividualCor(.ui, muRefs)
   if (.cor != "") .def <- paste0(.def, "\n", .cor)
   paste0("[INDIVIDUAL]\n",
          "input={", paste(.mlxTranInputForIndividual, collapse=", "), "}\n\n",
