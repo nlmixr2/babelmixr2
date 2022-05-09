@@ -95,12 +95,18 @@
 #' @noRd
 .createMuRefPkBlock <- function(var, est, muRefCurEval) {
   .w <- which(muRefCurEval$parameter == est)
-
-  if (length(.w) != 1) stop("duplicate/missing parameter in `muRefCurEval`", call.=FALSE)
-  .curEval <- muRefCurEval$curEval[.w]
-  .low <- muRefCurEval$low[.w]
-  .hi <- muRefCurEval$hi[.w]
-  if (is.na(.low) && !is.na(.hi)) .low <- 0
+  if (length(.w) == 1) {
+    .curEval <- muRefCurEval$curEval[.w]
+    .low <- muRefCurEval$low[.w]
+    .hi <- muRefCurEval$hi[.w]
+    if (is.na(.low) && !is.na(.hi)) .low <- 0
+  } else if (length(.w) == 0) {
+    .curEval <- ""
+    .low <- NA_real_
+    .hi <- NA_real_
+  } else {
+    stop("duplicate/missing parameter in `muRefCurEval`", call.=FALSE)
+  }
   str2lang(paste0(var, "<-", .curEval, ifelse(.curEval == "", "", "("),
                   est,
                   ifelse(is.na(.low), "", paste0(",", .low)),

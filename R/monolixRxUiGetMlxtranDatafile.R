@@ -9,18 +9,20 @@
                  "CENS"="censored",
                  "LIMIT"="limit",
                  "YTYPE"="observationtype",
-                 "CMT"="administration",
+                 "ADM"="administration",
                  "SS"="steadystate",
                  NA_character_)
   if (is.na(.use)) {
     # Determine if this is a regressor or a mu-referenced covariate
-    if (name == "nlmixrRowNums") return("ignore")
     .cov <- ui$saemMuRefCovariateDataFrame
-    if (name %in% .cov$covariate) return("regressor")
-    return("covariate")
+    if (name %in% .cov$covariate) return("covariate")
+    if (name %in% ui$allCovs) return("regressor")
+    return("ignore")
   }
   .use
 }
+
+
 
 #' @export
 rxUiGet.mlxtranDatafile <- function(x, ...) {
@@ -45,10 +47,10 @@ rxUiGet.mlxtranDatafile <- function(x, ...) {
   if (.hasLimit) {
     .limitData <- "LIMIT"
   }
-  .col0 <- c("ID", "TIME", "EVID", "AMT", "II", "DV", "CMT", "YTYPE", "SS", .rateData,
+  .col0 <- c("ID", "TIME", "EVID", "AMT", "II", "DV", "ADM", "YTYPE", "SS", .rateData,
              .censData, .limitData,
              .ui$allCovs, "nlmixrRowNums")
-  .ret <- c("<DATAFILE>", ""
+  .ret <- c("<DATAFILE>", "",
             "[FILEINFO]",
             paste0("file='", rxUiGet.monolixDataFile(x, ...), "'"),
             "delimter = tab",

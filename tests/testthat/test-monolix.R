@@ -79,7 +79,6 @@ test_that("pure mu reference parsing", {
                              muRefCurEval=data.frame(parameter="tcl", curEval="",
                                                      low=NA_real_, hi=NA_real_)),
                NULL)
-
 })
 
 
@@ -116,6 +115,72 @@ test_that("get variability component", {
 
 })
 
+test_that("test datafile use", {
+
+  one.cmt <- function() {
+    ini({
+      tka <- 0.45 ; label("Ka")
+      tcl <- log(c(0, 2.7, 100)) ; label("Log Cl")
+      tv <- 3.45; label("log V")
+      cl.wt <- 0
+      v.wt <- 0
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl + wt * cl.wt)
+      v <- exp(tv + eta.v) + wt2 ^ 2 * v.wt
+      linCmt() ~ add(add.sd)
+    })
+  }
+
+  ui <- rxode2::rxode2(one.cmt)
+
+  expect_equal(.monolixMapDataUse("ID", ui), "id")
+  expect_equal(.monolixMapDataUse("TIME", ui), "time")
+  expect_equal(.monolixMapDataUse("EVID", ui), "eventidentifier")
+  expect_equal(.monolixMapDataUse("AMT", ui), "amount")
+  expect_equal(.monolixMapDataUse("II", ui), "ii")
+  expect_equal(.monolixMapDataUse("DV", ui), "observation")
+  expect_equal(.monolixMapDataUse("CENS", ui), "censored")
+  expect_equal(.monolixMapDataUse("LIMIT", ui), "limit")
+  expect_equal(.monolixMapDataUse("YTYPE", ui), "observationtype")
+  expect_equal(.monolixMapDataUse("ADM", ui), "administration")
+  expect_equal(.monolixMapDataUse("SS", ui), "steadystate")
+  expect_equal(.monolixMapDataUse("wt2", ui), "regressor")
+  expect_equal(.monolixMapDataUse("wt", ui), "covariate")
+  expect_equal(.monolixMapDataUse("nlmixrRowNums", ui), "ignore")
+
+  one.cmt <- function() {
+    ini({
+      tka <- 0.45 ; label("Ka")
+      tcl <- log(c(0, 2.7, 100)) ; label("Log Cl")
+      tv <- 3.45; label("log V")
+      cl.wt <- 0
+      v.wt <- 0
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl + wt * cl.wt)
+      v <- exp(tv + eta.v) + wt ^ 2 * v.wt
+      linCmt() ~ add(add.sd)
+    })
+  }
+
+  ui <- rxode2::rxode2(one.cmt)
+
+  expect_equal(.monolixMapDataUse("wt2", ui), "ignore")
+  expect_equal(.monolixMapDataUse("wt", ui), "regressor")
+
+})
+
 test_that("covariate testing", {
 
   one.cmt <- function() {
@@ -138,7 +203,6 @@ test_that("covariate testing", {
   }
 
   f <- one.cmt()
-
 
 })
 
