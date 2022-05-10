@@ -89,10 +89,18 @@
 #' @noRd
 .mlxtranIndividualDef <- function(var, est, muRefCurEval, muRefTable, muRefCovariateDataFrame) {
   .w <- which(muRefCurEval$parameter == est)
-  if (length(.w) != 1) stop("duplicate/missing parameter in `muRefCurEval`", call.=FALSE)
-  .curEval <- muRefCurEval$curEval[.w]
-  .low <- muRefCurEval$low[.w]
-  .hi <- muRefCurEval$hi[.w]
+  if (length(.w) == 0) {
+    .curEval <- ""
+    .low <- 0
+    .hi <- 1
+  } else if (length(.w) == 1) {
+    .curEval <- muRefCurEval$curEval[.w]
+    .low <- muRefCurEval$low[.w]
+    .hi <- muRefCurEval$hi[.w]
+  } else {
+    stop("duplicate/missing parameter in `muRefCurEval`",
+         call.=FALSE)
+  }
   if (is.na(.low) && !is.na(.hi)) .low <- 0
   assignInMyNamespace(".mlxTranInputForIndividual",
                       c(.mlxTranInputForIndividual, paste0(var, "_pop")))

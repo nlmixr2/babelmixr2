@@ -22,22 +22,27 @@
   if (is.na(.use)) {
     # Determine if this is a regressor or a mu-referenced covariate
     .cov <- ui$saemMuRefCovariateDataFrame
-    if (name %in% .cov$covariate) return("{use=covariate, type=continuous}")
-    if (name %in% ui$allCovs) return("{use=regressor}")
-    return("{use=ignore}")
+    if (name %in% .cov$covariate) return(paste0(name, " = {use=covariate, type=continuous}"))
+    if (name %in% ui$allCovs) return(paste0(name, " = {use=regressor}"))
+    return(paste0(name, " = {use=ignore}"))
   }
   if (.use == "steadystate") {
     paste0(.use,", nbdoses=", rxode2::rxGetControl(ui, "nbSSDoses", 5))
   } else if (.use == "observation") {
     .predDf <- ui$predDf
+    if (length(.predDf$cond) == 1L) {
+      # single endpoint
+      .use <- paste0(.use, ", name=rx_prd_", .predDf$var, ", type=continuous")
+    } else {
+      # multiple endpoint
+      .name <- paste0("name={", paste(paste0("rx_prd_", .predDf$var), collapse=", "), "}")
+      .yname <- paste0("yname={", paste(paste0("'", seq_along(.predDf$var), "'"), collapse=", "), "}")
+      .type <- paste0("type={", paste(rep("continuous", length(.predDf$var)), collapse=", "), "}")
+      .use <- paste(c(.use, .name, .type), collapse=", ")
+    }
   }
-  .use <- paste0("use=", .use)
-  .use
+  paste0(name, " = {use=", .use, "}")
 }
-
-
-
-
 
 #' @export
 rxUiGet.mlxtranDatafile <- function(x, ...) {
@@ -74,5 +79,7 @@ rxUiGet.mlxtranDatafile <- function(x, ...) {
             paste0("file='", rxUiGet.monolixDataFile(x, ...), "'"),
             "delimter = tab",
             paste0("header = {", paste(.col0, collapse=", "), "}"),"",
-            "[CONTENT]")
+            "[CONTENT]",
+            paste(.use, collapse="\n"))
+  paste(.ret, collapse="\n")
 }

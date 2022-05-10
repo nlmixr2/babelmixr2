@@ -7,11 +7,11 @@ rxUiGet.monolixExportPath <- function(x, ...) {
 
 #' @export
 rxUiGet.monolixModelFileName <- function(x, ...) {
-  paste0(rxUiGet.rxUiGet.monolixExportPath(x, ...), ".txt")
+  paste0(rxUiGet.monolixExportPath(x, ...), ".txt")
 }
 #' @export
 rxUiGet.monolixDataFile <- function(x, ...) {
-  paste0(rxUiGet.rxUiGet.monolixExportPath(x, ...), ".csv")
+  paste0(rxUiGet.monolixExportPath(x, ...), ".csv")
 }
 
 #' @export
@@ -24,5 +24,12 @@ rxUiGet.mlxtranModel <- function(x, ...) {
          rxUiGet.mlxtranModelLongitudinal(x, ...))
 }
 
-
-
+#' @export
+rxUiGet.mlxtran <- function(x, ...) {
+  paste(c(rxUiGet.mlxtranDatafile(x, ...),"",
+          rxUiGet.mlxtranModel(x, ...),"",
+          rxUiGet.mlxtranFit(x, ...),"",
+          rxUiGet.mlxtranParameter(x, ...),"",
+          rxUiGet.mlxtranMonolix(x, ...)),
+        collapse="\n")
+}

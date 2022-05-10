@@ -69,7 +69,8 @@ rxUiGet.mlxtranModelLongitudinal <- function(x, ...) {
   # monolix supports distribution = logitNormal, min=0, max=, errorModel=.err
   paste0("[LONGITUDINAL]\n",
        "input={", paste(.inputErr, collapse=", "), "}\n",
-       "file=", rxUiGet.monolixMo delFileName(x, ...), "\n\n",
+       "file=", rxUiGet.monolixModelFileName(x, ...), "\n\n",
        "DEFINITION:\n",
-       paste(paste0("rx_prd_", .predDf$var, "={distribution = ", .dist, ", prediction = rx_pred_", .predDf$var, ", errorModel=", .err, "}"), collapse='\n'))
+       paste(paste0("rx_prd_", .predDf$var, "={distribution = ", .dist, ", prediction = rx_pred_", .predDf$var, ", errorModel=", .err, "}"),
+             collapse='\n'))
 }
