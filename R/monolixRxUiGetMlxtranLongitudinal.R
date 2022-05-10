@@ -38,18 +38,38 @@
   }
 }
 
+.getMonolixResidualDistribution <- function(i, ui) {
+  .pred1 <- ui$predDf[i, ]
+  .residual <- switch(paste(.pred1$transform),
+                      "lnorm"="logNormal",
+                      "logit"="logitNormal",
+                      "untransformed"="normal",
+                      NA_character_)
+  if (is.na(.residual)) {
+    stop("monolix does not support the transform: ", .pred1$transform,
+         call.=FALSE)
+  } else if (.residual == "logitNormal") {
+    .residual <- paste0("logitNormal, min=", .pred1$trLow, "max=", .pred1$trHi)
+  }
+  return(.residual)
+}
+
 #' @export
 rxUiGet.mlxtranModelLongitudinal <- function(x, ...) {
   .ui <- x[[1]]
   .predDf <- .ui$predDf
   .err <- vapply(seq_along(.predDf$var),
                  .getMonolixResidual, character(1), ui=.ui, USE.NAMES=FALSE)
+  .dist <- vapply(seq_along(.predDf$var),.getMonolixResidualDistribution,
+                  character(1), ui=ui, USE.NAMES=FALSE)
   .inputErr <- unlist(lapply(seq_along(.predDf$var),
                              .getMonolixResidual,  ui=.ui, input=TRUE))
   .iniDf <- .ui$iniDf
+  # monolix supports distribution = logNormal
+  # monolix supports distribution = logitNormal, min=0, max=, errorModel=.err
   paste0("[LONGITUDINAL]\n",
        "input={", paste(.inputErr, collapse=", "), "}\n",
-       "file=", rxUiGet.monolixModelFileName(x, ...), "\n\n",
+       "file=", rxUiGet.monolixMo delFileName(x, ...), "\n\n",
        "DEFINITION:\n",
-       paste(paste0("rx_prd_", .predDf$var, "={distribution = normal, prediction = rx_pred_", .predDf$var, ", errorModel=", .err, "}"), collapse='\n'))
+       paste(paste0("rx_prd_", .predDf$var, "={distribution = ", .dist, ", prediction = rx_pred_", .predDf$var, ", errorModel=", .err, "}"), collapse='\n'))
 }
