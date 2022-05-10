@@ -1,3 +1,10 @@
+#' Based on the name and ui, figure out what type of data is being provided
+#'
+#' @param name compartment name
+#' @param ui User interface function for retrieving covariate/regressor info
+#' @return Monolix use type (string)
+#' @author Matthew L. Fidler
+#' @noRd
 .monolixMapDataUse <- function(name, ui) {
   .use <- switch(name,
                  "ID"="id",
@@ -15,12 +22,20 @@
   if (is.na(.use)) {
     # Determine if this is a regressor or a mu-referenced covariate
     .cov <- ui$saemMuRefCovariateDataFrame
-    if (name %in% .cov$covariate) return("covariate")
-    if (name %in% ui$allCovs) return("regressor")
-    return("ignore")
+    if (name %in% .cov$covariate) return("{use=covariate, type=continuous}")
+    if (name %in% ui$allCovs) return("{use=regressor}")
+    return("{use=ignore}")
   }
+  if (.use == "steadystate") {
+    paste0(.use,", nbdoses=", rxode2::rxGetControl(ui, "nbSSDoses", 5))
+  } else if (.use == "observation") {
+    .predDf <- ui$predDf
+  }
+  .use <- paste0("use=", .use)
   .use
 }
+
+
 
 
 
@@ -50,6 +65,10 @@ rxUiGet.mlxtranDatafile <- function(x, ...) {
   .col0 <- c("ID", "TIME", "EVID", "AMT", "II", "DV", "ADM", "YTYPE", "SS", .rateData,
              .censData, .limitData,
              .ui$allCovs, "nlmixrRowNums")
+
+  .use <- vapply(.col0, .monolixMapDataUse,
+                 character(1),
+                 ui=.ui, USE.NAMES=FALSE)
   .ret <- c("<DATAFILE>", "",
             "[FILEINFO]",
             paste0("file='", rxUiGet.monolixDataFile(x, ...), "'"),

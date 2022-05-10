@@ -6,55 +6,6 @@
 
 .monolixErrs <- c()
 
-##' This constructs the data->monolix header mapping & regressors
-##'
-##' @param data Input dataset
-##' @param ui Parsed 'nlmixr2' user interface function
-##' @return list with (header=monolix header specification, regressor=monolix regressor specification)
-##' @author Matthew Fidler
-monolixMapData <- function(data, ui) {
-  ## Monolix header types "id", "time", "observation", "amount",
-  ## "contcov", "catcov", "occ", "evid", "mdv", "obsid", "cens",
-  ## "limit", "regressor","admid", "rate", "tinf", "ss", "ii", "addl",
-  ## "date", "ignore".
-  ##' Generate the monolix input line
-  regressors <- (eval(ui$saemModel0))$params
-  covariates <- ui$allCovs
-  .env <- environment()
-  .env$.regressor <- c(paste0("input={", paste(regressors, collapse=", "), "}"))
-  .headers <- sapply(names(data), function(x) {
-    if (tolower(x) == "id") return("id")
-    if (tolower(x) == "dv") return("observation")
-    if (tolower(x) == "amt") return("amount")
-    if (tolower(x) == "evid") return("evid")
-    if (tolower(x) == "mdv") return("mdv")
-    if (tolower(x) == "cmt") return("obsid")
-    if (tolower(x) == "cens") return("cens")
-    if (tolower(x) == "limit") return("limit")
-    if (tolower(x) == "rate") return("rate")
-    if (tolower(x) == "dur") return("tinf")
-    if (tolower(x) == "ss") return("ss")
-    if (tolower(x) == "ii") return("ii")
-    if (tolower(x) == "addl") return("addl")
-    if (tolower(x) == "occ") return("occ")
-    if (tolower(x) == "time") return("time")
-    .w <- which(tolower(x) == tolower(regressors))
-    if (length(.w) == 1) {
-      .env$.regressor <- c(.env$.regressor,
-                           paste0(regressors[.w], " = {use=regressor}"))
-      return("regressor")
-    }
-    if (any(x == covariates)) {
-      if (inherits(x, "factor") || inherits(x, "character")) {
-        return("catcov")
-      } else {
-        return("contcov")
-      }
-    }
-    return("ignore")
-  })
-  return(list(headerType=.headers, regressors=paste(.env$.regressor, collapse="\n")))
-}
 
 ################################################################################
 # https://cran.r-project.org/doc/manuals/r-release/R-exts.html
