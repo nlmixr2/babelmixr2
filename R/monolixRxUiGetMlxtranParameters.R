@@ -34,7 +34,7 @@ rxUiGet.mlxtranParameter <- function(x, ...) {
         return(paste0(.par, "={value=", .est, ", method=",
                       ifelse(.cur$fix, "FIXED", "MLE"), "}"))
       } else {
-        .par <- eval(str2lang(paste0("rxToMonolix(", .cur$name, ")")))
+        .par <- eval(str2lang(paste0("rxToMonolix(", .cur$name, ", ui=.ui)")))
         .est <- .cur$est
         return(paste0(.par, "={value=", .est, ", method=",
                       ifelse(.cur$fix, "FIXED", "MLE"), "}"))

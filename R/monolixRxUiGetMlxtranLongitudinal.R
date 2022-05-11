@@ -6,13 +6,13 @@
   .iniDf <- .iniDf[which(.iniDf$condition == .cond), ]
   if (.errType == 1L) { # add
     .tmp <- as.character(.iniDf$name)
-    .tmp <- eval(str2lang(paste0("rxToMonolix(", .tmp, ")")))
+    .tmp <- eval(str2lang(paste0("rxToMonolix(", .tmp, ", ui=ui)")))
     if (input) return(.tmp)
     return(paste0("constant(", .tmp, ")"))
   } else if (.errType == 2L) { # prop
     .tmp <- as.character(.iniDf$name)
     .getMonolixResidualAddPar(.tmp)
-    .tmp <- eval(str2lang(paste0("rxToMonolix(", .tmp, ")")))
+    .tmp <- eval(str2lang(paste0("rxToMonolix(", .tmp, ", ui=ui)")))
     if (input) return(.tmp)
     return(paste0("proportional(", .tmp, ")"))
   } else if (.errType == 3L) { # pow
@@ -24,9 +24,9 @@
       .addProp <- rxode2::rxGetControl(ui, "addProp", "combined2")
     }
     .add <- .iniDf[.iniDf$err == "add", "name"]
-    .add <- eval(str2lang(paste0("rxToMonolix(", .add, ")")))
+    .add <- eval(str2lang(paste0("rxToMonolix(", .add, ", ui=ui)")))
     .prop <- .iniDf[.iniDf$err == "prop", "name"]
-    .prop <- eval(str2lang(paste0("rxToMonolix(", .prop, ")")))
+    .prop <- eval(str2lang(paste0("rxToMonolix(", .prop, ", ui=ui)")))
     if (input) return(c(.add, .prop))
     return(paste0(.addProp, "(", .add, ",", .prop, ")"))
   } else if (.errType == 5L) { #  add + pow

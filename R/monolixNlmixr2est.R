@@ -23,7 +23,21 @@
   .data <- env$data
   .ret <- new.env(parent=emptyenv())
   .ret$table <- env$table
-  .ret$monolixData <- nlmixr2extra::nlmixrDataToMonolixfunction(.ui, .data, table=env$table)
+  .tmp  <- nlmixr2extra::nlmixrDataToMonolixfunction(.ui, .data, table=env$table)
+  .ret$monolixData <- .tmp$monolix
+  .tmp <- .tmp$adm
+  .tmp$f <- NA_real_
+  .tmp$dur <- NA_real_
+  .tmp$lag <- NA_real_
+  .tmp$rate <- NA_real_
+  .tmp$adm <- .tmp
+  .n <- names(.ret$monolixData)
+  rxode2::rxAssignControlValue(ui, ".hasRate",
+                               ifelse(any(.n == "RATE"), TRUE, ifelse(any(.n == "TINF"), FALSE, NA)))
+  rxode2::rxAssignControlValue(ui, ".hasCens", any(.n == "CENS"))
+  rxode2::rxAssignControlValue(ui, ".hasLimit", any(.n == "LIMIT"))
+  rxode2::rxAssignControlValue(ui, ".adm", .tmp)
+
   # Now make sure time varying covariates are not considered
   # mu-referenced items
   .et <- rxode2::etTrans(.ret$dataSav, .ui$mv0, addCmt=TRUE)

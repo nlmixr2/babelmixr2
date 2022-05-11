@@ -14,7 +14,7 @@ rxUiGet.monolixModel <- function(x, ...) {
                     useIf=FALSE)
   .norm <- rxode2::rxNorm(eval(.mainModel))
   .mv <- rxode2::rxModelVars(.ui)
-  .mod <- rxToMonolix(.norm)
+  .mod <- rxToMonolix(.norm, ui=.ui)
   .txtFile <- rxUiGet.monolixModelFileName(x, ...)
   .regressors <- ""
   if (length(.ui$allCov) > 0) {

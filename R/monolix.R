@@ -97,7 +97,41 @@
 .monolixTlag <- c()
 .monolixP <- c()
 
-.rxToMonolix <- function(x) {
+#' Set all the administration types for each cmt for monolix
+#'
+#' @param ui rxode2 user interface
+#' @param state which value this administration property is applied to
+#' @param param The parameter in nlmixr that is applying this effect
+#' @param type the type of administration
+#' @return Nothing, called for side effects
+#' @author Matthew L. Fidler
+#' @noRd
+.monolixSetAdm <- function(ui, state, param, type="f") {
+  .adm <- rxode2::rxGetControl(ui, ".adm",
+                       data.frame(adm=1L,
+                                  cmt=1L,
+                                  type=factor("bolus", levels=c("empty", "modelRate", "modelDur", "infusion", "bolus")),
+                                  f=NA_character_,
+                                  dur=NA_character_,
+                                  lag=NA_character_,
+                                  rate=NA_character_))
+  .state <- rxode2::rxState(ui)
+  .cmt <- which(state == .state)
+  .w <- which(.adm$cmt == .cmt)
+  if (length(.w) == 0L) return(invisible())
+  if (type == "f") {
+    .adm[.w, "f"] <- param
+  } else if (type == "dur") {
+    .adm[.w, "dur"] <- param
+  } else if (type == "lag") {
+    .adm[.w, "lag"] <- param
+  } else if (type == "rate") {
+    .adm[.w, "rate"] <- param
+  }
+  rxode2::rxAssignControlValue(ui, ".adm", .adm)
+}
+
+.rxToMonolix <- function(x, ui) {
   if (is.name(x) || is.atomic(x)) {
     if (is.character(x)) {
       stop("strings in nlmixr<->monolix are not supported", call.=FALSE)
@@ -122,13 +156,13 @@
     }
   } else if (is.call(x)) {
     if (identical(x[[1]], quote(`(`))) {
-      return(paste0("(", .rxToMonolix(x[[2]]), ")"))
+      return(paste0("(", .rxToMonolix(x[[2]], ui=ui), ")"))
     } else if (identical(x[[1]], quote(`{`))) {
       assignInMyNamespace(".monolixTlag", c())
       assignInMyNamespace(".monolixP", c())
       .x2 <- x[-1]
       .ret <- paste(lapply(.x2, function(x) {
-        .rxToMonolix(x)
+        .rxToMonolix(x, ui=ui)
       }), collapse = "\n")
       return(.ret)
     } else if (identical(x[[1]], quote(`*`)) ||
@@ -146,7 +180,7 @@
             if (length(.x3[[2]]) == 1) {
               .state <- as.character(.x3[[2]])
             } else {
-              .state <- .rxToMonolix(.x3[[2]])
+              .state <- .rxToMonolix(.x3[[2]], ui=ui)
             }
             return(paste0("ddt_", .state))
           } else {
@@ -157,16 +191,16 @@
               }
             }
             .ret <- paste0(
-              .rxToMonolix(.x2),
+              .rxToMonolix(.x2, ui=ui),
               as.character(x[[1]]),
-              .rxToMonolix(.x3)
+              .rxToMonolix(.x3, ui=ui)
             )
           }
         } else {
           .ret <- paste0(
-            .rxToMonolix(x[[2]]),
+            .rxToMonolix(x[[2]], ui=ui),
             as.character(x[[1]]),
-            .rxToMonolix(x[[3]])
+            .rxToMonolix(x[[3]], ui=ui)
           )
         }
         return(.ret)
@@ -174,17 +208,17 @@
         ## Unary Operators
         return(paste(
           as.character(x[[1]]),
-          .rxToMonolix(x[[2]])
+          .rxToMonolix(x[[2]], ui=ui)
         ))
       }
     } else if (identical(x[[1]], quote(`if`))) {
-      .ret <- paste0("if ", .rxToMonolix(x[[2]]), "\n",
-                     "  ", .rxToMonolix(x[[3]]))
+      .ret <- paste0("if ", .rxToMonolix(x[[2]], ui=ui), "\n",
+                     "  ", .rxToMonolix(x[[3]]), ui=ui)
       x <- x[-c(1:3)]
       if (length(x) == 1) x <- x[[1]]
       while(identical(x[[1]], quote(`if`))) {
-        .ret <- paste0(.ret, "\nelseif ", .rxToMonolix(x[[2]]), "\n",
-                       "  ", .rxToMonolix(x[[3]]));
+        .ret <- paste0(.ret, "\nelseif ", .rxToMonolix(x[[2]], ui=ui), "\n",
+                       "  ", .rxToMonolix(x[[3]], ui=ui))
         x <- x[-c(1:3)]
         if (length(x) == 1) x <- x[[1]]
       }
@@ -192,7 +226,7 @@
         .ret <- paste0(.ret, "\nend\n")
       }  else {
         .ret <- paste0(.ret, "\nelse \n",
-                       "  ", .rxToMonolix(x),
+                       "  ", .rxToMonolix(x, ui=ui),
                        "\nend\n")
       }
       return(.ret)
@@ -207,30 +241,60 @@
                  identical(x[[1]], quote(`|`)) ||
                  identical(x[[1]], quote(`&`))) {
         ## Use "preferred" monolix syntax
-      return(paste0(.rxToMonolix(x[[2]]), as.character(x[[1]]), .rxToMonolix(x[[3]])))
+      return(paste0(.rxToMonolix(x[[2]], ui=ui), as.character(x[[1]]), .rxToMonolix(x[[3]], ui=ui)))
     } else if (identical(x[[1]], quote(`!`)) ) {
       ## Use "preferred" monolix syntax
-      return(paste0("~", .rxToMonolix(x[[2]])))
+      return(paste0("~", .rxToMonolix(x[[2]], ui=ui)))
     } else if (identical(x[[1]], quote(`**`)) ) {
-      return(paste(.rxToMonolix(x[[2]]), "^", .rxToMonolix(x[[3]])))
+      return(paste(.rxToMonolix(x[[2]], ui=ui), "^", .rxToMonolix(x[[3]], ui=ui)))
     } else if (identical(x[[1]], quote(`=`)) ||
       identical(x[[1]], quote(`<-`)) ||
         identical(x[[1]], quote(`~`))) {
       if (any(as.character(x[[2]])[1] == c("alag", "lag", "F", "f", "rate", "dur"))) {
         if (any(as.character(x[[2]])[1] == c("alag", "lag"))) {
           .state <- as.character(x[[2]][[2]])
-          .extra <- .rxToMonolix(x[[3]])
-          assignInMyNamespace(".monolixTlag", c(.monolixTlag, setNames(.extra, .state)))
+          if (length(x[[3]]) == 1L) {
+            .extra <- .rxToMonolix(x[[3]], ui=ui)
+            .monolixSetAdm(ui, .state, .extra, type="lag")
+          } else {
+            stop("the complex lag time is not supported by babelmixr2",
+                 call.=FALSE)
+          }
         }
         if (any(as.character(x[[2]])[1] == c("F", "f"))) {
           .state <- as.character(x[[2]][[2]])
-          .extra <- .rxToMonolix(x[[3]])
-          assignInMyNamespace(".monolixP", c(.monolixP, setNames(.extra, .state)))
+          if (length(x[[3]]) == 1L) {
+            .extra <- .rxToMonolix(x[[3]], ui=ui)
+            .monolixSetAdm(ui, .state, .extra, type="f")
+          } else {
+            stop("the complex F is not supported by babelmixr2",
+                 call.=FALSE)
+          }
+        }
+        if (as.character(x[[2]])[1] == "rate") {
+          .state <- as.character(x[[2]][[2]])
+          if (length(x[[3]]) == 1L) {
+            .extra <- .rxToMonolix(x[[3]], ui=ui)
+            .monolixSetAdm(ui, .state, .extra, type="rate")
+          } else {
+            stop("the complex rate is not supported by babelmixr2",
+                 call.=FALSE)
+          }
+        }
+        if (as.character(x[[2]])[1] == "dur") {
+          .state <- as.character(x[[2]][[2]])
+          if (length(x[[3]]) == 1L) {
+            .extra <- .rxToMonolix(x[[3]], ui=ui)
+            .monolixSetAdm(ui, .state, .extra, type="dur")
+          } else {
+            stop("the complex dur is not supported by babelmixr2",
+                 call.=FALSE)
+          }
         }
         return(paste0(";", as.character(x[[2]])[1], " defined in PK section"))
       }
-      .var <- .rxToMonolix(x[[2]])
-      return(paste(.var, "=", .rxToMonolix(x[[3]])))
+      .var <- .rxToMonolix(x[[2]], ui=ui)
+      return(paste(.var, "=", .rxToMonolix(x[[3]], ui=ui)))
     } else if (identical(x[[1]], quote(`[`))) {
       .type <- toupper(as.character(x[[2]]))
       if (any(.type == c("THETA", "ETA"))) {
@@ -238,7 +302,7 @@
       }
     } else if (identical(x[[1]], quote(`log1pmx`))) {
       if (length(x == 2)) {
-        .a <- .rxToMonolix(x[[2]])
+        .a <- .rxToMonolix(x[[2]], ui=ui)
         return(paste0("(log(1+", .a, ")-(", .a, "))"))
       } else {
         stop("'log1pmx' only takes 1 argument", call. = FALSE)
@@ -247,16 +311,16 @@
                  (identical(x[[1]], quote(`normcdf`))) |
                  (identical(x[[1]], quote(`phi`)))) {
       if (length(x) == 4) {
-        .q <- .rxToMonolix(x[[2]])
-        .mean <- .rxToMonolix(x[[3]])
-        .sd <- .rxToMonolix(x[[4]])
+        .q <- .rxToMonolix(x[[2]], ui=ui)
+        .mean <- .rxToMonolix(x[[3]], ui=ui)
+        .sd <- .rxToMonolix(x[[4]], ui=ui)
         return(paste0("normcdf(((", .q, ")-(", .mean, "))/(", .sd, "))"))
       } else if (length(x) == 3) {
-        .q <- .rxToMonolix(x[[2]])
-        .mean <- .rxToMonolix(x[[3]])
+        .q <- .rxToMonolix(x[[2]], ui=ui)
+        .mean <- .rxToMonolix(x[[3]], ui=ui)
         return(paste0("normcdf(((", .q, ")-(", .mean, ")))"))
       } else if (length(x) == 2) {
-        .q <- .rxToMonolix(x[[2]])
+        .q <- .rxToMonolix(x[[2]], ui=ui)
         return(paste0("normcdf(", .q, ")"))
       } else {
         stop("'pnorm' can only take 1-3 arguments", call. = FALSE)
@@ -268,7 +332,7 @@
         if (!is.null(.xc)) {
           if (length(x) == 2) {
             .ret <- paste0(
-              .xc[1], .rxToMonolix(x[[2]]),
+              .xc[1], .rxToMonolix(x[[2]], ui=ui),
               .xc[2])
             return(.ret)
           } else {
@@ -276,7 +340,7 @@
           }
         }
       }
-      .ret0 <- c(list(as.character(x[[1]])), lapply(x[-1], .rxToMonolix))
+      .ret0 <- c(list(as.character(x[[1]])), lapply(x[-1], .rxToMonolix, ui=ui))
       .SEeq <- .rxMeq
       .curName <- paste(.ret0[[1]])
       .nargs <- .SEeq[.curName]
@@ -419,13 +483,15 @@
   }
 }
 
-##' Convert RxODE syntax to monolix syntax
-##'
-##' @param x Expression
-##' @return Monolix syntax
-##' @author Matthew Fidler
-##' @export
-rxToMonolix <- function(x) {
+#' Convert RxODE syntax to monolix syntax
+#'
+#' @param x Expression
+#' @param ui rxode2 ui
+#' @return Monolix syntax
+#' @author Matthew Fidler
+#' @export
+rxToMonolix <- function(x, ui) {
+  ui <- rxode2::assertRxUi(ui)
   if (is(substitute(x), "character")) {
     force(x)
   } else if (is(substitute(x), "{")) {
@@ -448,16 +514,17 @@ rxToMonolix <- function(x) {
           .val2 <- try(get(.xc, envir = .env), silent = TRUE)
           if (inherits(.val2, "character")) {
             .val2 <- eval(parse(text = paste0("quote({", .val2, "})")))
-            return(.rxToMonolix(.val2))
+            return(.rxToMonolix(.val2, ui=ui))
           } else if (inherits(.val2, "numeric") || inherits(.val2, "integer")) {
             return(sprintf("%s", .val2))
           }
         }
       }
     }
-    return(.rxToMonolix(x))
+    return(.rxToMonolix(x, ui=ui))
   }
-  return(.rxToMonolix(eval(parse(text = paste0("quote({", x, "})")))))
+  return(.rxToMonolix(eval(parse(text = paste0("quote({", x, "})"))),
+                      ui=ui))
 }
 
 ## FIXME these can be saved and retreived if rxToMonolix(.v) is run first
@@ -594,169 +661,6 @@ monolixP <- function(states){
   }
 }
 
-monolixModelParameter <- function(uif) {
-  .mu <- uif$nmodel$mu.ref
-  .ret <- do.call(rbind, lapply(names(.mu), function(x) {
-    data.frame(theta = .mu[[x]], eta = x, stringsAsFactors = FALSE)
-  }))
-  .ret0 <- merge(data.frame(name=.ret$theta), as.data.frame(uif$ini)[, c("name", "est")])
-  names(.ret0)[1] <- "theta"
-  return(.ret0)
-}
-
-monolixDataContent <- function(lst, uif, data, control=monolixControl()) {
-  .headerType <- lst$headerType
-  .obs <- ""
-  .env <- environment()
-  .ret <- paste(sapply(seq_along(.headerType), function(.i) {
-    .type <- setNames(.headerType[.i], NULL)
-    .col <- names(.headerType)[.i]
-    if (.type == "id") {
-      return(paste0(.col, " = {use=identifier}"))
-    } else if (.type == "amount") {
-      return(paste0(.col, " = {use=amount}"))
-    } else if (.type == "evid") {
-      return(paste0(.col, " = {use=eventidentifier}"))
-    } else if (.type == "mdv") {
-      return(paste0(.col, " = {use=missingdependentvariable}"))
-    } else if (.type == "occ") {
-      return(paste0(.col, " = {use=occasion}"))
-    } else if (.type == "cens") {
-      return(paste0(.col, " = {use=censored}"))
-    } else if (.type == "limit") {
-      return(paste0(.col, " = {use=limit}"))
-    } else if (.type == "catcov") {
-      return(paste0(.col, " = {use=covariate, type=categorical}"))
-    } else if (.type == "contcov") {
-      return(paste0(.col, " = {use=covariate, type=continuous}"))
-    } else if (.type == "regressor") {
-      return(paste0(.col, " = {use=regressor}"))
-    } else if (.type == "admid") {
-      return(paste0(.col, " = {use=administration}"))
-    } else if (.type == "ii") {
-      return(paste0(.col, " = {use=interdoseinterval}"))
-    } else if (.type == "addl") {
-      return(paste0(.col, " = {use=additionaldose}"))
-    } else if (.type == "ss") {
-      return(paste0(.col, " = {use=steadystate, nbdoses=", control$nbSSDoses, "}"))
-    } else if (.type == "rate") {
-      return(paste0(.col, " = {use=rate}"))
-    } else if (.type == "tinf") {
-      return(paste0(.col, " = {use=infusiontime}"))
-    } else if (.type == "obsid") {
-      return(paste0(.col, " = {use=observationtype}"))
-    } else if (.type == "time") {
-      return(paste0(.col, " = {use=time}"))
-    } else if (.type == "observation") {
-      # With one observation
-      .predDf <- uif$nmodel$predDf
-      if (length(.predDf$cmt) > 1) {
-        return(paste0(.col, " = {use=observation, name={", paste(paste0("y_", .predDf$cmt), collapse=", "), "},yname={",
-                      paste(paste0("'", .predDf$cmt, "'"), collapse=", "), "},type={",
-                      paste(rep("continuous", length(.predDf$cmt)), collapse=", "), "}}"))
-      }
-      # With more than one observation
-      #return(paste0(.col, " = {use=observation, name={", .col, "}, yname={'2','6'},type={continuous}}"))
-      assign(".obs", .col, .env)
-      .w <- which(tolower(names(data)) == "evid")
-      .wc <- which(tolower(names(data)) == "cmt")
-      if (length(.wc) == 1) {
-        if (length(.w) == 1) {
-          .cmt <- unique(data[data[, .w] == 0, .wc])
-          if (length(.cmt) == 1){
-            return(paste0(.col, " = {use=observation, name=", .col, ", yname='", .cmt, "', type=continuous}"))
-          }
-        } else {
-          .w <- which(tolower(names(data)) == "mdv")
-          if (length(.w) == 1) {
-            .cmt <- unique(data[data[, .w] == 0, .wc])
-            if (length(.cmt) == 1){
-              return(paste0(.col, " = {use=observation, name=", .col, ", yname='", .cmt, "', type=continuous}"))
-            }
-          }
-        }
-        stop("more than one compartment for observations, should be a multiple endpoint model", call.=FALSE)
-      }
-      return(paste0(.col, " = {use=observation, name=", .col, ", type=continuous}"))
-    } else {
-      return("")
-    }
-  }), collapse="\n")
-  return(list(obs=.obs, ret=.ret))
-}
-
-monolixDataFile <- function(lst, uif, data, control=monolixControl()) {
-  .lst <- lst
-  .cnt <- monolixDataContent(lst, uif, data, control)
-  .lst$obs <- .cnt$obs
-  .lst$datafile <- paste0("<DATAFILE>\n\n[FILEINFO]\n",
-                          "file='", lst$data.md5, ".csv'\n",
-                          "delimiter = comma\n",
-                          "header = {", paste(names(data), collapse=", "), "}\n\n",
-                          "[CONTENT]\n",
-                          gsub("\n+", "\n", .cnt$ret)
-                          )
-  return(.lst)
-}
-
-
-#
-
-monolixModelParameter <- function(.df, .dfError) {
-  ## FIXME Covariance estimates?
-  ## FIXME Covariate estimates?
-  paste0("\n\n<PARAMETER>\n",
-         paste(setNames(sapply(seq_along(.df$theta), function(.i){
-           .typical <- .df$typical[.i]
-           .val <- .df$thetaEst[.i]
-           .fixed <- .df$thetaFixed[.i]
-           .ret <- paste0(.typical, " = {value=", .val)
-           if (.fixed) {
-             .ret <- paste0(.ret, ", method=FIXED}")
-           } else {
-             .ret <- paste0(.ret, ", method=MLE}")
-           }
-           .sd <- .df$sd[.i]
-           if (!is.na(.sd)) {
-             .sdEst <- .df$sdEst[.i]
-             .fixed <- .df$sdFixed[.i]
-             .ret <- paste0(.ret, "\n", .sd, " = {value=", .sdEst)
-             if (.fixed) {
-               .ret <- paste0(.ret, ", method=FIXED}")
-             } else {
-               .ret <- paste0(.ret, ", method=MLE}")
-             }
-           }
-           return(.ret)
-         }), NULL), collapse="\n"),"\n",
-         paste(setNames(sapply(seq_along(.dfError$name), function(.i){
-           .errName <- .dfError$errName[.i]
-           .val <- .dfError$est[.i]
-           .fixed <- .dfError$fix[.i]
-           .ret <- paste0(.errName, " = {value=", .val)
-           if (.fixed) {
-             .ret <- paste0(.ret, ", method=FIXED}")
-           } else {
-             .ret <- paste0(.ret, ", method=MLE}")
-           }
-           return(.ret)
-         }), NULL), collapse="\n"),
-         "\n\n")
-}
-
-monolixModelFit <- function(uif, obs) {
-  .predDf <- uif$nmodel$predDf
-  if (length(.predDf$cmt) > 1) {
-    return(paste0("\n\n<FIT>\n",
-                  "data = {", paste(paste0("y_", .predDf$cmt), collapse=", "), "}\n",
-                  "model = {", paste(paste0(.predDf$cond, "_pred"), collapse=", "), "}\n"))
-  }
-  paste0("\n\n<FIT>\n",
-         "data = ", obs, "\n",
-         "model = ", paste0(.predDf$cond, "_pred"), "\n")
-
-}
-
 monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
   if (inherits(control, "monolixControl")) {
     control <-do.call(monolixControl, control)
@@ -769,7 +673,7 @@ monolixModelTxt <- function(uif, data, control=monolixControl(), name=NULL) {
                        monolixGetErr(.resMod, uif, control), "}"), collapse="\n")
   ## Now map data
   .map <- monolixMapData(data, uif)
-  .mod <- rxToMonolix(.v)
+  .mod <- rxToMonolix(.v, ui=uif)
 
   .lst <- .map
   .lst$data.md5 <- digest::digest(data)
@@ -856,7 +760,7 @@ nlmixrMonolixLastProject <- function(){
 ##' @export
 nlmixrToMonolix <- function(uif, data, control=monolixControl()){
   name <- as.character(substitute(uif))
-  if (!inherits(uif, "nlmixrUI")) {
+  if (!inherits(uif, "rxUi")) {
     uif <- nlmixr2::nlmixr2(uif)
   }
   data <- as.data.frame(data)
@@ -918,7 +822,7 @@ nlmixrToMonolix <- function(uif, data, control=monolixControl()){
           if (length(.w) == 1) {
             return(.final$varF[.w])
           }
-          .namem <- eval(parse(text=paste0("rxToMonolix(", .name, ")")))
+          .namem <- eval(parse(text=paste0("rxToMonolix(", .name, ", ui=uif)")))
           .w <- which(.namem == .populationParameters$parameter)
           if (length(.w) == 1){
             return(.populationParameters$value[.w])

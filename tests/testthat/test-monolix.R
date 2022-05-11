@@ -176,6 +176,10 @@ test_that("test datafile use", {
 
   ui <- rxode2::rxode2(one.cmt)
 
+  nlmixr2extra::nlmixrDataToMonolix(ui, nlmixr2data::theo_sd)
+
+
+
   expect_equal(.monolixMapDataUse("wt2", ui), "ignore")
   expect_equal(.monolixMapDataUse("wt", ui), "regressor")
 
@@ -658,6 +662,8 @@ test_that("F/alag", {
       eta.e0 ~ .5
       ##
       pdadd.err <- 10
+      eta.fd ~ 0.1
+      eta.alag ~ 0.1
     })
     model({
       ktr <- exp(tktr + eta.ktr)
@@ -669,7 +675,6 @@ test_that("F/alag", {
       kout = exp(tkout + eta.kout)
       e0 = exp(te0 + eta.e0)
       fd <- expit(tfd)
-      alagd <- exp(talagd)
       ##
       DCP = center/v
       PD=1-emax*DCP/(ec50+DCP)
@@ -681,8 +686,8 @@ test_that("F/alag", {
       d/dt(gut) =  ktr * depot -ka * gut
       d/dt(center) =  ka * gut - cl / v * center
       d/dt(effect) = kin*PD -kout*effect
-      f(depot) = fd
-      alag(depot) = alagd
+      f(depot) = fd + eta.fd
+      alag(depot) = talagd + eta.alag
       ##
       cp = center / v
       cp ~ prop(prop.err) + add(pkadd.err)
@@ -690,7 +695,7 @@ test_that("F/alag", {
     })
   }
 
-  uif <- nlmixr(pk.turnover.emax3)
+  ui <- nlmixr2(pk.turnover.emax3)
 
   tmp <- babelmixr:::monolixModelTxt(uif, warfarin)
 
