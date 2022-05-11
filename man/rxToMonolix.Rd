@@ -4,10 +4,12 @@
 \alias{rxToMonolix}
 \title{Convert RxODE syntax to monolix syntax}
 \usage{
-rxToMonolix(x)
+rxToMonolix(x, ui)
 }
 \arguments{
 \item{x}{Expression}
+
+\item{ui}{rxode2 ui}
 }
 \value{
 Monolix syntax

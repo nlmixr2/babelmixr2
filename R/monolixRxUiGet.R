@@ -15,6 +15,11 @@ rxUiGet.monolixDataFile <- function(x, ...) {
 }
 
 #' @export
+rxUiGet.monolixQs <- function(x, ...) {
+  paste0(rxUiGet.monolixExportPath(x, ...), ".qs")
+}
+
+#' @export
 rxUiGet.mlxtranModel <- function(x, ...) {
   .ui <- x[[1]]
   # note there is some categorical covariates that are not taken care of here...

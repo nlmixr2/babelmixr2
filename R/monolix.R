@@ -96,6 +96,23 @@
 
 .monolixTlag <- c()
 .monolixP <- c()
+#' Get the monolix administration info
+#'
+#'
+#' @param ui rxode2 user interface
+#' @return internal adm dataset that comes from `nlmixr2extra::nlmixrDataToMonolix`
+#' @author Matthew L. Fidler
+#' @noRd
+.monolixGetAdm <- function(ui) {
+  rxode2::rxGetControl(ui, ".adm",
+                       data.frame(adm=1L,
+                                  cmt=1L,
+                                  type=factor("bolus", levels=c("empty", "modelRate", "modelDur", "infusion", "bolus")),
+                                  f=NA_character_,
+                                  dur=NA_character_,
+                                  lag=NA_character_,
+                                  rate=NA_character_))
+}
 
 #' Set all the administration types for each cmt for monolix
 #'
@@ -107,14 +124,7 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .monolixSetAdm <- function(ui, state, param, type="f") {
-  .adm <- rxode2::rxGetControl(ui, ".adm",
-                       data.frame(adm=1L,
-                                  cmt=1L,
-                                  type=factor("bolus", levels=c("empty", "modelRate", "modelDur", "infusion", "bolus")),
-                                  f=NA_character_,
-                                  dur=NA_character_,
-                                  lag=NA_character_,
-                                  rate=NA_character_))
+  .adm <- .monolixGetAdm(ui)
   .state <- rxode2::rxState(ui)
   .cmt <- which(state == .state)
   .w <- which(.adm$cmt == .cmt)

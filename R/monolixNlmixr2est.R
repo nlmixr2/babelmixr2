@@ -23,7 +23,7 @@
   .data <- env$data
   .ret <- new.env(parent=emptyenv())
   .ret$table <- env$table
-  .tmp  <- nlmixr2extra::nlmixrDataToMonolixfunction(.ui, .data, table=env$table)
+  .tmp  <- nlmixr2extra::nlmixrDataToMonolix(.ui, .data, table=env$table)
   .ret$monolixData <- .tmp$monolix
   .tmp <- .tmp$adm
   .tmp$f <- NA_real_
@@ -75,6 +75,7 @@ nlmixr2Est.monolix <- function(env, ...) {
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'monlix'", .var.name=.ui$modelName)
   .monolixFamilyControl(env, ...)
+
   on.exit({
     if (exists("control", envir=.ui)) {
       rm("control", envir=.ui)
