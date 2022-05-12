@@ -7,6 +7,23 @@
   .cor
 }
 
+.getNonMonolixParameterIni <- function(est, name, curEval) {
+  .w <- which(curEval$parameter == name)
+  if (length(.w) == 1) {
+    .ce <- paste(curEval$curEval[.w])
+    .low <- curEval$low[.w]
+    if (is.na(.low)) .low <- 0
+    .high <- curEval$high[.w]
+    if (is.na(.high)) .high <- 0
+    return(switch(.ce,
+                  exp=exp(est),
+                  expit=expit(est, .low, .high),
+                  probitInv=probitInv(est, .low, .high),
+                  est))
+  }
+  return(est)
+}
+
 #' @export
 rxUiGet.mlxtranParameter <- function(x, ...) {
   .ui <- x[[1]]
@@ -15,7 +32,7 @@ rxUiGet.mlxtranParameter <- function(x, ...) {
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .iniDf <- .ui$iniDf
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
-
+  .curEval <- .ui$muRefCurEval
   paste0("<PARAMETER>\n",paste(vapply(seq_along(.iniDf$name), function(i) {
     .cur <- .iniDf[i, ]
     if (is.na(.cur$neta1)) {
@@ -30,12 +47,12 @@ rxUiGet.mlxtranParameter <- function(x, ...) {
                                         call.=FALSE)
           .par <- paste0(.monolixName, "_pop")
         }
-        .est <- .cur$est
+        .est <- .getNonMonolixParameterIni(.cur$est, .cur$name, .curEval)
         return(paste0(.par, "={value=", .est, ", method=",
                       ifelse(.cur$fix, "FIXED", "MLE"), "}"))
       } else {
         .par <- eval(str2lang(paste0("rxToMonolix(", .cur$name, ", ui=.ui)")))
-        .est <- .cur$est
+        .est <- .getNonMonolixParameterIni(.cur$est, .cur$name, .curEval)
         return(paste0(.par, "={value=", .est, ", method=",
                       ifelse(.cur$fix, "FIXED", "MLE"), "}"))
       }
