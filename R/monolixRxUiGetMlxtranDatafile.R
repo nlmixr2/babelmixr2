@@ -35,7 +35,7 @@
       .use <- paste0(.use, ", name=rx_prd_", .predDf$var, ", type=continuous")
     } else {
       # multiple endpoint
-      .name <- paste0("name={", paste(paste0("rx_prd_", .predDf$var), collapse=", "), "}")
+      .name <- paste0("name={", paste(paste0("y", seq_along(.predDf$var)), collapse=", "), "}")
       .yname <- paste0("yname={", paste(paste0("'", seq_along(.predDf$var), "'"), collapse=", "), "}")
       .type <- paste0("type={", paste(rep("continuous", length(.predDf$var)), collapse=", "), "}")
       .use <- paste(c(.use, .name, .yname, .type), collapse=", ")
