@@ -7,11 +7,11 @@
 #' @noRd
 .monolixMapDataUse <- function(name, ui) {
   .use <- switch(name,
-                 "ID"="id",
+                 "ID"="identifier",
                  "TIME"="time",
                  "EVID"="eventidentifier",
                  "AMT"="amount",
-                 "II"="ii",
+                 "II"="interdoesinterval",
                  "DV"="observation",
                  "CENS"="censored",
                  "LIMIT"="limit",
@@ -24,7 +24,7 @@
     .cov <- ui$saemMuRefCovariateDataFrame
     if (name %in% .cov$covariate) return(paste0(name, " = {use=covariate, type=continuous}"))
     if (name %in% ui$allCovs) return(paste0(name, " = {use=regressor}"))
-    return(paste0(name, " = {use=ignore}"))
+    return("")
   }
   if (.use == "steadystate") {
     paste0(.use,", nbdoses=", rxode2::rxGetControl(ui, "nbSSDoses", 5))
@@ -74,6 +74,7 @@ rxUiGet.mlxtranDatafile <- function(x, ...) {
   .use <- vapply(.col0, .monolixMapDataUse,
                  character(1),
                  ui=.ui, USE.NAMES=FALSE)
+  .use <- .use[.use != ""]
   .ret <- c("<DATAFILE>", "",
             "[FILEINFO]",
             paste0("file='", rxUiGet.monolixDataFile(x, ...), "'"),
