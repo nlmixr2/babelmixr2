@@ -11,7 +11,7 @@
                  "TIME"="time",
                  "EVID"="eventidentifier",
                  "AMT"="amount",
-                 "II"="interdoesinterval",
+                 "II"="interdoseinterval",
                  "DV"="observation",
                  "CENS"="censored",
                  "LIMIT"="limit",
