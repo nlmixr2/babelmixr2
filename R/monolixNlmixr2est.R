@@ -31,11 +31,11 @@
   .tmp$lag <- NA_real_
   .tmp$rate <- NA_real_
   .n <- names(.ret$monolixData)
-  rxode2::rxAssignControlValue(ui, ".hasRate",
+  rxode2::rxAssignControlValue(.ui, ".hasRate",
                                ifelse(any(.n == "RATE"), TRUE, ifelse(any(.n == "TINF"), FALSE, NA)))
-  rxode2::rxAssignControlValue(ui, ".hasCens", any(.n == "CENS"))
-  rxode2::rxAssignControlValue(ui, ".hasLimit", any(.n == "LIMIT"))
-  rxode2::rxAssignControlValue(ui, ".adm", .tmp)
+  rxode2::rxAssignControlValue(.ui, ".hasCens", any(.n == "CENS"))
+  rxode2::rxAssignControlValue(.ui, ".hasLimit", any(.n == "LIMIT"))
+  rxode2::rxAssignControlValue(.ui, ".adm", .tmp)
 
   # Now make sure time varying covariates are not considered
   # mu-referenced items
@@ -55,14 +55,14 @@
     # Drop time-varying covariates
     .muRefCovariateDataFrame <- .muRefCovariateDataFrame[!(.muRefCovariateDataFrame$covariate %in% .tv), ]
   }
-  assign("muRefFinal", .muRefCovariateDataFrame, ui)
-  assign("timeVaryingCovariates", .tv, ui)
+  assign("muRefFinal", .muRefCovariateDataFrame, .ui)
+  assign("timeVaryingCovariates", .tv, .ui)
   on.exit({
-    if (exists("muRefFinal", envir=ui)) {
-      rm(list="muRefFinal", envir=ui)
+    if (exists("muRefFinal", envir=.ui)) {
+      rm(list="muRefFinal", envir=.ui)
     }
-    if (exists("timeVaryingCovariates", envir=ui)) {
-      rm(list="timeVaryingCovariates", envir=ui)
+    if (exists("timeVaryingCovariates", envir=.ui)) {
+      rm(list="timeVaryingCovariates", envir=.ui)
     }
   })
   .qs <- .ui$monolixQs
