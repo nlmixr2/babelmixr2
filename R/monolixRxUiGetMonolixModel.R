@@ -35,8 +35,10 @@
            ", Tlag=", ifelse(is.na(.adm$lag), "0", .adm$lag), ", p=",
            ifelse(is.na(.adm$f), "1", .adm$f), ")")
   } else if (.type == "modelRate") {
-    stop("modeled rate not currently supported",
-         call.=FALSE)
+    paste0("depot(type=", .adm$adm, ", target=", state[.adm$cmt],
+           ", Tk0=amtDose/", .adm$rate,
+           ", Tlag=", ifelse(is.na(.adm$lag), "0", .adm$lag), ", p=",
+           ifelse(is.na(.adm$f), "1", .adm$f), ")")
   } else if (.type == "modelDur") {
     paste0("depot(type=", .adm$adm, ", target=", state[.adm$cmt],
            ", Tk0=", .adm$dur,

@@ -148,11 +148,11 @@
 #' Get individual correlation statement (if needed)
 #'
 #' @param ui rxode2 ui
-#' @param muRefs Mu reference to monolix varaible
+#' @param muRef Mu reference to monolix variable
 #' @return the correlation= statement in monolix
 #' @author Matthew L. Fidler
 #' @noRd
-.mlxtranIndividualCor <- function(ui, muRefs) {
+.mlxtranIndividualCor <- function(ui, muRef) {
   .eta <- ui$iniDf[!(is.na(ui$iniDf$neta1)),, drop=FALSE]
   if (length(.eta$neta1) == 0L) stop("need eta for monolix model",
                                      call.=FALSE)
@@ -182,7 +182,7 @@ rxUiGet.mlxtranModelIndividual <- function(x, ...) {
     .mlxtranIndividualDef(.var, .est, .ui$muRefCurEval, .ui$muRefTable, .muRefCov)
   }, character(1), USE.NAMES=FALSE)
   .def <- paste(.def, collapse="\n")
-  .cor <- .mlxtranIndividualCor(.ui, muRefs)
+  .cor <- .mlxtranIndividualCor(.ui, .muRef)
   if (.cor != "") .def <- paste0(.def, "\n", .cor)
   paste0("[INDIVIDUAL]\n",
          "input={", paste(.mlxTranInputForIndividual, collapse=", "), "}\n\n",

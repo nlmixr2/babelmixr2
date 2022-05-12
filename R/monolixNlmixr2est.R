@@ -23,14 +23,13 @@
   .data <- env$data
   .ret <- new.env(parent=emptyenv())
   .ret$table <- env$table
-  .tmp  <- nlmixr2extra::nlmixrDataToMonolix(.ui, .data, table=env$table)
+  .tmp  <- nlmixr2extra::nlmixrDataToMonolix(.ui, .data, table=env$table, env=.ret)
   .ret$monolixData <- .tmp$monolix
   .tmp <- .tmp$adm
   .tmp$f <- NA_real_
   .tmp$dur <- NA_real_
   .tmp$lag <- NA_real_
   .tmp$rate <- NA_real_
-  .tmp$adm <- .tmp
   .n <- names(.ret$monolixData)
   rxode2::rxAssignControlValue(ui, ".hasRate",
                                ifelse(any(.n == "RATE"), TRUE, ifelse(any(.n == "TINF"), FALSE, NA)))
@@ -52,12 +51,12 @@
     }
   }
   .muRefCovariateDataFrame <- .ui$muRefCovariateDataFrame
-  if (length(timeVaryingCovariates) > 0) {
+  if (length(.tv) > 0) {
     # Drop time-varying covariates
-    .muRefCovariateDataFrame <- .muRefCovariateDataFrame[!(.muRefCovariateDataFrame$covariate %in% timeVaryingCovariates), ]
+    .muRefCovariateDataFrame <- .muRefCovariateDataFrame[!(.muRefCovariateDataFrame$covariate %in% .tv), ]
   }
   assign("muRefFinal", .muRefCovariateDataFrame, ui)
-  assign("timeVaryingCovariates", timeVaryingCovariates, ui)
+  assign("timeVaryingCovariates", .tv, ui)
   on.exit({
     if (exists("muRefFinal", envir=ui)) {
       rm(list="muRefFinal", envir=ui)
@@ -70,7 +69,7 @@
   .exportPath <- .ui$monolixExportPath
   .csv <- .ui$monolixDataFile
   .model <- .ui$monolixModelFileName
-  .mlxtran <- .ui$mlxtranModel
+  .mlxtran <- .ui$monolixMlxtranFile
   .runLock <- .ui$monolixRunLock
 
   if (file.exists(.qs)) {

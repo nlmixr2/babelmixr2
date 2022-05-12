@@ -38,7 +38,7 @@
       .name <- paste0("name={", paste(paste0("rx_prd_", .predDf$var), collapse=", "), "}")
       .yname <- paste0("yname={", paste(paste0("'", seq_along(.predDf$var), "'"), collapse=", "), "}")
       .type <- paste0("type={", paste(rep("continuous", length(.predDf$var)), collapse=", "), "}")
-      .use <- paste(c(.use, .name, .type), collapse=", ")
+      .use <- paste(c(.use, .name, .yname, .type), collapse=", ")
     }
   }
   paste0(name, " = {use=", .use, "}")
@@ -77,7 +77,7 @@ rxUiGet.mlxtranDatafile <- function(x, ...) {
   .ret <- c("<DATAFILE>", "",
             "[FILEINFO]",
             paste0("file='", rxUiGet.monolixDataFile(x, ...), "'"),
-            "delimter = tab",
+            "delimter = comma",
             paste0("header = {", paste(.col0, collapse=", "), "}"),"",
             "[CONTENT]",
             paste(.use, collapse="\n"))

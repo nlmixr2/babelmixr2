@@ -1,4 +1,4 @@
-test_that("pure mu reference parsing", {
+test_that("pure mu refrence parsing", {
 
   expect_equal(.getPureMuRef(quote(cl <- tcl),
                muRefCurEval=data.frame(parameter="tcl", curEval="",
@@ -330,7 +330,6 @@ test_that("turnover mu-reference extraction", {
   }
 
   ui <- rxode2::rxode(pk.turnover.emax3)
-
 
 })
 

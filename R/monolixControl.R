@@ -82,3 +82,17 @@ monolixControl <- function(nbSSDoses=7,
   class(.ret) <- "monolixControl"
   .ret
 }
+
+getValidNlmixrCtl.monolix <- function(control) {
+  .ctl <- control[[1]]
+  .cls <- class(control)[1]
+  if (is.null(.ctl)) .ctl <- monolixControl()
+  if (is.null(attr(.ctl, "class")) && is(.ctl, "list")) .ctl <- do.call("monolixControl", .ctl)
+  if (!inherits(.ctl, "monolixControl")) {
+    .minfo(paste0("invalid control for `est=\"", .cls, "\"`, using default"))
+    .ctl <- monolixControl()
+  } else {
+    .ctl <- do.call(monolixControl, .ctl)
+  }
+  .ctl
+}
