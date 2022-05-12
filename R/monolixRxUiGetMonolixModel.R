@@ -43,8 +43,7 @@
            ", Tlag=", ifelse(is.na(.adm$lag), "0", .adm$lag), ", p=",
            ifelse(is.na(.adm$f), "1", .adm$f), ")")
   } else if (.type == "empty") {
-    stop("emty events not currently supported",
-         call.=FALSE)
+    paste0("empty(adm=", .adm$adm, "target=", state[.adm$cmt], ")")
   }
 }
 #' Get the PK macros
