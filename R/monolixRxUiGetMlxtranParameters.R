@@ -13,7 +13,7 @@
     .ce <- paste(curEval$curEval[.w])
     .low <- curEval$low[.w]
     if (is.na(.low)) .low <- 0
-    .high <- curEval$high[.w]
+    .high <- curEval$hi[.w]
     if (is.na(.high)) .high <- 0
     return(switch(.ce,
                   exp=exp(est),
