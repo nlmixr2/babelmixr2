@@ -66,7 +66,40 @@
       rm(list="timeVaryingCovariates", envir=ui)
     }
   })
+  .qs <- .ui$monolixQs
+  .exportPath <- .ui$monolixExportPath
+  .csv <- .ui$monolixDataFile
+  .model <- .ui$monolixModelFileName
+  .mlxtran <- .ui$mlxtranModel
+  .runLock <- .ui$monolixRunLock
 
+  if (file.exists(.qs)) {
+    .minfo("load saved nlmixr2 object")
+    return(qs::qread(.qs))
+  } else if (!file.exists(.model)) {
+    .minfo("writing monolix files")
+    writeLines(text=.ui$monolixModel, con=.model)
+    writeLines(text=.ui$mlxtran, con=.mlxtran)
+    write.csv(.ret$monolixData, file=.csv, na = ".", row.names = FALSE)
+    .minfo("done")
+    .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
+    if (.cmd != "") {
+      writeLines("", .runLock)
+      system(sprintf(.cmd, .mlx))
+    } else {
+      message("run monolix manually or setup monolix's run command")
+    }
+    return(invisible())
+  } else if (!file.exists(.exportPath)) {
+    if (file.exists(.runLock)) {
+      .minfo(paste0("may still be runnning '", .runLock, "'"))
+    } else {
+      .minfo(paste0("the export location '", .exportPath, "' doens't have files in it yet"))
+    }
+    return(invisible())
+  } else {
+
+  }
 }
 
 nlmixr2Est.monolix <- function(env, ...) {
@@ -75,10 +108,10 @@ nlmixr2Est.monolix <- function(env, ...) {
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'monlix'", .var.name=.ui$modelName)
   .monolixFamilyControl(env, ...)
-
   on.exit({
     if (exists("control", envir=.ui)) {
       rm("control", envir=.ui)
     }
   }, add=TRUE)
+  .monolixFamilyFit(env, ...)
 }

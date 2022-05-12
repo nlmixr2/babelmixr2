@@ -20,6 +20,11 @@ rxUiGet.monolixQs <- function(x, ...) {
 }
 
 #' @export
+rxUiGet.monolixRunLock <- function(x, ...) {
+  paste0(rxUiGet.monolixExportPath(x, ...), ".run-lock")
+}
+
+#' @export
 rxUiGet.mlxtranModel <- function(x, ...) {
   .ui <- x[[1]]
   # note there is some categorical covariates that are not taken care of here...

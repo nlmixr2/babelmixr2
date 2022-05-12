@@ -6,6 +6,7 @@
 \alias{rxModelVars}
 \alias{rxUiGet}
 \alias{nlmixr2Est}
+\alias{.minfo}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -15,6 +16,6 @@ below to see their documentation.
 \describe{
   \item{nlmixr2est}{\code{\link[nlmixr2est]{nlmixr2Est}}}
 
-  \item{rxode2}{\code{\link[rxode2]{rxModelVars}}, \code{\link[rxode2]{rxUiGet}}}
+  \item{rxode2}{\code{\link[rxode2:dot-minfo]{.minfo}}, \code{\link[rxode2]{rxModelVars}}, \code{\link[rxode2]{rxUiGet}}}
 }}
 

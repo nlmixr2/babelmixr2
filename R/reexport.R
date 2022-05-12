@@ -12,3 +12,6 @@ rxode2::rxUiGet
 #' @export
 nlmixr2est::nlmixr2Est
 
+#' @importFrom rxode2 .minfo
+#' @export
+rxode2::.minfo
