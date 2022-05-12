@@ -48,7 +48,7 @@
 rxUiGet.mlxtranDatafile <- function(x, ...) {
   .ui <- x[[1]]
   # This assumes the data are generated from nlmixr2extra
-  .hasRate <- rxode2::rxGetControl(ui, ".hasRate", NA)
+  .hasRate <- rxode2::rxGetControl(.ui, ".hasRate", NA)
   if (is.na(.hasRate)) {
     .rateData <- NULL
   } else if (.hasRate) {
@@ -56,13 +56,13 @@ rxUiGet.mlxtranDatafile <- function(x, ...) {
   } else {
     .rateData <- "TINF"
   }
-  .hasCens <- rxode2::rxGetControl(ui, ".hasCens", FALSE)
+  .hasCens <- rxode2::rxGetControl(.ui, ".hasCens", FALSE)
   .censData <- NULL
   if (.hasCens) {
     .censData <- "CENS"
   }
 
-  .hasLimit <- rxode2::rxGetControl(ui, ".hasLimit", FALSE)
+  .hasLimit <- rxode2::rxGetControl(.ui, ".hasLimit", FALSE)
   .limitData <- NULL
   if (.hasLimit) {
     .limitData <- "LIMIT"

@@ -61,7 +61,7 @@ rxUiGet.mlxtranModelLongitudinal <- function(x, ...) {
   .err <- vapply(seq_along(.predDf$var),
                  .getMonolixResidual, character(1), ui=.ui, USE.NAMES=FALSE)
   .dist <- vapply(seq_along(.predDf$var),.getMonolixResidualDistribution,
-                  character(1), ui=ui, USE.NAMES=FALSE)
+                  character(1), ui=.ui, USE.NAMES=FALSE)
   .inputErr <- unlist(lapply(seq_along(.predDf$var),
                              .getMonolixResidual,  ui=.ui, input=TRUE))
   .iniDf <- .ui$iniDf
