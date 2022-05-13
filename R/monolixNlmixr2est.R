@@ -17,6 +17,19 @@
   assign("control", .control, envir=.ui)
 }
 
+.monolixFormatData <- function(data, ui) {
+  .ret <- data
+  .ret$SS <- ifelse(.ret$SS == 0, NA_real_, .ret$SS)
+  .ret$YTYPE <- ifelse(.ret$YTYPE == 0, NA_real_, .ret$YTYPE)
+  .ret$ADM <- ifelse(.ret$ADM == 0, NA_real_, .ret$ADM)
+  .n <- names(.ret)
+  rxode2::rxAssignControlValue(ui, ".hasRate",
+                               ifelse(any(.n == "RATE"), TRUE, ifelse(any(.n == "TINF"), FALSE, NA)))
+  rxode2::rxAssignControlValue(ui, ".hasCens", any(.n == "CENS"))
+  rxode2::rxAssignControlValue(ui, ".hasLimit", any(.n == "LIMIT"))
+  .ret
+}
+
 .monolixFamilyFit <- function(env, ...) {
   .ui <- env$ui
   .control <- .ui$control
@@ -24,18 +37,13 @@
   .ret <- new.env(parent=emptyenv())
   .ret$table <- env$table
   .tmp  <- nlmixr2extra::nlmixrDataToMonolix(.ui, .data, table=env$table, env=.ret)
-  .ret$monolixData <- .tmp$monolix
+  .ret$monolixData <- .monolixFormatData(.tmp$monolix)
   .tmp <- .tmp$adm
+  rxode2::rxAssignControlValue(.ui, ".adm", .tmp)
   .tmp$f <- NA_real_
   .tmp$dur <- NA_real_
   .tmp$lag <- NA_real_
   .tmp$rate <- NA_real_
-  .n <- names(.ret$monolixData)
-  rxode2::rxAssignControlValue(.ui, ".hasRate",
-                               ifelse(any(.n == "RATE"), TRUE, ifelse(any(.n == "TINF"), FALSE, NA)))
-  rxode2::rxAssignControlValue(.ui, ".hasCens", any(.n == "CENS"))
-  rxode2::rxAssignControlValue(.ui, ".hasLimit", any(.n == "LIMIT"))
-  rxode2::rxAssignControlValue(.ui, ".adm", .tmp)
 
   # Now make sure time varying covariates are not considered
   # mu-referenced items
