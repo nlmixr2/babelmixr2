@@ -78,7 +78,7 @@ rxUiGet.mlxtranDatafile <- function(x, ...) {
   .ret <- c("<DATAFILE>", "",
             "[FILEINFO]",
             paste0("file='", rxUiGet.monolixDataFile(x, ...), "'"),
-            "delimter = comma",
+            "delimiter = comma",
             paste0("header = {", paste(.col0, collapse=", "), "}"),"",
             "[CONTENT]",
             paste(.use, collapse="\n"))
