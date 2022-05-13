@@ -23,7 +23,7 @@
   .ret$YTYPE <- ifelse(.ret$YTYPE == 0, NA_real_, .ret$YTYPE)
   .ret$ADM <- ifelse(.ret$ADM == 0, NA_real_, .ret$ADM)
   if (all(is.na(.ret$SS))) {
-    .ret <- .ret[, names(.ret) %in% c("SS", "II")]
+    .ret <- .ret[, !(names(.ret) %in% c("SS", "II"))]
   }
   .n <- names(.ret)
   rxode2::rxAssignControlValue(ui, ".hasRate",
