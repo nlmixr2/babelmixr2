@@ -44,11 +44,11 @@
   .tmp  <- nlmixr2extra::nlmixrDataToMonolix(.ui, .data, table=env$table, env=.ret)
   .ret$monolixData <- .monolixFormatData(.tmp$monolix, .ui)
   .tmp <- .tmp$adm
-  rxode2::rxAssignControlValue(.ui, ".adm", .tmp)
   .tmp$f <- NA_real_
   .tmp$dur <- NA_real_
   .tmp$lag <- NA_real_
   .tmp$rate <- NA_real_
+  rxode2::rxAssignControlValue(.ui, ".adm", .tmp)
 
   # Now make sure time varying covariates are not considered
   # mu-referenced items
