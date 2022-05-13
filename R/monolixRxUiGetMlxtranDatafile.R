@@ -67,7 +67,18 @@ rxUiGet.mlxtranDatafile <- function(x, ...) {
   if (.hasLimit) {
     .limitData <- "LIMIT"
   }
-  .col0 <- c("ID", "TIME", "EVID", "AMT", "II", "DV", "ADM", "YTYPE", "SS", .rateData,
+  .iiData <- NULL
+  .hasIi <- rxode2::rxGetControl(.ui, ".hasIi", FALSE)
+  if (.hasIi) {
+    .iiData <- "II"
+  }
+
+  .ssData <- NULL
+  .hasSs <- rxode2::rxGetControl(.ui, ".hasSs", FALSE)
+  if (.hasSs) {
+    .ssData <- "SS"
+  }
+  .col0 <- c("ID", "TIME", "EVID", "AMT", .iiData, "DV", "ADM", "YTYPE", .ssData, .rateData,
              .censData, .limitData,
              .ui$allCovs, "nlmixrRowNums")
 

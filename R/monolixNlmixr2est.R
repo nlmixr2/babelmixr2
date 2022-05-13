@@ -22,11 +22,16 @@
   .ret$SS <- ifelse(.ret$SS == 0, NA_real_, .ret$SS)
   .ret$YTYPE <- ifelse(.ret$YTYPE == 0, NA_real_, .ret$YTYPE)
   .ret$ADM <- ifelse(.ret$ADM == 0, NA_real_, .ret$ADM)
+  if (all(is.na(.ret$SS))) {
+    .ret <- .ret[, names(.ret) %in% c("SS", "II")]
+  }
   .n <- names(.ret)
   rxode2::rxAssignControlValue(ui, ".hasRate",
                                ifelse(any(.n == "RATE"), TRUE, ifelse(any(.n == "TINF"), FALSE, NA)))
   rxode2::rxAssignControlValue(ui, ".hasCens", any(.n == "CENS"))
   rxode2::rxAssignControlValue(ui, ".hasLimit", any(.n == "LIMIT"))
+  rxode2::rxAssignControlValue(ui, ".hasIi", any(.n == "II"))
+  rxode2::rxAssignControlValue(ui, ".hasSs", any(.n == "SS"))
   .ret
 }
 
