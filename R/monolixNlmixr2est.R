@@ -42,7 +42,7 @@
   .ret <- new.env(parent=emptyenv())
   .ret$table <- env$table
   .tmp  <- nlmixr2extra::nlmixrDataToMonolix(.ui, .data, table=env$table, env=.ret)
-  .ret$monolixData <- .monolixFormatData(.tmp$monolix)
+  .ret$monolixData <- .monolixFormatData(.tmp$monolix, .ui)
   .tmp <- .tmp$adm
   rxode2::rxAssignControlValue(.ui, ".adm", .tmp)
   .tmp$f <- NA_real_
