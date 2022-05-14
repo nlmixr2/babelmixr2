@@ -39,7 +39,15 @@ monolixControl <- function(nbSSDoses=7,
                            optimizationtolerance=0.0001,
                            variability=c("none", "firstStage", "decreasing"),
                            runCommand=getOption("babelmixr2.monolix", ""),
-                           adjObf=TRUE) {
+                           adjObf=TRUE,
+                           rxControl=NULL,
+                           sumProd = FALSE,
+                           optExpression = TRUE,
+                           calcTables = TRUE,
+                           addProp = c("combined2", "combined1"),
+                           compress = TRUE,
+                           ci = 0.95,
+                           sigdigTable=NULL, ...) {
 
   checkmate::assertLogical(stiff, max.len=1)
   checkmate::assertLogical(exploratoryautostop, max.len=1)
@@ -61,6 +69,48 @@ monolixControl <- function(nbSSDoses=7,
   checkmate::assertNumeric(optimizationtolerance, lower=0.0)
   if (optimizationtolerance == 0) stop("'optimizationtolerance' has to be above zero")
 
+  .xtra <- list(...)
+  .bad <- names(.xtra)
+  .bad <- .bad[!(.bad %in% c("genRxControl"))]
+  if (length(.bad) > 0) {
+    stop("unused argument: ", paste
+    (paste0("'", .bad, "'", sep=""), collapse=", "),
+    call.=FALSE)
+  }
+
+  if (checkmate::testIntegerish(addProp, lower=1, upper=1, len=1)) {
+    addProp <- c("combined1", "combined2")[addProp]
+  } else {
+    addProp <- match.arg(addProp)
+  }
+  checkmate::assertLogical(compress, any.missing=FALSE, len=1)
+
+  if (!is.null(.xtra$genRxControl)) {
+    genRxControl <- .xtra$genRxControl
+  } else {
+    genRxControl <- FALSE
+    if (is.null(rxControl)) {
+      rxControl <- rxode2::rxControl(sigdig=sigdig,
+                                     maxsteps=500000L)
+      genRxControl <- TRUE
+    } else if (is.list(rxControl)) {
+      rxControl <- do.call(rxode2::rxControl, rxControl)
+    }
+    if (!inherits(rxControl, "rxControl")) {
+      stop("rxControl needs to be ode solving options from rxode2::rxControl()",
+           call.=FALSE)
+    }
+  }
+
+  checkmate::assertLogical(sumProd, any.missing=FALSE, len=1)
+  checkmate::assertLogical(optExpression, any.missing=FALSE, len=1)
+
+  checkmate::assertNumeric(ci, any.missing=FALSE, len=1, lower=0, upper=1)
+
+  checkmate::assertLogical(calcTables, len=1, any.missing=FALSE)
+
+
+
   if (runCommand != "") checkmate::assertCharacter(runCommand, pattern="%s", min.len=1, max.len=1)
 
   .ret <- list(nbSSDoses=as.integer(nbSSDoses), stiff=stiff,
@@ -79,9 +129,33 @@ monolixControl <- function(nbSSDoses=7,
                optimizationtolerance=optimizationtolerance,
                variability=match.arg(variability),
                runCommand=runCommand,
-               adjObf=adjObf)
+               adjObf=adjObf,
+               rxControl=rxControl,
+               sumProd = sumProd,
+               optExpression=optExpression,
+               calcTables = calcTables,
+               addProp = addProp,
+               compress = compress,
+               ci = ci,
+               sigdigTable=sigdigTable)
   class(.ret) <- "monolixControl"
   .ret
+}
+
+.monolixControlToFoceiControl <- function(env, assign = TRUE)
+{
+    .monolixControl <- env$monolixControl
+    .ui <- env$ui
+    .foceiControl <- foceiControl(rxControl = env$monolixControl$rxControl,
+        maxOuterIterations = 0L, maxInnerIterations = 0L, covMethod = 0L,
+        etaMat = env$etaMat, sumProd = .monolixControl$sumProd,
+        optExpression = .monolixControl$optExpression, scaleTo = 0,
+        calcTables = .monolixControl$calcTables, addProp = .monolixControl$addProp,
+        skipCov = .ui$foceiSkipCov, interaction = 1L, compress = .monolixControl$compress,
+        ci = .monolixControl$ci, sigdigTable = .monolixControl$sigdigTable)
+    if (assign)
+        env$control <- .foceiControl
+    .foceiControl
 }
 
 getValidNlmixrCtl.monolix <- function(control) {
