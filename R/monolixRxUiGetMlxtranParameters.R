@@ -17,8 +17,8 @@
     if (is.na(.high)) .high <- 0
     return(switch(.ce,
                   exp=exp(est),
-                  expit=expit(est, .low, .high),
-                  probitInv=probitInv(est, .low, .high),
+                  expit=rxode2::expit(est, .low, .high),
+                  probitInv=rxode2::probitInv(est, .low, .high),
                   est))
   }
   return(est)

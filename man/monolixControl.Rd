@@ -23,7 +23,15 @@ monolixControl(
   optimizationtolerance = 1e-04,
   variability = c("none", "firstStage", "decreasing"),
   runCommand = getOption("babelmixr2.monolix", ""),
-  adjObf = TRUE
+  adjObf = TRUE,
+  rxControl = NULL,
+  sumProd = FALSE,
+  optExpression = TRUE,
+  calcTables = TRUE,
+  compress = TRUE,
+  ci = 0.95,
+  sigdigTable = NULL,
+  ...
 )
 }
 \arguments{
@@ -70,6 +78,30 @@ exploratory phase (default 200)}
 specfy the default by
 \code{options("babelmixr2.monolix"="runMonolix \%s")} where the \code{"\%s"}
 represents the monolix project file.}
+
+\item{rxControl}{`rxode2` ODE solving options during fitting, created with `rxControl()`}
+
+\item{sumProd}{Is a boolean indicating if the model should change
+multiplication to high precision multiplication and sums to
+high precision sums using the PreciseSums package.  By default
+this is \code{FALSE}.}
+
+\item{optExpression}{Optimize the rxode2 expression to speed up
+calculation. By default this is turned on.}
+
+\item{calcTables}{This boolean is to determine if the foceiFit
+will calculate tables. By default this is \code{TRUE}}
+
+\item{compress}{Should the object have compressed items}
+
+\item{ci}{Confidence level for some tables.  By default this is
+0.95 or 95\% confidence.}
+
+\item{sigdigTable}{Significant digits in the final output table.
+If not specified, then it matches the significant digits in the
+`sigdig` optimization algorithm.  If `sigdig` is NULL, use 3.}
+
+\item{...}{Ignored parameters}
 }
 \value{
 A monolix control object

@@ -1,4 +1,4 @@
-#' Get the saem control statement and install it into the ui
+#' Get the monolix control statement and install it into the ui
 #'
 #' @param env Environment with ui in it
 #' @param ... Other arguments
@@ -9,7 +9,7 @@
   .ui <- env$ui
   .control <- env$control
   if (is.null(.control)) {
-    .control <- saemControl()
+    .control <- monolixControl()
   }
   if (!inherits(.control, "monolixControl")){
     .control <- do.call(babelmixr2::monolixControl, .control)
@@ -37,34 +37,30 @@
 
 .monolixFinalizeEnv <- function(env, oldUi) {
   # The environment needs:
-  .ini <- as.expression(lotri::as.lotri(oldUi$monolixIniDf))
-  .ini[[1]] <- quote(`ini`)
-  .model <- str2lang(paste0("model({",
-                  paste(vapply(seq_along(x$lstExpr),
-                               function(i) {
-                                 deparse1(x$lstExpr[[i]])
-                               }, character(1), USE.NAMES=FALSE),
-                        collapse="\n"),
-                  "})"))
-  .newUi <- .getUiFunFromIniAndModel(oldUi, .ini, .model)
-  .newUi <- rxode2::rxode2(.newUi)
-  .newUi$control <- oldUi$control # for now
+  .iniDf <- oldUi$monolixIniDf
+  .ui <- new.env(parent=emptyenv())
+  for (n in ls(envir=oldUi, all.names=TRUE)) {
+    assign(n, get(n, envir=oldUi), envir=.ui)
+  }
+  assign("iniDf", .iniDf, envir=.ui)
+  class(.ui) <- class(oldUi)
   # - $table for table options -- already present
   # - $origData -- Original Data -- already present
   # - $dataSav -- Processed data from .foceiPreProcessData --already present
   # - $idLvl -- Level information for ID factor added -- already present
-  env$ui <- .newUi
+  env$ui <- .ui
   # - $ui for ui fullTheta Full theta information
+  env$fullTheta <- .ui$monolixFullTheta
   # - $etaObf data frame with ID, etas and OBJI
-  env$etaObf <- env$ui$monolixEtaObf
+  env$etaObf <- .ui$monolixEtaObf
   # - $cov For covariance
-  env$cov <- env$ui$monolixCovariance
+  env$cov <- .ui$monolixCovariance
   # - $covMethod for the method of calculating the covariance
-  env$covMethod <-rxode2::rxGetControl(env$ui, ".covMethod", "Monolix")
+  env$covMethod <-rxode2::rxGetControl(.ui, ".covMethod", "Monolix")
   # - $adjObf Should the objective function value be adjusted
-  env$adjObf <- rxode2::rxGetControl(env$ui, "adjObf", TRUE)
+  env$adjObf <- rxode2::rxGetControl(.ui, "adjObf", TRUE)
   # - $objective objective function value
-  .ll <- env$ui$monolixLL
+  .ll <- .ui$monolixLL
   .obfType <- paste("monolix", names(.ll)[2])
   names(.ll)[2] <- "val"
   env$objective <- .ll[.ll$criteria == "-2LL", "val"]
@@ -79,6 +75,7 @@
   # - $model a list of model information for table generation.  Needs a `predOnly` model
   env$model <- env$ui$ebe
   # - $message Message for display
+  env$message <- ""
   # - $est estimation method
   env$est <- "monolix"
   # - $ofvType (optional) tells the type of ofv is currently being used
@@ -86,10 +83,10 @@
   env$ofvType <- .obfType
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
-
+  .monolixControlToFoceiControl(env)
   env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData, control=env$control, table=env$table, env=env, est="monolix")
   .env <- env$env
-  .env$method <- "nlme"
+  .env$method <- "monolix"
   env
 }
 
@@ -99,6 +96,7 @@
   .data <- env$data
   .ret <- new.env(parent=emptyenv())
   .ret$table <- env$table
+  .ret$monolixControl <- .control
   .tmp  <- nlmixr2extra::nlmixrDataToMonolix(.ui, .data, table=env$table, env=.ret)
   .ret$monolixData <- .monolixFormatData(.tmp$monolix, .ui)
   .tmp <- .tmp$adm

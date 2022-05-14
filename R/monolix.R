@@ -163,8 +163,6 @@
     if (identical(x[[1]], quote(`(`))) {
       return(paste0("(", .rxToMonolix(x[[2]], ui=ui), ")"))
     } else if (identical(x[[1]], quote(`{`))) {
-      assignInMyNamespace(".monolixTlag", c())
-      assignInMyNamespace(".monolixP", c())
       .x2 <- x[-1]
       .ret <- paste(lapply(.x2, function(x) {
         .rxToMonolix(x, ui=ui)

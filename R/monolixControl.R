@@ -44,7 +44,6 @@ monolixControl <- function(nbSSDoses=7,
                            sumProd = FALSE,
                            optExpression = TRUE,
                            calcTables = TRUE,
-                           addProp = c("combined2", "combined1"),
                            compress = TRUE,
                            ci = 0.95,
                            sigdigTable=NULL, ...) {
@@ -90,8 +89,7 @@ monolixControl <- function(nbSSDoses=7,
   } else {
     genRxControl <- FALSE
     if (is.null(rxControl)) {
-      rxControl <- rxode2::rxControl(sigdig=sigdig,
-                                     maxsteps=500000L)
+      rxControl <- rxode2::rxControl()
       genRxControl <- TRUE
     } else if (is.list(rxControl)) {
       rxControl <- do.call(rxode2::rxControl, rxControl)
@@ -134,29 +132,43 @@ monolixControl <- function(nbSSDoses=7,
                sumProd = sumProd,
                optExpression=optExpression,
                calcTables = calcTables,
-               addProp = addProp,
                compress = compress,
                ci = ci,
-               sigdigTable=sigdigTable)
+               sigdigTable=sigdigTable,
+               genRxControl=genRxControl)
   class(.ret) <- "monolixControl"
   .ret
 }
 
-.monolixControlToFoceiControl <- function(env, assign = TRUE)
-{
-    .monolixControl <- env$monolixControl
-    .ui <- env$ui
-    .foceiControl <- foceiControl(rxControl = env$monolixControl$rxControl,
-        maxOuterIterations = 0L, maxInnerIterations = 0L, covMethod = 0L,
-        etaMat = env$etaMat, sumProd = .monolixControl$sumProd,
-        optExpression = .monolixControl$optExpression, scaleTo = 0,
-        calcTables = .monolixControl$calcTables, addProp = .monolixControl$addProp,
-        skipCov = .ui$foceiSkipCov, interaction = 1L, compress = .monolixControl$compress,
-        ci = .monolixControl$ci, sigdigTable = .monolixControl$sigdigTable)
-    if (assign)
-        env$control <- .foceiControl
-    .foceiControl
+.monolixControlToFoceiControl <- function(env, assign = TRUE) {
+  .monolixControl <- env$monolixControl
+  .ui <- env$ui
+  .foceiControl <- foceiControl(rxControl = env$monolixControl$rxControl,
+                                maxOuterIterations = 0L, maxInnerIterations = 0L, covMethod = 0L,
+                                etaMat = env$etaMat, sumProd = .monolixControl$sumProd,
+                                optExpression = .monolixControl$optExpression, scaleTo = 0,
+                                calcTables = .monolixControl$calcTables, addProp = .monolixControl$addProp,
+                                skipCov = .ui$foceiSkipCov, interaction = 1L, compress = .monolixControl$compress,
+                                ci = .monolixControl$ci, sigdigTable = .monolixControl$sigdigTable)
+  if (assign)
+    env$control <- .foceiControl
+  .foceiControl
 }
+
+#' @importFrom nlmixr2est nmObjGetFoceiControl
+#' @export
+nlmixr2est::nmObjGetFoceiControl
+
+#' @export
+#' @rdname nmObjGetFoceiControl
+nmObjGetFoceiControl.monolix <- function(x, ...) {
+  .monolixControlToFoceiControl(x[[1]])
+}
+
+
+#' @importFrom nlmixr2est getValidNlmixrCtl
+#' @export
+nlmixr2est::getValidNlmixrCtl
 
 getValidNlmixrCtl.monolix <- function(control) {
   .ctl <- control[[1]]
@@ -170,4 +182,36 @@ getValidNlmixrCtl.monolix <- function(control) {
     .ctl <- do.call(monolixControl, .ctl)
   }
   .ctl
+}
+
+#' @importFrom nlmixr2est nmObjHandleControlObject
+#' @export
+nlmixr2est::nmObjHandleControlObject
+
+#' @export
+nmObjHandleControlObject.monolixControl <- function(control, env) {
+  assign("monolixControl", control, envir=env)
+}
+
+#' @importFrom nlmixr2est foceiControl
+#' @export
+nlmixr2est::foceiControl
+
+
+#' @importFrom nlmixr2est nmObjGetControl
+#' @export
+nlmixr2est::nmObjGetControl
+
+#' @export
+nmObjGetControl.monolix <- function(x, ...) {
+  .env <- x[[1]]
+  if (exists("monolixControl", .env)) {
+    .control <- get("monolixControl", .env)
+    if (inherits(.control, "monolixControl")) return(.control)
+  }
+  if (exists("control", .env)) {
+    .control <- get("control", .env)
+    if (inherits(.control, "monolixControl")) return(.control)
+  }
+  stop("cannot find monolix related control object", call.=FALSE)
 }

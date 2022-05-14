@@ -197,6 +197,7 @@ rxUiGet.monolixEtaObf <- function(x, ...) {
   .split <- rxUiGet.getSplitMuModel(x, ...)
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .etaMonolix <- rxUiGet.monolixIndividualParameters(x, ...)
+  if (is.null(.etaMonolix)) return(NULL)
   .n <- c("id", vapply(.etas$neta1, function(i) {
     paste0("eta_",   .mlxtranGetIndividualMuRefEtaMonolixName(.ui, i, .muRef), "_SAEM")
   }, character(1), USE.NAMES=FALSE))
@@ -225,7 +226,7 @@ rxUiGet.monolixLL <- function(x, ...) {
 
 
  #' @export
-xUiGet.monolixCovarianceEstimatesLin <- function(x, ...) {
+rxUiGet.monolixCovarianceEstimatesLin <- function(x, ...) {
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
   .covLin <- file.path(.exportPath, "FisherInformation", "covarianceEstimatesLin.txt")
   if (file.exists(.covLin)) {
@@ -283,7 +284,8 @@ rxUiGet.monolixCovariance <- function(x, ...) {
     paste0(.muRef[n], "_pop")
   }, character(1), USE.NAMES=FALSE)
   .cov <- .cov[.n, .n]
-  rxode2::rxAssignControlValue(.ui, ".covMethod", ifelse(sa, "MonolixSA", "MonolixLin"))
+  .ui <- x[[1]]
+  rxode2::rxAssignControlValue(.ui, ".covMethod", ifelse(.sa, "MonolixSA", "MonolixLin"))
   if (.monolixCovarianceNeedsConversion(x, .sa)) {
     .jInv <- diag(1/diag(.j))
     # 2020+ SA returns correct matrix
@@ -291,7 +293,7 @@ rxUiGet.monolixCovariance <- function(x, ...) {
     # Otherwise use inverse matrix to get the correct covariance
     .cov <- .jInv %*% .cov %*% .jInv
     dimnames(.cov) <- dimnames(.j)
-    rxode2::rxAssignControlValue(.ui, ".covMethod", ifelse(sa, "MonolixSA*", "MonolixLin*"))
+    rxode2::rxAssignControlValue(.ui, ".covMethod", ifelse(.sa, "MonolixSA*", "MonolixLin*"))
   }
 
   .cov
