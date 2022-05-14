@@ -13,7 +13,7 @@
 #'   specfy the default by
 #'   \code{options("babelmixr2.monolix"="runMonolix \%s")} where the \code{"\%s"}
 #'   represents the monolix project file.
-#' @inheritParams nlmixr2::foceiControl
+#' @inheritParams nlmixr2est::foceiControl
 #' @return A monolix control object
 #' @author Matthew Fidler
 #' @export
@@ -38,7 +38,8 @@ monolixControl <- function(nbSSDoses=7,
                            optimizationiterations=20,
                            optimizationtolerance=0.0001,
                            variability=c("none", "firstStage", "decreasing"),
-                           runCommand=getOption("babelmixr2.monolix", "")) {
+                           runCommand=getOption("babelmixr2.monolix", ""),
+                           adjObf=TRUE) {
 
   checkmate::assertLogical(stiff, max.len=1)
   checkmate::assertLogical(exploratoryautostop, max.len=1)
@@ -77,8 +78,8 @@ monolixControl <- function(nbSSDoses=7,
                optimizationiterations=optimizationiterations,
                optimizationtolerance=optimizationtolerance,
                variability=match.arg(variability),
-               runCommand=runCommand
-               )
+               runCommand=runCommand,
+               adjObf=adjObf)
   class(.ret) <- "monolixControl"
   .ret
 }

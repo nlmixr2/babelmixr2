@@ -35,6 +35,64 @@
   .ret
 }
 
+.monolixFinalizeEnv <- function(env, oldUi) {
+  # The environment needs:
+  .ini <- as.expression(lotri::as.lotri(oldUi$monolixIniDf))
+  .ini[[1]] <- quote(`ini`)
+  .model <- str2lang(paste0("model({",
+                  paste(vapply(seq_along(x$lstExpr),
+                               function(i) {
+                                 deparse1(x$lstExpr[[i]])
+                               }, character(1), USE.NAMES=FALSE),
+                        collapse="\n"),
+                  "})"))
+  .newUi <- .getUiFunFromIniAndModel(oldUi, .ini, .model)
+  .newUi <- rxode2::rxode2(.newUi)
+  .newUi$control <- oldUi$control # for now
+  # - $table for table options -- already present
+  # - $origData -- Original Data -- already present
+  # - $dataSav -- Processed data from .foceiPreProcessData --already present
+  # - $idLvl -- Level information for ID factor added -- already present
+  env$ui <- .newUi
+  # - $ui for ui fullTheta Full theta information
+  # - $etaObf data frame with ID, etas and OBJI
+  env$etaObf <- env$ui$monolixEtaObf
+  # - $cov For covariance
+  env$cov <- env$ui$monolixCovariance
+  # - $covMethod for the method of calculating the covariance
+  env$covMethod <-rxode2::rxGetControl(env$ui, ".covMethod", "Monolix")
+  # - $adjObf Should the objective function value be adjusted
+  env$adjObf <- rxode2::rxGetControl(env$ui, "adjObf", TRUE)
+  # - $objective objective function value
+  .ll <- env$ui$monolixLL
+  .obfType <- paste("monolix", names(.ll)[2])
+  names(.ll)[2] <- "val"
+  env$objective <- .ll[.ll$criteria == "-2LL", "val"]
+  # - $extra Extra print information
+  env$extra <- paste0(" ver ", env$ui$monolixOutputVersion)
+  # - $method Estimation method (for printing)
+  env$method <- "Monolix"
+  # - $omega Omega matrix
+  env$omega <- env$ui$monolixOmega
+  # - $theta Is a theta data frame
+  env$theta <- env$ui$monolixTheta
+  # - $model a list of model information for table generation.  Needs a `predOnly` model
+  env$model <- env$ui$ebe
+  # - $message Message for display
+  # - $est estimation method
+  env$est <- "monolix"
+  # - $ofvType (optional) tells the type of ofv is currently being used
+  #env$ofvType
+  env$ofvType <- .obfType
+  # When running the focei problem to create the nlmixr object, you also need a
+  #  foceiControl object
+
+  env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData, control=env$control, table=env$table, env=env, est="monolix")
+  .env <- env$env
+  .env$method <- "nlme"
+  env
+}
+
 .monolixFamilyFit <- function(env, ...) {
   .ui <- env$ui
   .control <- .ui$control
@@ -110,7 +168,7 @@
     }
     return(invisible())
   } else {
-
+    return(.monolixFinalizeEnv(.ret, .ui))
   }
 }
 

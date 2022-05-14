@@ -28,6 +28,8 @@ rxUiGet.monolixPopulationParameters <- function(x, ...) {
 #' @export
 rxUiGet.monolixOmega <- function(x, ...) {
   .ui <- x[[1]]
+  .ret <- rxode2::rxGetControl(.ui, ".monolixOmega", NULL)
+  if (!is.null(.ret)) return(.ret)
   .pop <- rxUiGet.monolixPopulationParameters(x, ...)
   if (is.null(.pop)) return(NULL)
   .iniDf <- .ui$iniDf
@@ -64,6 +66,8 @@ rxUiGet.monolixOmega <- function(x, ...) {
   diag(.r) <- 1
   .d <- diag(.sd)
   .omega <- .d %*% .r %*% .d
+  dimnames(.omega) <- list(.eta$name, .eta$name)
+  rxode2::rxAssignControlValue(.ui, ".monolixOmega", .omega)
   .omega
 }
 
@@ -100,37 +104,70 @@ rxUiGet.monolixOmega <- function(x, ...) {
 }
 
 #' @export
-rxUiGet.monolixNewIniDf <- function(x, ...) {
+rxUiGet.monolixFullTheta <- function(x, ...) {
   .ui <- x[[1]]
+  .full <- rxode2::rxGetControl(.ui, ".monolixFullTheta", NULL)
+  if (!is.null(.full)) return(.full)
   .pop <- rxUiGet.monolixPopulationParameters(x, ...)
   if (is.null(.pop)) return(NULL)
-  .omega <- rxUiGet.monolixOmega(x, ...)
   .iniDf <- .ui$iniDf
+  .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
   .muRefCurEval <- .ui$muRefCurEval
   .split <- rxUiGet.getSplitMuModel(x, ...)
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
-  .iniDf$est <- vapply(seq_along(.iniDf$name),
-                  function(i) {
-                    .n <- .iniDf$name[i]
-                    if (is.na(.iniDf$ntheta[i])) {
-                      return(.omega[.iniDf$neta1[i], .iniDf$neta2[i]])
-                    }
-                    .isPop <- is.na(.iniDf$err[i])
-                    if (.isPop) {
-                      return(.monolixGetPopParValue(.n, .muRefCurEval, .muRef, .covDataFrame, .pop))
-                    }
-                    .isErr <- !is.na(.iniDf$ntheta[i]) & !is.na(.iniDf$err[i])
-                    if (.isErr) {
-                      .par <- eval(str2lang(paste0("rxToMonolix(", .n, ", ui=.ui)")))
-                      .w <- which(.pop$parameter == .par)
-                      if (length(.w) != 1) return(NA_real_)
-                      return(.pop$value[.w])
-                    }
-                    NA_real_
-                  }, double(1), USE.NAMES=FALSE)
+  .fullTheta <- setNames(vapply(seq_along(.theta$name),
+                                function(i) {
+                                  .n <- .theta$name[i]
+                                  .isPop <- is.na(.theta$err[i])
+                                  if (.isPop) {
+                                    return(.monolixGetPopParValue(.n, .muRefCurEval, .muRef, .covDataFrame, .pop))
+                                  }
+                                  .isErr <- !is.na(.theta$ntheta[i]) & !is.na(.theta$err[i])
+                                  if (.isErr) {
+                                    .par <- eval(str2lang(paste0("rxToMonolix(", .n, ", ui=.ui)")))
+                                    .w <- which(.pop$parameter == .par)
+                                    if (length(.w) != 1) return(NA_real_)
+                                    return(.pop$value[.w])
+                                  }
+                                  NA_real_
+                                }, double(1), USE.NAMES=FALSE),
+                         .theta$name)
+  rxode2::rxAssignControlValue(.ui, ".monolixFullTheta", .fullTheta)
+  .fullTheta
+}
+
+#' @export
+rxUiGet.monolixIniDf <- function(x, ...) {
+  .omega <- rxUiGet.monolixOmega(x, ...)
+  .theta <- rxUiGet.monolixFullTheta(x, ...)
+  .ui <- x[[1]]
+  .iniDf <- .ui$iniDf
+  .etas <- .ui$iniDf[is.na(.ui$iniDf$ntheta), ]
+  .est <- c(.theta,
+            vapply(seq_along(.etas$neta1), function(i) {
+              .n1 <- .etas$neta1[i]
+              .n2 <- .etas$neta2[i]
+              .omega[.n1, .n2]
+            }, double(1), USE.NAMES=FALSE))
+  .iniDf$est <- .est
   .iniDf
 }
+
+#' @export
+rxUiGet.monolixTheta <- function(x, ...) {
+  .fullTheta <- rxUiGet.monolixFullTheta(x, ...)
+  .ui <- x[[1]]
+  .iniDf <- .ui$iniDf
+  .n <- names(.fullTheta)
+  .fullTheta <- setNames(.fullTheta, NULL)
+  .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
+  data.frame(lower=.theta$lower, theta=.fullTheta,
+             fixed=.theta$fix, upper=.theta$upper,
+             row.names=.n)
+}
+
+
 
 #' @export
 rxUiGet.monolixIndividualParameters <- function(x, ...) {
@@ -141,6 +178,51 @@ rxUiGet.monolixIndividualParameters <- function(x, ...) {
   }
   NULL
 }
+
+#' @export
+rxUiGet.monolixIndividualLL <- function(x, ...) {
+  .exportPath <- rxUiGet.monolixExportPath(x, ...)
+  .individualParameters <- file.path(.exportPath, "LogLikelihood", "individualLL.txt")
+  if (file.exists(.individualParameters)) {
+    return(read.csv(.individualParameters))
+  }
+  NULL
+}
+
+#' @export
+rxUiGet.monolixEtaObf <- function(x, ...) {
+  .ui <- x[[1]]
+  .etas <- .ui$iniDf[!is.na(.ui$iniDf$neta1), ]
+  .etas <- .etas[.etas$neta1 == .etas$neta2, ]
+  .split <- rxUiGet.getSplitMuModel(x, ...)
+  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  .etaMonolix <- rxUiGet.monolixIndividualParameters(x, ...)
+  .n <- c("id", vapply(.etas$neta1, function(i) {
+    paste0("eta_",   .mlxtranGetIndividualMuRefEtaMonolixName(.ui, i, .muRef), "_SAEM")
+  }, character(1), USE.NAMES=FALSE))
+  .etaObf <- .etaMonolix[, .n]
+  names(.etaObf) <- c("ID", .etas$name)
+  .indLL <- rxUiGet.monolixIndividualLL(x, ...)
+  if (is.null(.indLL)) {
+    .etaObf$OBJI <- NA_real_
+  } else {
+    names(.indLL) <- c("ID", "OBJI")
+    .etaObf <- merge(.etaObf, .indLL, by="ID")
+    .etaObf <- .etaObf[, c("ID", .etas$name, "OBJI")]
+  }
+  .etaObf
+}
+
+#' @export
+rxUiGet.monolixLL <- function(x, ...) {
+  .exportPath <- rxUiGet.monolixExportPath(x, ...)
+  .individualParameters <- file.path(.exportPath, "LogLikelihood", "logLikelihood.txt")
+  if (file.exists(.individualParameters)) {
+    return(read.csv(.individualParameters))
+  }
+  NULL
+}
+
 
  #' @export
 xUiGet.monolixCovarianceEstimatesLin <- function(x, ...) {
@@ -201,6 +283,7 @@ rxUiGet.monolixCovariance <- function(x, ...) {
     paste0(.muRef[n], "_pop")
   }, character(1), USE.NAMES=FALSE)
   .cov <- .cov[.n, .n]
+  rxode2::rxAssignControlValue(.ui, ".covMethod", ifelse(sa, "MonolixSA", "MonolixLin"))
   if (.monolixCovarianceNeedsConversion(x, .sa)) {
     .jInv <- diag(1/diag(.j))
     # 2020+ SA returns correct matrix
@@ -208,6 +291,8 @@ rxUiGet.monolixCovariance <- function(x, ...) {
     # Otherwise use inverse matrix to get the correct covariance
     .cov <- .jInv %*% .cov %*% .jInv
     dimnames(.cov) <- dimnames(.j)
+    rxode2::rxAssignControlValue(.ui, ".covMethod", ifelse(sa, "MonolixSA*", "MonolixLin*"))
   }
+
   .cov
 }

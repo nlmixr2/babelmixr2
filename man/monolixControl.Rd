@@ -22,7 +22,8 @@ monolixControl(
   optimizationiterations = 20,
   optimizationtolerance = 1e-04,
   variability = c("none", "firstStage", "decreasing"),
-  runCommand = getOption("babelmixr2.monolix", "")
+  runCommand = getOption("babelmixr2.monolix", ""),
+  adjObf = TRUE
 )
 }
 \arguments{
