@@ -149,22 +149,27 @@
     .minfo("done")
     .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
     if (.cmd != "") {
-      writeLines("", .runLock)
+      .minfo(paste0("run monolix: ", sprintf(.cmd, .mlx)))
       system(sprintf(.cmd, .mlx))
     } else {
-      message("run monolix manually or setup monolix's run command")
+      .minfo("run monolix manually or stop and setup monolix's run command")
     }
-    return(invisible())
-  } else if (!file.exists(.exportPath)) {
-    if (file.exists(.runLock)) {
-      .minfo(paste0("may still be runnning '", .runLock, "'"))
-    } else {
-      .minfo(paste0("the export location '", .exportPath, "' doens't have files in it yet"))
-    }
-    return(invisible())
-  } else {
-    return(.monolixFinalizeEnv(.ret, .ui))
   }
+  if (!dir.exists(.exportPath)) {
+    .minfo("waiting for monolix output")
+    .i <- 0
+    while (!dir.exists(.exportPat)) {
+      .i <- .i + 1
+      message(".", appendLF=FALSE)
+      if (.i %% 50 == 0) {
+        message(paste0(.i, "\n"), appendLF=TRUE)
+      } else if (.i %% 10 == 0) {
+        message("|", appendLF=TRUE)
+      }
+      Sys.sleep(1)
+    }
+  }
+  return(.monolixFinalizeEnv(.ret, .ui))
 }
 
 nlmixr2Est.monolix <- function(env, ...) {

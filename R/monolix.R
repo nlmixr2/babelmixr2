@@ -216,7 +216,7 @@
       }
     } else if (identical(x[[1]], quote(`if`))) {
       .ret <- paste0("if ", .rxToMonolix(x[[2]], ui=ui), "\n",
-                     "  ", .rxToMonolix(x[[3]]), ui=ui)
+                     "  ", .rxToMonolix(x[[3]], ui=ui))
       x <- x[-c(1:3)]
       if (length(x) == 1) x <- x[[1]]
       while(identical(x[[1]], quote(`if`))) {

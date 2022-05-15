@@ -53,28 +53,35 @@ test_that("test monolix reading for 2019, 2020, and 2021", {
     })
   }
 
-  unzip("pk.turnover.emax3-2019.zip")
-  f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
-  expect_true(inherits(f, "nlmixr2FitData"))
-  unlink("pk.turnover.emax3", recursive=TRUE)
-  unlink("pk.turnover.emax3.csv")
-  unlink("pk.turnover.emax3.mlxtran")
-  unlink("pk.turnover.emax3.txt")
+  if (file.exists("pk.turnover.emax3-2019.zip")) {
 
-  unzip("pk.turnover.emax3-2020.zip")
-  f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
-  expect_true(inherits(f, "nlmixr2FitData"))
-  unlink("pk.turnover.emax3", recursive=TRUE)
-  unlink("pk.turnover.emax3.csv")
-  unlink("pk.turnover.emax3.mlxtran")
-  unlink("pk.turnover.emax3.txt")
+    unzip("pk.turnover.emax3-2019.zip")
+    f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
+    expect_true(inherits(f, "nlmixr2FitData"))
+    unlink("pk.turnover.emax3", recursive=TRUE)
+    unlink("pk.turnover.emax3.csv")
+    unlink("pk.turnover.emax3.mlxtran")
+    unlink("pk.turnover.emax3.txt")
+  }
 
-  unzip("pk.turnover.emax3-2021.zip")
-  f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
-  expect_true(inherits(f, "nlmixr2FitData"))
-  unlink("pk.turnover.emax3", recursive=TRUE)
-  unlink("pk.turnover.emax3.csv")
-  unlink("pk.turnover.emax3.mlxtran")
-  unlink("pk.turnover.emax3.txt")
+  if (file.exists("pk.turnover.emax3-2020.zip")) {
+    unzip("pk.turnover.emax3-2020.zip")
+    f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
+    expect_true(inherits(f, "nlmixr2FitData"))
+    unlink("pk.turnover.emax3", recursive=TRUE)
+    unlink("pk.turnover.emax3.csv")
+    unlink("pk.turnover.emax3.mlxtran")
+    unlink("pk.turnover.emax3.txt")
+  }
+
+  if (file.exists("pk.turnover.emax3-2021.zip")) {
+    unzip("pk.turnover.emax3-2021.zip")
+    f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
+    expect_true(inherits(f, "nlmixr2FitData"))
+    unlink("pk.turnover.emax3", recursive=TRUE)
+    unlink("pk.turnover.emax3.csv")
+    unlink("pk.turnover.emax3.mlxtran")
+    unlink("pk.turnover.emax3.txt")
+  }
 
 })
