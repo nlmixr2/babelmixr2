@@ -142,6 +142,16 @@ test_that("test more nlmixr2/monolix features", {
     })
   }
 
-  f <- nlmixr2::nlmixr(pk.turnover.emax4, nlmixr2data::warfarin, "saem")
+
+  if (file.exists("pk.turnover.emax4-2021.zip")) {
+    unzip("pk.turnover.emax4-2021.zip")
+    f <- nlmixr2::nlmixr(pk.turnover.emax4, nlmixr2data::warfarin, "monolix")
+    expect_true(inherits(f, "nlmixr2FitData"))
+    unlink("pk.turnover.emax4", recursive=TRUE)
+    unlink("pk.turnover.emax4.csv")
+    unlink("pk.turnover.emax4.mlxtran")
+    unlink("pk.turnover.emax4.txt")
+  }
+
 
 })

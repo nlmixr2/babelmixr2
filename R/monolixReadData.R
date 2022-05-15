@@ -66,6 +66,7 @@ rxUiGet.monolixOmega <- function(x, ...) {
   diag(.r) <- 1
   .d <- diag(.sd)
   .omega <- .d %*% .r %*% .d
+  .eta <- .eta[.eta$neta1 == .eta$neta2, ]
   dimnames(.omega) <- list(.eta$name, .eta$name)
   rxode2::rxAssignControlValue(.ui, ".monolixOmega", .omega)
   .omega
