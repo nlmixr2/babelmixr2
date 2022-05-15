@@ -168,6 +168,7 @@
       }
       Sys.sleep(1)
     }
+    message("")
   }
   return(.monolixFinalizeEnv(.ret, .ui))
 }
