@@ -6,7 +6,6 @@
 \alias{nmObjGetFoceiControl}
 \alias{getValidNlmixrCtl}
 \alias{nmObjHandleControlObject}
-\alias{foceiControl}
 \alias{nmObjGetControl}
 \alias{rxModelVars}
 \alias{rxUiGet}
@@ -19,7 +18,7 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
-  \item{nlmixr2est}{\code{\link[nlmixr2est]{foceiControl}}, \code{\link[nlmixr2est:getValidNlmixrControl]{getValidNlmixrCtl}}, \code{\link[nlmixr2est]{nlmixr2Est}}, \code{\link[nlmixr2est]{nmObjGetControl}}, \code{\link[nlmixr2est]{nmObjGetFoceiControl}}, \code{\link[nlmixr2est]{nmObjHandleControlObject}}}
+  \item{nlmixr2est}{\code{\link[nlmixr2est:getValidNlmixrControl]{getValidNlmixrCtl}}, \code{\link[nlmixr2est]{nlmixr2Est}}, \code{\link[nlmixr2est]{nmObjGetControl}}, \code{\link[nlmixr2est]{nmObjGetFoceiControl}}, \code{\link[nlmixr2est]{nmObjHandleControlObject}}}
 
   \item{rxode2}{\code{\link[rxode2:dot-minfo]{.minfo}}, \code{\link[rxode2]{rxModelVars}}, \code{\link[rxode2]{rxUiGet}}}
 }}

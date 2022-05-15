@@ -143,13 +143,13 @@ monolixControl <- function(nbSSDoses=7,
 .monolixControlToFoceiControl <- function(env, assign = TRUE) {
   .monolixControl <- env$monolixControl
   .ui <- env$ui
-  .foceiControl <- foceiControl(rxControl = env$monolixControl$rxControl,
-                                maxOuterIterations = 0L, maxInnerIterations = 0L, covMethod = 0L,
-                                etaMat = env$etaMat, sumProd = .monolixControl$sumProd,
-                                optExpression = .monolixControl$optExpression, scaleTo = 0,
-                                calcTables = .monolixControl$calcTables, addProp = .monolixControl$addProp,
-                                skipCov = .ui$foceiSkipCov, interaction = 1L, compress = .monolixControl$compress,
-                                ci = .monolixControl$ci, sigdigTable = .monolixControl$sigdigTable)
+  .foceiControl <- nlmixr2est::foceiControl(rxControl = env$monolixControl$rxControl,
+                                            maxOuterIterations = 0L, maxInnerIterations = 0L, covMethod = 0L,
+                                            etaMat = env$etaMat, sumProd = .monolixControl$sumProd,
+                                            optExpression = .monolixControl$optExpression, scaleTo = 0,
+                                            calcTables = .monolixControl$calcTables, addProp = .monolixControl$addProp,
+                                            skipCov = .ui$foceiSkipCov, interaction = 1L, compress = .monolixControl$compress,
+                                            ci = .monolixControl$ci, sigdigTable = .monolixControl$sigdigTable)
   if (assign)
     env$control <- .foceiControl
   .foceiControl
@@ -192,11 +192,6 @@ nlmixr2est::nmObjHandleControlObject
 nmObjHandleControlObject.monolixControl <- function(control, env) {
   assign("monolixControl", control, envir=env)
 }
-
-#' @importFrom nlmixr2est foceiControl
-#' @export
-nlmixr2est::foceiControl
-
 
 #' @importFrom nlmixr2est nmObjGetControl
 #' @export
