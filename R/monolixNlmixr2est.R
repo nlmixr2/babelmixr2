@@ -56,7 +56,7 @@
   # - $cov For covariance
   env$cov <- .ui$monolixCovariance
   # - $covMethod for the method of calculating the covariance
-  env$covMethod <-rxode2::rxGetControl(.ui, ".covMethod", "Monolix")
+  env$covMethod <- rxode2::rxGetControl(.ui, ".covMethod", "Monolix")
   # - $adjObf Should the objective function value be adjusted
   env$adjObf <- rxode2::rxGetControl(.ui, "adjObf", TRUE)
   # - $objective objective function value
