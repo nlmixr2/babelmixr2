@@ -158,7 +158,7 @@
   if (!dir.exists(.exportPath)) {
     .minfo("waiting for monolix output")
     .i <- 0
-    while (!dir.exists(.exportPat)) {
+    while (!dir.exists(.exportPath)) {
       .i <- .i + 1
       message(".", appendLF=FALSE)
       if (.i %% 50 == 0) {
