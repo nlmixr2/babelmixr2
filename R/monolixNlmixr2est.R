@@ -60,27 +60,24 @@
   # - $adjObf Should the objective function value be adjusted
   env$adjObf <- rxode2::rxGetControl(.ui, "adjObf", TRUE)
   # - $objective objective function value
-  .ll <- .ui$monolixLL
-  .obfType <- paste("monolix", names(.ll)[2])
-  names(.ll)[2] <- "val"
-  env$objective <- .ll[.ll$criteria == "-2LL", "val"]
+  env$objective <- .ui$monolixObjf
   # - $extra Extra print information
   env$extra <- paste0(" ver ", env$ui$monolixOutputVersion)
   # - $method Estimation method (for printing)
   env$method <- "Monolix"
   # - $omega Omega matrix
-  env$omega <- env$ui$monolixOmega
+  env$omega <- .ui$monolixOmega
   # - $theta Is a theta data frame
-  env$theta <- env$ui$monolixTheta
+  env$theta <- .ui$monolixTheta
   # - $model a list of model information for table generation.  Needs a `predOnly` model
-  env$model <- env$ui$ebe
+  env$model <- .ui$ebe
   # - $message Message for display
   env$message <- ""
   # - $est estimation method
   env$est <- "monolix"
   # - $ofvType (optional) tells the type of ofv is currently being used
   #env$ofvType
-  env$ofvType <- .obfType
+  env$ofvType <- .ui$monolixObjfType
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
   .monolixControlToFoceiControl(env)

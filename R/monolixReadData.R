@@ -181,10 +181,15 @@ rxUiGet.monolixIndividualParameters <- function(x, ...) {
 
 #' @export
 rxUiGet.monolixIndividualLL <- function(x, ...) {
+  .ui <- x[[1]]
+  .ret <- rxode2::rxGetControl(.ui, ".monolixIndividualLL", NULL)
+  if (!is.null(.ret)) return(.ret)
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
   .individualParameters <- file.path(.exportPath, "LogLikelihood", "individualLL.txt")
   if (file.exists(.individualParameters)) {
-    return(read.csv(.individualParameters))
+    .ret <- read.csv(.individualParameters)
+    rxode2::rxAssignControlValue(.ui, ".monolixIndividualLL", .ret)
+    return(.ret)
   }
   NULL
 }
@@ -216,14 +221,42 @@ rxUiGet.monolixEtaObf <- function(x, ...) {
 
 #' @export
 rxUiGet.monolixLL <- function(x, ...) {
+  .ui <- x[[1]]
+  .ret <- rxode2::rxGetControl(.ui, ".monolixLL", NULL)
+  if (!is.null(.ret)) return(.ret)
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
   .individualParameters <- file.path(.exportPath, "LogLikelihood", "logLikelihood.txt")
   if (file.exists(.individualParameters)) {
-    return(read.csv(.individualParameters))
+    .ret <- read.csv(.individualParameters)
+    rxode2::rxAssignControlValue(.ui, ".monolixLL", .ret)
+    return(.ret)
   }
   NULL
 }
 
+#' @export
+rxUiGet.monolixObjf <- function(x, ...) {
+  .ll <- rxUiGet.monolixLL(x, ...)
+  names(.ll)[2] <- "val"
+  .w <- which(.ll$criteria == "OFV")
+  if (length(.w) == 1L) {
+    return(.ll[.w, "val"])
+  } else {
+    .w <- which(.ll$criteria == "-2LL")
+    if (length(.w) == 1L) {
+      return(.ll[.w, "val"])
+    } else {
+      stop("cannot figure out the objective function value from monolix",
+           call.=FALSE)
+    }
+  }
+}
+
+#' @export
+rxUiGet.monolixObjfType <- function(x, ...) {
+  .ll <- rxUiGet.monolixObjf(x, ...)
+  paste("monolix", names(.ll)[2])
+}
 
  #' @export
 rxUiGet.monolixCovarianceEstimatesLin <- function(x, ...) {
