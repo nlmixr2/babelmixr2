@@ -1,4 +1,4 @@
 library(testthat)
-library(babelmixr)
+library(babelmixr2)
 
-test_check("babelmixr")
+test_check("babelmixr2")
