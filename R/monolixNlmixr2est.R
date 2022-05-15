@@ -149,8 +149,8 @@
     .minfo("done")
     .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
     if (.cmd != "") {
-      .minfo(paste0("run monolix: ", sprintf(.cmd, .mlx)))
-      system(sprintf(.cmd, .mlx))
+      .minfo(paste0("run monolix: ", sprintf(.cmd, .mlxtran)))
+      system(sprintf(.cmd, .mlxtran))
     } else {
       .minfo("run monolix manually or stop and setup monolix's run command")
     }
