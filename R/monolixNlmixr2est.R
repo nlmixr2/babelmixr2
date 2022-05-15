@@ -164,7 +164,7 @@
       if (.i %% 50 == 0) {
         message(paste0(.i, "\n"), appendLF=TRUE)
       } else if (.i %% 10 == 0) {
-        message("|", appendLF=TRUE)
+        message("|", appendLF=FALSE)
       }
       Sys.sleep(1)
     }
