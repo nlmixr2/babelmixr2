@@ -79,7 +79,7 @@ rxUiGet.mlxtranDatafile <- function(x, ...) {
     .ssData <- "SS"
   }
   .ytypeData <- NULL
-  if (length(ui$predDf$cond) > 1) {
+  if (length(.ui$predDf$cond) > 1) {
     .ytypeData <- "YTYPE"
   }
   .col0 <- c("ID", "TIME", "EVID", "AMT", .iiData, "DV", "ADM", .ytypeData, .ssData, .rateData,
