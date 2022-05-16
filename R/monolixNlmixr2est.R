@@ -170,7 +170,11 @@
     }
     message("")
   }
-  return(.monolixFinalizeEnv(.ret, .ui))
+  .ret <- .monolixFinalizeEnv(.ret, .ui)
+  if (inherits(.ret, "nlmixr2FitData")) {
+    qs::qsave(.ret, .qs)
+  }
+  return(.ret)
 }
 
 nlmixr2Est.monolix <- function(env, ...) {

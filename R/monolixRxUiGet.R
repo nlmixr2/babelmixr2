@@ -16,7 +16,7 @@ rxUiGet.monolixDataFile <- function(x, ...) {
 
 #' @export
 rxUiGet.monolixQs <- function(x, ...) {
-  paste0(rxUiGet.monolixExportPath(x, ...), ".qs")
+  file.path(rxUiGet.monolixExportPath(x, ...), "nlmixr.qs")
 }
 
 #' @export
