@@ -78,7 +78,11 @@ rxUiGet.mlxtranDatafile <- function(x, ...) {
   if (.hasSs) {
     .ssData <- "SS"
   }
-  .col0 <- c("ID", "TIME", "EVID", "AMT", .iiData, "DV", "ADM", "YTYPE", .ssData, .rateData,
+  .ytypeData <- NULL
+  if (length(ui$predDf$cond) > 1) {
+    .ytypeData <- "YTYPE"
+  }
+  .col0 <- c("ID", "TIME", "EVID", "AMT", .iiData, "DV", "ADM", .ytypeData, .ssData, .rateData,
              .censData, .limitData,
              .ui$allCovs, "nlmixrRowNums")
 

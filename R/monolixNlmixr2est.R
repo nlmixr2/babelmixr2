@@ -25,6 +25,9 @@
   if (all(is.na(.ret$SS))) {
     .ret <- .ret[, !(names(.ret) %in% c("SS", "II"))]
   }
+  if (length(ui$predDf$cond) == 1L) {
+    .ret <- .ret[, !(names(.ret) %in% c("YTYPE"))]
+  }
   .n <- names(.ret)
   rxode2::rxAssignControlValue(ui, ".hasRate",
                                ifelse(any(.n == "RATE"), TRUE, ifelse(any(.n == "TINF"), FALSE, NA)))
