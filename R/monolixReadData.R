@@ -63,11 +63,15 @@ rxUiGet.monolixOmega <- function(x, ...) {
     }
   }
   .sd <- diag(.r)
-  diag(.r) <- 1
-  .d <- diag(.sd)
-  .omega <- .d %*% .r %*% .d
-  .eta <- .eta[.eta$neta1 == .eta$neta2, ]
-  dimnames(.omega) <- list(.eta$name, .eta$name)
+  if (!inherits(.sd, "matrix") && length(.sd) == 1) {
+    .omega <- matrix(.sd * .sd, 1, 1, dimnames=list(names(.sd), names(.sd)))
+  } else {
+    diag(.r) <- 1
+    .d <- diag(.sd)
+    .omega <- .d %*% .r %*% .d
+    .eta <- .eta[.eta$neta1 == .eta$neta2, ]
+    dimnames(.omega) <- list(.eta$name, .eta$name)
+  }
   rxode2::rxAssignControlValue(.ui, ".monolixOmega", .omega)
   .omega
 }
