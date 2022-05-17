@@ -54,34 +54,30 @@ test_that("test monolix reading for 2019, 2020, and 2021", {
   }
 
   if (file.exists("pk.turnover.emax3-2019.zip")) {
-
-    unzip("pk.turnover.emax3-2019.zip")
-    f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
-    expect_true(inherits(f, "nlmixr2FitData"))
-    unlink("pk.turnover.emax3", recursive=TRUE)
-    unlink("pk.turnover.emax3.csv")
-    unlink("pk.turnover.emax3.mlxtran")
-    unlink("pk.turnover.emax3.txt")
+    .path <- normalizePath("pk.turnover.emax3-2019.zip")
+    withr::with_tempdir({
+      unzip(.path)
+      f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
+      expect_true(inherits(f, "nlmixr2FitData"))
+    })
   }
 
   if (file.exists("pk.turnover.emax3-2020.zip")) {
-    unzip("pk.turnover.emax3-2020.zip")
-    f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
-    expect_true(inherits(f, "nlmixr2FitData"))
-    unlink("pk.turnover.emax3", recursive=TRUE)
-    unlink("pk.turnover.emax3.csv")
-    unlink("pk.turnover.emax3.mlxtran")
-    unlink("pk.turnover.emax3.txt")
+    .path <- normalizePath("pk.turnover.emax3-2020.zip")
+    withr::with_tempdir({
+      unzip(.path)
+      f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
+      expect_true(inherits(f, "nlmixr2FitData"))
+    })
   }
 
   if (file.exists("pk.turnover.emax3-2021.zip")) {
-    unzip("pk.turnover.emax3-2021.zip")
-    f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
-    expect_true(inherits(f, "nlmixr2FitData"))
-    unlink("pk.turnover.emax3", recursive=TRUE)
-    unlink("pk.turnover.emax3.csv")
-    unlink("pk.turnover.emax3.mlxtran")
-    unlink("pk.turnover.emax3.txt")
+    .path <- normalizePath("pk.turnover.emax3-2021.zip")
+    withr::with_tempdir({
+      unzip(.path)
+      f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
+      expect_true(inherits(f, "nlmixr2FitData"))
+    })
   }
 
 })
@@ -144,14 +140,45 @@ test_that("test more nlmixr2/monolix features", {
 
 
   if (file.exists("pk.turnover.emax4-2021.zip")) {
-    unzip("pk.turnover.emax4-2021.zip")
-    f <- nlmixr2::nlmixr(pk.turnover.emax4, nlmixr2data::warfarin, "monolix")
-    expect_true(inherits(f, "nlmixr2FitData"))
-    unlink("pk.turnover.emax4", recursive=TRUE)
-    unlink("pk.turnover.emax4.csv")
-    unlink("pk.turnover.emax4.mlxtran")
-    unlink("pk.turnover.emax4.txt")
+    .path <- normalizePath("pk.turnover.emax4-2021.zip")
+    withr::with_tempdir({
+      unzip(.path)
+      f <- nlmixr2::nlmixr(pk.turnover.emax4, nlmixr2data::warfarin, "monolix")
+      expect_true(inherits(f, "nlmixr2FitData"))
+    })
+  }
+})
+
+
+test_that("test pheno", {
+
+  pheno <- function() {
+    ini({
+      tcl <- log(0.008) # typical value of clearance
+      tv <-  log(0.6)   # typical value of volume
+      ## var(eta.cl)
+      eta.cl + eta.v ~ c(1,
+                         0.01, 1) ## cov(eta.cl, eta.v), var(eta.v)
+      # interindividual variability on clearance and volume
+      add.err <- 0.1    # residual variability
+    })
+    model({
+      cl <- exp(tcl + eta.cl) # individual value of clearance
+      v <- exp(tv + eta.v)    # individual value of volume
+      ke <- cl / v            # elimination rate constant
+      d/dt(A1) = - ke * A1    # model differential equation
+      cp = A1 / v             # concentration in plasma
+      cp ~ add(add.err)       # define error model
+    })
   }
 
 
+  if (file.exists("pheno-2021.zip")) {
+    .path <- normalizePath("pheno-2021.zip")
+    withr::with_tempdir({
+      unzip(.path)
+      f <- nlmixr2::nlmixr(pheno, nlmixr2data::pheno_sd, "monolix")
+      expect_true(inherits(f, "nlmixr2FitData"))
+    })
+  }
 })
