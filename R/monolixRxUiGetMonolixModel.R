@@ -81,14 +81,16 @@ rxUiGet.monolixModel <- function(x, ...) {
   .mv <- rxode2::rxModelVars(.ui)
   .mod <- rxToMonolix(.norm, ui=.ui)
   .txtFile <- rxUiGet.monolixModelFileName(x, ...)
-  .regressors <- ""
-  if (length(.ui$allCov) > 0) {
-    .regressors <- paste(paste0(.ui$allCov, "= {use=regressor}"), collapse="\n")
+  .regress <- .ui$allCovs
+  .cov <- .ui$saemMuRefCovariateDataFrame
+  .regress <- .regress[!(.regress %in% .cov)]
+  if (length(.ui$allCovs) > 0) {
+    .regressors <- paste0("\n", paste(paste0(.regress, "= {use=regressor}"), collapse="\n"))
   }
   paste0("DESCRIPTION:\n",
          paste0("model translated from `babelmixr2` and `nlmixr2` function ", .ui$modelName, " to ", .txtFile, "\n\n"),
          "[LONGITUDINAL]\n",
-         "input={", paste(setNames(c(.split$pureMuRef, .split$taintMuRef, .ui$allCov), NULL), collapse=",") , "}",
+         "input={", paste(setNames(c(.split$pureMuRef, .split$taintMuRef, .regress), NULL), collapse=",") , "}",
          .regressors,
           ifelse(rxode2::rxGetControl(.ui, "stiff", FALSE), "\n\nodeType = stiff", ""),
          "\n\nPK:\n; Define compartments with administrations\n",
