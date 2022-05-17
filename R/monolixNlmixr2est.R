@@ -97,7 +97,7 @@
   .ret <- new.env(parent=emptyenv())
   .ret$table <- env$table
   .ret$monolixControl <- .control
-  .tmp  <- nlmixr2extra::nlmixrDataToMonolix(.ui, .data, table=env$table, env=.ret)
+  .tmp  <- bblDatToMonolix(.ui, .data, table=env$table, env=.ret)
   .ret$monolixData <- .monolixFormatData(.tmp$monolix, .ui)
   .tmp <- .tmp$adm
   .tmp$f <- NA_real_

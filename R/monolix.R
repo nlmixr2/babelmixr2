@@ -95,7 +95,7 @@
 #'
 #'
 #' @param ui rxode2 user interface
-#' @return internal adm dataset that comes from `nlmixr2extra::nlmixrDataToMonolix`
+#' @return internal adm dataset that comes from `bblDatToMonolix()`
 #' @author Matthew L. Fidler
 #' @noRd
 .monolixGetAdm <- function(ui) {
