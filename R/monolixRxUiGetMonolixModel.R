@@ -84,6 +84,7 @@ rxUiGet.monolixModel <- function(x, ...) {
   .regress <- .ui$allCovs
   .cov <- .ui$saemMuRefCovariateDataFrame
   .regress <- .regress[!(.regress %in% .cov)]
+  .regressors <- ""
   if (length(.ui$allCovs) > 0) {
     .regressors <- paste0("\n", paste(paste0(.regress, "= {use=regressor}"), collapse="\n"))
   }
