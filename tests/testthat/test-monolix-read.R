@@ -286,5 +286,14 @@ test_that("pbpk mavoglurant", {
 
   expect_error(bblDatToMonolix(pbpk, nlmixr2data::mavoglurant), NA)
 
+  if (file.exists("pbpk-2021.zip")) {
+    .path <- normalizePath("pbpk-2021.zip")
+    withr::with_tempdir({
+      unzip(.path)
+      f <- nlmixr2::nlmixr(pbpk, nlmixr2data::mavoglurant, "monolix")
+      expect_true(inherits(f, "nlmixr2FitData"))
+    })
+  }
+
 
 })
