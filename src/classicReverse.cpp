@@ -282,15 +282,18 @@ List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, Nu
           } else {
             keepItem[i] = false;
           }
+          break;
         case EVIDF_REPLACE:
           newEvid[i] = replaceEvid;
           keepItem[i] = false;
           hasReplace=true;
+          break;
         case EVIDF_MULT:
           newEvid[i] = 6;
           newSs[i] =getSs(wh0, hasSs, hasSs2, hasSsRate);
           keepItem[i] = false;
           hasMult=true;
+          break;
         case EVIDF_NORMAL:
           // defined by 
           newEvid[i] = 1;

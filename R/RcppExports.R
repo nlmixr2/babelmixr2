@@ -2,6 +2,6 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 convertDataBack <- function(id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, linNcmt = 0L, linKa = 0L, neq = 0L, replaceEvid = 5L) {
-    .Call('_babelmixr2_convertDataBack', PACKAGE = 'babelmixr2', id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, linNcmt, linKa, neq, replaceEvid)
+    .Call(`_babelmixr2_convertDataBack`, id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, linNcmt, linKa, neq, replaceEvid)
 }
 
