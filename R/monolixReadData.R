@@ -333,6 +333,10 @@ rxUiGet.monolixCovariance <- function(x, ...) {
     dimnames(.cov) <- dimnames(.j)
     rxode2::rxAssignControlValue(.ui, ".covMethod", ifelse(.sa, "MonolixSA*", "MonolixLin*"))
   }
-
+  if (any(is.na(.cov)) || any(is.nan(.cov))) {
+    warning("there are NaNs in the covariance in monolix, not included in nlmixr2 fit; check model results",
+            call.=FALSE)
+    return(NULL)
+  }
   .cov
 }
