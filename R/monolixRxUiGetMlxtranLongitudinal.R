@@ -11,7 +11,6 @@
     return(paste0("constant(", .tmp, ")"))
   } else if (.errType == 2L) { # prop
     .tmp <- as.character(.iniDf$name)
-    .getMonolixResidualAddPar(.tmp)
     .tmp <- eval(str2lang(paste0("rxToMonolix(", .tmp, ", ui=ui)")))
     if (input) return(.tmp)
     return(paste0("proportional(", .tmp, ")"))
