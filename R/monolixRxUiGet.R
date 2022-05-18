@@ -20,6 +20,11 @@ rxUiGet.monolixQs <- function(x, ...) {
 }
 
 #' @export
+rxUiGet.monolixCvParam <- function(x, ...) {
+  file.path(rxUiGet.monolixExportPath(x, ...), "ChartsData", "Saem")
+}
+
+#' @export
 rxUiGet.monolixRunLock <- function(x, ...) {
   paste0(rxUiGet.monolixExportPath(x, ...), ".run-lock")
 }

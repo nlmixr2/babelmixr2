@@ -14,6 +14,21 @@ rxUiGet.monolixOutputVersion <- function(x, ...) {
   NULL
 }
 
+#' @export
+rxUiGet.monolixHasChartData <- function(x, ...) {
+  .chart <- rxUiGet.monolixCvParam(x, ...)
+  if (file.exists(.chart)) return(TRUE)
+  .mlxtran <- rxUiGet.monolixMlxtranFile(x, ...)
+  if (!file.exists(.mlxtran)) return(FALSE)
+  if (!requireNamespace("lixoftConnectors", quietly = TRUE)) return(FALSE)
+  .l <-loadNamespace("lixoftConnectors")
+  .x <- try(.l$initializeLixoftConnectors(software = "monolix"), silent=TRUE)
+  if (inherits(.x, "try-error")) return(FALSE)
+  .x <- try(.l$loadProject(.mlxtran), silent=TRUE)
+  if (inherits(.x, "try-error")) return(FALSE)
+  .x <- try(.l$computeChartsData(), silent=TRUE)
+  file.exists(.chart)
+}
 
 #' @export
 rxUiGet.monolixPopulationParameters <- function(x, ...) {
