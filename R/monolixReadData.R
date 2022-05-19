@@ -20,10 +20,10 @@ rxUiGet.monolixHasChartData <- function(x, ...) {
   if (file.exists(.chart)) return(TRUE)
   .mlxtran <- rxUiGet.monolixMlxtranFile(x, ...)
   if (!file.exists(.mlxtran)) return(FALSE)
-  if (!requireNamespace("lixoftConnectors", quietly = TRUE)) return(FALSE)
-  .l <-loadNamespace("lixoftConnectors")
-  .x <- try(.l$initializeLixoftConnectors(software = "monolix"), silent=TRUE)
-  if (inherits(.x, "try-error")) return(FALSE)
+  if (!.hasLixoftConnectors()) {
+    return(FALSE)
+  }
+  .l <- .lixoftNs
   .x <- try(.l$loadProject(.mlxtran), silent=TRUE)
   if (inherits(.x, "try-error")) return(FALSE)
   .x <- try(.l$computeChartsData(), silent=TRUE)

@@ -93,6 +93,27 @@
   env
 }
 
+.lixoftStarted <- NA
+.lixoftNs <- NULL
+
+.hasLixoftConnectors <- function() {
+  if (is.na(.lixoftStarted)) {
+    if (!requireNamespace("lixoftConnectors", quietly = TRUE)) {
+      assignInMyNamespace(".lixoftStarted", FALSE)
+      return(invisible(FALSE))
+    }
+    .l <- loadNamespace("lixoftConnectors")
+    .x <- try(.l$initializeLixoftConnectors(software = "monolix"), silent=TRUE)
+    if (inherits(.x, "try-error")) {
+      assignInMyNamespace(".lixoftStarted", FALSE)
+    } else {
+      assignInMyNamespace(".lixoftStarted", TRUE)
+      assignInMyNamespace(".lixoftNs", .l)
+    }
+  }
+  invisible(.lixoftStarted)
+}
+
 .monolixFamilyFit <- function(env, ...) {
   .ui <- env$ui
   .control <- .ui$control
@@ -153,12 +174,24 @@
     writeLines(text=.ui$mlxtran, con=.mlxtran)
     write.csv(.ret$monolixData, file=.csv, na = ".", row.names = FALSE)
     .minfo("done")
+    .runLS <- FALSE
     .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
     if (.cmd != "") {
       .minfo(paste0("run monolix: ", sprintf(.cmd, .mlxtran)))
       system(sprintf(.cmd, .mlxtran))
     } else {
-      .minfo("run monolix manually or stop and setup monolix's run command")
+      if (.hasLixoftConnectors()) {
+        .l <- .lixoftNs
+        .x <- try(.l$loadProject(.mlxtran), silent=TRUE)
+        if (inherits(.x, "try-error")) {
+          stop("lixoftConnectors cannot load mlxtran",
+               call.=FALSE)
+        }
+        .l$runScenario()
+        .runLS <- TRUE
+      } else {
+        .minfo("run monolix manually or stop and setup monolix's run command")
+      }
     }
   }
   if (!dir.exists(.exportPath)) {
@@ -171,6 +204,17 @@
         message(paste0(.i, "\n"), appendLF=TRUE)
       } else if (.i %% 10 == 0) {
         message("|", appendLF=FALSE)
+        if (.runLS) {
+          .status <- .lixoftNs$getLastRunStatus()
+          if (.status$report != ""){
+            message("")
+            message(.status$report)
+            break;
+          }
+          if (.status$status) {
+            break;
+          }
+        }
       }
       Sys.sleep(1)
     }
