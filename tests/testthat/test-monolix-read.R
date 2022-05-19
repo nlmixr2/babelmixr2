@@ -419,10 +419,17 @@ test_that("wbc", {
 
   if (file.exists("wbc-2021.zip")) {
     .path <- normalizePath("wbc-2021.zip")
+    .pathCharts <- "wbc-charts-2021.zip"
     withr::with_tempdir({
       unzip(.path)
+
+      unzip("wbc-2021.zip")
       f <- suppressWarnings(nlmixr2::nlmixr2(wbc, nlmixr2data::wbcSim, "monolix"))
+
+      unzip("wbc-charts-2021.zip")
+
       expect_true(inherits(f, "nlmixr2FitData"))
+
     })
   }
 

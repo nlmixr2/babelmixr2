@@ -31,6 +31,74 @@ rxUiGet.monolixHasChartData <- function(x, ...) {
 }
 
 #' @export
+rxUiGet.monolixParHistoryRaw <- function(x, ...) {
+  if (rxUiGet.monolixHasChartData(x, ...)) {
+    return(read.csv(rxUiGet.monolixCvParam(x, ...)))
+  }
+  NULL
+}
+
+#' @export
+rxUiGet.monolixParHistory <- function(x, ...) {
+  .raw <- rxUiGet.monolixParHistoryRaw(x, ...)
+  if (!is.null(.raw)) {
+    .ui <- x[[1]]
+    .iniDf <- .ui$iniDf
+    .split <- rxUiGet.getSplitMuModel(x, ...)
+    .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+    .muRefCurEval <- .ui$muRefCurEval
+    .eta <- .iniDf[is.na(.iniDf$ntheta), ]
+    .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
+    .r <- .getOmegaR(.ui)
+    .n <- names(.raw)
+    .en <- dimnames(.r)[[1]]
+    .covDataFrame <- .ui$saemMuRefCovariateDataFrame
+    for (.i in seq_along(.eta$name)) {
+      .n1 <- .eta$neta1[.i]
+      .n2 <- .eta$neta2[.i]
+      if (.n1 == .n2) {
+        .par <- paste0("omega_", .mlxtranGetIndividualMuRefEtaMonolixName(.ui, .n1, .muRef))
+        .n <- sub(.par, paste0("O(", .en[.n1], ")"), .n, fixed=TRUE)
+      } else {
+        .par <- paste0("corr_", .mlxtranGetIndividualMuRefEtaMonolixName(.ui, .n1, .muRef),"_",
+                       .mlxtranGetIndividualMuRefEtaMonolixName(.ui, .n2, .muRef))
+        .n <- sub(.par, paste0("C(", .en[.n1], ",", .en[.n2], ")"), .n, fixed=TRUE)
+      }
+    }
+    for (.name in .theta$name) {
+      .w <- which(.covDataFrame$covariateParameter == .name)
+      if (length(.w) == 1) {
+        .par <- paste0("beta_", .muRef[.covDataFrame$theta[.w]], "_",
+                       .covDataFrame$covariate[.w])
+        .n <- sub(.par, .name, .n, fixed=TRUE)
+      }  else {
+        .par <- paste0(.muRef[.name], "_pop")
+        .w <- which(.n == .par)
+        if (length(.w) == 1) {
+          .n[.w] <- .par
+        } else {
+          .i <- which(.name == .theta$name)
+          .isErr <- !is.na(.theta$ntheta[.i]) & !is.na(.theta$err[.i])
+          if (.isErr) {
+            .par <- eval(str2lang(paste0("rxToMonolix(", .name, ", ui=.ui)")))
+            .n <- sub(.par, .name, .n, fixed=TRUE)
+          }
+        }
+      }
+    }
+    .n <- sub("iteration", "iter", .n)
+    .ret <- setNames(.raw, .n)
+    .w <- which(.ret$phase == 2)[1]
+    .niter <- .ret$iter[.w]
+    .cls <- class(.ret)
+    attr(.cls, "niter") <- .niter
+    class(.ret) <- .cls
+    return(.ret)
+  }
+  NULL
+}
+
+#' @export
 rxUiGet.monolixPopulationParameters <- function(x, ...) {
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
   .popParameters <- file.path(.exportPath, "populationParameters.txt")
