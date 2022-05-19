@@ -187,7 +187,9 @@
           stop("lixoftConnectors cannot load mlxtran",
                call.=FALSE)
         }
+        .minfo("lixoftConnectors::runScenario()")
         .l$runScenario()
+        .minfo("done")
         .runLS <- TRUE
       } else {
         .minfo("run monolix manually or stop and setup monolix's run command")
@@ -204,17 +206,6 @@
         message(paste0(.i, "\n"), appendLF=TRUE)
       } else if (.i %% 10 == 0) {
         message("|", appendLF=FALSE)
-        if (.runLS) {
-          .status <- .lixoftNs$getLastRunStatus()
-          if (.status$report != ""){
-            message("")
-            message(.status$report)
-            break;
-          }
-          if (.status$status) {
-            break;
-          }
-        }
       }
       Sys.sleep(1)
     }
