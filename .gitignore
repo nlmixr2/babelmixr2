@@ -4,3 +4,4 @@
 .Ruserdata
 *.o
 /src/babelmixr2.so
+babelmixr2.Rproj
