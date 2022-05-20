@@ -167,7 +167,18 @@
 
   if (file.exists(.qs)) {
     .minfo("load saved nlmixr2 object")
-    return(qs::qread(.qs))
+    .ret <- qs::qread(.qs)
+    if (!exists("parHist", .ret$env)) {
+      .tmp <- .ret$ui$monolixParHistory
+      if (is.null(.tmp)) {
+        .minfo("monolix parameter history needs expoted charts, please export charts")
+      } else {
+        assign("parHist", .tmp, .ret$env)
+        .minfo("monolix parameter history integrated into fit object")
+        qs::qsave(.ret, .qs)
+      }
+    }
+    return(.ret)
   } else if (!file.exists(.model)) {
     .minfo("writing monolix files")
     writeLines(text=.ui$monolixModel, con=.model)
@@ -213,6 +224,14 @@
   }
   .ret <- .monolixFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
+    .tmp <- .ret$ui$monolixParHistory
+    if (is.null(.tmp)) {
+      .minfo("monolix parameter history needs expoted charts, please export charts")
+    } else {
+      assign("parHist", .tmp, .ret$env)
+      .minfo("monolix parameter history integrated into fit object")
+      qs::qsave(.ret, .qs)
+    }
     qs::qsave(.ret, .qs)
   }
   return(.ret)

@@ -90,6 +90,7 @@ rxUiGet.monolixParHistory <- function(x, ...) {
     .ret <- setNames(.raw, .n)
     .w <- which(.ret$phase == 2)[1]
     .niter <- .ret$iter[.w]
+    .ret <- .ret[, names(.ret) != "phase"]
     .cls <- class(.ret)
     attr(.cls, "niter") <- .niter
     class(.ret) <- .cls

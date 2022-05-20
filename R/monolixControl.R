@@ -89,9 +89,25 @@ monolixControl <- function(nbSSDoses=7,
   } else {
     genRxControl <- FALSE
     if (is.null(rxControl)) {
-      rxControl <- rxode2::rxControl()
+      rxControl <- rxode2::rxControl(
+        maxSS=nbSSDoses + 1,
+        minSS=nbSSDoses,
+        ssAtol=100,
+        ssRtol=100,
+        atol=ifelse(stiff, 1e-9, 1e-6),
+        rtol=ifelse(stiff, 1e-6, 1e-3),
+        method=ifelse(stiff, "liblsoda", "dop853")
+      )
       genRxControl <- TRUE
     } else if (is.list(rxControl)) {
+        rxControl$maxSS <- nbSSDoses + 1
+        rxControl$minSS <- .monolixControl$nbSSDoses
+        rxControl$ssAtol <- 100
+        rxControl$ssRtol <- 100
+        rxControl$atol <- ifelse(.monolixControl$stiff, 1e-9, 1e-6)
+        rxControl$rtol <- ifelse(.monolixControl$stiff, 1e-6, 1e-3)
+        rxControl$method <- ifelse(.monolixControl$stiff, "liblsoda",
+                                   "dop853")
       rxControl <- do.call(rxode2::rxControl, rxControl)
     }
     if (!inherits(rxControl, "rxControl")) {
@@ -152,15 +168,7 @@ monolixControl <- function(nbSSDoses=7,
                                             skipCov = .ui$foceiSkipCov, interaction = 1L,
                                             compress = .monolixControl$compress,
                                             ci = .monolixControl$ci,
-                                            sigdigTable = .monolixControl$sigdigTable,
-                                            maxSS=.monolixControl$nbSSDoses + 1,
-                                            minSS=.monolixControl$nbSSDoses,
-                                            ssAtol=100,
-                                            ssRtol=100,
-                                            atol=ifelse(.monolixControl$stiff, 1e-9, 1e-6),
-                                            rtol=ifelse(.monolixControl$stiff, 1e-6, 1e-3),
-                                            method=ifelse(.monolixControl$stiff, "liblsoda",
-                                                          "dop853"))
+                                            sigdigTable = .monolixControl$sigdigTable)
   if (assign)
     env$control <- .foceiControl
   .foceiControl
