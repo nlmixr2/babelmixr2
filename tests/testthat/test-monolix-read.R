@@ -419,7 +419,7 @@ test_that("wbc", {
 
   if (file.exists("wbc-2021.zip")) {
     .path <- normalizePath("wbc-2021.zip")
-    .pathCharts <- normalizePath"wbc-charts-2021.zip")
+    .pathCharts <- normalizePath("wbc-charts-2021.zip")
     withr::with_tempdir({
       unzip(.path)
 
