@@ -158,7 +158,9 @@ monolixControl <- function(nbSSDoses=7,
                                             ssAtol=100,
                                             ssRtol=100,
                                             atol=ifelse(.monolixControl$stiff, 1e-9, 1e-6),
-                                            rtol=ifelse(.monolixControl$stiff, 1e-6, 1e-3))
+                                            rtol=ifelse(.monolixControl$stiff, 1e-6, 1e-3),
+                                            method=ifelse(.monolixControl$stiff, "liblsoda",
+                                                          "dop853"))
   if (assign)
     env$control <- .foceiControl
   .foceiControl
