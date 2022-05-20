@@ -56,7 +56,7 @@ monolixControl <- function(nbSSDoses=7,
   checkmate::assertIntegerish(burniniterations, max.len=1, lower=1)
   checkmate::assertIntegerish(exploratoryiterations, max.len=1, lower=1)
   checkmate::assertIntegerish(simulatedannealingiterations, max.len=1, lower=1)
-  checkmate::assertIntegerish(nbSSDoses, lower=1, max.len=1)
+  checkmate::assertIntegerish(nbSSDoses, lower=7, max.len=1)
   checkmate::assertIntegerish(exploratoryiterations, max.len=1, lower=1)
   checkmate::assertIntegerish(exploratoryinterval, max.len=1, lower=1)
   checkmate::assertIntegerish(smoothingiterations, max.len=1, lower=1)
@@ -149,7 +149,11 @@ monolixControl <- function(nbSSDoses=7,
                                             optExpression = .monolixControl$optExpression, scaleTo = 0,
                                             calcTables = .monolixControl$calcTables, addProp = .monolixControl$addProp,
                                             skipCov = .ui$foceiSkipCov, interaction = 1L, compress = .monolixControl$compress,
-                                            ci = .monolixControl$ci, sigdigTable = .monolixControl$sigdigTable)
+                                            ci = .monolixControl$ci, sigdigTable = .monolixControl$sigdigTable,
+                                            maxSS=.monolixConrol$nbSSDoses + 1,
+                                            minSS=.monolixConrol$nbSSDoses,
+                                            ssAtol=100,
+                                            ssRtol=100)
   if (assign)
     env$control <- .foceiControl
   .foceiControl
