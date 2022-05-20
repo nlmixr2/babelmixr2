@@ -147,13 +147,18 @@ monolixControl <- function(nbSSDoses=7,
                                             maxOuterIterations = 0L, maxInnerIterations = 0L, covMethod = 0L,
                                             etaMat = env$etaMat, sumProd = .monolixControl$sumProd,
                                             optExpression = .monolixControl$optExpression, scaleTo = 0,
-                                            calcTables = .monolixControl$calcTables, addProp = .monolixControl$addProp,
-                                            skipCov = .ui$foceiSkipCov, interaction = 1L, compress = .monolixControl$compress,
-                                            ci = .monolixControl$ci, sigdigTable = .monolixControl$sigdigTable,
-                                            maxSS=.monolixConrol$nbSSDoses + 1,
-                                            minSS=.monolixConrol$nbSSDoses,
+                                            calcTables = .monolixControl$calcTables,
+                                            addProp = .monolixControl$addProp,
+                                            skipCov = .ui$foceiSkipCov, interaction = 1L,
+                                            compress = .monolixControl$compress,
+                                            ci = .monolixControl$ci,
+                                            sigdigTable = .monolixControl$sigdigTable,
+                                            maxSS=.monolixControl$nbSSDoses + 1,
+                                            minSS=.monolixControl$nbSSDoses,
                                             ssAtol=100,
-                                            ssRtol=100)
+                                            ssRtol=100,
+                                            atol=ifelse(.monolixControl$stiff, 1e-9, 1e-6),
+                                            rtol=ifelse(.monolixControl$stiff, 1e-6, 1e-3))
   if (assign)
     env$control <- .foceiControl
   .foceiControl
