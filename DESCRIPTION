@@ -6,24 +6,31 @@ Author: Who wrote it
 Maintainer: The package maintainer <yourself@somewhere.net>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
-License: MIT
+    While not required, you can get/install the R 'lixoftConnectors'
+    package in the 'Monolix' installation, as described at the following url
+    <https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/>.
+    When 'lixoftConnectors' is available, R can 'Monolix' directly instead of
+    using a command line.
+License: GPL (>= 3)
 NeedsCompilation: yes
 Encoding: UTF-8
 LazyData: true
 Suggests: 
-    testthat
+    testthat,
+    nlmixr2data,
+    withr,
+    lixoftConnectors
 Depends: 
-    R (>= 3.5)
+    R (>= 3.5),
+    nlmixr2
 Imports: 
     rxode2,
     nlmixr2est,
     checkmate,
-    digest,
     methods,
-    stringi,
-    data.table,
-    cli
+    qs
 RoxygenNote: 7.1.2
+Additional_repositories: https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/
 Config/testthat/edition: 3
 LinkingTo: 
     Rcpp

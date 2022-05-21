@@ -94,21 +94,18 @@
 }
 
 .lixoftStarted <- NA
-.lixoftNs <- NULL
-
 .hasLixoftConnectors <- function() {
   if (is.na(.lixoftStarted)) {
     if (!requireNamespace("lixoftConnectors", quietly = TRUE)) {
       assignInMyNamespace(".lixoftStarted", FALSE)
       return(invisible(FALSE))
     }
-    .l <- loadNamespace("lixoftConnectors")
-    .x <- try(.l$initializeLixoftConnectors(software = "monolix"), silent=TRUE)
+
+    .x <- try(lixoftConnectors::initializeLixoftConnectors(software = "monolix"), silent=TRUE)
     if (inherits(.x, "try-error")) {
       assignInMyNamespace(".lixoftStarted", FALSE)
     } else {
       assignInMyNamespace(".lixoftStarted", TRUE)
-      assignInMyNamespace(".lixoftNs", .l)
     }
   }
   invisible(.lixoftStarted)
@@ -192,14 +189,13 @@
       system(sprintf(.cmd, .mlxtran))
     } else {
       if (.hasLixoftConnectors()) {
-        .l <- .lixoftNs
-        .x <- try(.l$loadProject(.mlxtran), silent=TRUE)
+        .x <- try(lixoftConnectors::loadProject(.mlxtran), silent=TRUE)
         if (inherits(.x, "try-error")) {
           stop("lixoftConnectors cannot load mlxtran",
                call.=FALSE)
         }
         .minfo("lixoftConnectors::runScenario()")
-        .l$runScenario()
+        lixoftConnectors::runScenario()
         .minfo("done")
         .runLS <- TRUE
       } else {

@@ -530,9 +530,3 @@ rxToMonolix <- function(x, ui) {
                       ui=ui))
 }
 
-#' Get the last babelmix nlmixr project exported
-#'
-#' @export
-nlmixrMonolixLastProject <- function(){
-  return(.nlmixrMonolixLastProject)
-}

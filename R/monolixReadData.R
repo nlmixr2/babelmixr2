@@ -23,10 +23,9 @@ rxUiGet.monolixHasChartData <- function(x, ...) {
   if (!.hasLixoftConnectors()) {
     return(FALSE)
   }
-  .l <- .lixoftNs
-  .x <- try(.l$loadProject(.mlxtran), silent=TRUE)
+  .x <- try(lixoftConnectors::loadProject(.mlxtran), silent=TRUE)
   if (inherits(.x, "try-error")) return(FALSE)
-  .x <- try(.l$computeChartsData(), silent=TRUE)
+  .x <- try(lixoftConnectors::computeChartsData(), silent=TRUE)
   file.exists(.chart)
 }
 
@@ -163,8 +162,8 @@ rxUiGet.monolixOmega <- function(x, ...) {
 .monolixGetPopParValue <- function(name, muRefCurEval, muRef, covDataFrame, pop) {
   .w <- which(covDataFrame$covariateParameter == name)
   if (length(.w) == 1) {
-    .par <- paste0("beta_", .muRef[.covDataFrame$theta[.w]], "_",
-                   .covDataFrame$covariate[.w])
+    .par <- paste0("beta_", muRef[covDataFrame$theta[.w]], "_",
+                   covDataFrame$covariate[.w])
     .w <- which(pop$parameter == .par)
     if (length(.w) != 1) return(NA_real_)
     return(pop$value[.w])

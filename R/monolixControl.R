@@ -20,7 +20,7 @@
 #' @importFrom nlmixr2 nlmixr2
 #' @importFrom methods is
 #' @importFrom stats na.omit setNames
-#' @importFrom utils assignInMyNamespace
+#' @importFrom utils assignInMyNamespace read.csv write.csv
 monolixControl <- function(nbSSDoses=7,
                            stiff=FALSE,
                            addProp = c("combined2", "combined1"),
@@ -101,13 +101,12 @@ monolixControl <- function(nbSSDoses=7,
       genRxControl <- TRUE
     } else if (is.list(rxControl)) {
         rxControl$maxSS <- nbSSDoses + 1
-        rxControl$minSS <- .monolixControl$nbSSDoses
+        rxControl$minSS <- nbSSDoses
         rxControl$ssAtol <- 100
         rxControl$ssRtol <- 100
-        rxControl$atol <- ifelse(.monolixControl$stiff, 1e-9, 1e-6)
-        rxControl$rtol <- ifelse(.monolixControl$stiff, 1e-6, 1e-3)
-        rxControl$method <- ifelse(.monolixControl$stiff, "liblsoda",
-                                   "dop853")
+        rxControl$atol <- ifelse(stiff, 1e-9, 1e-6)
+        rxControl$rtol <- ifelse(stiff, 1e-6, 1e-3)
+        rxControl$method <- ifelse(stiff, "liblsoda", "dop853")
       rxControl <- do.call(rxode2::rxControl, rxControl)
     }
     if (!inherits(rxControl, "rxControl")) {
