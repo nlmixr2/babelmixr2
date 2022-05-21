@@ -2,7 +2,11 @@
 #' @export
 rxUiGet.monolixExportPath <- function(x, ...) {
   .ui <- x[[1]]
-  file.path(getwd(), .ui$modelName)
+  if (rxode2::rxGetControl(.ui, "absolutePath", FALSE)) {
+    file.path(getwd(), .ui$modelName)
+  } else {
+    file.path(getwd(), .ui$modelName)
+  }
 }
 
 #' @export
