@@ -21,7 +21,7 @@ rxUiGet.monolixQs <- function(x, ...) {
 
 #' @export
 rxUiGet.monolixCvParam <- function(x, ...) {
-  file.path(rxUiGet.monolixExportPath(x, ...), "ChartsData", "Saem")
+  file.path(rxUiGet.monolixExportPath(x, ...), "ChartsData", "Saem", "CvParam.txt")
 }
 
 #' @export

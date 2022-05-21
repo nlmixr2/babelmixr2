@@ -94,21 +94,18 @@
 }
 
 .lixoftStarted <- NA
-.lixoftNs <- NULL
-
 .hasLixoftConnectors <- function() {
   if (is.na(.lixoftStarted)) {
     if (!requireNamespace("lixoftConnectors", quietly = TRUE)) {
       assignInMyNamespace(".lixoftStarted", FALSE)
       return(invisible(FALSE))
     }
-    .l <- loadNamespace("lixoftConnectors")
-    .x <- try(.l$initializeLixoftConnectors(software = "monolix"), silent=TRUE)
+
+    .x <- try(lixoftConnectors::initializeLixoftConnectors(software = "monolix"), silent=TRUE)
     if (inherits(.x, "try-error")) {
       assignInMyNamespace(".lixoftStarted", FALSE)
     } else {
       assignInMyNamespace(".lixoftStarted", TRUE)
-      assignInMyNamespace(".lixoftNs", .l)
     }
   }
   invisible(.lixoftStarted)
@@ -167,7 +164,18 @@
 
   if (file.exists(.qs)) {
     .minfo("load saved nlmixr2 object")
-    return(qs::qread(.qs))
+    .ret <- qs::qread(.qs)
+    if (!exists("parHist", .ret$env)) {
+      .tmp <- .ret$ui$monolixParHistory
+      if (is.null(.tmp)) {
+        .minfo("monolix parameter history needs expoted charts, please export charts")
+      } else {
+        assign("parHist", .tmp, .ret$env)
+        .minfo("monolix parameter history integrated into fit object")
+        qs::qsave(.ret, .qs)
+      }
+    }
+    return(.ret)
   } else if (!file.exists(.model)) {
     .minfo("writing monolix files")
     writeLines(text=.ui$monolixModel, con=.model)
@@ -181,13 +189,14 @@
       system(sprintf(.cmd, .mlxtran))
     } else {
       if (.hasLixoftConnectors()) {
-        .l <- .lixoftNs
-        .x <- try(.l$loadProject(.mlxtran), silent=TRUE)
+        .x <- try(lixoftConnectors::loadProject(.mlxtran), silent=TRUE)
         if (inherits(.x, "try-error")) {
           stop("lixoftConnectors cannot load mlxtran",
                call.=FALSE)
         }
-        .l$runScenario()
+        .minfo("lixoftConnectors::runScenario()")
+        lixoftConnectors::runScenario()
+        .minfo("done")
         .runLS <- TRUE
       } else {
         .minfo("run monolix manually or stop and setup monolix's run command")
@@ -204,17 +213,6 @@
         message(paste0(.i, "\n"), appendLF=TRUE)
       } else if (.i %% 10 == 0) {
         message("|", appendLF=FALSE)
-        if (.runLS) {
-          .status <- .lixoftNs$getLastRunStatus()
-          if (.status$report != ""){
-            message("")
-            message(.status$report)
-            break;
-          }
-          if (.status$status) {
-            break;
-          }
-        }
       }
       Sys.sleep(1)
     }
@@ -222,6 +220,14 @@
   }
   .ret <- .monolixFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
+    .tmp <- .ret$ui$monolixParHistory
+    if (is.null(.tmp)) {
+      .minfo("monolix parameter history needs expoted charts, please export charts")
+    } else {
+      assign("parHist", .tmp, .ret$env)
+      .minfo("monolix parameter history integrated into fit object")
+      qs::qsave(.ret, .qs)
+    }
     qs::qsave(.ret, .qs)
   }
   return(.ret)

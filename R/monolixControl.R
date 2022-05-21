@@ -20,7 +20,7 @@
 #' @importFrom nlmixr2 nlmixr2
 #' @importFrom methods is
 #' @importFrom stats na.omit setNames
-#' @importFrom utils assignInMyNamespace
+#' @importFrom utils assignInMyNamespace read.csv write.csv
 monolixControl <- function(nbSSDoses=7,
                            stiff=FALSE,
                            addProp = c("combined2", "combined1"),
@@ -56,7 +56,7 @@ monolixControl <- function(nbSSDoses=7,
   checkmate::assertIntegerish(burniniterations, max.len=1, lower=1)
   checkmate::assertIntegerish(exploratoryiterations, max.len=1, lower=1)
   checkmate::assertIntegerish(simulatedannealingiterations, max.len=1, lower=1)
-  checkmate::assertIntegerish(nbSSDoses, lower=1, max.len=1)
+  checkmate::assertIntegerish(nbSSDoses, lower=7, max.len=1)
   checkmate::assertIntegerish(exploratoryiterations, max.len=1, lower=1)
   checkmate::assertIntegerish(exploratoryinterval, max.len=1, lower=1)
   checkmate::assertIntegerish(smoothingiterations, max.len=1, lower=1)
@@ -89,9 +89,24 @@ monolixControl <- function(nbSSDoses=7,
   } else {
     genRxControl <- FALSE
     if (is.null(rxControl)) {
-      rxControl <- rxode2::rxControl()
+      rxControl <- rxode2::rxControl(
+        maxSS=nbSSDoses + 1,
+        minSS=nbSSDoses,
+        ssAtol=100,
+        ssRtol=100,
+        atol=ifelse(stiff, 1e-9, 1e-6),
+        rtol=ifelse(stiff, 1e-6, 1e-3),
+        method=ifelse(stiff, "liblsoda", "dop853")
+      )
       genRxControl <- TRUE
     } else if (is.list(rxControl)) {
+        rxControl$maxSS <- nbSSDoses + 1
+        rxControl$minSS <- nbSSDoses
+        rxControl$ssAtol <- 100
+        rxControl$ssRtol <- 100
+        rxControl$atol <- ifelse(stiff, 1e-9, 1e-6)
+        rxControl$rtol <- ifelse(stiff, 1e-6, 1e-3)
+        rxControl$method <- ifelse(stiff, "liblsoda", "dop853")
       rxControl <- do.call(rxode2::rxControl, rxControl)
     }
     if (!inherits(rxControl, "rxControl")) {
@@ -147,9 +162,12 @@ monolixControl <- function(nbSSDoses=7,
                                             maxOuterIterations = 0L, maxInnerIterations = 0L, covMethod = 0L,
                                             etaMat = env$etaMat, sumProd = .monolixControl$sumProd,
                                             optExpression = .monolixControl$optExpression, scaleTo = 0,
-                                            calcTables = .monolixControl$calcTables, addProp = .monolixControl$addProp,
-                                            skipCov = .ui$foceiSkipCov, interaction = 1L, compress = .monolixControl$compress,
-                                            ci = .monolixControl$ci, sigdigTable = .monolixControl$sigdigTable)
+                                            calcTables = .monolixControl$calcTables,
+                                            addProp = .monolixControl$addProp,
+                                            skipCov = .ui$foceiSkipCov, interaction = 1L,
+                                            compress = .monolixControl$compress,
+                                            ci = .monolixControl$ci,
+                                            sigdigTable = .monolixControl$sigdigTable)
   if (assign)
     env$control <- .foceiControl
   .foceiControl

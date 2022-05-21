@@ -178,11 +178,9 @@ test_that("test datafile use", {
 
   ui <- rxode2::rxode2(one.cmt)
 
-  nlmixr2extra::nlmixrDataToMonolix(ui, nlmixr2data::theo_sd)
-
   expect_equal(.monolixMapDataUse("wt2", ui), "")
   # This is only true with the new rxode2;
-  #expect_equal(.monolixMapDataUse("WT", ui), "WT = {use=regressor}")
+  expect_equal(.monolixMapDataUse("WT", ui), "WT = {use=regressor}")
 
 })
 
