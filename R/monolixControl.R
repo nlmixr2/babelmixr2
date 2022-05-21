@@ -2,18 +2,40 @@
 #'
 #' @param nbSSDoses Number of steady state doses (default 7)
 #' @param stiff boolean for using the stiff ODE solver
-#' @param exploratoryautostop logical to turn on or off exploratory
+#' @param exploratoryAutoStop logical to turn on or off exploratory
 #'   phase auto-stop of SAEM (default 250)
-#' @param exploratoryiterations Number of iterations for exploratory
+#' @param exploratoryIterations Number of iterations for exploratory
 #'   phase (default 250)
-#' @param exploratoryinterval Minimum number of interation in the
+#' @param exploratoryInterval Minimum number of interation in the
 #'   exploratory phase (default 200)
-#' @param simulatedannealingiterations Number of burn in iterations
-#' @param runCommand is a shell command to run monolix; You can
-#'   specfy the default by
-#'   \code{options("babelmixr2.monolix"="runMonolix \%s")} where the \code{"\%s"}
-#'   represents the monolix project file.
+#' @param exploratoryAlpha Convergence memory in the exploratory phase
+#'   (only used when `exploratoryAutoStop` is `TRUE`)
+#' @param simulatedAnnealingIterations Number of simulating annealing
+#'   iterations
+#' @param burnInIterations Number of burn in iterations
+#' @param smoothingIterations Number of smoothing iterations
+#' @param smoothingAutoStop Boolen indicating if the smoothing should
+#'   automatically stop (default `FALSE`)
+#' @param useLinearization Use linearization for log likelihood and
+#'   fim.
 #' @inheritParams nlmixr2est::foceiControl
+#' @param omegaTau Proportional rate on variance for simulated
+#'   annealing
+#' @param errorModelTau Proportional rate on error model for simulated
+#'   annealing
+#' @param variability This describes the methodology for parameters
+#'   without varaiblity.  It could be: - Fixed throughout (none) -
+#'   Variability in the first stage (firstStage) - Decreasing until it
+#'   reaches the fixed value (decreasing)
+#' @param runCommand is a shell command to run monolix; You can specfy
+#'   the default by
+#'   \code{options("babelmixr2.monolix"="runMonolix \%s")} where the
+#'   \code{"\%s"} represents the monolix project file. If it is empty
+#'   and 'lixoftConnectors' is available, use lixoftConnectors to run
+#'   monolix.
+#' @param absolutePath Boolean indicating if the absolute path should
+#'   be used for the monolix runs.
+#' @inheritParams nlmixr2est::saemControl
 #' @return A monolix control object
 #' @author Matthew Fidler
 #' @export
@@ -22,21 +44,19 @@
 #' @importFrom stats na.omit setNames
 #' @importFrom utils assignInMyNamespace read.csv write.csv
 monolixControl <- function(nbSSDoses=7,
+                           useLinearization=FALSE,
                            stiff=FALSE,
                            addProp = c("combined2", "combined1"),
-                           exploratoryautostop=FALSE,
-                           smoothingautostop=FALSE,
-                           simulatedannealing=TRUE,
-                           burniniterations=5,
-                           smoothingiterations=200,
-                           exploratoryiterations=250,
-                           simulatedannealingiterations=250,
-                           exploratoryinterval=200,
-                           exploratoryalpha=0.0,
-                           omegatau=0.95,
-                           errormodeltau=0.95,
-                           optimizationiterations=20,
-                           optimizationtolerance=0.0001,
+                           exploratoryAutoStop=FALSE,
+                           smoothingAutoStop=FALSE,
+                           burnInIterations=5,
+                           smoothingIterations=200,
+                           exploratoryIterations=250,
+                           simulatedAnnealingIterations=250,
+                           exploratoryInterval=200,
+                           exploratoryAlpha=0.0,
+                           omegaTau=0.95,
+                           errorModelTau=0.95,
                            variability=c("none", "firstStage", "decreasing"),
                            runCommand=getOption("babelmixr2.monolix", ""),
                            adjObf=TRUE,
@@ -46,27 +66,26 @@ monolixControl <- function(nbSSDoses=7,
                            calcTables = TRUE,
                            compress = TRUE,
                            ci = 0.95,
-                           sigdigTable=NULL, ...) {
+                           sigdigTable=NULL,
+                           absolutePath=FALSE,
+                           ...) {
 
-  checkmate::assertLogical(stiff, max.len=1)
-  checkmate::assertLogical(exploratoryautostop, max.len=1)
-  checkmate::assertLogical(smoothingautostop, max.len=1)
-  checkmate::assertLogical(simulatedannealing, max.len=1)
+  checkmate::assertLogical(stiff, max.len=1, any.missing=FALSE)
+  checkmate::assertLogical(exploratoryAutoStop, max.len=1, any.missing=FALSE)
+  checkmate::assertLogical(smoothingAutoStop, max.len=1, any.missing=FALSE)
+  checkmate::assertLogical(absolutePath, max.len=1, any.missing=FALSE)
+  checkmate::assertLogical(useLinearization, max.len=1, any.missing=FALSE)
 
-  checkmate::assertIntegerish(burniniterations, max.len=1, lower=1)
-  checkmate::assertIntegerish(exploratoryiterations, max.len=1, lower=1)
-  checkmate::assertIntegerish(simulatedannealingiterations, max.len=1, lower=1)
+  checkmate::assertIntegerish(burnInIterations, max.len=1, lower=1)
+  checkmate::assertIntegerish(exploratoryIterations, max.len=1, lower=1)
+  checkmate::assertIntegerish(simulatedAnnealingIterations, max.len=1, lower=1)
   checkmate::assertIntegerish(nbSSDoses, lower=7, max.len=1)
-  checkmate::assertIntegerish(exploratoryiterations, max.len=1, lower=1)
-  checkmate::assertIntegerish(exploratoryinterval, max.len=1, lower=1)
-  checkmate::assertIntegerish(smoothingiterations, max.len=1, lower=1)
-  checkmate::assertIntegerish(optimizationiterations, max.len=1, lower=1)
+  checkmate::assertIntegerish(exploratoryInterval, max.len=1, lower=1)
+  checkmate::assertIntegerish(smoothingIterations, max.len=1, lower=1)
 
-  checkmate::assertNumeric(exploratoryalpha, lower=0.0, upper=1.0)
-  checkmate::assertNumeric(omegatau, lower=0.0, upper=1.0)
-  checkmate::assertNumeric(errormodeltau, lower=0.0, upper=1.0)
-  checkmate::assertNumeric(optimizationtolerance, lower=0.0)
-  if (optimizationtolerance == 0) stop("'optimizationtolerance' has to be above zero")
+  checkmate::assertNumeric(exploratoryAlpha, lower=0.0, upper=1.0)
+  checkmate::assertNumeric(omegaTau, lower=0.0, upper=1.0)
+  checkmate::assertNumeric(errorModelTau, lower=0.0, upper=1.0)
 
   .xtra <- list(...)
   .bad <- names(.xtra)
@@ -127,19 +146,17 @@ monolixControl <- function(nbSSDoses=7,
   if (runCommand != "") checkmate::assertCharacter(runCommand, pattern="%s", min.len=1, max.len=1)
 
   .ret <- list(nbSSDoses=as.integer(nbSSDoses), stiff=stiff,
-               exploratoryautostop=exploratoryautostop,
-               smoothingautostop=smoothingautostop,
+               exploratoryAutoStop=exploratoryAutoStop,
+               smoothingAutoStop=smoothingAutoStop,
                addProp=match.arg(addProp),
-               burniniterations=burniniterations,
-               simulatedannealingiterations=simulatedannealingiterations,
-               exploratoryinterval=exploratoryinterval,
-               smoothingiterations=smoothingiterations,
-               exploratoryalpha=exploratoryalpha,
-               omegatau=omegatau,
-               errormodeltau=errormodeltau,
-               exploratoryiterations=exploratoryiterations,
-               optimizationiterations=optimizationiterations,
-               optimizationtolerance=optimizationtolerance,
+               burnInIterations=burnInIterations,
+               simulatedAnnealingIterations=simulatedAnnealingIterations,
+               exploratoryInterval=exploratoryInterval,
+               smoothingIterations=smoothingIterations,
+               exploratoryAlpha=exploratoryAlpha,
+               omegaTau=omegaTau,
+               errorModelTau=errorModelTau,
+               exploratoryIterations=exploratoryIterations,
                variability=match.arg(variability),
                runCommand=runCommand,
                adjObf=adjObf,
@@ -150,7 +167,8 @@ monolixControl <- function(nbSSDoses=7,
                compress = compress,
                ci = ci,
                sigdigTable=sigdigTable,
-               genRxControl=genRxControl)
+               genRxControl=genRxControl,
+               useLinearization=useLinearization)
   class(.ret) <- "monolixControl"
   .ret
 }

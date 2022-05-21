@@ -6,21 +6,19 @@
 \usage{
 monolixControl(
   nbSSDoses = 7,
+  useLinearization = FALSE,
   stiff = FALSE,
   addProp = c("combined2", "combined1"),
-  exploratoryautostop = FALSE,
-  smoothingautostop = FALSE,
-  simulatedannealing = TRUE,
-  burniniterations = 5,
-  smoothingiterations = 200,
-  exploratoryiterations = 250,
-  simulatedannealingiterations = 250,
-  exploratoryinterval = 200,
-  exploratoryalpha = 0,
-  omegatau = 0.95,
-  errormodeltau = 0.95,
-  optimizationiterations = 20,
-  optimizationtolerance = 1e-04,
+  exploratoryAutoStop = FALSE,
+  smoothingAutoStop = FALSE,
+  burnInIterations = 5,
+  smoothingIterations = 200,
+  exploratoryIterations = 250,
+  simulatedAnnealingIterations = 250,
+  exploratoryInterval = 200,
+  exploratoryAlpha = 0,
+  omegaTau = 0.95,
+  errorModelTau = 0.95,
   variability = c("none", "firstStage", "decreasing"),
   runCommand = getOption("babelmixr2.monolix", ""),
   adjObf = TRUE,
@@ -31,11 +29,15 @@ monolixControl(
   compress = TRUE,
   ci = 0.95,
   sigdigTable = NULL,
+  absolutePath = FALSE,
   ...
 )
 }
 \arguments{
 \item{nbSSDoses}{Number of steady state doses (default 7)}
+
+\item{useLinearization}{Use linearization for log likelihood and
+fim.}
 
 \item{stiff}{boolean for using the stiff ODE solver}
 
@@ -63,21 +65,49 @@ The combined2 error model can be described by the following equation:
 
  - c is the power exponent (in the proportional case c=1)}
 
-\item{exploratoryautostop}{logical to turn on or off exploratory
+\item{exploratoryAutoStop}{logical to turn on or off exploratory
 phase auto-stop of SAEM (default 250)}
 
-\item{exploratoryiterations}{Number of iterations for exploratory
+\item{smoothingAutoStop}{Boolen indicating if the smoothing should
+automatically stop (default `FALSE`)}
+
+\item{burnInIterations}{Number of burn in iterations}
+
+\item{smoothingIterations}{Number of smoothing iterations}
+
+\item{exploratoryIterations}{Number of iterations for exploratory
 phase (default 250)}
 
-\item{simulatedannealingiterations}{Number of burn in iterations}
+\item{simulatedAnnealingIterations}{Number of simulating annealing
+iterations}
 
-\item{exploratoryinterval}{Minimum number of interation in the
+\item{exploratoryInterval}{Minimum number of interation in the
 exploratory phase (default 200)}
 
-\item{runCommand}{is a shell command to run monolix; You can
-specfy the default by
-\code{options("babelmixr2.monolix"="runMonolix \%s")} where the \code{"\%s"}
-represents the monolix project file.}
+\item{exploratoryAlpha}{Convergence memory in the exploratory phase
+(only used when `exploratoryAutoStop` is `TRUE`)}
+
+\item{omegaTau}{Proportional rate on variance for simulated
+annealing}
+
+\item{errorModelTau}{Proportional rate on error model for simulated
+annealing}
+
+\item{variability}{This describes the methodology for parameters
+without varaiblity.  It could be: - Fixed throughout (none) -
+Variability in the first stage (firstStage) - Decreasing until it
+reaches the fixed value (decreasing)}
+
+\item{runCommand}{is a shell command to run monolix; You can specfy
+the default by
+\code{options("babelmixr2.monolix"="runMonolix \%s")} where the
+\code{"\%s"} represents the monolix project file. If it is empty
+and 'lixoftConnectors' is available, use lixoftConnectors to run
+monolix.}
+
+\item{adjObf}{is a boolean to indicate if the objective function
+should be adjusted to be closer to NONMEM's default objective
+function.  By default this is \code{TRUE}}
 
 \item{rxControl}{`rxode2` ODE solving options during fitting, created with `rxControl()`}
 
@@ -100,6 +130,9 @@ will calculate tables. By default this is \code{TRUE}}
 \item{sigdigTable}{Significant digits in the final output table.
 If not specified, then it matches the significant digits in the
 `sigdig` optimization algorithm.  If `sigdig` is NULL, use 3.}
+
+\item{absolutePath}{Boolean indicating if the absolute path should
+be used for the monolix runs.}
 
 \item{...}{Ignored parameters}
 }
