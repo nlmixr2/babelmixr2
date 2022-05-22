@@ -172,6 +172,27 @@
   return(.ret)
 }
 
+.rxToMonolixHandleIfExpressions <- function(x, ui) {
+  .ret <- paste0("if ", .rxToMonolix(x[[2]], ui=ui), "\n",
+                 "  ", .rxToMonolix(x[[3]], ui=ui))
+  x <- x[-c(1:3)]
+  if (length(x) == 1) x <- x[[1]]
+  while(identical(x[[1]], quote(`if`))) {
+    .ret <- paste0(.ret, "\nelseif ", .rxToMonolix(x[[2]], ui=ui), "\n",
+                   "  ", .rxToMonolix(x[[3]], ui=ui))
+    x <- x[-c(1:3)]
+    if (length(x) == 1) x <- x[[1]]
+  }
+  if (is.null(x)) {
+    .ret <- paste0(.ret, "\nend\n")
+  }  else {
+    .ret <- paste0(.ret, "\nelse \n",
+                   "  ", .rxToMonolix(x, ui=ui),
+                   "\nend\n")
+  }
+  return(.ret)
+}
+
 .rxToMonolix <- function(x, ui) {
   if (is.name(x) || is.atomic(x)) {
     if (is.character(x)) {
@@ -215,35 +236,15 @@
         ))
       }
     } else if (identical(x[[1]], quote(`if`))) {
-      .ret <- paste0("if ", .rxToMonolix(x[[2]], ui=ui), "\n",
-                     "  ", .rxToMonolix(x[[3]], ui=ui))
-      x <- x[-c(1:3)]
-      if (length(x) == 1) x <- x[[1]]
-      while(identical(x[[1]], quote(`if`))) {
-        .ret <- paste0(.ret, "\nelseif ", .rxToMonolix(x[[2]], ui=ui), "\n",
-                       "  ", .rxToMonolix(x[[3]], ui=ui))
-        x <- x[-c(1:3)]
-        if (length(x) == 1) x <- x[[1]]
-      }
-      if (is.null(x)) {
-        .ret <- paste0(.ret, "\nend\n")
-      }  else {
-        .ret <- paste0(.ret, "\nelse \n",
-                       "  ", .rxToMonolix(x, ui=ui),
-                       "\nend\n")
-      }
-      return(.ret)
+      return(.rxToMonolixHandleIfExpressions(x, ui))
     } else if (.rxIsLogicalOperator(x[[1]])) {
         ## Use "preferred" monolix syntax
       return(paste0(.rxToMonolix(x[[2]], ui=ui), as.character(x[[1]]), .rxToMonolix(x[[3]], ui=ui)))
     } else if (identical(x[[1]], quote(`!`)) ) {
-      ## Use "preferred" monolix syntax
       return(paste0("~", .rxToMonolix(x[[2]], ui=ui)))
     } else if (identical(x[[1]], quote(`**`)) ) {
       return(paste(.rxToMonolix(x[[2]], ui=ui), "^", .rxToMonolix(x[[3]], ui=ui)))
-    } else if (identical(x[[1]], quote(`=`)) ||
-      identical(x[[1]], quote(`<-`)) ||
-        identical(x[[1]], quote(`~`))) {
+    } else if (.rxIsAssignmentOperator(x[[1]])) {
       if (any(as.character(x[[2]])[1] == c("alag", "lag", "F", "f", "rate", "dur"))) {
         if (any(as.character(x[[2]])[1] == c("alag", "lag"))) {
           .state <- as.character(x[[2]][[2]])
@@ -319,7 +320,7 @@
       } else {
         stop("'pnorm' can only take 1-3 arguments", call. = FALSE)
       }
-    }  else {
+    } else {
       if (length(x[[1]]) == 1) {
         .x1 <- as.character(x[[1]])
         .xc <- .rxMsingle[[.x1]]
