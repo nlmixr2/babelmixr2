@@ -62,8 +62,8 @@
   "lfactorial" = c("factln(", ")"),
   "lgamma1p" = c("gammaln(", "+1)"),
   "expm1" = c("(exp(", ")-1)"),
-  "log10" = c("log10(", ""),
-  "log2" = c("log(", ")*1.442695040888963387005"),
+  "log10" = c("log10(", ")"),
+  "log2" = c("(log(", ")*1.442695040888963387005)"),
   "log1pexp" = c("log(1+exp(", "))", "log1pexp"),
   "phi" = c("normcdf(", ")"),
   "pnorm" = c("normcdf(", ")"),
@@ -136,6 +136,42 @@
   rxode2::rxAssignControlValue(ui, ".adm", .adm)
 }
 
+.rxToMonolixHandleBinaryOperator <- function(x, ui) {
+  if (identical(x[[1]], quote(`/`))) {
+    .x2 <- x[[2]]
+    .x3 <- x[[3]]
+    ## df(%s)/dy(%s)
+    if (identical(.x2, quote(`d`)) &&
+          identical(.x3[[1]], quote(`dt`))) {
+      if (length(.x3[[2]]) == 1) {
+        .state <- as.character(.x3[[2]])
+      } else {
+        .state <- .rxToMonolix(.x3[[2]], ui=ui)
+      }
+      return(paste0("ddt_", .state))
+    } else {
+      if (length(.x2) == 2 && length(.x3) == 2) {
+        if (identical(.x2[[1]], quote(`df`)) &&
+              identical(.x3[[1]], quote(`dy`))) {
+          stop('df()/dy() is not supported in monolix conversion', call.=FALSE)
+        }
+      }
+      .ret <- paste0(
+        .rxToMonolix(.x2, ui=ui),
+        as.character(x[[1]]),
+        .rxToMonolix(.x3, ui=ui)
+      )
+    }
+  } else {
+    .ret <- paste0(
+      .rxToMonolix(x[[2]], ui=ui),
+      as.character(x[[1]]),
+      .rxToMonolix(x[[3]], ui=ui)
+    )
+  }
+  return(.ret)
+}
+
 .rxToMonolix <- function(x, ui) {
   if (is.name(x) || is.atomic(x)) {
     if (is.character(x)) {
@@ -168,45 +204,9 @@
         .rxToMonolix(x, ui=ui)
       }), collapse = "\n")
       return(.ret)
-    } else if (identical(x[[1]], quote(`*`)) ||
-      identical(x[[1]], quote(`^`)) ||
-      identical(x[[1]], quote(`+`)) ||
-      identical(x[[1]], quote(`-`)) ||
-      identical(x[[1]], quote(`/`))) {
+    } else if (.rxIsPossibleBinaryOperator(x[[1]])) {
       if (length(x) == 3) {
-        if (identical(x[[1]], quote(`/`))) {
-          .x2 <- x[[2]]
-          .x3 <- x[[3]]
-          ## df(%s)/dy(%s)
-          if (identical(.x2, quote(`d`)) &&
-                identical(.x3[[1]], quote(`dt`))) {
-            if (length(.x3[[2]]) == 1) {
-              .state <- as.character(.x3[[2]])
-            } else {
-              .state <- .rxToMonolix(.x3[[2]], ui=ui)
-            }
-            return(paste0("ddt_", .state))
-          } else {
-            if (length(.x2) == 2 && length(.x3) == 2) {
-              if (identical(.x2[[1]], quote(`df`)) &&
-                    identical(.x3[[1]], quote(`dy`))) {
-                stop('df()/dy() is not supported in monolix conversion', call.=FALSE)
-              }
-            }
-            .ret <- paste0(
-              .rxToMonolix(.x2, ui=ui),
-              as.character(x[[1]]),
-              .rxToMonolix(.x3, ui=ui)
-            )
-          }
-        } else {
-          .ret <- paste0(
-            .rxToMonolix(x[[2]], ui=ui),
-            as.character(x[[1]]),
-            .rxToMonolix(x[[3]], ui=ui)
-          )
-        }
-        return(.ret)
+        return(.rxToMonolixHandleBinaryOperator(x, ui))
       } else {
         ## Unary Operators
         return(paste(
@@ -233,16 +233,7 @@
                        "\nend\n")
       }
       return(.ret)
-    } else if (identical(x[[1]], quote(`==`)) ||
-                 identical(x[[1]], quote(`>`)) ||
-                 identical(x[[1]], quote(`<`)) ||
-                 identical(x[[1]], quote(`<=`)) ||
-                 identical(x[[1]], quote(`>=`)) ||
-                 identical(x[[1]], quote(`!=`)) ||
-                 identical(x[[1]], quote(`&&`)) ||
-                 identical(x[[1]], quote(`||`)) ||
-                 identical(x[[1]], quote(`|`)) ||
-                 identical(x[[1]], quote(`&`))) {
+    } else if (.rxIsLogicalOperator(x[[1]])) {
         ## Use "preferred" monolix syntax
       return(paste0(.rxToMonolix(x[[2]], ui=ui), as.character(x[[1]]), .rxToMonolix(x[[3]], ui=ui)))
     } else if (identical(x[[1]], quote(`!`)) ) {
