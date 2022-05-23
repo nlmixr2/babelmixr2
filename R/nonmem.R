@@ -169,6 +169,15 @@ rex::register_shortcuts("babelmixr2")
 .rxToNonmemHandleNamesOrAtomic <- function(x, ui) {
   if (is.character(x)) stop("strings in nlmixr<->monolix are not supported", call.=FALSE)
   .ret <- as.character(x)
+  if (exists(".thetaMu", ui)) {
+    .thetaMu <- ui$.thetaMu
+    .ref <- .thetaMu[.ret]
+    if (!is.na(.ref)) return(.ref)
+  }
+  .ref <- .nonmemGetThetaNum(x, ui)
+  if (!is.na(.ref)) return(.ref)
+  .ref <- .nonmemGetEtaNum(x, ui)
+  if (!is.na(.ref)) return(.ref)
   if (is.na(.ret) | (.ret %in% .rxNMbad)) {
     stop("'", .ret, "' cannot be translated to NONMEM", call.=FALSE)
   }
@@ -176,7 +185,7 @@ rex::register_shortcuts("babelmixr2")
   if (is.na(.v)) {
     if (is.numeric(.ret)) {
       return(.ret)
-    } else if (regexpr("(?:-)?(?:(?:0|(?:[1-9][0-9]*))|(?:(?:[0-9]+\\.[0-9]*)|(?:[0-9]*\\.[0-9]+))(?:(?:[Ee](?:[+\\-])?[0-9]+))?|[0-9]+[Ee](?:[\\-+])?[0-9]+)",
+    } else if (regexpr("^(?:-)?(?:(?:0|(?:[1-9][0-9]*))|(?:(?:[0-9]+\\.[0-9]*)|(?:[0-9]*\\.[0-9]+))(?:(?:[Ee](?:[+\\-])?[0-9]+))?|[0-9]+[Ee](?:[\\-+])?[0-9]+)$",
                        .ret, perl=TRUE) != -1) {
       return(.ret)
     } else {
@@ -185,7 +194,6 @@ rex::register_shortcuts("babelmixr2")
       if (length(.w) == 1) {
         return(paste0("A(", .w, ")"))
       }
-      # FIXME Look for reserved variables
       return(.nmGetVar(.ret, ui))
     }
   } else {
@@ -325,10 +333,11 @@ rex::register_shortcuts("babelmixr2")
   if (length(.w) == 0L) {
     .prop <- rbind(.prop,
                    data.frame(cmt=.cmt,
-                                  f=NA_character_,
-                                  dur=NA_character_,
-                                  lag=NA_character_,
-                              rate=NA_character_))
+                              f=NA_character_,
+                              dur=NA_character_,
+                              lag=NA_character_,
+                              rate=NA_character_,
+                              init=NA_character_))
     .w <- which(.prop$cmt == .cmt)
   }
   if (type == "f") {
@@ -339,54 +348,71 @@ rex::register_shortcuts("babelmixr2")
     .prop[.w, "lag"] <- param
   } else if (type == "rate") {
     .prop[.w, "rate"] <- param
+  } else if (type == "init") {
+    .prop[.w, "init"] <- param
   }
   rxode2::rxAssignControlValue(ui, ".cmtProperties", .adm)
 }
 
 .rxToNonmemHandleAssignmentOperator <- function(x, ui) {
-  if (any(as.character(x[[2]])[1] == c("alag", "lag", "F", "f", "rate", "dur"))) {
-    # I believe these have to be in the $PK block
-    if (any(as.character(x[[2]])[1] == c("alag", "lag"))) {
-      .state <- as.character(x[[2]][[2]])
+  if (length(x[[2]]) == 2L) {
+    if (identical(x[[2]][[2]], 0)) {
+      .state <- as.character(x[[2]][[1]])
       if (length(x[[3]]) == 1L) {
         .extra <- .rxToNonmem(x[[3]], ui=ui)
-        .nonmemSetCmtProperty(ui, .state, .extra, type="lag")
+        .nonmemSetCmtProperty(ui, .state, .extra, type="init")
+        return(paste0(.rxToNonmemGetIndent(ui),
+                      paste0(";", as.character(x[[2]])[1], "(0) defined in $PK block")))
       } else {
-        stop("the complex lag time is not supported by babelmixr2",
+        stop("the complex initialization time is not supported by babelmixr2",
              call.=FALSE)
       }
     }
-    if (any(as.character(x[[2]])[1] == c("F", "f"))) {
-      .state <- as.character(x[[2]][[2]])
-      if (length(x[[3]]) == 1L) {
-        .extra <- .rxToNonmem(x[[3]], ui=ui)
-        .nonmemSetCmtProperty(ui, .state, .extra, type="f")
-      } else {
-        stop("the complex F is not supported by babelmixr2",
-             call.=FALSE)
+    if (any(as.character(x[[2]])[1] == c("alag", "lag", "F", "f", "rate", "dur"))) {
+      # I believe these have to be in the $PK block
+      if (any(as.character(x[[2]])[1] == c("alag", "lag"))) {
+        .state <- as.character(x[[2]][[2]])
+        if (length(x[[3]]) == 1L) {
+          .extra <- .rxToNonmem(x[[3]], ui=ui)
+          .nonmemSetCmtProperty(ui, .state, .extra, type="lag")
+        } else {
+          stop("the complex lag time is not supported by babelmixr2",
+               call.=FALSE)
+        }
       }
-    }
-    if (as.character(x[[2]])[1] == "rate") {
-      .state <- as.character(x[[2]][[2]])
-      if (length(x[[3]]) == 1L) {
-        .extra <- .rxToNonmem(x[[3]], ui=ui)
-        .nonmemSetCmtProperty(ui, .state, .extra, type="rate")
-      } else {
-        stop("the complex rate is not supported by babelmixr2",
-             call.=FALSE)
+      if (any(as.character(x[[2]])[1] == c("F", "f"))) {
+        .state <- as.character(x[[2]][[2]])
+        if (length(x[[3]]) == 1L) {
+          .extra <- .rxToNonmem(x[[3]], ui=ui)
+          .nonmemSetCmtProperty(ui, .state, .extra, type="f")
+        } else {
+          stop("the complex F is not supported by babelmixr2",
+               call.=FALSE)
+        }
       }
-    }
-    if (as.character(x[[2]])[1] == "dur") {
-      .state <- as.character(x[[2]][[2]])
-      if (length(x[[3]]) == 1L) {
-        .extra <- .rxToNonmem(x[[3]], ui=ui)
-        .nonmemSetCmtProperty(ui, .state, .extra, type="dur")
-      } else {
-        stop("the complex dur is not supported by babelmixr2",
-             call.=FALSE)
+      if (as.character(x[[2]])[1] == "rate") {
+        .state <- as.character(x[[2]][[2]])
+        if (length(x[[3]]) == 1L) {
+          .extra <- .rxToNonmem(x[[3]], ui=ui)
+          .nonmemSetCmtProperty(ui, .state, .extra, type="rate")
+        } else {
+          stop("the complex rate is not supported by babelmixr2",
+               call.=FALSE)
+        }
       }
+      if (as.character(x[[2]])[1] == "dur") {
+        .state <- as.character(x[[2]][[2]])
+        if (length(x[[3]]) == 1L) {
+          .extra <- .rxToNonmem(x[[3]], ui=ui)
+          .nonmemSetCmtProperty(ui, .state, .extra, type="dur")
+        } else {
+          stop("the complex dur is not supported by babelmixr2",
+               call.=FALSE)
+        }
+      }
+      return(paste0(.rxToNonmemGetIndent(ui),
+                    ";", as.character(x[[2]])[1], " defined in $PK block"))
     }
-    return(paste0(";", as.character(x[[2]])[1], " defined in $PK block"))
   }
   .var <- .rxToNonmem(x[[2]], ui=ui)
   return(paste0(.rxToNonmemGetIndent(ui), .var, "=", .rxToNonmem(x[[3]], ui=ui)))
@@ -473,15 +499,7 @@ rex::register_shortcuts("babelmixr2")
     .fun <- paste(.ret0[[1]])
     .ret0 <- .ret0[-1]
     .ret <- paste0("(", paste(unlist(.ret0), collapse = ","), ")")
-    if (.ret == "(0)") {
-      .state <- rxode2::rxModelVars(ui)$state
-      .cmt <- which(.fun == .state)
-      if (length(.cmt) != 1) {
-        stop("cannot find '", .fun, "' in the model",
-             call.=FALSE)
-      }
-      return(paste0("A_0(", .cmt, ")"))
-    } else if (any(.fun == c("cmt", "dvid"))) {
+    if (any(.fun == c("cmt", "dvid"))) {
       return("")
     } else if (any(.fun == c("max", "min"))) {
       .ret0 <- unlist(.ret0)
