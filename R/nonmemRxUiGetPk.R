@@ -76,10 +76,48 @@ rxUiGet.nonmemPkDes <- function(x, ...) {
                               function(i) {
                                 .rxToNonmem(.split$muRefDef[[i]], ui=.ui)
                               }, character(1), USE.NAMES=FALSE),
-                       collapse="\n")
-                 )
+                       collapse="\n"))
+
+  .mainModel <- rxode2::rxCombineErrorLines(.ui,
+                                            errLines=nmGetDistributionNonmemLines(.ui),
+                                            paramsLine=NA,
+                                            modelVars=TRUE,
+                                            cmtLines=FALSE,
+                                            dvidLine=FALSE,
+                                            lstExpr=.split$modelWithDrop,
+                                            useIf=TRUE)
+  .norm <- rxode2::rxNorm(eval(.mainModel))
+  .des <- rxToNonmem(.norm, ui=.ui)
+  .prop <- .nonmemGetCmtProperties(.ui)
+  .pk2 <- vapply(seq_along(.prop$cmt),
+                 function(i) {
+                   .cmt <- .prop$cmt[i]
+                   .ret <- NULL
+                   if (!is.na(.prop$f[i])) {
+                     .ret <- c(.ret,
+                               paste0("  F", .cmt, "=", .prop$f[i]))
+                   }
+                   if (!is.na(.prop$dur[i])) {
+                     .ret <- c(.ret,
+                               paste0("  DUR", .cmt, "=", .prop$dur[i]))
+                   }
+                   if (!is.na(.prop$lag[i])) {
+                     .ret <- c(.ret,
+                               paste0("  ALAG", .cmt, "=", .prop$lag[i]))
+                   }
+                   if (!is.na(.prop$init[i])) {
+                     .ret <- c(.ret,
+                               paste0("  A_0(", .cmt, ")=", .prop$init[i]))
+                   }
+                   if (is.null(.ret)) return(NA_character_)
+                   paste(.ret, collapse="\n")
+                 }, character(1), USE.NAMES=FALSE)
+  .pk2 <- .pk2[!is.na(.pk2)]
+  .pk2 <- paste0("\n", .pk2)
   rm(".thetaMu", envir=.ui)
-  .pk
+  paste0(.pk, .pk2,
+         "\n\n$DES\n",
+         .des)
 }
 
 

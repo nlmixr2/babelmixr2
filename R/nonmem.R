@@ -114,7 +114,8 @@ rex::register_shortcuts("babelmixr2")
 .nmRes <- rex::rex(start,
                    or("GETETA", "SIMETA", "SIMEPS",
                       "COMSAV", "NWIND", "ETEXT", "IERPRD", "MSEC",
-                      "MFIRST", "NETEXT", .nmNumReg("ETA"),.nmNumReg("THETA"), .nmNumReg("EPS"), .nmNumReg("MU_"),
+                      "MFIRST", "NETEXT", .nmNumReg("ETA"),.nmNumReg("THETA"), .nmNumReg("EPS"),
+                      .nmNumReg("MU_"),
                       .nmNumReg("A"), .nmNumReg("B"), .nmNumReg("C"), .nmNumReg("D"), .nmNumReg("E"),
                       .nmNumReg("F"), .nmNumReg("P"), .nmNumReg("Q"), .nmNumReg("MC"), .nmNumReg("ME"),
                       .nmNumReg("MG"), .nmNumReg("MT"), .nmNumReg("ROCM"),
@@ -322,7 +323,8 @@ rex::register_shortcuts("babelmixr2")
                                   f=character(0),
                                   dur=character(0),
                                   lag=character(0),
-                                  rate=character(0)))
+                                  rate=character(0),
+                                  init=character(0)))
 }
 
 .nonmemSetCmtProperty <- function(ui, state, extra, type="f") {
@@ -341,17 +343,17 @@ rex::register_shortcuts("babelmixr2")
     .w <- which(.prop$cmt == .cmt)
   }
   if (type == "f") {
-    .prop[.w, "f"] <- param
+    .prop[.w, "f"] <- extra
   } else if (type == "dur") {
-    .prop[.w, "dur"] <- param
+    .prop[.w, "dur"] <- extra
   } else if (type == "lag") {
-    .prop[.w, "lag"] <- param
+    .prop[.w, "lag"] <- extra
   } else if (type == "rate") {
-    .prop[.w, "rate"] <- param
+    .prop[.w, "rate"] <- extra
   } else if (type == "init") {
-    .prop[.w, "init"] <- param
+    .prop[.w, "init"] <- extra
   }
-  rxode2::rxAssignControlValue(ui, ".cmtProperties", .adm)
+  rxode2::rxAssignControlValue(ui, ".cmtProperties", .prop)
 }
 
 .rxToNonmemHandleAssignmentOperator <- function(x, ui) {

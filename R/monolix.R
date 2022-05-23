@@ -172,23 +172,52 @@
   return(.ret)
 }
 
+.rxToMonolixIndent <- function(ui) {
+  rxode2::rxAssignControlValue(ui, ".mIndent",
+                               rxode2::rxGetControl(ui, ".mIndent", 0) + 2)
+}
+
+.rxToMonolixUnIndent <- function(ui) {
+  rxode2::rxAssignControlValue(ui, ".mIndent",
+                               max(2, rxode2::rxGetControl(ui, ".mIndent", 0) - 2))
+}
+
+.rxToMonolixGetIndent <- function(ui, ind=NA) {
+  if (is.na(ind)) {
+  } else if (ind) {
+    .rxToMonolixIndent(ui)
+  } else {
+    .rxToMonolixUnIndent(ui)
+  }
+  .nindent <- rxode2::rxGetControl(ui, ".mIndent", 0)
+  paste(vapply(seq(1, .nindent), function(x) " ", character(1), USE.NAMES=FALSE), collapse="")
+}
+
+
 .rxToMonolixHandleIfExpressions <- function(x, ui) {
-  .ret <- paste0("if ", .rxToMonolix(x[[2]], ui=ui), "\n",
-                 "  ", .rxToMonolix(x[[3]], ui=ui))
+  .ret <- paste0(.rxToMonolixGetIndent(ui), "if ", .rxToMonolix(x[[2]], ui=ui), "\n")
+  .rxToMonolixIndent(ui)
+  .ret <- paste0(.ret, .rxToMonolix(x[[3]], ui=ui))
   x <- x[-c(1:3)]
   if (length(x) == 1) x <- x[[1]]
   while(identical(x[[1]], quote(`if`))) {
-    .ret <- paste0(.ret, "\nelseif ", .rxToMonolix(x[[2]], ui=ui), "\n",
-                   "  ", .rxToMonolix(x[[3]], ui=ui))
+    .ret <- paste0(.ret, "\n",
+                   .rxToMonolixGetIndent(ui, FALSE), "elseif ", .rxToMonolix(x[[2]], ui=ui), "\n")
+    .rxToMonolixIndent(ui)
+    .ret <- paste0(.ret, .rxToMonolix(x[[3]], ui=ui))
     x <- x[-c(1:3)]
     if (length(x) == 1) x <- x[[1]]
   }
   if (is.null(x)) {
-    .ret <- paste0(.ret, "\nend\n")
+    .ret <- paste0(.ret, "\n",
+                   .rxToMonolixGetIndent(ui, FALSE), "end\n")
   }  else {
-    .ret <- paste0(.ret, "\nelse \n",
-                   "  ", .rxToMonolix(x, ui=ui),
-                   "\nend\n")
+    .ret <- paste0(.ret, "\n",
+                   .rxToMonolixGetIndent(ui, FALSE), "else\n")
+    .rxToMonolixIndent(ui)
+    .ret <- paste0(.ret, .rxToMonolix(x, ui=ui),
+                   "\n",
+                   .rxToMonolixGetIndent(ui, FALSE), "end\n")
   }
   return(.ret)
 }
