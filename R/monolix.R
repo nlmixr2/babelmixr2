@@ -179,7 +179,7 @@
 
 .rxToMonolixUnIndent <- function(ui) {
   rxode2::rxAssignControlValue(ui, ".mIndent",
-                               max(2, rxode2::rxGetControl(ui, ".mIndent", 0) - 2))
+                               max(0, rxode2::rxGetControl(ui, ".mIndent", 0) - 2))
 }
 
 .rxToMonolixGetIndent <- function(ui, ind=NA) {
