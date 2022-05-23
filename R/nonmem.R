@@ -1,3 +1,5 @@
+rex::register_shortcuts("babelmixr2")
+
 .rxNMcnt <- c(
   # "band"
   # "bsmm"
@@ -96,14 +98,75 @@
               `-`="-",
               `/`="/")
 
-#' Handle numbers and symbols
+
+.nmNumReg <- function(var="ETA", C=FALSE) {
+  .nmEtaNum <- rex::rex(var, "1":"9")
+  .nmEtaNum2 <- rex::rex(var, "1":"9", "0":"9")
+  if (C) {
+    .var2 <- paste0(var, "C")
+    rex::rex(or(var, .var2, .nmEtaNum, .nmEtaNum2))
+  } else {
+    rex::rex(or(var, .nmEtaNum, .nmEtaNum2))
+  }
+}
+
+
+.nmRes <- rex::rex(start,
+                   or("GETETA", "SIMETA", "SIMEPS",
+                      "COMSAV", "NWIND", "ETEXT", "IERPRD", "MSEC",
+                      "MFIRST", "NETEXT", .nmNumReg("ETA"),.nmNumReg("THETA"), .nmNumReg("EPS"), .nmNumReg("MU_"),
+                      .nmNumReg("A"), .nmNumReg("B"), .nmNumReg("C"), .nmNumReg("D"), .nmNumReg("E"),
+                      .nmNumReg("F"), .nmNumReg("P"), .nmNumReg("Q"), .nmNumReg("MC"), .nmNumReg("ME"),
+                      .nmNumReg("MG"), .nmNumReg("MT"), .nmNumReg("ROCM"),
+                      .nmNumReg("S", TRUE), .nmNumReg("F", TRUE),
+                      "FO", .nmNumReg("R", TRUE), .nmNumReg("D", TRUE),
+                      .nmNumReg("ALAG", TRUE), .nmNumReg("TSCALE", TRUE),
+                      .nmNumReg("XSCALE", TRUE), "A_0FLG", "A_0", "DADT",
+                      "CALLFL", "Y", "NEWL2", "ICALL", "EXIT", "CALL",
+                      "GETETA", "SIMETA", "SIMEPS", "COMSAV", "NWIND", "ETEXT",
+                      "IERPRD", "MSEC", "MFIRST", "NETEXT"),
+                   end)
+#' Gets variable, respecting the many resereved names in NONMEM
+#'
+#'
+#' @param var Variable name in rxode2 syntax
+#' @param ui UI for saving and retriving information
+#' @return NONMEM-compatible variable name
+#' @author Matthew L. Fidler
+#' @noRd
+.nmGetVar <- function(var, ui) {
+  .var <- rxode2::rxGetControl(ui, ".nmGetVarDf",
+                               data.frame(var=character(0),
+                                          nm=character(0)))
+  .w <- which(.var$var == var)
+  if (length(.w) == 1) return(.var$nm[.w])
+  .uvar <- gsub(".", "_", toupper(var), fixed=TRUE)
+  .w <- which(.var$nm == .uvar)
+  .doRx <- FALSE
+  if (length(.w) == 1) {
+    .doRx <- TRUE
+  }
+  if (regexpr(.nmRes, .uvar, perl=TRUE) != -1) {
+    .doRx <- TRUE
+  }
+  if (.doRx) {
+    .num <- rxode2::rxGetControl(ui, ".nmVarNum", 1)
+    .newVar <- sprintf("RX%03d", .num)
+    rxode2::rxAssignControlValue(ui, ".nmVarNum", .num + 1)
+  } else {
+    .newVar <- .uvar
+  }
+  .var <- rbind(.var, data.frame(var=var, nm=.newVar))
+  rxode2::rxAssignControlValue(ui, ".nmGetVarDf", .var)
+  .newVar
+}
 #'
 #' @param x Expression
 #' @param ui User interface
 #' @return Symbol, converted to NONMEM compatible name
 #' @author Matthew L. Fidler
 #' @noRd
-.rxToNonmemHandleNamesOrAtomic <- function(x, ui=NULL) {
+.rxToNonmemHandleNamesOrAtomic <- function(x, ui) {
   if (is.character(x)) stop("strings in nlmixr<->monolix are not supported", call.=FALSE)
   .ret <- as.character(x)
   if (is.na(.ret) | (.ret %in% .rxNMbad)) {
@@ -122,7 +185,8 @@
       if (length(.w) == 1) {
         return(paste0("A(", .w, ")"))
       }
-      return(gsub("[.]", "__", toupper(.ret)))
+      # FIXME Look for reserved variables
+      return(.nmGetVar(.ret, ui))
     }
   } else {
     return(.v)
@@ -152,6 +216,10 @@
       }
       .states <- rxode2::rxModelVars(ui)$state
       .num <- which(.state == .states)
+      if (length(.num) != 1) {
+        stop("cannot find '", .state, "' in the model",
+             call.=FALSE)
+      }
       return(paste0("DADT(", .num, ")"))
     } else {
       if (length(.x2) == 2 && length(.x3) == 2) {
@@ -192,34 +260,50 @@
 
 
 .rxToNonmemIndent <- function(ui) {
-
+  rxode2::rxAssignControlValue(ui, ".nmIndent",
+                               rxode2::rxGetControl(ui, ".nmIndent", 2) + 2)
 }
 
 .rxToNonmemUnIndent <- function(ui) {
-
+  rxode2::rxAssignControlValue(ui, ".nmIndent",
+                               max(2, rxode2::rxGetControl(ui, ".nmIndent", 2) - 2))
 }
 
-.rxToNonmemGetIndent <- function(ui) {
-
+.rxToNonmemGetIndent <- function(ui, ind=NA) {
+  if (is.na(ind)) {
+  } else if (ind) {
+    .rxToNonmemIndent(ui)
+  } else {
+    .rxToNonmemUnIndent(ui)
+  }
+  .nindent <- rxode2::rxGetControl(ui, ".nmIndent", 2)
+  paste(vapply(seq(1, .nindent), function(x) " ", character(1), USE.NAMES=FALSE), collapse="")
 }
 
 .rxToNonmemHandleIfExpressions <- function(x, ui) {
-  .ret <- paste0("IF ", .rxToNonmem(x[[2]], ui=ui), " THEN\n",
-                 "  ", .rxToNonmem(x[[3]], ui=ui))
+  .ret <- paste0(.rxToNonmemGetIndent(ui), "IF (", .rxToNonmem(x[[2]], ui=ui), ") THEN\n")
+  .rxToNonmemIndent(ui)
+  .ret <- paste0(.ret, .rxToNonmem(x[[3]], ui=ui))
   x <- x[-c(1:3)]
   if (length(x) == 1) x <- x[[1]]
   while(identical(x[[1]], quote(`if`))) {
-    .ret <- paste0(.ret, "\nELSE IF ", .rxToNonmem(x[[2]], ui=ui), " THEN\n",
-                   "  ", .rxToNonmem(x[[3]], ui=ui))
+    .ret <- paste0(.ret, "\n",
+                   .rxToNonmemGetIndent(ui, FALSE), "ELSE IF (", .rxToNonmem(x[[2]], ui=ui), ") THEN\n")
+    .rxToNonmemIndent(ui)
+    .ret <- paste0(.ret, .rxToNonmem(x[[3]], ui=ui))
     x <- x[-c(1:3)]
     if (length(x) == 1) x <- x[[1]]
   }
   if (is.null(x)) {
-    .ret <- paste0(.ret, "\nEND IF\n")
+    .ret <- paste0(.ret, "\n",
+                   .rxToNonmemGetIndent(ui, FALSE), "END IF\n")
   }  else {
-    .ret <- paste0(.ret, "\nELSE \n",
-                   "  ", .rxToNonmem(x, ui=ui),
-                   "\nEND IF\n")
+    .ret <- paste0(.ret, "\n",
+                   .rxToNonmemGetIndent(ui, FALSE), "ELSE\n")
+    .rxToNonmemIndent(ui)
+    .ret <- paste0(.ret, .rxToNonmem(x, ui=ui),
+                   "\n",
+                   .rxToNonmemGetIndent(ui, FALSE), "END IF\n")
   }
   return(.ret)
 }
@@ -305,7 +389,7 @@
     return(paste0(";", as.character(x[[2]])[1], " defined in $PK block"))
   }
   .var <- .rxToNonmem(x[[2]], ui=ui)
-  return(paste(.var, "=", .rxToNonmem(x[[3]], ui=ui)))
+  return(paste0(.rxToNonmemGetIndent(ui), .var, "=", .rxToNonmem(x[[3]], ui=ui)))
 }
 
 .rxToNonmemHandleCall <- function(x, ui) {
@@ -334,7 +418,7 @@
   } else if (identical(x[[1]], quote(`!`)) ) {
     return(paste0(".NOT. (", .rxToNonmem(x[[2]], ui=ui), ")"))
   } else if (.rxIsAssignmentOperator(x[[1]])) {
-    return(.rxToNonmemHandleAssignmentOperator(x))
+    return(.rxToNonmemHandleAssignmentOperator(x, ui))
   } else if (identical(x[[1]], quote(`[`))) {
     .type <- toupper(as.character(x[[2]]))
     if (any(.type == c("THETA", "ETA"))) {
@@ -385,12 +469,17 @@
       }
     }
     # There are no identical functions from nlmixr to NONMEM.
+    .ret0 <- c(list(as.character(x[[1]])), lapply(x[-1], .rxToNonmem, ui=ui))
     .fun <- paste(.ret0[[1]])
     .ret0 <- .ret0[-1]
     .ret <- paste0("(", paste(unlist(.ret0), collapse = ","), ")")
     if (.ret == "(0)") {
-      .state <- rxode2::rxModelVars(ui)
+      .state <- rxode2::rxModelVars(ui)$state
       .cmt <- which(.fun == .state)
+      if (length(.cmt) != 1) {
+        stop("cannot find '", .fun, "' in the model",
+             call.=FALSE)
+      }
       return(paste0("A_0(", .cmt, ")"))
     } else if (any(.fun == c("cmt", "dvid"))) {
       return("")
@@ -456,7 +545,7 @@
         .ret <- paste0("1/(1+DEXP(-(", unlist(.ret0)[1], ")))")
       } else if (length(.ret0) == 2) {
         .ret0 <- unlist(.ret0)
-        .p <- paste0("1/(1+exp(-(", .ret0[1], ")))")
+        .p <- paste0("1/(1+DEXP(-(", .ret0[1], ")))")
         ## return (high-low)*p+low;
         .ret <- paste0(
           "(1.0-(", .ret0[2], "))*(", .p,
@@ -488,7 +577,7 @@
 
 .rxToNonmem <- function(x, ui) {
   if (is.name(x) || is.atomic(x)) {
-    return(.rxToNonmemHandleNamesOrAtomic(x))
+    return(.rxToNonmemHandleNamesOrAtomic(x, ui))
   } else if (is.call(x)) {
     return(.rxToNonmemHandleCall(x, ui))
   }
