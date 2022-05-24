@@ -315,10 +315,12 @@
                  call.=FALSE)
           }
         }
-        return(paste0(";", as.character(x[[2]])[1], " defined in PK section"))
+        return(paste0(.rxToMonolixGetIndent(ui),
+                      ";", as.character(x[[2]])[1], " defined in PK section"))
       }
       .var <- .rxToMonolix(x[[2]], ui=ui)
-      return(paste(.var, "=", .rxToMonolix(x[[3]], ui=ui)))
+      return(paste(.rxToMonolixGetIndent(ui),
+                   .var, "=", .rxToMonolix(x[[3]], ui=ui)))
     } else if (identical(x[[1]], quote(`[`))) {
       .type <- toupper(as.character(x[[2]]))
       if (any(.type == c("THETA", "ETA"))) {
