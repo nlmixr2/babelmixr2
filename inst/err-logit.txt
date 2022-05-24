@@ -1,0 +1,5 @@
+      IPRED = RX_PRED
+      W     = DSQRT(W)
+      XL  = (IPRED - (LOW))/((HIGH) - (LOW))
+      IPRED = -DLOG(1.0/XL - 1.0)
+      Y     = IPRED + EPS(1)*W

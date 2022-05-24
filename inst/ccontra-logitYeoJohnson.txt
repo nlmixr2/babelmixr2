@@ -14,7 +14,7 @@
       xl = -log(one/xl-one)
       if (LAMBDA .eq. 1.0) then
          y(1) = xl
-      else if (p .ge. 0) then
+      else if (xl .ge. 0) then
          if (LAMBDA .eq. 0) then
             y(1) = log(one+xl)
          else

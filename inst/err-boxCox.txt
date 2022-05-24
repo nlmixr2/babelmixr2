@@ -1,0 +1,13 @@
+      IPRED = RX_PRED
+      W     = DSQRT(W)
+      IF (W .EQ. 0.0) W = 1.0
+      IF (LAMBDA .EQ. 0.0 .AND. IPRED .NE. 0.0) THEN
+         IPRED = DLOG(IPRED)
+      ELSE IF (LAMBDA .EQ. 0.0 .AND. IPRED .EQ. 0.0) THEN
+         IPRED = -1/LAMBDA
+      ELSE IF (LAMBDA .NE. 0.0 .AND. IPRED .NE. 0.0) THEN
+         IPRED = (IPRED**LAMBDA - 1.0)/LAMBDA
+      ELSE IF (LAMBDA .NE. 0.0 .AND. IPRED .EQ. 0.0) THEN
+         IPRED = -1000000000
+      END IF
+      Y     = IPRED + EPS(1)*W
