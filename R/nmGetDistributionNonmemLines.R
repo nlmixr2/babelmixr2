@@ -17,14 +17,14 @@ nmGetDistributionNonmemLines <- function(line) {
 #' @return nmGetDistributionNonmemLines object
 #' @author Matthew L. Fidler
 #' @noRd
-.createNonmemLineObject <- function(x, line) {
+.createNonmemLineObject <- function(x, line, extra="") {
   .predDf <- get("predDf", x)
   if (line > nrow(.predDf)) {
     return(NULL)
   }
   .predLine <- .predDf[line, ]
   .ret <- list(x, .predLine)
-  class(.ret) <- c(paste(.predLine$distribution), "nmGetDistributionNonmemLines")
+  class(.ret) <- c(paste0(.predLine$distribution, extra), "nmGetDistributionNonmemLines")
   .ret
 }
 
@@ -49,7 +49,23 @@ nmGetDistributionNonmemLines.norm <- function(line) {
     stop("linCmt() translation not supported (yet)",
          call.=FALSE)
   }
-  rxode2::.handleSingleErrTypeNormOrTFoceiBase(.env, .pred1)
+  .ret <- rxode2::.handleSingleErrTypeNormOrTFoceiBase(.env, .pred1)
+  # Take out transformation; not supported right for multiple endpoint models
+  .ret[-(1:4)]
+}
+
+#' @rdname nmGetDistributionNonmemLines
+#' @export
+nmGetDistributionNonmemLines.norm1 <- function(line) {
+  .env <- line[[1]]
+  .pred1 <- line[[2]]
+  if (.pred1[["linCmt"]]) {
+    stop("linCmt() translation not supported (yet)",
+         call.=FALSE)
+  }
+  .ret <- rxode2::.handleSingleErrTypeNormOrTFoceiBase(.env, .pred1)
+  # Transformation can be supported with single endpoint models
+  .ret
 }
 
 #' @export

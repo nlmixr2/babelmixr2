@@ -132,4 +132,136 @@ pk.turnover.emax3 <- function() {
 
 w <- pk.turnover.emax3()
 
+test_that("tbs tests", {
+
+  pheno <- function() {
+    ini({
+      tcl <- log(0.008) # typical value of clearance
+      tv <-  log(0.6)   # typical value of volume
+      ## var(eta.cl)
+      eta.cl + eta.v ~ c(1,
+                         0.01, 1) ## cov(eta.cl, eta.v), var(eta.v)
+      # interindividual variability on clearance and volume
+      add.err <- 0.1    # residual variability
+      lambda <- c(-2, 0, 2)
+    })
+    model({
+      cl <- exp(tcl + eta.cl) # individual value of clearance
+      v <- exp(tv + eta.v)    # individual value of volume
+      ke <- cl / v            # elimination rate constant
+      d/dt(A1) = - ke * A1    # model differential equation
+      cp = A1 / v             # concentration in plasma
+      cp ~ add(add.err) + boxCox(lambda)# define error model
+    })
+  }
+
+  p <- pheno()
+
+  expect_equal(p$nonmemCcontra,
+               "      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)\n      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2\n      USE NM_INTERFACE,ONLY: CELS\n!      parameter (lth=40,lvr=30,no=50)\n!      common /rocm0/ theta (lth)\n!      common /rocm4/ y\n!      double precision c1,c2,c3,theta,y,w,one,two\n      double precision c1,c2,c3,w,one,two\n      dimension c2(:),c3(:,:)\n      data one,two/1.,2./\n      if (icall.le.1) return\n      w=y(1)\n\n         if(theta(4).eq.0) y(1)=log(y(1))\n         if(theta(4).ne.0) y(1)=(y(1)**theta(4)-one)/theta(4)\n\n\n      call cels (c1,c2,c3,ier1,ier2)\n      y(1)=w\n      c1=c1-two*(theta(4)-one)*log(y(1))\n\n      return\n      end")
+
+
+  pheno <- function() {
+    ini({
+      tcl <- log(0.008) # typical value of clearance
+      tv <-  log(0.6)   # typical value of volume
+      ## var(eta.cl)
+      eta.cl + eta.v ~ c(1,
+                         0.01, 1) ## cov(eta.cl, eta.v), var(eta.v)
+      # interindividual variability on clearance and volume
+      add.err <- 0.1    # residual variability
+      lambda <- c(-2, 0, 2)
+    })
+    model({
+      cl <- exp(tcl + eta.cl) # individual value of clearance
+      v <- exp(tv + eta.v)    # individual value of volume
+      ke <- cl / v            # elimination rate constant
+      d/dt(A1) = - ke * A1    # model differential equation
+      cp = A1 / v             # concentration in plasma
+      cp ~ add(add.err) + yeoJohnson(lambda)# define error model
+    })
+  }
+
+  p <- pheno()
+
+  expect_equal(p$nonmemCcontra, "      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)\n      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2\n      USE NM_INTERFACE,ONLY: CELS\n!      parameter (lth=40,lvr=30,no=50)\n!      common /rocm0/ theta (lth)\n!      common /rocm4/ y\n!      double precision c1,c2,c3,theta,y,w,one,two\n      double precision c1,c2,c3,w,one,two\n      dimension c2(:),c3(:,:)\n      data one,two/1.,2./\n      if (icall.le.1) return\n      w=y(1)\n      if (theta(4) .eq. 1.0) then\n         y(1) = y(1)\n      else if (y(1) .gt. 0.0) then\n         if (theta(4) .eq. 0.0) then\n            y(1) = log(y(1) + one)\n         else\n            y(1) = ((y(1)+one)**theta(4)-one)/theta(4)\n         end if\n      else\n         if (theta(4) .eq. 2.0) then\n            y(1) = -log(one - y(1))\n         else\n            y(1) = (1.0 - (1.0- y(1))**(2.0-theta(4)))/(2.0 - theta(4))\n         end if\n      end if\n      call cels (c1,c2,c3,ier1,ier2)\n      y(1)=w\n      if (y(1) .ge. 0) then\n         c1=c1-two*(theta(4)-one)*log(one+y(1))\n      else\n         c1=c1-two*(one-theta(4))*log(one-y(1))\n      end if\n      return\n      end")
+
+  pheno <- function() {
+    ini({
+      tcl <- log(0.008) # typical value of clearance
+      tv <-  log(0.6)   # typical value of volume
+      ## var(eta.cl)
+      eta.cl + eta.v ~ c(1,
+                         0.01, 1) ## cov(eta.cl, eta.v), var(eta.v)
+      # interindividual variability on clearance and volume
+      lnorm.err <- 0.1    # residual variability
+    })
+    model({
+      cl <- exp(tcl + eta.cl) # individual value of clearance
+      v <- exp(tv + eta.v)    # individual value of volume
+      ke <- cl / v            # elimination rate constant
+      d/dt(A1) = - ke * A1    # model differential equation
+      cp = A1 / v             # concentration in plasma
+      cp ~ lnorm(lnorm.err)# define error model
+    })
+  }
+
+  p <- pheno()
+
+  expect_equal(p$nonmemCcontra,
+               "      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)\n      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2\n      USE NM_INTERFACE,ONLY: CELS\n!      parameter (lth=40,lvr=30,no=50)\n!      common /rocm0/ theta (lth)\n!      common /rocm4/ y\n!      double precision c1,c2,c3,theta,y,w,one,two\n      double precision c1,c2,c3,w,one,two\n      dimension c2(:),c3(:,:)\n      data one,two/1.,2./\n      if (icall.le.1) return\n      w=y(1)\n      y(1)=log(y(1))\n      call cels (c1,c2,c3,ier1,ier2)\n      y(1)=w\n      c1=c1+two*log(y(1))\n      return\n      end")
+
+  pheno <- function() {
+    ini({
+      tcl <- log(0.008) # typical value of clearance
+      tv <-  log(0.6)   # typical value of volume
+      ## var(eta.cl)
+      eta.cl + eta.v ~ c(1,
+                         0.01, 1) ## cov(eta.cl, eta.v), var(eta.v)
+      # interindividual variability on clearance and volume
+      lnorm.err <- 0.1    # residual variability
+    })
+    model({
+      cl <- exp(tcl + eta.cl) # individual value of clearance
+      v <- exp(tv + eta.v)    # individual value of volume
+      ke <- cl / v            # elimination rate constant
+      d/dt(A1) = - ke * A1    # model differential equation
+      cp = A1 / v             # concentration in plasma
+      cp ~ logitNorm(lnorm.err, -0.1, 70)# define error model
+    })
+  }
+
+  p <- pheno()
+
+  expect_equal(p$nonmemCcontra,
+               "      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)\n      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2\n      USE NM_INTERFACE,ONLY: CELS\n!      parameter (lth=40,lvr=30,no=50)\n!      common /rocm0/ theta (lth)\n!      common /rocm4/ y\n!      double precision c1,c2,c3,theta,y,w,one,two\n      double precision c1,c2,c3,w,one,two,xl,hl,hl2\n      dimension c2(:),c3(:,:)\n      data one,two/1.,2./\n      if (icall.le.1) return\n      w=y(1)\n      xl = (y(1)-(-0.1))/((70.0)-(-0.1))\n      y(1) = -log(one/xl-one)\n      call cels (c1,c2,c3,ier1,ier2)\n      y(1)=w\n      xl = (y(1)-(-0.1))\n      hl = ((70.0) - (-0.1))\n      hl2 = hl-xl\n      c1=c1-two*(log(hl)-log(xl)-log(hl2))\n      return\n      end")
+
+
+  pheno <- function() {
+    ini({
+      tcl <- log(0.008) # typical value of clearance
+      tv <-  log(0.6)   # typical value of volume
+      ## var(eta.cl)
+      eta.cl + eta.v ~ c(1,
+                         0.01, 1) ## cov(eta.cl, eta.v), var(eta.v)
+      # interindividual variability on clearance and volume
+      lnorm.err <- 0.1    # residual variability
+      lambda <- c(-2, 0, 2)
+    })
+    model({
+      cl <- exp(tcl + eta.cl) # individual value of clearance
+      v <- exp(tv + eta.v)    # individual value of volume
+      ke <- cl / v            # elimination rate constant
+      d/dt(A1) = - ke * A1    # model differential equation
+      cp = A1 / v             # concentration in plasma
+      cp ~ logitNorm(lnorm.err, -0.1, 70) + yeoJohnson(lambda)# define error model
+    })
+  }
+
+  p <- pheno()
+
+  message(p$nonmemCcontra)
+
+})
+
 

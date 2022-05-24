@@ -1,0 +1,5 @@
+      subroutine contr (icall,cnt,ier1,ier2)
+      double precision cnt
+      call ncontr (cnt,ier1,ier2,l2r)
+      return
+      end
