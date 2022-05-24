@@ -119,5 +119,3 @@ rxUiGet.nonmemPkDes <- function(x, ...) {
          "\n\n$DES\n",
          .des)
 }
-
-
