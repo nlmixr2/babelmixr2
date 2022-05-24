@@ -1,5 +1,5 @@
 #'@export
-rxUiGet.nonmemErr <- function(x, ...) {
+rxUiGet.nonmemErrSigma <- function(x, ...) {
   paste0(c("$ERROR\n",
            "  IPRED = RX_PRED\n",
            "  IRES = DV = IPRED\n",

@@ -80,12 +80,12 @@ pk.turnover.emax3 <- function() {
     tktr <- log(1)
     tka <- log(1)
     tcl <- log(0.1)
-    tv <- log(10)
+    tv <- fix(log(10))
     ##
     eta.ktr ~ 1
     eta.ka ~ 1
-    eta.cl ~ 2
-    eta.v ~ 1
+    eta.cl + eta.v ~ c(2,
+                       0.01, 1)
     prop.err <- 0.1
     pkadd.err <- 0.1
     ##
@@ -93,8 +93,8 @@ pk.turnover.emax3 <- function() {
     tec50 <- log(0.5)
     tkout <- log(0.05)
     te0 <- log(100)
-    cl.wt <- 0.1
-    cl.sex <- 0.1
+    cl.wt <- c(-10, 0.1, 10)
+    cl.sex <- c(-Inf, 0.1, 10)
     ##
     eta.emax ~ .5
     eta.ec50  ~ .5
