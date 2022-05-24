@@ -1,8 +1,6 @@
-      IPRED = RX_PRED
-      W     = DSQRT(W)
+      IPRED = RX_PRED_F
       IF (IPRED .EQ. 0.0) THEN
          IPRED = -1000000000
       ELSE
          IPRED = DLOG(IPRED)
       END IF
-      Y     = IPRED + EPS(1)*W

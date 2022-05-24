@@ -4,7 +4,6 @@
 \alias{nmGetDistributionNonmemLines}
 \alias{nmGetDistributionNonmemLines.rxUi}
 \alias{nmGetDistributionNonmemLines.norm}
-\alias{nmGetDistributionNonmemLines.norm1}
 \title{This is a S3 method for getting the distribution lines for a base rxode2 saem problem}
 \usage{
 nmGetDistributionNonmemLines(line)
@@ -12,8 +11,6 @@ nmGetDistributionNonmemLines(line)
 \method{nmGetDistributionNonmemLines}{rxUi}(line)
 
 \method{nmGetDistributionNonmemLines}{norm}(line)
-
-\method{nmGetDistributionNonmemLines}{norm1}(line)
 }
 \arguments{
 \item{line}{Parsed rxode2 model environment}

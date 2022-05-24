@@ -5,7 +5,7 @@
 }
 
 #'@export
-rxUiGet.nonmemErr <- function(x, ...) {
+rxUiGet.nonmemErr0 <- function(x, ...) {
   .ui <- x[[1]]
   .predDf <- .ui$predDf
   if (length(.predDf$cond) == 1L) {
@@ -41,4 +41,33 @@ rxUiGet.nonmemErr <- function(x, ...) {
     }
   }
   return(.getErr("err.txt"))
+}
+
+#'@export
+rxUiGet.nonmemErr <- function(x, ...) {
+  .err <- rxUiGet.nonmemErr0(x, ...)
+  .ui <- x[[1]]
+  .predDf <- .ui$predDf
+  if (length(.predDf$cond) == 1L) {
+    .r <- .rxToNonmem(.nmGetDistributionNonmemLinesR, .ui)
+    # depending on the method the prop can be with regards to the F or the transformed F
+    # So, here we add RX_PRED_ to be the transformed to support both
+    paste0(gsub("\n *\n+",
+                "\n",
+                paste(c(.err,
+                        "  RX_PRED_=IPRED",
+                        .r,
+                        "  W = DSQRT(RX_R_)",
+                        "  IF (W .EQ. 0.0) W = 1",
+                        "  Y = IPRED + W*EPS(1)"), collapse="\n")), "\n")
+  } else {
+    # Here no transforms are supported per endpoint, simply use rx_r_
+    paste0(gsub("\n *\n+",
+                "\n",
+                paste(c(.err,
+                        "  W = DSQRT(RX_R_)",
+                        "  IF (W .EQ. 0.0) W = 1",
+                        "  Y = IPRED + W*EPS(1)"),
+                      collapse="\n")), "\n")
+  }
 }
