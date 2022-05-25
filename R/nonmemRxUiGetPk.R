@@ -113,9 +113,9 @@ rxUiGet.nonmemPkDes <- function(x, ...) {
                    paste(.ret, collapse="\n")
                  }, character(1), USE.NAMES=FALSE)
   .pk2 <- .pk2[!is.na(.pk2)]
-  .pk2 <- paste0("\n", .pk2)
+  .pk2 <- ifelse(length(.pk2) > 0, paste0("\n", .pk2), "")
   rm(".thetaMu", envir=.ui)
   paste0(.pk, .pk2,
-         "\n$DES\n",
+         "\n\n$DES\n",
          .des)
 }
