@@ -15,3 +15,9 @@ rxUiGet.nonmemCcontraName <- function(x, ...) {
   .ui <- x[[1]]
   paste0(.ui$modelName, ".ccontra")
 }
+
+#' @export
+rxUiGet.nonmemCsv <- function(x, ...) {
+  .ui <- x[[1]]
+  paste0(.ui$modelName, ".csv")
+}

@@ -17,7 +17,7 @@ rxUiGet.nonmemModel <- function(x, ...) {
   .ui <- x[[1]]
   .ret <- paste0(
     "$PROBLEM ", .ui$modelName, " translated from babelmixr2\n\n",
-    "$DATA ", .ui$modelName, ".csv IGNORE=@\n\n",
+    "$DATA ", .ui$nonmemCsv, " IGNORE=@\n\n",
     rxUiGet.nonmemInput(x, ...), "\n",
     rxUiGet.nonmemSub(x, ...), "\n\n",
     rxUiGet.nonmemMod(x, ...), "\n\n",

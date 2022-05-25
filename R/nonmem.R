@@ -518,16 +518,22 @@ rex::register_shortcuts("babelmixr2")
         .ret0 <- unlist(.ret0)
         .p <- paste0("PHI(", .ret0[1], ")")
         ## return (high-low)*p+low;
+        .low <- paste(.ret0[2])
+        if (regexpr("^-?[0-9]+$", .low) != -1) .low <- paste0(.low, ".0")
         .ret <- paste0(
-          "(1.0-(", .ret0[2], "))*(", .p,
-          ")+(", .ret0[2], ")"
+          "(1.0-(", .low, "))*(", .p,
+          ")+(", .low, ")"
         )
       } else if (length(.ret0) == 3) {
         .ret0 <- unlist(.ret0)
+        .low <- paste(.ret0[2])
+        if (regexpr("^-?[0-9]+$", .low) != -1) .low <- paste0(.low, ".0")
+        .hi <- paste(.ret0[3])
+        if (regexpr("^-?[0-9]+$", .hi) != -1) .hi <- paste0(.hi, ".0")
         .p <- paste0("PHI(", .ret0[1], ")")
         .ret <- paste0(
-          "((", .ret0[3], ")-(", .ret0[2], "))*(", .p,
-          ")+(", .ret0[2], ")"
+          "((", .hi, ")-(", .low, "))*(", .p,
+          ")+(", .low, ")"
         )
       } else {
         stop("'probitInv' requires 1-3 arguments",
@@ -542,17 +548,23 @@ rex::register_shortcuts("babelmixr2")
         .ret <- paste0("-DLOG(1/(", unlist(.ret0), ")-1)")
       } else if (length(.ret0) == 2) {
         .ret0 <- unlist(.ret0)
+        .low <- paste(.ret0[2])
+        if (regexpr("^-?[0-9]+$", .low) != -1) .low <- paste0(.low, ".0")
         .p <- paste0(
-          "((", .ret0[1], ")-(", .ret0[2], "))/(1.0-",
-          "(", .ret0[2], "))"
+          "((", .ret0[1], ")-(", .low, "))/(1.0-",
+          "(", .low, "))"
         )
         .ret <- paste0("-DLOG(1/(", .p, ")-1)")
       } else if (length(.ret0) == 3) {
         .ret0 <- unlist(.ret0)
+        .low <- paste(.ret0[2])
+        if (regexpr("^-?[0-9]+$", .low) != -1) .low <- paste0(.low, ".0")
+        .hi <- paste(.ret0[3])
+        if (regexpr("^-?[0-9]+$", .hi) != -1) .hi <- paste0(.hi, ".0")
         ## (x-low)/(high-low)
         .p <- paste0(
-          "((", .ret0[1], ")-(", .ret0[2],
-          "))/((", .ret0[3], ")-(", .ret0[2], "))"
+          "((", .ret0[1], ")-(", .low,
+          "))/((", .hi, ")-(", .low, "))"
         )
         .ret <- paste0("-DLOG(1/(", .p, ")-1)")
       } else {
@@ -565,18 +577,24 @@ rex::register_shortcuts("babelmixr2")
         .ret <- paste0("1/(1+DEXP(-(", unlist(.ret0)[1], ")))")
       } else if (length(.ret0) == 2) {
         .ret0 <- unlist(.ret0)
+        .low <- paste(.ret0[2])
+        if (regexpr("^-?[0-9]+$", .low) != -1) .low <- paste0(.low, ".0")
         .p <- paste0("1/(1+DEXP(-(", .ret0[1], ")))")
         ## return (high-low)*p+low;
         .ret <- paste0(
-          "(1.0-(", .ret0[2], "))*(", .p,
-          ")+(", .ret0[2], ")"
+          "(1.0-(", .low, "))*(", .p,
+          ")+(", .low, ")"
         )
       } else if (length(.ret0) == 3) {
         .ret0 <- unlist(.ret0)
         .p <- paste0("1/(1+DEXP(-(", .ret0[1], ")))")
+        .low <- paste(.ret0[2])
+        if (regexpr("^-?[0-9]+$", .low) != -1) .low <- paste0(.low, ".0")
+        .hi <- paste(.ret0[3])
+        if (regexpr("^-?[0-9]+$", .hi) != -1) .hi <- paste0(.hi, ".0")
         .ret <- paste0(
-          "((", .ret0[3], ")-(", .ret0[2], "))*(", .p,
-          ")+(", .ret0[2], ")"
+          "((", .hi, ")-(", .low, "))*(", .p,
+          ")+(", .low, ")"
         )
       } else {
         stop("'expit' requires 1-3 arguments",
