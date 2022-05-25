@@ -116,6 +116,6 @@ rxUiGet.nonmemPkDes <- function(x, ...) {
   .pk2 <- paste0("\n", .pk2)
   rm(".thetaMu", envir=.ui)
   paste0(.pk, .pk2,
-         "\n\n$DES\n",
+         "\n$DES\n",
          .des)
 }

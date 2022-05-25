@@ -5,7 +5,7 @@ rxUiGet.nonmemContr <- function(x, ...) {
   .predDf <- .ui$predDf
   if (length(.predDf$cond) != 1) return(NULL)
   if (.predDf$transform == "untransformed") return(NULL)
-  return(paste(readLines(file.path(system.file(package="babelmixr2"), "contra.txt")),
+  return(paste(readLines(file.path(system.file(package="babelmixr2"), "contr.txt")),
                collapse="\n"))
 }
 
