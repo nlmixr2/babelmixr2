@@ -242,9 +242,10 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
 #' @rdname bblDatToMonolix
 #' @export
 bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), env=NULL) {
-  .bblDatToNonmem (model, data, table,
-                       fun="bblDatToNonmem", replaceEvid=5L,
-                       replaceOK=FALSE, software="NONMEM", env=env)
+  .ret <- .bblDatToNonmem (model, data, table,
+                           fun="bblDatToNonmem", replaceEvid=5L,
+                           replaceOK=FALSE, software="NONMEM", env=env)
+  .ret[, names(.ret) != "DVID"]
 }
 
 #' @rdname bblDatToMonolix
