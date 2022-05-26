@@ -1,0 +1,14 @@
+      IF (CENS .EQ. 1 .OR. CENS .EQ. -1) THEN
+         F_FLAG = 1
+         IF (LIMIT .LE. -1000000 .OR. LIMIT .GE. 1000000) THEN
+            Y = PHI(CENS*(DV-IPRED)/W)
+         ELSE
+            CUM1 = PHI(CENS*(DV-IPRED)/W)
+            CUM2 = PHI(CENS*(LIMIT-IPRED)/W)
+            Y = (CUM1-CUM2)/(1.0 - CUM2)
+         END IF
+      ELSE
+         F_FLAG = 0
+         Y = IPRED + W*EPS(1)
+      END IF
+      

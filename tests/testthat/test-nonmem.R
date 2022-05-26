@@ -168,7 +168,7 @@ test_that("tbs tests", {
                "$ERROR\n  IPRED = RX_PRED\n  W     = DSQRT(W)\n  IF (W .EQ. 0.0) W = 1.0\n  IF (THETA(4) .EQ. 0.0 .AND. IPRED .NE. 0.0) THEN\n     IPRED = DLOG(IPRED)\n  ELSE IF (THETA(4) .EQ. 0.0 .AND. IPRED .EQ. 0.0) THEN\n     IPRED = -1/THETA(4)\n  ELSE IF (THETA(4) .NE. 0.0 .AND. IPRED .NE. 0.0) THEN\n     IPRED = (IPRED**THETA(4) - 1.0)/THETA(4)\n  ELSE IF (THETA(4) .NE. 0.0 .AND. IPRED .EQ. 0.0) THEN\n     IPRED = -1000000000\n  END IF\n  Y     = IPRED + EPS(1)*W")
 
 
-   pheno <- function() {
+  pheno <- function() {
     ini({
       tcl <- log(0.008) # typical value of clearance
       tv <-  log(0.6)   # typical value of volume
@@ -217,6 +217,7 @@ test_that("tbs tests", {
   }
 
   p <- pheno()
+
 
   expect_equal(p$nonmemCcontra,
                "      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)\n      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2\n      USE NM_INTERFACE,ONLY: CELS\n!      parameter (lth=40,lvr=30,no=50)\n!      common /rocm0/ theta (lth)\n!      common /rocm4/ y\n!      double precision c1,c2,c3,theta,y,w,one,two\n      double precision c1,c2,c3,w,one,two\n      dimension c2(:),c3(:,:)\n      data one,two/1.,2./\n      if (icall.le.1) return\n      w=y(1)\n      y(1)=log(y(1))\n      call cels (c1,c2,c3,ier1,ier2)\n      y(1)=w\n      c1=c1+two*log(y(1))\n      return\n      end")

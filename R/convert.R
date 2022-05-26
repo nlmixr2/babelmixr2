@@ -226,12 +226,16 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
   }
 
   .censData <- NULL
-  if (any(names(.new) == "CENS")) {
+  .w <- which(toupper(names(.new)) == "CENS")
+  if (length(.w) == 1) {
+    names(.new)[.w] <- "CENS"
     .censData <- "CENS"
   }
 
   .limitData <- NULL
-  if (any(names(.new) == "LIMIT")) {
+  .w <- which(toupper(names(.new)) == "LIMIT")
+  if (length(.w) == 1) {
+    names(.new)[.w] <- "LIMIT"
     .limitData <- "LIMIT"
   }
 
@@ -245,7 +249,15 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), env=NU
   .ret <- .bblDatToNonmem (model, data, table,
                            fun="bblDatToNonmem", replaceEvid=5L,
                            replaceOK=FALSE, software="NONMEM", env=env)
-  .ret[, names(.ret) != "DVID"]
+  .ret <- .ret[, names(.ret) != "DVID"]
+  if (any(names(.ret) == "LIMIT")) {
+    # This converts LIMIT to NONMEM's definition of infinity
+    # (according to manual for $THETA)
+    .ret$LIMIT <- ifelse(is.finite(.ret$LIMIT),
+                         .ret$LIMIT,
+                         ifelse(.ret$LIMIT < 0, -1000000, 1000000))
+  }
+  .ret
 }
 
 #' @rdname bblDatToMonolix

@@ -1,0 +1,8 @@
+      IF (CENS .EQ. 1 .OR. CENS .EQ. -1) THEN
+         F_FLAG = 1
+         Y = PHI(CENS*(DV-IPRED)/W)
+      ELSE
+         F_FLAG = 0
+         Y = IPRED + W*EPS(1)
+      END IF
+      

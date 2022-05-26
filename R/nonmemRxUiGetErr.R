@@ -1,6 +1,6 @@
-.getErr <- function(err) {
+.getErr <- function(err, iniErr=TRUE) {
   .err <- readLines(file.path(system.file(package="babelmixr2"), err))
-  paste0("$ERROR\n",
+  paste0(ifelse(iniErr, "$ERROR\n", ""),
          paste(gsub("^      ", "  ", .err), collapse="\n"))
 }
 
@@ -52,6 +52,18 @@ rxUiGet.nonmemErr <- function(x, ...) {
     .r <- .rxToNonmem(.nmGetDistributionNonmemLinesR, .ui)
     # depending on the method the prop can be with regards to the F or the transformed F
     # So, here we add RX_PRED_ to be the transformed to support both
+    .cens <- rxode2::rxGetControl(.ui, ".hasCens", FALSE)
+    .limit <- rxode2::rxGetControl(.ui, ".hasLimit", FALSE)
+    if (.cens && .limit) {
+      .y <- .getErr("err-cens-limit.txt", FALSE)
+    } else if (.cens) {
+      .y <- .getErr("err-cens.txt", FALSE)
+    } else if (.limit) {
+      stop("ylo/yup not implemented (would require laplacian); drop LIMIT or add CENS column",
+           call.=FALSE)
+    } else {
+      .y <- "  Y = IPRED + W*EPS(1)"
+    }
     paste0(gsub("\n *\n+",
                 "\n",
                 paste(c(.err,
@@ -59,7 +71,7 @@ rxUiGet.nonmemErr <- function(x, ...) {
                         .r,
                         "  W = DSQRT(RX_R_)",
                         "  IF (W .EQ. 0.0) W = 1",
-                        "  Y = IPRED + W*EPS(1)"), collapse="\n")), "\n")
+                        .y), collapse="\n")), "\n")
   } else {
     # Here no transforms are supported per endpoint, simply use rx_r_
     paste0(gsub("\n *\n+",
