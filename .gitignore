@@ -4,3 +4,5 @@
 .Ruserdata
 *.o
 /src/babelmixr2.so
+/src/Makevars
+
