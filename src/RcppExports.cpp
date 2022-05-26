@@ -33,3 +33,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// transDv
+NumericVector transDv(NumericVector& inDv, IntegerVector& inCmt, IntegerVector& cmtTrans, NumericVector& lambda, IntegerVector& yj, NumericVector& low, NumericVector& high);
+RcppExport SEXP _babelmixr2_transDv(SEXP inDvSEXP, SEXP inCmtSEXP, SEXP cmtTransSEXP, SEXP lambdaSEXP, SEXP yjSEXP, SEXP lowSEXP, SEXP highSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector& >::type inDv(inDvSEXP);
+    Rcpp::traits::input_parameter< IntegerVector& >::type inCmt(inCmtSEXP);
+    Rcpp::traits::input_parameter< IntegerVector& >::type cmtTrans(cmtTransSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< IntegerVector& >::type yj(yjSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type low(lowSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type high(highSEXP);
+    rcpp_result_gen = Rcpp::wrap(transDv(inDv, inCmt, cmtTrans, lambda, yj, low, high));
+    return rcpp_result_gen;
+END_RCPP
+}

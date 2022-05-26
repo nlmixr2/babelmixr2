@@ -17,4 +17,26 @@ using namespace Rcpp;
 
 #define _safe_sqrt(a) ((a) <= 0 ? sqrt(DBL_EPSILON) : sqrt(a))
 
+static inline double getDv(double dv, int cmt,
+                           IntegerVector &cmtTrans, NumericVector &lambda,
+                           IntegerVector& yj, NumericVector& low, NumericVector& high) {
+  for (unsigned int i = cmtTrans.size(); i--;) {
+    if (cmt == cmtTrans[i]) {
+      return _powerD(dv, lambda[i], yj[i], low[i], high[i]);
+    }
+  }
+  return dv;
+}
+
+//[[Rcpp::export]]
+NumericVector transDv(NumericVector &inDv, IntegerVector &inCmt,
+                      IntegerVector &cmtTrans, NumericVector &lambda,
+                      IntegerVector& yj, NumericVector& low, NumericVector& high) {
+  NumericVector out(inDv.size());
+  for (unsigned int i = inDv.size(); i--;) {
+    out[i] = getDv(inDv[i], inCmt[i], cmtTrans, lambda, yj, low, high);
+  }
+  return out;
+}
+
 

@@ -171,6 +171,39 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
 }
 
 
+.bblGetLambda <- function(ui) {
+  .env <- new.env(parent=emptyenv())
+  .env$isFixed <- TRUE
+  .predDf <- ui$predDf
+  .iniDf <- ui$iniDf
+  .ret <- vapply(seq_along(.predDf$cond),
+                 function(i){
+                   .cond <- .predDf$cond[i]
+                   .df <- .iniDf[which(.iniDf$condition == .cond), ]
+                   if (length(.df$cond) == 0) return(1.0)
+                   .w <- which(.df$err == "yeoJohnson")
+                   if (length(.w) == 1) {
+                     if (!.df$fix[.w]) .env$isFixed <- FALSE
+                     return(.df$est[.w])
+                   }
+                   .w <- which(.df$err == "boxCox")
+                   if (length(.w) == 1) {
+                     if (!.df$fix[.w]) .env$isFixed <- FALSE
+                     return(.df$est[.w])
+                   }
+                   return(1.0)
+                 }, numeric(1), USE.NAMES=FALSE)
+  list(lambda=.ret, allFixed=.env$isFixed)
+}
+
+.bblTransform <- function(dvIn, cmtIn, ui) {
+  .predDf <- ui$predDf
+  .l <- .bblGetLambda(ui)
+  .Call(`_babelmixr2_transDv`, dvIn, cmtIn, .l$lambda,
+        as.integer(.predDf$transform) - 1,
+        .predDf$trLow, .predDf$trHi)
+}
+
 .bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
                                 fun="bblDatToNonmem", replaceEvid=5L,
                                 replaceOK=FALSE, software="NONMEM", env=NULL) {
