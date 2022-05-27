@@ -1,0 +1,55 @@
+      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)
+      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2
+      USE NM_INTERFACE,ONLY: CELS
+!      parameter (lth=40,lvr=30,no=50)
+!      common /rocm0/ theta (lth)
+!      common /rocm4/ y
+!      double precision c1,c2,c3,theta,y,w,one,two
+      double precision c1,c2,c3,w,one,two,xl,hl,hl2,pd,pdd1,pdd2,p
+      dimension c2(:),c3(:,:)
+      data one,two/1.,2./
+      if (icall.le.1) return
+      w=y(1)
+      xl = (y(1)-(LOW))/((HIGH)-(LOW))
+      xl = -log(one/xl-one)
+      if (LAMBDA .eq. 1.0) then
+         y(1) = xl
+      else if (xl .ge. 0) then
+         if (LAMBDA .eq. 0) then
+            y(1) = log(one+xl)
+         else
+            y(1) = ((xl + one)**LAMBDA - one)/LAMBDA
+         end if
+      else
+         if (LAMBDA .eq. 2.0) then
+            y(1) = -log(one-xl)
+         else
+            hl = two - LAMBDA
+            y(1) = (one - (one - xl)**hl)/hl
+         end if
+      end if
+      call cels (c1,c2,c3,ier1,ier2)
+      y(1)=w
+      p = (y(1)-(LOW))/((HIGH)-(LOW))
+      pd = -log(one/p-one)
+      if (LAMBDA .eq. one) then
+         pdd1 = 1.0
+      else if (pd .ge. 0) then
+         if (LAMBDA .eq. 0.0) then
+            pdd1 = one/(pd + one)
+         else
+            pdd1 = (pd + one)**(LAMBDA-1.0)
+         end if
+      else 
+         if (LAMBDA .eq. 2.0) then
+            pdd1 =  -one/(one - pd);
+         else
+            pdd1 = (one - pd)**(one-LAMBDA)
+         end if
+      end if
+      xl = (y(1)-(LOW))
+      hl = ((HIGH) - (LOW));
+      pdd2 = hl/(xl*(hl-xl));
+      c1=c1-two*(log(pdd1)+log(pdd2))
+      return
+      end

@@ -7,8 +7,12 @@ SEXP _babelmixr2_convertDataBack(SEXP, SEXP, SEXP, SEXP, SEXP,
                                  SEXP, SEXP, SEXP, SEXP, SEXP,
                                  SEXP, SEXP);
 
+SEXP _babelmixr2_transDv(SEXP, SEXP, SEXP, SEXP, SEXP,
+                         SEXP, SEXP);
+
 static const R_CallMethodDef CallEntries[] = {
   {"_babelmixr2_convertDataBack", (DL_FUNC) &_babelmixr2_convertDataBack, 12},
+  {"_babelmixr2_transDv", (DL_FUNC) &_babelmixr2_transDv, 7},
   {NULL, NULL, 0}
 };
 

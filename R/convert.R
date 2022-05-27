@@ -171,6 +171,43 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
 }
 
 
+.bblGetLambda <- function(ui) {
+  .env <- new.env(parent=emptyenv())
+  .env$isFixed <- TRUE
+  .predDf <- ui$predDf
+  .iniDf <- ui$iniDf
+  .ret <- vapply(seq_along(.predDf$cond),
+                 function(i){
+                   .cond <- .predDf$cond[i]
+                   .df <- .iniDf[which(.iniDf$condition == .cond), ]
+                   if (length(.df$cond) == 0) return(1.0)
+                   .w <- which(.df$err == "yeoJohnson")
+                   if (length(.w) == 1) {
+                     if (!.df$fix[.w]) .env$isFixed <- FALSE
+                     return(.df$est[.w])
+                   }
+                   .w <- which(.df$err == "boxCox")
+                   if (length(.w) == 1) {
+                     if (!.df$fix[.w]) .env$isFixed <- FALSE
+                     return(.df$est[.w])
+                   }
+                   return(1.0)
+                 }, numeric(1), USE.NAMES=FALSE)
+  list(lambda=.ret, allFixed=.env$isFixed)
+}
+
+.bblTransform <- function(dvIn, cmtIn, ui, onlyFixed=TRUE) {
+  .predDf <- ui$predDf
+  .l <- .bblGetLambda(ui)
+  if (onlyFixed & !.l$allFixed) {
+    stop("all transformations need to be fixed (not estimated) for multiple endpoint models with babelmixr2 NONMEM",
+         call.=FALSE)
+  }
+  .Call(`_babelmixr2_transDv`, dvIn, cmtIn, .predDf$cmt, .l$lambda,
+        as.integer(.predDf$transform) - 1,
+        .predDf$trLow, .predDf$trHi)
+}
+
 .bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
                                 fun="bblDatToNonmem", replaceEvid=5L,
                                 replaceOK=FALSE, software="NONMEM", env=NULL) {
@@ -226,12 +263,16 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
   }
 
   .censData <- NULL
-  if (any(names(.new) == "CENS")) {
+  .w <- which(toupper(names(.new)) == "CENS")
+  if (length(.w) == 1) {
+    names(.new)[.w] <- "CENS"
     .censData <- "CENS"
   }
 
   .limitData <- NULL
-  if (any(names(.new) == "LIMIT")) {
+  .w <- which(toupper(names(.new)) == "LIMIT")
+  if (length(.w) == 1) {
+    names(.new)[.w] <- "LIMIT"
     .limitData <- "LIMIT"
   }
 
@@ -242,9 +283,25 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
 #' @rdname bblDatToMonolix
 #' @export
 bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), env=NULL) {
-  .bblDatToNonmem (model, data, table,
-                       fun="bblDatToNonmem", replaceEvid=5L,
-                       replaceOK=FALSE, software="NONMEM", env=env)
+  .xtra <- paste0(" to convert the data with 'bblDatToNonmem'")
+  model <- rxode2::assertRxUi(model, extra=.xtra)
+  .ret <- .bblDatToNonmem (model, data, table,
+                           fun="bblDatToNonmem", replaceEvid=5L,
+                           replaceOK=FALSE, software="NONMEM", env=env)
+  .ret <- .ret[, names(.ret) != "DVID"]
+  if (any(names(.ret) == "LIMIT")) {
+    # This converts LIMIT to NONMEM's definition of infinity
+    # (according to manual for $THETA)
+    .ret$LIMIT <- ifelse(is.finite(.ret$LIMIT),
+                         .ret$LIMIT,
+                         ifelse(.ret$LIMIT < 0, -1000000, 1000000))
+  }
+  if (length(model$predDf$cond) > 1) {
+    .dv2 <- .bblTransform(.ret$DV, .ret$CMT, model)
+    .ret$DV <- .dv2$dv
+    env$nmLikAdj <- .dv2$likAdj
+  }
+  .ret
 }
 
 #' @rdname bblDatToMonolix

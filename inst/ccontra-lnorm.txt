@@ -1,0 +1,18 @@
+      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)
+      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2
+      USE NM_INTERFACE,ONLY: CELS
+!      parameter (lth=40,lvr=30,no=50)
+!      common /rocm0/ theta (lth)
+!      common /rocm4/ y
+!      double precision c1,c2,c3,theta,y,w,one,two
+      double precision c1,c2,c3,w,one,two
+      dimension c2(:),c3(:,:)
+      data one,two/1.,2./
+      if (icall.le.1) return
+      w=y(1)
+      y(1)=log(y(1))
+      call cels (c1,c2,c3,ier1,ier2)
+      y(1)=w
+      c1=c1+two*log(y(1))
+      return
+      end

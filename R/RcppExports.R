@@ -5,3 +5,7 @@ convertDataBack <- function(id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, lin
     .Call(`_babelmixr2_convertDataBack`, id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, linNcmt, linKa, neq, replaceEvid)
 }
 
+transDv <- function(inDv, inCmt, cmtTrans, lambda, yj, low, high) {
+    .Call(`_babelmixr2_transDv`, inDv, inCmt, cmtTrans, lambda, yj, low, high)
+}
+

@@ -62,8 +62,8 @@
   "lfactorial" = c("factln(", ")"),
   "lgamma1p" = c("gammaln(", "+1)"),
   "expm1" = c("(exp(", ")-1)"),
-  "log10" = c("log10(", ""),
-  "log2" = c("log(", ")*1.442695040888963387005"),
+  "log10" = c("log10(", ")"),
+  "log2" = c("(log(", ")*1.442695040888963387005)"),
   "log1pexp" = c("log(1+exp(", "))", "log1pexp"),
   "phi" = c("normcdf(", ")"),
   "pnorm" = c("normcdf(", ")"),
@@ -136,6 +136,92 @@
   rxode2::rxAssignControlValue(ui, ".adm", .adm)
 }
 
+.rxToMonolixHandleBinaryOperator <- function(x, ui) {
+  if (identical(x[[1]], quote(`/`))) {
+    .x2 <- x[[2]]
+    .x3 <- x[[3]]
+    ## df(%s)/dy(%s)
+    if (identical(.x2, quote(`d`)) &&
+          identical(.x3[[1]], quote(`dt`))) {
+      if (length(.x3[[2]]) == 1) {
+        .state <- as.character(.x3[[2]])
+      } else {
+        .state <- .rxToMonolix(.x3[[2]], ui=ui)
+      }
+      return(paste0("ddt_", .state))
+    } else {
+      if (length(.x2) == 2 && length(.x3) == 2) {
+        if (identical(.x2[[1]], quote(`df`)) &&
+              identical(.x3[[1]], quote(`dy`))) {
+          stop('df()/dy() is not supported in monolix conversion', call.=FALSE)
+        }
+      }
+      .ret <- paste0(
+        .rxToMonolix(.x2, ui=ui),
+        as.character(x[[1]]),
+        .rxToMonolix(.x3, ui=ui)
+      )
+    }
+  } else {
+    .ret <- paste0(
+      .rxToMonolix(x[[2]], ui=ui),
+      as.character(x[[1]]),
+      .rxToMonolix(x[[3]], ui=ui)
+    )
+  }
+  return(.ret)
+}
+
+.rxToMonolixIndent <- function(ui) {
+  rxode2::rxAssignControlValue(ui, ".mIndent",
+                               rxode2::rxGetControl(ui, ".mIndent", 0) + 2)
+}
+
+.rxToMonolixUnIndent <- function(ui) {
+  rxode2::rxAssignControlValue(ui, ".mIndent",
+                               max(0, rxode2::rxGetControl(ui, ".mIndent", 0) - 2))
+}
+
+.rxToMonolixGetIndent <- function(ui, ind=NA) {
+  if (is.na(ind)) {
+  } else if (ind) {
+    .rxToMonolixIndent(ui)
+  } else {
+    .rxToMonolixUnIndent(ui)
+  }
+  .nindent <- rxode2::rxGetControl(ui, ".mIndent", 0)
+  paste(vapply(seq(1, .nindent), function(x) " ", character(1), USE.NAMES=FALSE), collapse="")
+}
+
+
+.rxToMonolixHandleIfExpressions <- function(x, ui) {
+  .ret <- paste0(.rxToMonolixGetIndent(ui), "if ", .rxToMonolix(x[[2]], ui=ui), "\n")
+  .rxToMonolixIndent(ui)
+  .ret <- paste0(.ret, .rxToMonolix(x[[3]], ui=ui))
+  x <- x[-c(1:3)]
+  if (length(x) == 1) x <- x[[1]]
+  while(identical(x[[1]], quote(`if`))) {
+    .ret <- paste0(.ret, "\n",
+                   .rxToMonolixGetIndent(ui, FALSE), "elseif ", .rxToMonolix(x[[2]], ui=ui), "\n")
+    .rxToMonolixIndent(ui)
+    .ret <- paste0(.ret, .rxToMonolix(x[[3]], ui=ui))
+    x <- x[-c(1:3)]
+    if (length(x) == 1) x <- x[[1]]
+  }
+  if (is.null(x)) {
+    .ret <- paste0(.ret, "\n",
+                   .rxToMonolixGetIndent(ui, FALSE), "end\n")
+  }  else {
+    .ret <- paste0(.ret, "\n",
+                   .rxToMonolixGetIndent(ui, FALSE), "else\n")
+    .rxToMonolixIndent(ui)
+    .ret <- paste0(.ret, .rxToMonolix(x, ui=ui),
+                   "\n",
+                   .rxToMonolixGetIndent(ui, FALSE), "end\n")
+  }
+  return(.ret)
+}
+
 .rxToMonolix <- function(x, ui) {
   if (is.name(x) || is.atomic(x)) {
     if (is.character(x)) {
@@ -149,7 +235,7 @@
       if (is.na(.v)) {
         if (is.numeric(.ret)) {
           return(.ret)
-        } else if (regexpr("(?:-)?(?:(?:0|(?:[1-9][0-9]*))|(?:(?:[0-9]+\\.[0-9]*)|(?:[0-9]*\\.[0-9]+))(?:(?:[Ee](?:[+\\-])?[0-9]+))?|[0-9]+[Ee](?:[\\-+])?[0-9]+)",
+        } else if (regexpr("^(?:-)?(?:(?:0|(?:[1-9][0-9]*))|(?:(?:[0-9]+\\.[0-9]*)|(?:[0-9]*\\.[0-9]+))(?:(?:[Ee](?:[+\\-])?[0-9]+))?|[0-9]+[Ee](?:[\\-+])?[0-9]+)$",
                            .ret, perl=TRUE) != -1) {
           return(.ret)
         } else {
@@ -168,45 +254,9 @@
         .rxToMonolix(x, ui=ui)
       }), collapse = "\n")
       return(.ret)
-    } else if (identical(x[[1]], quote(`*`)) ||
-      identical(x[[1]], quote(`^`)) ||
-      identical(x[[1]], quote(`+`)) ||
-      identical(x[[1]], quote(`-`)) ||
-      identical(x[[1]], quote(`/`))) {
+    } else if (.rxIsPossibleBinaryOperator(x[[1]])) {
       if (length(x) == 3) {
-        if (identical(x[[1]], quote(`/`))) {
-          .x2 <- x[[2]]
-          .x3 <- x[[3]]
-          ## df(%s)/dy(%s)
-          if (identical(.x2, quote(`d`)) &&
-                identical(.x3[[1]], quote(`dt`))) {
-            if (length(.x3[[2]]) == 1) {
-              .state <- as.character(.x3[[2]])
-            } else {
-              .state <- .rxToMonolix(.x3[[2]], ui=ui)
-            }
-            return(paste0("ddt_", .state))
-          } else {
-            if (length(.x2) == 2 && length(.x3) == 2) {
-              if (identical(.x2[[1]], quote(`df`)) &&
-                    identical(.x3[[1]], quote(`dy`))) {
-                stop('df()/dy() is not supported in monolix conversion', call.=FALSE)
-              }
-            }
-            .ret <- paste0(
-              .rxToMonolix(.x2, ui=ui),
-              as.character(x[[1]]),
-              .rxToMonolix(.x3, ui=ui)
-            )
-          }
-        } else {
-          .ret <- paste0(
-            .rxToMonolix(x[[2]], ui=ui),
-            as.character(x[[1]]),
-            .rxToMonolix(x[[3]], ui=ui)
-          )
-        }
-        return(.ret)
+        return(.rxToMonolixHandleBinaryOperator(x, ui))
       } else {
         ## Unary Operators
         return(paste(
@@ -215,44 +265,15 @@
         ))
       }
     } else if (identical(x[[1]], quote(`if`))) {
-      .ret <- paste0("if ", .rxToMonolix(x[[2]], ui=ui), "\n",
-                     "  ", .rxToMonolix(x[[3]], ui=ui))
-      x <- x[-c(1:3)]
-      if (length(x) == 1) x <- x[[1]]
-      while(identical(x[[1]], quote(`if`))) {
-        .ret <- paste0(.ret, "\nelseif ", .rxToMonolix(x[[2]], ui=ui), "\n",
-                       "  ", .rxToMonolix(x[[3]], ui=ui))
-        x <- x[-c(1:3)]
-        if (length(x) == 1) x <- x[[1]]
-      }
-      if (is.null(x)) {
-        .ret <- paste0(.ret, "\nend\n")
-      }  else {
-        .ret <- paste0(.ret, "\nelse \n",
-                       "  ", .rxToMonolix(x, ui=ui),
-                       "\nend\n")
-      }
-      return(.ret)
-    } else if (identical(x[[1]], quote(`==`)) ||
-                 identical(x[[1]], quote(`>`)) ||
-                 identical(x[[1]], quote(`<`)) ||
-                 identical(x[[1]], quote(`<=`)) ||
-                 identical(x[[1]], quote(`>=`)) ||
-                 identical(x[[1]], quote(`!=`)) ||
-                 identical(x[[1]], quote(`&&`)) ||
-                 identical(x[[1]], quote(`||`)) ||
-                 identical(x[[1]], quote(`|`)) ||
-                 identical(x[[1]], quote(`&`))) {
+      return(.rxToMonolixHandleIfExpressions(x, ui))
+    } else if (.rxIsLogicalOperator(x[[1]])) {
         ## Use "preferred" monolix syntax
       return(paste0(.rxToMonolix(x[[2]], ui=ui), as.character(x[[1]]), .rxToMonolix(x[[3]], ui=ui)))
     } else if (identical(x[[1]], quote(`!`)) ) {
-      ## Use "preferred" monolix syntax
       return(paste0("~", .rxToMonolix(x[[2]], ui=ui)))
     } else if (identical(x[[1]], quote(`**`)) ) {
       return(paste(.rxToMonolix(x[[2]], ui=ui), "^", .rxToMonolix(x[[3]], ui=ui)))
-    } else if (identical(x[[1]], quote(`=`)) ||
-      identical(x[[1]], quote(`<-`)) ||
-        identical(x[[1]], quote(`~`))) {
+    } else if (.rxIsAssignmentOperator(x[[1]])) {
       if (any(as.character(x[[2]])[1] == c("alag", "lag", "F", "f", "rate", "dur"))) {
         if (any(as.character(x[[2]])[1] == c("alag", "lag"))) {
           .state <- as.character(x[[2]][[2]])
@@ -294,10 +315,12 @@
                  call.=FALSE)
           }
         }
-        return(paste0(";", as.character(x[[2]])[1], " defined in PK section"))
+        return(paste0(.rxToMonolixGetIndent(ui),
+                      ";", as.character(x[[2]])[1], " defined in PK section"))
       }
       .var <- .rxToMonolix(x[[2]], ui=ui)
-      return(paste(.var, "=", .rxToMonolix(x[[3]], ui=ui)))
+      return(paste(.rxToMonolixGetIndent(ui),
+                   .var, "=", .rxToMonolix(x[[3]], ui=ui)))
     } else if (identical(x[[1]], quote(`[`))) {
       .type <- toupper(as.character(x[[2]]))
       if (any(.type == c("THETA", "ETA"))) {
@@ -328,7 +351,7 @@
       } else {
         stop("'pnorm' can only take 1-3 arguments", call. = FALSE)
       }
-    }  else {
+    } else {
       if (length(x[[1]]) == 1) {
         .x1 <- as.character(x[[1]])
         .xc <- .rxMsingle[[.x1]]

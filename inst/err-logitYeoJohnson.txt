@@ -1,0 +1,19 @@
+      IPRED = RX_PRED_F_
+      XL  = (IPRED - (LOW))/((HIGH) - (LOW))
+      XL  = -DLOG(1.0/XL - 1.0)
+      IF (LAMBDA .EQ. 1.0) THEN
+         IPRED = XL
+      ELSE IF (XL .GE. 0.0) THEN
+         IF (LAMBDA .EQ. 0.0) THEN
+            IPRED = DLOG(1.0 + XL)
+         ELSE
+            IPRED = ((XL + 1.0)**LAMBDA - 1.0)/LAMBDA
+         END IF
+      ELSE
+         IF (LAMBDA .EQ. 2.0) THEN
+            IPRED = -DLOG(1.0 - XL)
+         ELSE
+            HL = 2.0 - LAMBDA
+            IPRED = (1.0 - (1.0 - XL)**HL)/HL
+         END IF
+      END IF

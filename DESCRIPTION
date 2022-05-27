@@ -29,8 +29,8 @@ Imports:
     checkmate,
     methods,
     qs
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0
 Additional_repositories: https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/
 Config/testthat/edition: 3
 LinkingTo: 
-    Rcpp
+    Rcpp, rxode2, RcppArmadillo, RcppEigen

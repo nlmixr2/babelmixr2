@@ -23,9 +23,11 @@ rxUiGet.monolixHasChartData <- function(x, ...) {
   if (!.hasLixoftConnectors()) {
     return(FALSE)
   }
+  .minfo("trying to create the chart data with lixoftConnectors::computeChartsData()")
   .x <- try(lixoftConnectors::loadProject(.mlxtran), silent=TRUE)
   if (inherits(.x, "try-error")) return(FALSE)
   .x <- try(lixoftConnectors::computeChartsData(), silent=TRUE)
+  .minfo("done")
   file.exists(.chart)
 }
 

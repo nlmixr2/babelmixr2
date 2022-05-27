@@ -230,11 +230,11 @@ List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, Nu
           // In monolix this is done by macro; rates cannot be -2
           // Rather you define
           // depot(type=ADMId, target=Cmt, ModeledDuration)
-          newEvid[i] = 1;
-          newSs[i] = getSs(wh0, hasSs, hasSs2, hasSsRate);
-          newRate[i] = -2;
-          newAmt[i] = amt[i];
-          newAdm[i] = getAdm(cmt[i], MONOLIX_MODEL_DUR, admIds);
+          newEvid[i]  = 1;
+          newSs[i]    = getSs(wh0, hasSs, hasSs2, hasSsRate);
+          newRate[i]  = -2;
+          newAmt[i]   = amt[i];
+          newAdm[i]   = getAdm(cmt[i], MONOLIX_MODEL_DUR, admIds);
           keepItem[i] = true;
           break;
         case EVIDF_MODEL_RATE_OFF: // End modeled rate
