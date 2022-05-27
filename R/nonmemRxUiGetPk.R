@@ -48,7 +48,8 @@ rxUiGet.nonmemThetaRep <- function(x, ...) {
                        USE.NAMES=FALSE),
              cov=vapply(.thetas, .nonmemGetThetaMuCov, character(1),
                         ui=.ui, covRefDf=.covRefDf, USE.NAMES=FALSE))
-  .ret$nmEta <- paste0("ETA(",substr(.ret$mu,4, 10),")")
+  .ret$nmEta <- ifelse(is.na(.ret$mu), NA_character_,
+                       paste0("ETA(",substr(.ret$mu,4, 10),")"))
   .ret
 }
 
@@ -58,12 +59,16 @@ rxUiGet.nonmemPkDes <- function(x, ...) {
   .split <- rxUiGet.getSplitMuModel(x, ...)
   .mu <- rxUiGet.nonmemThetaRep(x, ...)
   .ret <- vapply(seq_along(.mu$mu), function(i) {
+    if (is.na(.mu$mu[i])) return(NA_character_)
     paste0("  ", .mu$mu[i], "=", .mu$nmTheta[i],
            ifelse(is.na(.mu$cov[i]), "",
                   paste0("+", .mu$cov[i])))
   }, character(1), USE.NAMES=FALSE)
-  .ret <- paste(.ret, collapse="\n")
-  .mu2 <- setNames(paste0(.mu$mu, "+", .mu$nmEta), .mu$theta)
+  .ret <- paste(.ret[!is.na(.ret)], collapse="\n")
+  .mu2 <- setNames(ifelse(is.na(.mu$mu),
+                          .mu$nmTheta,
+                          paste0(.mu$mu, "+", .mu$nmEta)),
+                   .mu$theta)
   assign(".thetaMu", .mu2, envir=.ui)
   on.exit({
     if (exists(".thetaMu", envir=.ui)) {

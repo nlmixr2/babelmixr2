@@ -172,8 +172,10 @@ rex::register_shortcuts("babelmixr2")
   .ret <- as.character(x)
   if (exists(".thetaMu", ui)) {
     .thetaMu <- ui$.thetaMu
-    .ref <- .thetaMu[.ret]
-    if (!is.na(.ref)) return(.ref)
+    .w <- which(names(.thetaMu) == .ret)
+    if (length(.w) == 1) {
+      return(.thetaMu[.w])
+    }
   }
   .ref <- .nonmemGetThetaNum(x, ui)
   if (!is.na(.ref)) return(.ref)
