@@ -120,7 +120,7 @@ static inline int getDvid(int &cmt, IntegerVector &dvidDvid, IntegerVector &cmtD
 
 static inline int getAdm(int cmt, int type, std::vector<int> &admIds) {
   int id = cmt*10+type;
-  for (int i = 0; i < admIds.size(); ++i) {
+  for (unsigned int i = 0; i < admIds.size(); ++i) {
     if (admIds[i] == id) {
       return i+1;
     }
@@ -134,7 +134,7 @@ static inline DataFrame createAdm(std::vector<int> &admIds) {
   IntegerVector cmt(admIds.size());
   IntegerVector type(admIds.size());
   int c=0, t=0;
-  for (int i = 0; i < admIds.size(); ++i) {
+  for (unsigned int i = 0; i < admIds.size(); ++i) {
     adm[i] = i+1;
     c =admIds[i]/10;
     t = admIds[i] - c*10;
