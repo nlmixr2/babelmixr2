@@ -6,12 +6,13 @@ nonmemControl <- function(est=c("focei", "posthoc"),
                           sigl=6,
                           sigdig=2,
                           print=1,
+                          extension=getOption("babelmixr2.modelExtension", ".nmctl"),
                           noabort=TRUE) {
   # nonmem manual slides suggest tol=6, sigl=6 sigdig=2
   checkmate::assertIntegerish(maxeval, lower=100, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(sigdig, lower=1, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(print, lower=1, len=1, any.missing=FALSE)
-  checkmate::assertLogical(abort, len=1, any.missing=FALSE)
+  checkmate::assertLogical(noabort, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(tol, lower=1, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(sigl, lower=1, upper=14, len=1, any.missing=FALSE)
   .ret <- list(est=match.arg(est),
@@ -26,3 +27,38 @@ nonmemControl <- function(est=c("focei", "posthoc"),
   class(.ret) <- "nonmemControl"
   .ret
 }
+
+#' @export
+getValidNlmixrCtl.nonmem <- function(control) {
+  .ctl <- control[[1]]
+  .cls <- class(control)[1]
+  if (is.null(.ctl)) .ctl <- nonmemControl()
+  if (is.null(attr(.ctl, "class")) && is(.ctl, "list")) .ctl <- do.call("nonmemControl", .ctl)
+  if (!inherits(.ctl, "nonmemControl")) {
+    .minfo(paste0("invalid control for `est=\"", .cls, "\"`, using default"))
+    .ctl <- nonmemControl()
+  } else {
+    .ctl <- do.call(nonmemControl, .ctl)
+  }
+  .ctl
+}
+
+#' @export
+nmObjHandleControlObject.nonmemControl <- function(control, env) {
+  assign("nonmemControl", control, envir=env)
+}
+
+#' @export
+nmObjGetControl.nonmem <- function(x, ...) {
+  .env <- x[[1]]
+  if (exists("nonmemControl", .env)) {
+    .control <- get("nonmemControl", .env)
+    if (inherits(.control, "nonmemControl")) return(.control)
+  }
+  if (exists("control", .env)) {
+    .control <- get("control", .env)
+    if (inherits(.control, "nonmemControl")) return(.control)
+  }
+  stop("cannot find nonmem related control object", call.=FALSE)
+}
+
