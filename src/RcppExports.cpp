@@ -34,7 +34,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // transDv
-NumericVector transDv(NumericVector& inDv, IntegerVector& inCmt, IntegerVector& cmtTrans, NumericVector& lambda, IntegerVector& yj, NumericVector& low, NumericVector& high);
+List transDv(NumericVector& inDv, IntegerVector& inCmt, IntegerVector& cmtTrans, NumericVector& lambda, IntegerVector& yj, NumericVector& low, NumericVector& high);
 RcppExport SEXP _babelmixr2_transDv(SEXP inDvSEXP, SEXP inCmtSEXP, SEXP cmtTransSEXP, SEXP lambdaSEXP, SEXP yjSEXP, SEXP lowSEXP, SEXP highSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

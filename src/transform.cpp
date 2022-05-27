@@ -19,9 +19,11 @@ using namespace Rcpp;
 
 static inline double getDv(double dv, int cmt,
                            IntegerVector &cmtTrans, NumericVector &lambda,
-                           IntegerVector& yj, NumericVector& low, NumericVector& high) {
+                           IntegerVector& yj, NumericVector& low, NumericVector& high,
+                           double& llikAdj) {
   for (unsigned int i = cmtTrans.size(); i--;) {
     if (cmt == cmtTrans[i]) {
+      llikAdj += _powerL(dv, lambda[i], yj[i], low[i], high[i]);
       return _powerD(dv, lambda[i], yj[i], low[i], high[i]);
     }
   }
@@ -29,14 +31,15 @@ static inline double getDv(double dv, int cmt,
 }
 
 //[[Rcpp::export]]
-NumericVector transDv(NumericVector &inDv, IntegerVector &inCmt,
-                      IntegerVector &cmtTrans, NumericVector &lambda,
-                      IntegerVector& yj, NumericVector& low, NumericVector& high) {
+List transDv(NumericVector &inDv, IntegerVector &inCmt,
+             IntegerVector &cmtTrans, NumericVector &lambda,
+             IntegerVector& yj, NumericVector& low, NumericVector& high) {
   NumericVector out(inDv.size());
+  double llikAdj = 0.0;
   for (unsigned int i = inDv.size(); i--;) {
-    out[i] = getDv(inDv[i], inCmt[i], cmtTrans, lambda, yj, low, high);
+    out[i] = getDv(inDv[i], inCmt[i], cmtTrans, lambda, yj, low, high, llikAdj);
   }
-  return out;
+  return List::create(_["dv"]=out, _["likAdj"]=llikAdj);
 }
 
 
