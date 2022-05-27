@@ -1,4 +1,4 @@
-      IPRED = RX_PRED_F
+      IPRED = RX_PRED_F_
       XL  = (IPRED - (LOW))/((HIGH) - (LOW))
       XL  = -DLOG(1.0/XL - 1.0)
       IF (LAMBDA .EQ. 1.0) THEN

@@ -1,6 +1,4 @@
-      IPRED = RX_PRED_F
-      W     = DSQRT(W)
-      IF (W .EQ. 0.0) W = 1.0
+      IPRED = RX_PRED_F_
       IF (IPRED .GE. 0.0) THEN
          IF (LAMBDA .EQ. 0.0) THEN
             IPRED = DLOG(IPRED + 1.0)

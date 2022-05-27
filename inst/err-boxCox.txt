@@ -1,5 +1,4 @@
-      IPRED = RX_PRED_F
-      IF (W .EQ. 0.0) W = 1.0
+      IPRED = RX_PRED_F_
       IF (LAMBDA .EQ. 0.0 .AND. IPRED .NE. 0.0) THEN
          IPRED = DLOG(IPRED)
       ELSE IF (LAMBDA .EQ. 0.0 .AND. IPRED .EQ. 0.0) THEN

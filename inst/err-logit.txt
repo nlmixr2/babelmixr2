@@ -1,4 +1,3 @@
-      IPRED = RX_PRED_F
-      W     = DSQRT(W)
+      IPRED = RX_PRED_F_
       XL  = (IPRED - (LOW))/((HIGH) - (LOW))
       IPRED = -DLOG(1.0/XL - 1.0)
