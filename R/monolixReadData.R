@@ -425,3 +425,53 @@ rxUiGet.monolixCovariance <- function(x, ...) {
   }
   .cov
 }
+#' @export
+rxUiGet.monolixPreds <- function(x, ...) {
+  .ui <- x[[1]]
+  .predDf <- .ui$predDf
+  if (length(.predDf$var) > 1) {
+    do.call("rbind", lapply(seq_along(.predDf$var),
+                            function(i){
+                              .var <- .predDf$var[i]
+                              .ret <- read.csv(file.path(rxUiGet.monolixExportPath(x, ...),
+                                                         paste0("predictions_rx_prd_", .var, ".txt")))
+                              .ret$CMT <- .predDf$cond[i]
+                              names(.ret) <- sub("id", "ID",
+                                                 sub("time", "TIME",
+                                                     sub(paste0("rx_prd_", .var), "DV", names(.ret))))
+                              .ret
+                            }))
+  } else {
+    .var <- .predDf$var
+    .ret <- read.csv(file.path(rxUiGet.monolixExportPath(x, ...), "predictions.txt"))
+    names(.ret) <- sub("id", "ID",
+                       sub("time", "TIME",
+                           sub(paste0("rx_prd_", .var), "DV", names(.ret))))
+    .ret
+  }
+}
+
+.monolixMergePredsAndCalcRelativeErr <- function(fit) {
+  .singleEndpoint <- length(fit$ui$predDf$cond) == 1
+  .tmp <- as.data.frame(fit)
+  .tmp$ID <-as.integer(.tmp$ID)
+  .by <- c("ID", "TIME", "CMT", "DV")
+  if (.singleEndpoint) {
+    .by <- c("ID", "TIME", "DV")
+  } else {
+    .tmp$CMT <- paste(.tmp$CMT)
+  }
+  .ret <- merge(fit$ui$monolixPreds, .tmp, by=.by)
+  .ci <- (1 - fit$monolixControl$ci) / 2
+  .q <- c(0, .ci, 0.5, 1 - .ci, 1)
+  .qi <- quantile(with(.ret, 100*abs((IPRED-indivPred_SAEM)/indivPred_SAEM)), .q, na.rm=TRUE)
+  .qp <- quantile(with(.ret, 100*abs((PRED-popPred)/popPred)), .q, na.rm=TRUE)
+  .msg <- c(paste0("IPRED approximation error compared to Monolix IPRED: ", round(.qi[3], 2),
+                 "%; ", fit$monolixControl$ci * 100,"% ci: (",
+                 round(.qi[2], 2), "%-", round(.qi[4], 2), "%)"),
+            paste0("PRED approximation error compared to Monolix PRED: ", round(.qp[3], 2),
+                   "%; ", fit$monolixControl$ci * 100,"% ci: (",
+                   round(.qp[2], 2), "%-", round(.qp[4], 2), "%)"))
+  list(individual=.qi, pop=.qp, message=.msg)
+}
+

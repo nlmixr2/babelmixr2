@@ -220,7 +220,9 @@
   }
   .ret <- .monolixFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
+    .msg <- .monolixMergePredsAndCalcRelativeErr(.ret)
     .tmp <- .ret$ui$monolixParHistory
+    assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
     if (is.null(.tmp)) {
       .minfo("monolix parameter history needs expoted charts, please export charts")
     } else {
