@@ -69,7 +69,7 @@ rxUiGet.nonmemErrF <- function(x, ...) {
                      .ret
                    }, character(1), USE.NAMES=FALSE)
   .err <- paste(.ipred, collapse="\n")
-  .cens <- rxode2::rxGetControl(.ui, ".hasCens", TRUE)
+  .cens <- rxode2::rxGetControl(.ui, ".hasCens", FALSE)
   .limit <- rxode2::rxGetControl(.ui, ".hasLimit", FALSE)
   if (.cens && .limit) {
     .y <- .getErr("err-cens-limit.txt", FALSE)

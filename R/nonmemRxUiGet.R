@@ -11,6 +11,12 @@ rxUiGet.nonmemEtaTableName <- function(x, ...) {
 }
 
 #' @export
+rxUiGet.nonmemSdTableName <- function(x, ...) {
+  .ui <- x[[1]]
+  paste0(.ui$modelName, ".pred")
+}
+
+#' @export
 rxUiGet.nonmemContraName <- function(x, ...) {
   .ui <- x[[1]]
   paste0(.ui$modelName, ".contra")
