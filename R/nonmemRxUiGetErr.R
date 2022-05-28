@@ -45,7 +45,7 @@
 
 
 #'@export
-rxUiGet.nonmemErr <- function(x, ...) {
+rxUiGet.nonmemErrF <- function(x, ...) {
   .ui <- x[[1]]
   .predDf <- .ui$predDf
   .single <- (length(.predDf$cond) == 1L)
@@ -81,7 +81,7 @@ rxUiGet.nonmemErr <- function(x, ...) {
   } else {
     .y <- "  Y = IPRED + W*EPS(1)"
   }
-  paste0("$ERROR\n",
+  paste0("\n  ; Write out expressions for ipred and w\n",
          gsub("\n *\n+",
               "\n",
               paste(c(.err,

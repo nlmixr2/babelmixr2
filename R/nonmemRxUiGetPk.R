@@ -54,7 +54,7 @@ rxUiGet.nonmemThetaRep <- function(x, ...) {
 }
 
 #'@export
-rxUiGet.nonmemPkDes <- function(x, ...) {
+rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   .ui <- x[[1]]
   .split <- rxUiGet.getSplitMuModel(x, ...)
   .mu <- rxUiGet.nonmemThetaRep(x, ...)
@@ -82,7 +82,14 @@ rxUiGet.nonmemPkDes <- function(x, ...) {
                                 .rxToNonmem(.split$muRefDef[[i]], ui=.ui)
                               }, character(1), USE.NAMES=FALSE),
                        collapse="\n"))
+  rm(".thetaMu", envir=.ui)
 
+  .desModel <- .split$modelWithDrop[-w$predDf$line]
+  .rmModel <- which(vapply(seq_along(.desModel),
+                           function(i) {
+                             identical(.desModel[[i]], quote(`_drop`))
+                           }, logical(1), USE.NAMES=FALSE))
+  .desModel <- .desModel[-.rmModel]
   .mainModel <- rxode2::rxCombineErrorLines(.ui,
                                             errLines=nmGetDistributionNonmemLines(.ui),
                                             paramsLine=NA,
@@ -91,7 +98,33 @@ rxUiGet.nonmemPkDes <- function(x, ...) {
                                             dvidLine=FALSE,
                                             lstExpr=.split$modelWithDrop,
                                             useIf=TRUE)
-  .norm <- rxode2::rxNorm(eval(.mainModel))
+  .mv <- rxode2::rxModelVars(paste(vapply(seq_along(.desModel),
+                                          function(i) {
+                                            deparse1(.desModel[[i]])
+                                          }, character(1), USE.NAMES=FALSE),
+                                   collapse="\n"))
+  .normMain <- strsplit(rxode2::rxNorm(eval(.mainModel)), "\n")[[1]]
+  .normMainL <- vapply(seq_along(.normMain),
+                       function(i){
+                         regexpr("^((alag|f|F|rate|dur|lag)[(][^)]+[)]|[^(]+[(]0[)]|d[/]dt[(][^(]+[)])=", .normMain[i]) == -1
+                       }, logical(1), USE.NAMES=FALSE)
+
+  .normMain <- paste(.normMain[.normMainL], collapse="\n")
+  .lhs <- vapply(.mv$lhs,
+                 function(v) {
+                   paste0("RXE_", .rxToNonmemHandleNamesOrAtomic(str2lang(v), .ui))
+                 }, character(1), USE.NAMES=TRUE)
+  assign(".thetaMu", .lhs, envir=.ui)
+  .err <- rxToNonmem(.normMain, .ui)
+  rm(".thetaMu", envir=.ui)
+  .pk <- paste0("$PK\n",
+                 .ret,"\n",
+                 paste(vapply(seq_along(.split$muRefDef),
+                              function(i) {
+                                .rxToNonmem(.split$muRefDef[[i]], ui=.ui)
+                              }, character(1), USE.NAMES=FALSE),
+                       collapse="\n"))
+  .norm <- rxode2::rxNorm(.mv)
   .des <- rxToNonmem(.norm, ui=.ui)
   .prop <- .nonmemGetCmtProperties(.ui)
   .pk2 <- vapply(seq_along(.prop$cmt),
@@ -119,8 +152,8 @@ rxUiGet.nonmemPkDes <- function(x, ...) {
                  }, character(1), USE.NAMES=FALSE)
   .pk2 <- .pk2[!is.na(.pk2)]
   .pk2 <- ifelse(length(.pk2) > 0, paste0("\n", .pk2), "")
-  rm(".thetaMu", envir=.ui)
   paste0(.pk, .pk2,
          "\n\n$DES\n",
-         .des)
+         .des, "\n\n$ERROR\n  ;Redefine LHS in $DES by prefixing with on RXE_ for $ERROR\n",
+         .err)
 }
