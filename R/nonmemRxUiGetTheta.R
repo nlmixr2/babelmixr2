@@ -31,6 +31,9 @@ rxUiGet.nonmemTheta <- function(x, ...) {
                                  .upper <- .theta$upper[i]
                                  if (is.finite(.upper)) return("-INF, ")
                                  # (est, )
+                                 if (.theta$est[i] == 0.0) return(paste0("0.",
+                                                                         paste(rep("0", .sigdig),collapse=""),
+                                                                         "1"))
                                  paste(signif(.theta$est[i], .sigdig))
                                }, character(1), USE.NAMES=TRUE),
                      t2=vapply(.s,
@@ -40,6 +43,9 @@ rxUiGet.nonmemTheta <- function(x, ...) {
                                  if (.fix) return("FIXED")
                                  if (!is.finite(.theta$lower[i]) &&
                                        !is.finite(.theta$upper[i])) return("")
+                                 if (.theta$est[i] == 0.0) return(paste0("0.",
+                                                                         paste(rep("0", .sigdig), collapse=""),
+                                                                         "1, "))
                                  paste0(signif(.theta$est[i], .sigdig),
                                         ifelse(is.finite(.theta$upper[i]), ", ", ""))
                                }, character(1), USE.NAMES=FALSE),
