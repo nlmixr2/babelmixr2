@@ -343,6 +343,62 @@ test_that("tbs tests", {
 
   as.integer(w$predDf$transform)-1
 
+  wbc <- function() {
+    ini({
+      ## Note that the UI can take expressions
+      ## Also note that these initial estimates should be provided on the log-scale
+      log_CIRC0 <- log(7.21)
+      log_MTT <- log(124)
+      log_SLOPU <- log(28.9)
+      log_GAMMA <- log(0.239)
+      ## Initial estimates should be high for SAEM ETAs
+      eta.CIRC0  ~ .1
+      eta.MTT  ~ .03
+      eta.SLOPU ~ .2
+      ##  Also true for additive error (also ignored in SAEM)
+      prop.err <- 10
+    })
+    model({
+      CIRC0 =  exp(log_CIRC0 + eta.CIRC0)
+      MTT =  exp(log_MTT + eta.MTT)
+      SLOPU =  exp(log_SLOPU + eta.SLOPU)
+      GAMMA = exp(log_GAMMA)
+
+      # PK parameters from input dataset
+      CL = CLI;
+      V1 = V1I;
+      V2 = V2I;
+      Q = 204;
+
+      CONC = A_centr/V1;
+
+      # PD parameters
+      NN = 3;
+      KTR = (NN + 1)/MTT;
+      EDRUG = 1 - SLOPU * CONC;
+      FDBK = (CIRC0 / A_circ)^GAMMA;
+
+      CIRC = A_circ;
+
+      A_prol(0) = CIRC0;
+      A_tr1(0) = CIRC0;
+      A_tr2(0) = CIRC0;
+      A_tr3(0) = CIRC0;
+      A_circ(0) = CIRC0;
+
+      d/dt(A_centr) = A_periph * Q/V2 - A_centr * (CL/V1 + Q/V1);
+      d/dt(A_periph) = A_centr * Q/V1 - A_periph * Q/V2;
+      d/dt(A_prol) = KTR * A_prol * EDRUG * FDBK - KTR * A_prol;
+      d/dt(A_tr1) = KTR * A_prol - KTR * A_tr1;
+      d/dt(A_tr2) = KTR * A_tr1 - KTR * A_tr2;
+      d/dt(A_tr3) = KTR * A_tr2 - KTR * A_tr3;
+      d/dt(A_circ) = KTR * A_tr3 - KTR * A_circ;
+
+      CIRC ~ prop(prop.err)
+    })
+  }
+  w <- wbc()
+
 
 })
 
