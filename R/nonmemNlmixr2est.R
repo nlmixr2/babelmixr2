@@ -146,7 +146,8 @@
       .ccontra <- .ui$nonmemCcontra
       writeLines(text=.ccontra, con=.ccontraFile)
     }
-    write.csv(.ret$nonmemData, file=.csv, na = ".", row.names = FALSE)
+    write.csv(.ret$nonmemData, file=.csv, na = ".", row.names = FALSE,
+              quote=FALSE)
     .minfo("done")
   }
   stop("need to run and test as next step")
