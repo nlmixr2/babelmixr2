@@ -116,7 +116,7 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                  }, character(1), USE.NAMES=TRUE)
   assign(".thetaMu", .lhs, envir=.ui)
   rxode2::rxAssignControlValue(.ui, ".nmVarExtra", "E")
-  .var <- rxode2::rxGetControl(ui, ".nmGetVarDf",
+  .var <- rxode2::rxGetControl(.ui, ".nmGetVarDf",
                                data.frame(var=character(0),
                                           nm=character(0)))
   .var$nm <- gsub("^RX([0-9])", "^RXE\\1", .var$nm)
