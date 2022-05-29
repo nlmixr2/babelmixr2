@@ -54,7 +54,7 @@ rxUiGet.nonmemThetaRep <- function(x, ...) {
 }
 
 #'@export
-rxUiGenonmemPkDesErr0 <- function(x, ...) {
+rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   .ui <- x[[1]]
   .split <- rxUiGet.getSplitMuModel(x, ...)
   .mu <- rxUiGet.nonmemThetaRep(x, ...)
