@@ -114,7 +114,11 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                  function(v) {
                    paste0("RXE_", .rxToNonmemHandleNamesOrAtomic(str2lang(v), .ui))
                  }, character(1), USE.NAMES=TRUE)
-  assign(".thetaMu", .lhs, envir=.ui)
+  .ini <- vapply(names(.mv$ini[!is.na(.mv$ini)]),
+                 function(v) {
+                   paste0("RXE_", .rxToNonmemHandleNamesOrAtomic(str2lang(v), .ui))
+                 }, character(1), USE.NAMES=TRUE)
+  assign(".thetaMu", c(.lhs, .ini), envir=.ui)
   rxode2::rxAssignControlValue(.ui, ".nmVarExtra", "E")
   .err <- rxToNonmem(.normMain, .ui)
   rxode2::rxAssignControlValue(.ui, ".nmVarExtra", "")
