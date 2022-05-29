@@ -54,7 +54,7 @@ rxUiGet.nonmemThetaRep <- function(x, ...) {
 }
 
 #'@export
-rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
+rxUiGenonmemPkDesErr0 <- function(x, ...) {
   .ui <- x[[1]]
   .split <- rxUiGet.getSplitMuModel(x, ...)
   .mu <- rxUiGet.nonmemThetaRep(x, ...)
@@ -84,7 +84,7 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                        collapse="\n"))
   rm(".thetaMu", envir=.ui)
 
-  .desModel <- .split$modelWithDrop[-w$predDf$line]
+  .desModel <- .split$modelWithDrop[-.ui$predDf$line]
   .rmModel <- which(vapply(seq_along(.desModel),
                            function(i) {
                              identical(.desModel[[i]], quote(`_drop`))
