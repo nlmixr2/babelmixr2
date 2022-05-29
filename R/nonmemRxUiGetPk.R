@@ -116,14 +116,15 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                  }, character(1), USE.NAMES=TRUE)
   assign(".thetaMu", .lhs, envir=.ui)
   rxode2::rxAssignControlValue(.ui, ".nmVarExtra", "E")
-  .var <- rxode2::rxGetControl(.ui, ".nmGetVarDf",
-                               data.frame(var=character(0),
-                                          nm=character(0)))
-  .var$nm <- gsub("^RX([0-9])", "^RXE\\1", .var$nm)
-  rxode2::rxAssignControlValue(.ui, ".nmGetVarDf", .var)
   .err <- rxToNonmem(.normMain, .ui)
   rxode2::rxAssignControlValue(.ui, ".nmVarExtra", "")
   rm(".thetaMu", envir=.ui)
+  .var <- rxode2::rxGetControl(.ui, ".nmGetVarDf",
+                               data.frame(var=character(0),
+                                          nm=character(0)))
+  .var$nm <- gsub("^RXE([0-9])", "RX\\1", .var$nm)
+  rxode2::rxAssignControlValue(.ui, ".nmGetVarDf", .var)
+
   .pk <- paste0("$PK\n",
                  .ret,"\n",
                  paste(vapply(seq_along(.split$muRefDef),
