@@ -152,7 +152,8 @@ rex::register_shortcuts("babelmixr2")
   }
   if (.doRx) {
     .num <- rxode2::rxGetControl(ui, ".nmVarNum", 1)
-    .newVar <- sprintf("RX%03d", .num)
+    .extra <- rxode2::rxGetControl(ui, ".nmVarExtra", "")
+    .newVar <- sprintf("RX%s%03d", .extra, .num)
     rxode2::rxAssignControlValue(ui, ".nmVarNum", .num + 1)
   } else {
     .newVar <- .uvar
