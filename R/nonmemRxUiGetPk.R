@@ -6,7 +6,8 @@
   .eta <- .muRefDf$eta[.w]
   .w <- which(.iniDf$name == .eta)
   if (length(.w) != 1) return(NA_character_)
-  paste0("MU_", .iniDf$neta1[.w])
+  .muRef <- rxode2::rxGetControl(ui, "muRef", TRUE)
+  paste0(ifelse(.muRef, "MU_", "UM_"), .iniDf$neta1[.w])
 }
 
 .nonmemGetThetaNum <- function(theta, ui) {

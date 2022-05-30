@@ -115,7 +115,7 @@ rex::register_shortcuts("babelmixr2")
                    or("GETETA", "SIMETA", "SIMEPS",
                       "COMSAV", "NWIND", "ETEXT", "IERPRD", "MSEC",
                       "MFIRST", "NETEXT", .nmNumReg("ETA"),.nmNumReg("THETA"), .nmNumReg("EPS"),
-                      .nmNumReg("MU_"),
+                      .nmNumReg("MU_"),.nmNumReg("UM_"),
                       .nmNumReg("A"), .nmNumReg("B"), .nmNumReg("C"), .nmNumReg("D"), .nmNumReg("E"),
                       .nmNumReg("F"), .nmNumReg("P"), .nmNumReg("Q"), .nmNumReg("MC"), .nmNumReg("ME"),
                       .nmNumReg("MG"), .nmNumReg("MT"), .nmNumReg("ROCM"),
