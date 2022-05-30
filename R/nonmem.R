@@ -40,6 +40,13 @@ rex::register_shortcuts("babelmixr2")
 
 .rxNMbadF <- c("digamma", "trigamma", "tetragamma", "pentagamma", "psigamma", "choose", "lchoose", "qnorm")
 
+.rxNMprotectZero <-
+  c("gammafn", "lgammafn", "lgamma", "loggamma", "log10", "log2", "sqrt", "log")
+
+.rxNmProtectZeroP1 <- c("log1p", "lfactorial", "lgamma1p", "factorial")
+
+# "log1pexp" = c("DLOG(1+DEXP(", "))", "log1pexp"), ???
+
 .rxNMsingle <- list(
   "gammafn" = c("DEXP(GAMLN(", "))"),
   "lgammafn" = c("GAMLN(", ")"),
@@ -63,7 +70,6 @@ rex::register_shortcuts("babelmixr2")
   "exp"=c("DEXP(", ")"),
   "abs"=c("DABS(", ")"),
   "log"=c("DLOG(", ")"),
-  "log10"=c("DLOG10(", ")"),
   "normcdf"=c("PHI(", ")"),
   "sin"=c("DSIN(", ")"),
   "cos"=c("DCOS(", ")"),
@@ -235,6 +241,55 @@ rex::register_shortcuts("babelmixr2")
   }
   return(paste0("DADT(", .num, ")"))
 }
+#' Protect Zeros for dlog(x) or dsqrt(x)
+#'
+#' @param x Expression to protect
+#' @param ui rxode2 to get information
+#' @param one if this is protecting a plus one expression like `lfactorial()`
+#' @return expression, with prefix lines calculated
+#' @author Matthew L. Fidler
+#' @noRd
+.rxProtectPlusZero <- function(x, ui, one=FALSE) {
+  .protectZeros <- rxode2::rxGetControl(ui, "protectZeros", TRUE)
+  .ret <- .rxToNonmem(x, ui=ui)
+  if (.protectZeros) {
+    .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
+                                data.frame(expr=character(0),
+                                           nm=character(0)))
+    .expr <- paste0(.ret, ifelse(one, "+++1", ""))
+    .w <- which(.df$expr == .expr)
+    if (length(.w) == 1) {
+      # Previously protected this expression
+      .ret <- .df$nm[.w]
+    } else {
+      .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
+      .num <- rxode2::rxGetControl(ui, ".nmVarDZNum", 1)
+      .extra <- rxode2::rxGetControl(ui, ".nmVarExtra", "")
+      .newVar <- sprintf("RXDZ%s%03d", .extra, .num)
+      rxode2::rxAssignControlValue(ui, ".nmVarDZNum", .num + 1)
+      .sigdig <- rxode2::rxGetControl(ui, "iniSigDig", 5)
+      .num <- paste0(ifelse(one, "-1.", "0."), paste(rep("0", .sigdig), collapse=""), "1")
+      .prefixLines <- c(.prefixLines,
+                        paste0(.rxToNonmemGetIndent(ui),
+                               .newVar, "=", .ret),
+                        paste0(.rxToNonmemGetIndent(ui),
+                               "IF (", .newVar, " .LE. ", .num, ") THEN"))
+      .rxToNonmemIndent(ui)
+      .prefixLines <- c(.prefixLines,
+                        paste0(.rxToNonmemGetIndent(ui),
+                               .newVar, "=", .num),
+                        paste0(.rxToNonmemGetIndent(ui, FALSE),
+                               "END IF"))
+      .df <- rbind(.df,
+                   data.frame(expr=.expr, nm=.newVar))
+      rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf", .df)
+      rxode2::rxAssignControlValue(ui, ".nmPrefixLines", .prefixLines)
+      .ret <- .newVar
+    }
+  }
+  .ret
+}
+
 #'  Protect Zero expressions but preserves negative/positive
 #'
 #' @param x expression to protect
@@ -583,8 +638,15 @@ rex::register_shortcuts("babelmixr2")
       .xc <- .rxNMsingle[[.x1]]
       if (!is.null(.xc)) {
         if (length(x) == 2) {
+          if (.x1 %in% .rxNMprotectZero) {
+            .expr <- .rxProtectPlusZero(x[[2]], ui=ui, one=FALSE)
+          } else if (.x1 %in% .rxNmProtectZeroP1) {
+            .expr <- .rxProtectPlusZero(x[[2]], ui=ui, one=TRUE)
+          } else {
+            .expr <- .rxToNonmem(x[[2]], ui=ui)
+          }
           .ret <- paste0(
-            .xc[1], .rxToNonmem(x[[2]], ui=ui),
+            .xc[1], .expr,
             .xc[2])
           if (.ret == "DEXP(1)") {
             return("2.718281828459045090796")
