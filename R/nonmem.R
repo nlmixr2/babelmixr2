@@ -213,7 +213,94 @@ rex::register_shortcuts("babelmixr2")
     identical(expr, quote(`-`)) ||
     identical(expr, quote(`/`))
 }
-
+#'  Handle d/dt() expression
+#'
+#' @param x2 numerator expression
+#' @param x3 denominator expression
+#' @param ui rxode2 ui
+#' @return DADT(#) for NONMEM
+#' @author Matthew L. Fidler
+#' @noRd
+.rxToNonmemHandleDdt <- function(x2, x3, ui) {
+  if (length(x3[[2]]) == 1) {
+    .state <- as.character(x3[[2]])
+  } else {
+    .state <- .rxToNonmem(x3[[2]], ui=ui)
+  }
+  .states <- rxode2::rxModelVars(ui)$state
+  .num <- which(.state == .states)
+  if (length(.num) != 1) {
+    stop("cannot find '", .state, "' in the model",
+         call.=FALSE)
+  }
+  return(paste0("DADT(", .num, ")"))
+}
+#' This handles divide by zero for NONMEM control streams
+#'
+#'
+#' @param x2 numerator
+#' @param x3 denominator
+#' @param ui rxode2 ui
+#' @return divion operator, as a side effect lines are prepended to protect divide by zero errors
+#' @author Matthew L. Fidler
+#' @noRd
+.rxToNonmemHandleDivideZero <- function(x2, x3, x, ui) {
+  .protectZeros <- rxode2::rxGetControl(ui, "protectZeros", TRUE)
+  .denom <- .rxToNonmem(x3, ui=ui)
+  if (.protectZeros) {
+    .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
+                                data.frame(expr=character(0),
+                                           nm=character(0)))
+    .w <- which(.df$expr == .denom)
+    if (length(.w) == 1) {
+      # Previously protected this expression
+      .denom <- .df$nm[.w]
+    } else {
+      .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
+      .num <- rxode2::rxGetControl(ui, ".nmVarDZNum", 1)
+      .extra <- rxode2::rxGetControl(ui, ".nmVarExtra", "")
+      .newVar <- sprintf("RXDZ%s%03d", .extra, .num)
+      rxode2::rxAssignControlValue(ui, ".nmVarDZNum", .num + 1)
+      .sigdig <- rxode2::rxGetControl(ui, "iniSigDig", 5)
+      .num <- paste0("0.", paste(rep("0", .sigdig), collapse=""), "1")
+      .prefixLines <- c(.prefixLines,
+                        paste0(.rxToNonmemGetIndent(ui),
+                               .newVar, "=", .denom),
+                        paste0(.rxToNonmemGetIndent(ui),
+                               "IF (", .newVar, " .GE. 0.0 .AND. ",
+                               .newVar, " .LE. ", .num, ") THEN"))
+      .rxToNonmemIndent(ui)
+      .prefixLines <- c(.prefixLines,
+                        paste0(.rxToNonmemGetIndent(ui),
+                               .newVar, "=", .num),
+                        paste0(.rxToNonmemGetIndent(ui, FALSE), "ELSE IF (",
+                               .newVar, " .GE. -", .num, " .AND. ",
+                               .newVar, " .LE. 0.) THEN"))
+      .rxToNonmemIndent(ui)
+      .prefixLines <- c(.prefixLines,
+                        paste0(.rxToNonmemGetIndent(ui),
+                               .newVar, "= -", .num),
+                        paste0(.rxToNonmemGetIndent(ui, FALSE),
+                               "END IF"))
+      .df <- rbind(.df,
+                   data.frame(expr=.denom, nm=.newVar))
+      rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf", .df)
+      rxode2::rxAssignControlValue(ui, ".nmPrefixLines", .prefixLines)
+      .denom <- .newVar
+    }
+  }
+  paste0(
+    .rxToNonmem(x2, ui=ui),
+    .rxNMbin[as.character(x[[1]])],
+    .denom)
+}
+#' This is where binary operators are converted to NONMEM operators
+#'
+#' @param x Binary operator R expresion
+#' @param ui rxode2 user interface function
+#' @return NONMEM equivalent binary operator
+#' @author Matthew L. Fidler
+#' @noRd
 .rxToNonmemHandleBinaryOperator <- function(x, ui) {
   if (identical(x[[1]], quote(`/`))) {
     .x2 <- x[[2]]
@@ -221,18 +308,7 @@ rex::register_shortcuts("babelmixr2")
     ## df(%s)/dy(%s)
     if (identical(.x2, quote(`d`)) &&
           identical(.x3[[1]], quote(`dt`))) {
-      if (length(.x3[[2]]) == 1) {
-        .state <- as.character(.x3[[2]])
-      } else {
-        .state <- .rxToNonmem(.x3[[2]], ui=ui)
-      }
-      .states <- rxode2::rxModelVars(ui)$state
-      .num <- which(.state == .states)
-      if (length(.num) != 1) {
-        stop("cannot find '", .state, "' in the model",
-             call.=FALSE)
-      }
-      return(paste0("DADT(", .num, ")"))
+      return(.rxToNonmemHandleDdt(.x2, .x3, ui))
     } else {
       if (length(.x2) == 2 && length(.x3) == 2) {
         if (identical(.x2[[1]], quote(`df`)) &&
@@ -240,54 +316,7 @@ rex::register_shortcuts("babelmixr2")
           stop('df()/dy() is not supported in NONMEM conversion', call.=FALSE)
         }
       }
-      .protectZeros <- rxode2::rxGetControl(ui, "protectZeros", TRUE)
-      .denom <- .rxToNonmem(.x3, ui=ui)
-      if (.protectZeros) {
-        .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
-                                    data.frame(expr=character(0),
-                                               nm=character(0)))
-        .w <- which(.df$expr == .denom)
-        if (length(.w) == 1) {
-          # Previously protected this expression
-          .denom <- .df$nm[.w]
-        } else {
-          .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
-          .num <- rxode2::rxGetControl(ui, ".nmVarDZNum", 1)
-          .extra <- rxode2::rxGetControl(ui, ".nmVarExtra", "")
-          .newVar <- sprintf("RXDZ%s%03d", .extra, .num)
-          rxode2::rxAssignControlValue(ui, ".nmVarDZNum", .num + 1)
-          .sigdig <- rxode2::rxGetControl(ui, "iniSigDig", 5)
-          .num <- paste0("0.", paste(rep("0", .sigdig), collapse=""), "1")
-          .prefixLines <- c(.prefixLines,
-                            paste0(.rxToNonmemGetIndent(ui),
-                                   .newVar, "=", .denom),
-                            paste0(.rxToNonmemGetIndent(ui),
-                                   "IF (", .newVar, " .GE. 0.0 .AND. ",
-                                   .newVar, " .LE. ", .num, ") THEN"))
-          .rxToNonmemIndent(ui)
-          .prefixLines <- c(.prefixLines,
-                            paste0(.rxToNonmemGetIndent(ui),
-                                   .newVar, "=", .num),
-                            paste0(.rxToNonmemGetIndent(ui, FALSE), "ELSE IF (",
-                                   .newVar, " .GE. -", .num, " .AND. ",
-                                   .newVar, " .LE. 0.) THEN"))
-          .rxToNonmemIndent(ui)
-          .prefixLines <- c(.prefixLines,
-                            paste0(.rxToNonmemGetIndent(ui),
-                                   .newVar, "= -", .num),
-                            paste0(.rxToNonmemGetIndent(ui, FALSE),
-                                   "END IF"))
-          .df <- rbind(.df,
-                       data.frame(expr=.denom, nm=.newVar))
-          rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf", .df)
-          rxode2::rxAssignControlValue(ui, ".nmPrefixLines", .prefixLines)
-          .denom <- .newVar
-        }
-      }
-      .ret <- paste0(
-        .rxToNonmem(.x2, ui=ui),
-        .rxNMbin[as.character(x[[1]])],
-        .denom)
+      return(.rxToNonmemHandleDivideZero(.x2, .x3, x, ui))
     }
   } else {
     .ret <- paste0(
