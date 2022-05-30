@@ -153,7 +153,7 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                    paste(.ret, collapse="\n")
                  }, character(1), USE.NAMES=FALSE)
   .pk2 <- .pk2[!is.na(.pk2)]
-  .pk2 <- ifelse(length(.pk2) > 0, paste0("\n", .pk2), "")
+  .pk2 <- ifelse(length(.pk2) > 0, paste0("\n", paste(.pk2, collapse="\n")), "")
   paste0(.pk, .pk2,
          "\n\n$DES\n",
          .des, "\n\n$ERROR\n  ;Redefine LHS in $DES by prefixing with on RXE_ for $ERROR\n",

@@ -363,7 +363,6 @@ test_that("tbs tests", {
       MTT =  exp(log_MTT + eta.MTT)
       SLOPU =  exp(log_SLOPU + eta.SLOPU)
       GAMMA = exp(log_GAMMA)
-      tmp = lfactorial(log_GAMMA)
 
       # PK parameters from input dataset
       CL = CLI;
