@@ -1,3 +1,26 @@
+#' NONMEM estimation control
+#'
+#' @param est NONMEM estimation method
+#' @param advanOde The ODE solving method for NONMEM
+#' @param cov The NONMEM covariance method
+#' @param maxeval NONMEM's maxeval (for non posthoc methods)
+#' @param tol NONMEM tolerance for ODE solving advan
+#' @param sigl NONMEM sigl estimation option
+#' @param sigdig the significant digits for NONMEM
+#' @param print The print number for NONMEM
+#' @param extension NONMEM file extensions
+#' @param protectZeros Add methods to protect divide by zero
+#' @param noabort Add the `NOABORT` option for `$EST`
+#'
+#' @return babelmixr control option for generating NONMEM control stream and reading it back into
+#'   `babelmixr2`/`nlmixr2`
+#'
+#' @author Matthew L. Fidler
+#'
+#' @export
+#'
+#' @examples
+#' nonmemControl()
 nonmemControl <- function(est=c("focei", "posthoc"),
                           advanOde=c("advan13", "advan8", "advan6"),
                           cov=c("r,s", "r", "s", ""),
@@ -7,6 +30,7 @@ nonmemControl <- function(est=c("focei", "posthoc"),
                           sigdig=3,
                           print=1,
                           extension=getOption("babelmixr2.modelExtension", ".nmctl"),
+                          protectZeros=TRUE,
                           noabort=TRUE) {
   # nonmem manual slides suggest tol=6, sigl=6 sigdig=2
   checkmate::assertIntegerish(maxeval, lower=100, len=1, any.missing=FALSE)

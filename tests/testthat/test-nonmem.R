@@ -397,6 +397,7 @@ test_that("tbs tests", {
       CIRC ~ prop(prop.err)
     })
   }
+
   w <- wbc()
 
 
