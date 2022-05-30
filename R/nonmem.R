@@ -235,18 +235,16 @@ rex::register_shortcuts("babelmixr2")
   }
   return(paste0("DADT(", .num, ")"))
 }
-#' This handles divide by zero for NONMEM control streams
+#'  Protect Zero expressions but preserves negative/positive
 #'
-#'
-#' @param x2 numerator
-#' @param x3 denominator
-#' @param ui rxode2 ui
-#' @return divion operator, as a side effect lines are prepended to protect divide by zero errors
+#' @param x expression to protect
+#' @param ui User interface
+#' @return expression, but adds prefix lines to protect the expression
 #' @author Matthew L. Fidler
 #' @noRd
-.rxToNonmemHandleDivideZero <- function(x2, x3, x, ui) {
+.rxProtectPlusOrMinusZero <- function(x, ui) {
   .protectZeros <- rxode2::rxGetControl(ui, "protectZeros", TRUE)
-  .denom <- .rxToNonmem(x3, ui=ui)
+  .denom <- .rxToNonmem(x, ui=ui)
   if (.protectZeros) {
     .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
                                 data.frame(expr=character(0),
@@ -289,10 +287,22 @@ rex::register_shortcuts("babelmixr2")
       .denom <- .newVar
     }
   }
+  .denom
+}
+
+#' This handles divide by zero for NONMEM control streams
+#'
+#' @param x2 numerator
+#' @param x3 denominator
+#' @param ui rxode2 ui
+#' @return divion operator, as a side effect lines are prepended to protect divide by zero errors
+#' @author Matthew L. Fidler
+#' @noRd
+.rxToNonmemHandleDivideZero <- function(x2, x3, x, ui) {
   paste0(
     .rxToNonmem(x2, ui=ui),
     .rxNMbin[as.character(x[[1]])],
-    .denom)
+    .rxProtectPlusOrMinusZero(x3, ui))
 }
 #' This is where binary operators are converted to NONMEM operators
 #'
@@ -318,6 +328,13 @@ rex::register_shortcuts("babelmixr2")
       }
       return(.rxToNonmemHandleDivideZero(.x2, .x3, x, ui))
     }
+  } else if (identical(x[[1]], quote(`^`)) ||
+               identical(x[[1]], quote(`**`))) {
+    .ret <- paste0(
+      .rxProtectPlusOrMinusZero(x[[2]], ui),
+      .rxNMbin[as.character(x[[1]])],
+      .rxToNonmem(x[[3]], ui=ui)
+    )
   } else {
     .ret <- paste0(
       .rxToNonmem(x[[2]], ui=ui),
