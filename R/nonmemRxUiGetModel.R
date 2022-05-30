@@ -12,9 +12,28 @@ rxUiGet.nonmemMod <- function(x, ...) {
         collapse="\n")
 }
 
+.nonmemResetUi <- function(ui, extra="") {
+    rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf",
+                               data.frame(expr=character(0),
+                                          nm=character(0)))
+  rxode2::rxAssignControlValue(ui, ".nmVarNum", 1)
+  rxode2::rxAssignControlValue(ui, ".nmGetVarDf",
+                               data.frame(var=character(0),
+                                          nm=character(0)))
+
+  rxode2::rxAssignControlValue(ui, ".nmVarDZNum", 1)
+  rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf",
+                               data.frame(expr=character(0),
+                                          nm=character(0)))
+  rxode2::rxAssignControlValue(ui, ".nmPrefixLines", NULL)
+  rxode2::rxAssignControlValue(ui, ".nmVarExtra", extra)
+
+}
+
 #' @export
 rxUiGet.nonmemModel <- function(x, ...) {
   .ui <- x[[1]]
+  .nonmemResetUi(.ui)
   .ret <- paste0(
     "$PROBLEM ", .ui$modelName, " translated from babelmixr2\n\n",
     "$DATA ", .ui$nonmemCsv, " IGNORE=@\n\n",
