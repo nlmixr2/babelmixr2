@@ -160,7 +160,7 @@
   .modelText <- .ui$monolixModel
   .mlxtranText <- .ui$mlxtran
   .dataDf <- .ret$monolixData
-  .hashMd5 <- digest::digest(c(.modelText, .mlxtranText, .dataDf))
+  .hashMd5 <- digest::digest(list(.modelText, .mlxtranText, .dataDf))
   .foundModelName <- FALSE
   .hashFile <- .ui$monolixModelHashFileName
   while (!.foundModelName) {

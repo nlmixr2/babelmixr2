@@ -126,7 +126,7 @@
   })
   .nmctl <- .ui$nonmemModel
   .contra <- .ui$nonmemContra
-  .hashMd5 <- digest::digest(.nmctl, .contra, .ret$nonmemData)
+  .hashMd5 <- digest::digest(list(.nmctl, .contra, .ret$nonmemData))
   .foundModelName <- FALSE
 
   .hashFile <- file.path(.ui$nonmemExportPath, .ui$nonmemHashFile)
