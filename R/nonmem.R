@@ -442,6 +442,10 @@ rex::register_shortcuts("babelmixr2")
 }
 
 .rxToNonmemHandleIfExpressions <- function(x, ui) {
+  if (rxode2::rxGetControl(ui, ".ifelse", FALSE)) {
+    stop("babelmixr2 NONMEM translator will not handle nested if/else models")
+  }
+    #rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
   .ret <- paste0(.rxToNonmemGetIndent(ui), "IF (", .rxToNonmem(x[[2]], ui=ui), ") THEN\n")
   .rxToNonmemIndent(ui)
   rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
@@ -450,23 +454,27 @@ rex::register_shortcuts("babelmixr2")
   x <- x[-c(1:3)]
   if (length(x) == 1) x <- x[[1]]
   while(identical(x[[1]], quote(`if`))) {
-    .ret <- paste0(.ret, "\n",
-                   .rxToNonmemGetIndent(ui, FALSE), "ELSE IF (", .rxToNonmem(x[[2]], ui=ui), ") THEN\n")
-    .rxToNonmemIndent(ui)
-    .ret <- paste0(.ret, .rxToNonmem(x[[3]], ui=ui))
-    x <- x[-c(1:3)]
-    if (length(x) == 1) x <- x[[1]]
+    stop("babelmixr2 will not allow `else if` or `else` statements in NONMEM models",
+         call.=FALSE)
+    ## .ret <- paste0(.ret, "\n",
+    ##                .rxToNonmemGetIndent(ui, FALSE), "ELSE IF (", .rxToNonmem(x[[2]], ui=ui), ") THEN\n")
+    ## .rxToNonmemIndent(ui)
+    ## .ret <- paste0(.ret, .rxToNonmem(x[[3]], ui=ui))
+    ## x <- x[-c(1:3)]
+    ## if (length(x) == 1) x <- x[[1]]
   }
   if (is.null(x)) {
     .ret <- paste0(.ret, "\n",
                    .rxToNonmemGetIndent(ui, FALSE), "END IF\n")
   }  else {
-    .ret <- paste0(.ret, "\n",
-                   .rxToNonmemGetIndent(ui, FALSE), "ELSE\n")
-    .rxToNonmemIndent(ui)
-    .ret <- paste0(.ret, .rxToNonmem(x, ui=ui),
-                   "\n",
-                   .rxToNonmemGetIndent(ui, FALSE), "END IF\n")
+    stop("babelmixr2 will not allow `else if` or `else` statements in NONMEM models",
+         call.=FALSE)
+    ## .ret <- paste0(.ret, "\n",
+    ##                .rxToNonmemGetIndent(ui, FALSE), "ELSE\n")
+    ## .rxToNonmemIndent(ui)
+    ## .ret <- paste0(.ret, .rxToNonmem(x, ui=ui),
+    ##                "\n",
+    ##                .rxToNonmemGetIndent(ui, FALSE), "END IF\n")
   }
   return(.ret)
 }
