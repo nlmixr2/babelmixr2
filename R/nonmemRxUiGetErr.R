@@ -47,6 +47,8 @@
 #'@export
 rxUiGet.nonmemErrF <- function(x, ...) {
   .ui <- x[[1]]
+  rxode2::rxAssignControlValue(.ui, ".ifelse", TRUE)
+  on.exit(rxode2::rxAssignControlValue(.ui, ".ifelse", FALSE))
   .predDf <- .ui$predDf
   .single <- (length(.predDf$cond) == 1L)
   .ipred <- vapply(seq_along(.predDf$cond),

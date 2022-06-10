@@ -251,6 +251,8 @@ rex::register_shortcuts("babelmixr2")
 #' @noRd
 .rxProtectPlusZero <- function(x, ui, one=FALSE) {
   .protectZeros <- rxode2::rxGetControl(ui, "protectZeros", TRUE)
+  .inIfElse <- rxode2::rxGetControl(ui, ".ifelse", FALSE)
+  .protectZeros <- .protectZeros && !.inIfElse
   .ret <- .rxToNonmem(x, ui=ui)
   if (.protectZeros) {
     .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
@@ -299,6 +301,8 @@ rex::register_shortcuts("babelmixr2")
 #' @noRd
 .rxProtectPlusOrMinusZero <- function(x, ui) {
   .protectZeros <- rxode2::rxGetControl(ui, "protectZeros", TRUE)
+  .inIfElse <- rxode2::rxGetControl(ui, ".ifelse", FALSE)
+  .protectZeros <- .protectZeros && !.inIfElse
   .denom <- .rxToNonmem(x, ui=ui)
   if (.protectZeros) {
     .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
@@ -440,6 +444,8 @@ rex::register_shortcuts("babelmixr2")
 .rxToNonmemHandleIfExpressions <- function(x, ui) {
   .ret <- paste0(.rxToNonmemGetIndent(ui), "IF (", .rxToNonmem(x[[2]], ui=ui), ") THEN\n")
   .rxToNonmemIndent(ui)
+  rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
+  on.exit(rxode2::rxAssignControlValue(ui, ".ifelse", FALSE))
   .ret <- paste0(.ret, .rxToNonmem(x[[3]], ui=ui))
   x <- x[-c(1:3)]
   if (length(x) == 1) x <- x[[1]]
