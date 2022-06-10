@@ -245,7 +245,8 @@
   }
   .ret <- .monolixFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
-    .msg <- .monolixMergePredsAndCalcRelativeErr(.ret)
+    .msg <- c(.monolixMergePredsAndCalcRelativeErr(.ret),
+              paste0("monolix model: '", .mlxtran, "'"))
     .tmp <- .ret$ui$monolixParHistory
     assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
     if (is.null(.tmp)) {
