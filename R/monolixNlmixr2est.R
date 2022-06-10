@@ -162,7 +162,7 @@
   .foundModelName <- FALSE
   .hashFile <- .ui$monolixModelHashFileName
   while (!.foundModelName) {
-    if (!exists(.hashFile)) {
+    if (!file.exists(.hashFile)) {
       .foundModelName <- TRUE
     } else {
       if (readLines(.hashFile) == .hashMd5) {

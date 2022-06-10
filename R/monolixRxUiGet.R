@@ -9,9 +9,9 @@ rxUiGet.monolixExportPath <- function(x, ...) {
   }
   .base <- paste0(.ui$modelName, .extra, "-monolix")
   if (rxode2::rxGetControl(.ui, "absolutePath", FALSE)) {
-    file.path(.base)
-  } else {
     file.path(getwd(), .base)
+  } else {
+    file.path(.base)
   }
 }
 
