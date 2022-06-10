@@ -1,15 +1,27 @@
+.monolixWaitForFile <- function(file, maxWait=10) {
+  i <- 1
+  while (i <= maxWait) {
+    if (file.exists(file)) {
+      return(TRUE)
+    }
+    i <- i + 1
+  }
+  stop("the file '", file, "' does not exist even though monolix export path is present",
+       call.=FALSE)
+}
+
 #' @export
 rxUiGet.monolixOutputVersion <- function(x, ...) {
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
+  if (!file.exists(.exportPath)) return(NULL)
   .summary <- file.path(.exportPath, "summary.txt")
-  if (file.exists(.summary)) {
-    .lines <- readLines(.summary, n=5)
-    .w <- which(regexpr(".*[vV]ersion *: *[^ ]*.*", .lines) != -1)
-    if (length(.w) == 1) {
-      .line <- .lines[.w]
-      # 2019 is 5.1.1
-      return(sub(".*[vV]ersion *: *([^ ]*).*", "\\1", .line))
-    }
+  .monolixWaitForFile(.summary)
+  .lines <- readLines(.summary, n=5)
+  .w <- which(regexpr(".*[vV]ersion *: *[^ ]*.*", .lines) != -1)
+  if (length(.w) == 1) {
+    .line <- .lines[.w]
+    # 2019 is 5.1.1
+    return(sub(".*[vV]ersion *: *([^ ]*).*", "\\1", .line))
   }
   NULL
 }
@@ -103,11 +115,10 @@ rxUiGet.monolixParHistory <- function(x, ...) {
 #' @export
 rxUiGet.monolixPopulationParameters <- function(x, ...) {
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
+  if (!file.exists(.exportPath)) return(NULL)
   .popParameters <- file.path(.exportPath, "populationParameters.txt")
-  if (file.exists(.popParameters)) {
-    return(read.csv(.popParameters))
-  }
-  NULL
+  .monolixWaitForFile(.popParameters)
+  read.csv(.popParameters)
 }
 
 #' @export
@@ -262,11 +273,10 @@ rxUiGet.monolixTheta <- function(x, ...) {
 #' @export
 rxUiGet.monolixIndividualParameters <- function(x, ...) {
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
+  if (!file.exists(.exportPath)) return(NULL)
   .individualParameters <- file.path(.exportPath, "IndividualParameters", "estimatedRandomEffects.txt")
-  if (file.exists(.individualParameters)) {
-    return(read.csv(.individualParameters))
-  }
-  NULL
+  .monolixWaitForFile(.individualParameters)
+  read.csv(.individualParameters)
 }
 
 #' @export
@@ -275,13 +285,12 @@ rxUiGet.monolixIndividualLL <- function(x, ...) {
   .ret <- rxode2::rxGetControl(.ui, ".monolixIndividualLL", NULL)
   if (!is.null(.ret)) return(.ret)
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
+  if (!file.exists(.exportPath)) return(NULL)
   .individualParameters <- file.path(.exportPath, "LogLikelihood", "individualLL.txt")
-  if (file.exists(.individualParameters)) {
-    .ret <- read.csv(.individualParameters)
-    rxode2::rxAssignControlValue(.ui, ".monolixIndividualLL", .ret)
-    return(.ret)
-  }
-  NULL
+  .monolixWaitForFile(.individualParameters)
+  .ret <- read.csv(.individualParameters)
+  rxode2::rxAssignControlValue(.ui, ".monolixIndividualLL", .ret)
+  .ret
 }
 
 #' @export
@@ -315,13 +324,12 @@ rxUiGet.monolixLL <- function(x, ...) {
   .ret <- rxode2::rxGetControl(.ui, ".monolixLL", NULL)
   if (!is.null(.ret)) return(.ret)
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
+  if (!file.exists(.exportPath)) return(NULL)
   .individualParameters <- file.path(.exportPath, "LogLikelihood", "logLikelihood.txt")
-  if (file.exists(.individualParameters)) {
-    .ret <- read.csv(.individualParameters)
-    rxode2::rxAssignControlValue(.ui, ".monolixLL", .ret)
-    return(.ret)
-  }
-  NULL
+  .monolixWaitForFile(.individualParameters)
+  .ret <- read.csv(.individualParameters)
+  rxode2::rxAssignControlValue(.ui, ".monolixLL", .ret)
+  .ret
 }
 
 #' @export
@@ -351,30 +359,28 @@ rxUiGet.monolixObjfType <- function(x, ...) {
  #' @export
 rxUiGet.monolixCovarianceEstimatesLin <- function(x, ...) {
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
+  if (!file.exists(.exportPath)) return(NULL)
   .covLin <- file.path(.exportPath, "FisherInformation", "covarianceEstimatesLin.txt")
-  if (file.exists(.covLin)) {
-    .c <- read.csv(.covLin, header=FALSE)
-    .n <- .c[, 1]
-    .c <- as.matrix(.c[, -1])
-    dimnames(.c) <- list(.n, .n)
-    return(.c)
-  }
-  NULL
+  .monolixWaitForFile(.covLin)
+  .c <- read.csv(.covLin, header=FALSE)
+  .n <- .c[, 1]
+  .c <- as.matrix(.c[, -1])
+  dimnames(.c) <- list(.n, .n)
+  .c
 }
 
 
- #' @export
+#' @export
 rxUiGet.monolixCovarianceEstimatesSA <- function(x, ...) {
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
+  if (!file.exists(.exportPath)) return(NULL)
   .covSA <- file.path(.exportPath, "FisherInformation", "covarianceEstimatesSA.txt")
-  if (file.exists(.covSA)) {
-    .c <- read.csv(.covSA, header=FALSE)
-    .n <- .c[, 1]
-    .c <- as.matrix(.c[, -1])
-    dimnames(.c) <- list(.n, .n)
-    return(.c)
-  }
-  NULL
+  .monolixWaitForFile(.covSA)
+  .c <- read.csv(.covSA, header=FALSE)
+  .n <- .c[, 1]
+  .c <- as.matrix(.c[, -1])
+  dimnames(.c) <- list(.n, .n)
+  .c
 }
 
 .monolixCovarianceNeedsConversion <- function(x, sa) {
@@ -429,12 +435,17 @@ rxUiGet.monolixCovariance <- function(x, ...) {
 rxUiGet.monolixPreds <- function(x, ...) {
   .ui <- x[[1]]
   .predDf <- .ui$predDf
+  .exportPath <- rxUiGet.monolixExportPath(x, ...)
+  if (!file.exists(.exportPath)) return(NULL)
+
   if (length(.predDf$var) > 1) {
     do.call("rbind", lapply(seq_along(.predDf$var),
                             function(i){
                               .var <- .predDf$var[i]
-                              .ret <- read.csv(file.path(rxUiGet.monolixExportPath(x, ...),
-                                                         paste0("predictions_rx_prd_", .var, ".txt")))
+                              .file <- file.path(.exportPath,
+                                                 paste0("predictions_rx_prd_", .var, ".txt"))
+                              .monolixWaitForFile(.file)
+                              .ret <- read.csv(.file)
                               .ret$CMT <- .predDf$cond[i]
                               names(.ret) <- sub("id", "ID",
                                                  sub("time", "TIME",
@@ -443,7 +454,9 @@ rxUiGet.monolixPreds <- function(x, ...) {
                             }))
   } else {
     .var <- .predDf$var
-    .ret <- read.csv(file.path(rxUiGet.monolixExportPath(x, ...), "predictions.txt"))
+    .file <- file.path(.exportPath,"predictions.txt")
+    .monolixWaitForFile(.file)
+    .ret <- read.csv(.file)
     names(.ret) <- sub("id", "ID",
                        sub("time", "TIME",
                            sub(paste0("rx_prd_", .var), "DV", names(.ret))))

@@ -242,7 +242,6 @@
       Sys.sleep(1)
     }
     message("")
-    Sys.sleep(2)
   }
   .ret <- .monolixFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
