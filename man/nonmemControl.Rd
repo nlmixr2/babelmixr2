@@ -14,6 +14,7 @@ nonmemControl(
   sigdig = 3,
   print = 1,
   extension = getOption("babelmixr2.modelExtension", ".nmctl"),
+  runCommand = getOption("babelmixr2.nonmem", ""),
   iniSigDig = 5,
   protectZeros = TRUE,
   muRef = FALSE,

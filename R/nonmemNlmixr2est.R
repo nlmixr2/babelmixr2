@@ -168,6 +168,15 @@
               quote=FALSE)
     .minfo("done")
   }
+  .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
+  if (.cmd != "") {
+    .arg <- paste(.ui$nonmemNmctl, " ", .ui$nonmemNmlst)
+    .minfo(paste0("run NONMEM: ", sprintf(.cmd, .arg)))
+    system(sprintf(.cmd, .mlxtran))
+  } else {
+    .minfo("run NONMEM manually or setup NONMEM's run command")
+  }
+
   stop("need to run and test as next step")
   ## if (!dir.exists(.exportPath)) {
   ##   .minfo("waiting for nonmem output")

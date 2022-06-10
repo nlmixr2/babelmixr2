@@ -29,7 +29,9 @@ nonmemControl <- function(est=c("focei", "posthoc"),
                           sigl=12,
                           sigdig=3,
                           print=1,
-                          extension=getOption("babelmixr2.modelExtension", ".nmctl"),
+                          extension=getOption("babelmixr2.nmModelExtension", ".nmctl"),
+                          outputExtension=getOption("babelmixr2.nmOutputExtension", ".lst"),
+                          runCommand=getOption("babelmixr2.nonmem", ""),
                           iniSigDig=5,
                           protectZeros=TRUE,
                           muRef=FALSE,
@@ -44,6 +46,7 @@ nonmemControl <- function(est=c("focei", "posthoc"),
   checkmate::assertIntegerish(iniSigDig, lower=1, len=1, any.missing=FALSE)
   checkmate::assertLogical(protectZeros, len=1, any.missing=FALSE)
   checkmate::assertLogical(muRef, len=1, any.missing=FALSE)
+  if (runCommand != "") checkmate::assertCharacter(runCommand, pattern="%s", min.len=1, max.len=1)
   .ret <- list(est=match.arg(est),
                cov=match.arg(cov),
                advanOde=match.arg(advanOde),
@@ -54,7 +57,9 @@ nonmemControl <- function(est=c("focei", "posthoc"),
                tol=tol,
                sigl=sigl,
                muRef=muRef,
-               sigdig=sigdig)
+               sigdig=sigdig,
+               runCommand=runCommand,
+               outputExtension=outputExtension)
   class(.ret) <- "nonmemControl"
   .ret
 }

@@ -46,6 +46,12 @@ rxUiGet.nonmemNmctl <- function(x, ...) {
 }
 
 #' @export
+rxUiGet.nonmemNmlst <- function(x, ...) {
+  .ui <- x[[1]]
+  paste0(.ui$modelName, rxode2::rxGetControl(.ui, "outputExtension", ".lst"))
+}
+
+#' @export
 rxUiGet.nonmemHashFile <- function(x, ...) {
   .ui <- x[[1]]
   paste0(.ui$modelName, ".md5")
