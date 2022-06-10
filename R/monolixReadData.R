@@ -362,7 +362,7 @@ rxUiGet.monolixCovarianceEstimatesLin <- function(x, ...) {
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
   if (!file.exists(.exportPath)) return(NULL)
   .covLin <- file.path(.exportPath, "FisherInformation", "covarianceEstimatesLin.txt")
-  .monolixWaitForFile(.covLin)
+  if (!file.exists(.covLin)) return(NULL)
   .c <- read.csv(.covLin, header=FALSE)
   .n <- .c[, 1]
   .c <- as.matrix(.c[, -1])
@@ -376,7 +376,7 @@ rxUiGet.monolixCovarianceEstimatesSA <- function(x, ...) {
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
   if (!file.exists(.exportPath)) return(NULL)
   .covSA <- file.path(.exportPath, "FisherInformation", "covarianceEstimatesSA.txt")
-  .monolixWaitForFile(.covSA)
+  if (!file.exists(.covSA)) return(NULL)
   .c <- read.csv(.covSA, header=FALSE)
   .n <- .c[, 1]
   .c <- as.matrix(.c[, -1])

@@ -56,13 +56,6 @@
   env$fullTheta <- .ui$monolixFullTheta
   # - $etaObf data frame with ID, etas and OBJI
   env$etaObf <- .ui$monolixEtaObf
-  # - $cov For covariance
-  .cov <- .ui$monolixCovariance
-  if (!is.null(.cov)) {
-    env$cov <- .cov
-    # - $covMethod for the method of calculating the covariance
-    env$covMethod <- rxode2::rxGetControl(.ui, ".covMethod", "Monolix")
-  }
   # - $adjObf Should the objective function value be adjusted
   env$adjObf <- rxode2::rxGetControl(.ui, "adjObf", TRUE)
   # - $objective objective function value
@@ -84,6 +77,15 @@
   # - $ofvType (optional) tells the type of ofv is currently being used
   #env$ofvType
   env$ofvType <- .ui$monolixObjfType
+  # Last to try to ensure all files have been exported
+  # - $cov For covariance
+  .cov <- .ui$monolixCovariance
+  if (!is.null(.cov)) {
+    env$cov <- .cov
+    # - $covMethod for the method of calculating the covariance
+    env$covMethod <- rxode2::rxGetControl(.ui, ".covMethod", "Monolix")
+  }
+
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
   .monolixControlToFoceiControl(env)
@@ -245,8 +247,9 @@
   }
   .ret <- .monolixFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
-    .msg <- c(.monolixMergePredsAndCalcRelativeErr(.ret),
-              paste0("monolix model: '", .mlxtran, "'"))
+    .msg <- .monolixMergePredsAndCalcRelativeErr(.ret)
+    .msg$message <- c(.msg$message,
+                      paste0("monolix model: '", .mlxtran, "'"))
     .tmp <- .ret$ui$monolixParHistory
     assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
     if (is.null(.tmp)) {

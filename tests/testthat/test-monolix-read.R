@@ -448,4 +448,25 @@ test_that("wbc", {
     })
   }
 
+  if (file.exists("x-2021.zip")) {
+
+    .path <- normalizePath("x-2021.zip")
+    withr::with_tempdir({
+      unzip(.path)
+      # with piping, the original model name is scrubbed, and is changed to x
+      p1 <- wbc %>%
+        ini(prop.err=15) %>%
+        nlmixr2(., nlmixr2data::wbcSim, "monolix")
+
+      expect_true(inherits(p1, "nlmixr2FitData"))
+
+      p2 <-wbc %>%
+        ini(prop.err=7) %>%
+        nlmixr2(., nlmixr2data::wbcSim, "monolix")
+
+      expect_true(inherits(p2, "nlmixr2FitData"))
+    })
+  }
+
+
 })
