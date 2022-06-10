@@ -81,7 +81,9 @@
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
   .nonmemControlToFoceiControl(env)
-  env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData, control=env$control, table=env$table, env=env, est="nonmem")
+  env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData,
+                                               control=env$control, table=env$table,
+                                               env=env, est="nonmem")
   .env <- env$env
   .env$method <- "nonmem"
   env
@@ -172,7 +174,8 @@
   if (.cmd != "") {
     .arg <- paste0(.ui$nonmemNmctl, " ", .ui$nonmemNmlst)
     .minfo(paste0("run NONMEM: ", sprintf(.cmd, .arg)))
-    system(sprintf(.cmd, .arg))
+    withr::with_dir(.exportPath,
+                    system(sprintf(.cmd, .arg)))
   } else {
     .minfo("run NONMEM manually or setup NONMEM's run command")
   }
