@@ -124,6 +124,25 @@
       rm(list="timeVaryingCovariates", envir=.ui)
     }
   })
+  .nmctl <- .ui$nonmemModel
+  .contra <- .ui$nonmemContra
+  .hashMd5 <- digest::digest(.nmctl, .contra, .ret$nonmemData)
+  .foundModelName <- FALSE
+
+  .hashFile <- file.path(.ui$nonmemExportPath, .ui$nonmemHashFile)
+  while (!.foundModelName) {
+    if (!file.exists(.hashFile)) {
+      .foundModelName <- TRUE
+    } else {
+      if (readLines(.hashFile) == .hashMd5) {
+        .foundModelName <- TRUE
+      } else {
+        .num <- rxode2::rxGetControl(.ui, ".modelNumber", 0) + 1
+        rxode2::rxAssignControlValue(.ui, ".modelNumber", .num)
+        .hashFile <- file.path(.ui$nonmemExportPath, .ui$nonmemHashFile)
+      }
+    }
+  }
   .exportPath <- .ui$nonmemExportPath
   if (!dir.exists(.exportPath)) dir.create(.exportPath)
   .csv <- file.path(.exportPath, .ui$nonmemCsv)
@@ -138,9 +157,8 @@
     return(.ret)
   } else if (!file.exists(.nmctlFile)) {
     .minfo("writing nonmem files")
-    .nmctl <- .ui$nonmemModel
-    .contra <- .ui$nonmemContra
     writeLines(text=.nmctl, con=.nmctlFile)
+    writeLines(text=.hashMd5, con=.hashFile)
     if (!is.null(.contra)) {
       writeLines(text=.contra, con=.contraFile)
       .ccontra <- .ui$nonmemCcontra

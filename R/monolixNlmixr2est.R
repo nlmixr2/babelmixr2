@@ -175,6 +175,10 @@
     }
   }
   .csv <- .ui$monolixDataFile
+  # Update if model name has changed
+  .modelText <- .ui$monolixModel
+  .mlxtranText <- .ui$mlxtran
+
 
   .qs <- .ui$monolixQs
   .exportPath <- .ui$monolixExportPath
