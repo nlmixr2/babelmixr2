@@ -2,12 +2,22 @@
 #' @export
 rxUiGet.monolixExportPath <- function(x, ...) {
   .ui <- x[[1]]
-  .base <- paste0(.ui$modelName, "-monolix")
+  .extra <- ""
+  .num <- rxode2::rxGetControl(.ui, ".modelNumber", 0)
+  if (.num > 0) {
+    .extra <- sprintf("-%03d", .num)
+  }
+  .base <- paste0(.ui$modelName, .extra, "-monolix")
   if (rxode2::rxGetControl(.ui, "absolutePath", FALSE)) {
     file.path(.base)
   } else {
     file.path(getwd(), .base)
   }
+}
+
+#' @export
+rxUiGet.monolixModelHashFileName <- function(x, ...) {
+  paste0(rxUiGet.monolixExportPath(x, ...), ".md5")
 }
 
 #' @export

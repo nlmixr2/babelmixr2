@@ -155,9 +155,29 @@
       rm(list="timeVaryingCovariates", envir=.ui)
     }
   })
+  .modelText <- .ui$monolixModel
+  .mlxtranText <- .ui$mlxtran
+  .dataDf <- .ret$monolixData
+  .hashMd5 <- digest::digest(c(.modelText, .mlxtranText, .dataDf))
+  .foundModelName <- FALSE
+  .hashFile <- .ui$monolixModelHashFileName
+  while (!.foundModelName) {
+    if (!exists(.hashFile)) {
+      .foundModelName <- TRUE
+    } else {
+      if (readLines(.hashFile) == .hashMd5) {
+        .foundModelName <- TRUE
+      } else {
+        .num <- rxode2::rxGetControl(.ui, ".modelNumber", 0) + 1
+        rxode2::rxAssignControlValue(.ui, ".modelNumber", .num)
+        .hashFile <- .ui$monolixModelHashFileName # regenerate hash file name
+      }
+    }
+  }
+  .csv <- .ui$monolixDataFile
+
   .qs <- .ui$monolixQs
   .exportPath <- .ui$monolixExportPath
-  .csv <- .ui$monolixDataFile
   .model <- .ui$monolixModelFileName
   .mlxtran <- .ui$monolixMlxtranFile
   .runLock <- .ui$monolixRunLock
@@ -178,9 +198,10 @@
     return(.ret)
   } else if (!file.exists(.model)) {
     .minfo("writing monolix files")
-    writeLines(text=.ui$monolixModel, con=.model)
-    writeLines(text=.ui$mlxtran, con=.mlxtran)
-    write.csv(.ret$monolixData, file=.csv, na = ".", row.names = FALSE)
+    writeLines(text=.modelText, con=.model)
+    writeLines(text=.mlxtranText, con=.mlxtran)
+    writeLines(text=.hashMd5, con=.hashFile)
+    write.csv(.dataDf, file=.csv, na = ".", row.names = FALSE)
     .minfo("done")
     .runLS <- FALSE
     .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
