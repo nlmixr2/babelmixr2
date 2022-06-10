@@ -170,9 +170,9 @@
   }
   .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
   if (.cmd != "") {
-    .arg <- paste(.ui$nonmemNmctl, " ", .ui$nonmemNmlst)
+    .arg <- paste0(.ui$nonmemNmctl, " ", .ui$nonmemNmlst)
     .minfo(paste0("run NONMEM: ", sprintf(.cmd, .arg)))
-    system(sprintf(.cmd, .mlxtran))
+    system(sprintf(.cmd, .arg))
   } else {
     .minfo("run NONMEM manually or setup NONMEM's run command")
   }
