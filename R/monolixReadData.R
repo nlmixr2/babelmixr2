@@ -4,6 +4,7 @@
     if (file.exists(file)) {
       return(TRUE)
     }
+    Sys.sleep(1)
     i <- i + 1
   }
   stop("the file '", file, "' does not exist even though monolix export path is present",
