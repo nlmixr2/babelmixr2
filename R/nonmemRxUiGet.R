@@ -78,7 +78,7 @@ rxUiGet.nonmemExt <- function(x, ...) {
 
 
 #' @export
-rxUiGet.nonmemCov <- function(x, ...) {
+rxUiGet.nonmemCovFile <- function(x, ...) {
   .ui <- x[[1]]
   paste0(.ui$modelName, ".cov")
 }

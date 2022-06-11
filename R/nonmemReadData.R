@@ -35,12 +35,16 @@ rxUiGet.nonmemOutputExt <- function(x, ...) {
   .ext
 }
 
+.getThetaNames <- function(ui) {
+  .iniDf <- ui$iniDf
+  .iniDf$name[!is.na(!.iniDf$ntheta)]
+}
+
 #' @export
 rxUiGet.nonmemFullTheta <- function(x, ...) {
   .ui <- x[[1]]
-  .iniDf <- .ui$iniDf
   .ext <- rxUiGet.nonmemOutputExt(x, ...)
-  setNames(.ext$Thetas, .iniDf$name[!is.na(!.iniDf$ntheta)])
+  setNames(.ext$Thetas, .getThetaNames(.ui))
 }
 
 .getEtaNames <- function(ui) {
@@ -86,5 +90,32 @@ rxUiGet.nonmemEtaObf <- function(x, ...) {
                           pmxTools::read_nm_multi_table(.etaTable))
   .n <- c("ID", .getEtaNames(.ui), "OBJI")
   names(.ret) <- .n
+  .ret
+}
+
+#' @export
+rxUiGet.nonmemCovariance <- function(x, ...) {
+  .ui <- x[[1]]
+  .exportPath <- rxUiGet.nonmemExportPath(x, ...)
+  .covFile <- rxUiGet.nonmemCovFile(x, ...)
+  if (!file.exists(file.path(.exportPath, .covFile))) return(NULL)
+  .ret <- as.matrix(withr::with_dir(.exportPath,
+                                    pmxTools::read_nmcov(.ui$modelName, quiet=TRUE)))
+  .t <- .getThetaNames(.ui)
+  .s <- "_sigma"
+  .e0 <- .getEtaNames(.ui)
+  .ef <- NULL
+  for (.i in seq_along(.e0)) {
+    for (.j in seq(1, .i)) {
+      if (.i == .j) {
+        .ef <- c(.ef, .e0[.i])
+      } else {
+        .ef <- c(.ef,
+                 paste0("(", .e0[.i], ",", .e0[.j], ")"))
+      }
+    }
+  }
+  .d <- c(.t, .s, .ef)
+  dimnames(.ret) <- list(.d, .d)
   .ret
 }
