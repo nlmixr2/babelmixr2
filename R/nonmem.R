@@ -269,8 +269,9 @@ rex::register_shortcuts("babelmixr2")
       .extra <- rxode2::rxGetControl(ui, ".nmVarExtra", "")
       .newVar <- sprintf("RXDZ%s%03d", .extra, .num)
       rxode2::rxAssignControlValue(ui, ".nmVarDZNum", .num + 1)
-      .sigdig <- rxode2::rxGetControl(ui, "iniSigDig", 5)
-      .num <- paste0(ifelse(one, "-1.", "0."), paste(rep("0", .sigdig), collapse=""), "1")
+      #.sigdig <- rxode2::rxGetControl(ui, "iniSigDig", 5)
+      #.num <- paste0(ifelse(one, "-1.", "0."), paste(rep("0", .sigdig), collapse=""), "1")
+      .num <- ifelse(one, "(1.D-18-1.0)", "1.D-18")
       .prefixLines <- c(.prefixLines,
                         paste0(.rxToNonmemGetIndent(ui),
                                .newVar, "=", .ret),
@@ -318,8 +319,9 @@ rex::register_shortcuts("babelmixr2")
       .extra <- rxode2::rxGetControl(ui, ".nmVarExtra", "")
       .newVar <- sprintf("RXDZ%s%03d", .extra, .num)
       rxode2::rxAssignControlValue(ui, ".nmVarDZNum", .num + 1)
-      .sigdig <- rxode2::rxGetControl(ui, "iniSigDig", 5)
-      .num <- paste0("0.", paste(rep("0", .sigdig), collapse=""), "1")
+      #.sigdig <- rxode2::rxGetControl(ui, "iniSigDig", 5)
+      #.num <- paste0("0.", paste(rep("0", .sigdig), collapse=""), "1")
+      .num <- "1.D-18"
       .prefixLines <- c(.prefixLines,
                         paste0(.rxToNonmemGetIndent(ui),
                                .newVar, "=", .denom),
