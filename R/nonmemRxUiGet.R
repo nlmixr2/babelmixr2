@@ -62,3 +62,23 @@ rxUiGet.nonmemQs <- function(x, ...) {
   .ui <- x[[1]]
   paste0(.ui$modelName, ".qs")
 }
+
+
+#' @export
+rxUiGet.nonmemXml <- function(x, ...) {
+  .ui <- x[[1]]
+  paste0(.ui$modelName, ".xml")
+}
+
+#' @export
+rxUiGet.nonmemExt <- function(x, ...) {
+  .ui <- x[[1]]
+  paste0(.ui$modelName, ".ext")
+}
+
+
+#' @export
+rxUiGet.nonmemCov <- function(x, ...) {
+  .ui <- x[[1]]
+  paste0(.ui$modelName, ".cov")
+}

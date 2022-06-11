@@ -239,21 +239,25 @@ rxUiGet.monolixFullTheta <- function(x, ...) {
   .fullTheta
 }
 
+.bblIniDf <- function(theta, omega, ui) {
+  .iniDf <- ui$iniDf
+  .etas <- ui$iniDf[is.na(ui$iniDf$ntheta), ]
+  .est <- c(theta,
+            vapply(seq_along(.etas$neta1), function(i) {
+              .n1 <- .etas$neta1[i]
+              .n2 <- .etas$neta2[i]
+              omega[.n1, .n2]
+            }, double(1), USE.NAMES=FALSE))
+  .iniDf$est <- .est
+  .iniDf
+}
+
 #' @export
 rxUiGet.monolixIniDf <- function(x, ...) {
   .omega <- rxUiGet.monolixOmega(x, ...)
   .theta <- rxUiGet.monolixFullTheta(x, ...)
   .ui <- x[[1]]
-  .iniDf <- .ui$iniDf
-  .etas <- .ui$iniDf[is.na(.ui$iniDf$ntheta), ]
-  .est <- c(.theta,
-            vapply(seq_along(.etas$neta1), function(i) {
-              .n1 <- .etas$neta1[i]
-              .n2 <- .etas$neta2[i]
-              .omega[.n1, .n2]
-            }, double(1), USE.NAMES=FALSE))
-  .iniDf$est <- .est
-  .iniDf
+  .bblIniDf(.theta, .omega, .ui)
 }
 
 #' @export
