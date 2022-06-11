@@ -5,14 +5,12 @@ rxUiGet.nonmemOutputXml <- function(x, ...) {
   if (!is.null(.info)) return(.info)
   .exportPath <- rxUiGet.nonmemExportPath(x, ...)
   .xml <- rxUiGet.nonmemXml(x, ...)
-  if (file.exists(file.path(.exportPath, .xml))) {
-    .info <- withr::with_dir(.exportPath, {
-      pmxTools::read_nm(.xml, quiet=TRUE)
-    })
-    rxode2::rxAssignControlValue(.ui, ".xml", .info)
-    return(.info)
-  }
-  NULL
+  if (!file.exists(file.path(.exportPath, .xml))) return(NULL)
+  .info <- withr::with_dir(.exportPath, {
+    pmxTools::read_nm(.xml, quiet=TRUE)
+  })
+  rxode2::rxAssignControlValue(.ui, ".xml", .info)
+  .info
 }
 
 #' @export
@@ -45,13 +43,17 @@ rxUiGet.nonmemFullTheta <- function(x, ...) {
   setNames(.ext$Thetas, .iniDf$name[!is.na(!.iniDf$ntheta)])
 }
 
+.getEtaNames <- function(ui) {
+  .iniDf <- ui$iniDf
+  .iniDf <- .iniDf[is.na(.iniDf$ntheta), ]
+  .iniDf <- .iniDf[.iniDf$neta1 == .iniDf$neta2, ]
+  .iniDf$name
+}
+
 #' @export
 rxUiGet.nonmemOutputOmega <- function(x, ...) {
   .ui <- x[[1]]
-  .iniDf <- .ui$iniDf
-  .iniDf <- .iniDf[is.na(.iniDf$ntheta), ]
-  .iniDf <- .iniDf[.iniDf$neta1 == .iniDf$neta2, ]
-  .n <- .iniDf$name
+  .n <- .getEtaNames(.ui)
   .ext <- rxUiGet.nonmemOutputExt(x, ...)
   .omegaLst <- .ext$Omega
   .len <- length(.omegaLst)
@@ -73,3 +75,16 @@ rxUiGet.nonmemIniDf <- function(x, ...) {
   .bblIniDf(.theta, .omega, .ui)
 }
 
+#' @export
+rxUiGet.nonmemEtaObf <- function(x, ...) {
+  .ui <- x[[1]]
+  .exportPath <- rxUiGet.nonmemExportPath(x, ...)
+  .xml <- rxUiGet.nonmemXml(x, ...)
+  .etaTable <- rxUiGet.nonmemEtaTableName(x, ...)
+  if (!file.exists(file.path(.exportPath, .etaTable))) return(NULL)
+  .ret <- withr::with_dir(.exportPath,
+                          pmxTools::read_nm_multi_table(.etaTable))
+  .n <- c("ID", .getEtaNames(.ui), "OBJI")
+  names(.ret) <- .n
+  .ret
+}
