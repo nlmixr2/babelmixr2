@@ -18,7 +18,7 @@ nonmemControl(
   runCommand = getOption("babelmixr2.nonmem", ""),
   iniSigDig = 5,
   protectZeros = TRUE,
-  muRef = FALSE,
+  muRef = TRUE,
   noabort = TRUE
 )
 }
