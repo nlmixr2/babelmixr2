@@ -296,9 +296,9 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), env=NU
                          .ret$LIMIT,
                          ifelse(.ret$LIMIT < 0, -1000000, 1000000))
   }
+  .ui <- model
   if (length(model$predDf$cond) > 1) {
     .dv2 <- .bblTransform(.ret$DV, .ret$CMT, model)
-    .ui <- model
     .ret$DV <- .dv2$dv
     .ret$CMT <- .dv2$cmt
     .ret$DVID <- .dv2$dvid
