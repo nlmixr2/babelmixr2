@@ -27,12 +27,13 @@ static inline void getDv(double dv, int cmt,
       llikAdj += _powerL(dv, lambda[i], yj[i], low[i], high[i]);
       out = _powerD(dv, lambda[i], yj[i], low[i], high[i]);
       dvid = i+1;
-      cmtOut = 0;
+      cmtOut = NA_INTEGER;
+      return;
     }
   }
-  out = dv;
-  dvid = 0;
-  cmtOut = 0;
+  out = NA_REAL;
+  dvid = NA_INTEGER;
+  cmtOut = cmt;
 }
 
 //[[Rcpp::export]]
