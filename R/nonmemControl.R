@@ -34,7 +34,7 @@ nonmemControl <- function(est=c("focei", "posthoc"),
                           runCommand=getOption("babelmixr2.nonmem", ""),
                           iniSigDig=5,
                           protectZeros=TRUE,
-                          muRef=FALSE,
+                          muRef=TRUE,
                           noabort=TRUE) {
   # nonmem manual slides suggest tol=6, sigl=6 sigdig=2
   checkmate::assertIntegerish(maxeval, lower=100, len=1, any.missing=FALSE)
