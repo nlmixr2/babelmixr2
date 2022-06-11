@@ -19,9 +19,11 @@
 
 .nonmemFormatData <- function(data, ui) {
   .ret <- data
-  .ret$SS <- ifelse(.ret$SS == 0, NA_real_, .ret$SS)
-  if (all(is.na(.ret$SS))) {
-    .ret <- .ret[, !(names(.ret) %in% c("SS", "II"))]
+  if (any(names(.ret) == "SS")) {
+    .ret$SS <- ifelse(.ret$SS == 0, NA_real_, .ret$SS)
+    if (all(is.na(.ret$SS))) {
+      .ret <- .ret[, !(names(.ret) %in% c("SS", "II"))]
+    }
   }
   .n <- names(.ret)
   rxode2::rxAssignControlValue(ui, ".hasRate", any(.n == "RATE"))
