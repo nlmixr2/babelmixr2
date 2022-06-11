@@ -83,7 +83,13 @@ rxUiGet.nonmemErrF <- function(x, ...) {
   } else {
     .y <- "  Y = IPRED + W*EPS(1)"
   }
-  paste0("\n  ; Write out expressions for ipred and w\n",
+  paste0(paste0("\n  ; Write out expressions for ipred and w\n",
+                ifelse(length(.ui$predDf$cond) > 1,
+                       paste0("  W          = 1\n",
+                              "  RX_PRED_F_ = DV\n",
+                              "  IPRED      = DV\n",
+                              "  RX_PRED_   = DV\n"),
+                       "")),
          gsub("\n *\n+",
               "\n",
               paste(c(.err,
