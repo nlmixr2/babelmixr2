@@ -60,7 +60,7 @@ rxUiGet.nonmemErrF <- function(x, ...) {
                      # depending on the method the prop can be with regards to the F or the transformed F
                      # So, here we add RX_PRED_ to be the transformed to support both
                      if (!.single) {
-                       .ret <- paste0("  IF (CMT .EQ. ", .pred1$cmt, ") THEN\n",
+                       .ret <- paste0("  IF (DVID .EQ. ", .pred1$dvid, ") THEN\n",
                                       .ret,
                                       paste("\n    RX_PRED_ = IPRED\n ", .var),
                                       "\n  END IF\n")

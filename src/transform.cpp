@@ -17,17 +17,22 @@ using namespace Rcpp;
 
 #define _safe_sqrt(a) ((a) <= 0 ? sqrt(DBL_EPSILON) : sqrt(a))
 
-static inline double getDv(double dv, int cmt,
-                           IntegerVector &cmtTrans, NumericVector &lambda,
-                           IntegerVector& yj, NumericVector& low, NumericVector& high,
-                           double& llikAdj) {
+static inline void getDv(double dv, int cmt,
+                         IntegerVector &cmtTrans, NumericVector &lambda,
+                         IntegerVector& yj, NumericVector& low, NumericVector& high,
+                         double& llikAdj,
+                         double &out, int &dvid, int &cmtOut) {
   for (unsigned int i = cmtTrans.size(); i--;) {
     if (cmt == cmtTrans[i]) {
       llikAdj += _powerL(dv, lambda[i], yj[i], low[i], high[i]);
-      return _powerD(dv, lambda[i], yj[i], low[i], high[i]);
+      out = _powerD(dv, lambda[i], yj[i], low[i], high[i]);
+      dvid = i+1;
+      cmtOut = 0;
     }
   }
-  return dv;
+  out = dv;
+  dvid = 0;
+  cmtOut = 0;
 }
 
 //[[Rcpp::export]]
@@ -35,11 +40,24 @@ List transDv(NumericVector &inDv, IntegerVector &inCmt,
              IntegerVector &cmtTrans, NumericVector &lambda,
              IntegerVector& yj, NumericVector& low, NumericVector& high) {
   NumericVector out(inDv.size());
+  IntegerVector dvid(inDv.size());
+  IntegerVector newCmt(inDv.size());
   double llikAdj = 0.0;
+  double dvOut = 0.0;
+  int dvidOut = 0;
+  int cmtOut = 0;
   for (unsigned int i = inDv.size(); i--;) {
-    out[i] = getDv(inDv[i], inCmt[i], cmtTrans, lambda, yj, low, high, llikAdj);
+    getDv(inDv[i], inCmt[i], cmtTrans, lambda, yj, low, high, llikAdj,
+          dvOut, dvidOut, cmtOut);
+    out[i] = dvOut;
+    dvid[i] = dvidOut;
+    newCmt[i] = cmtOut;
   }
-  return List::create(_["dv"]=out, _["likAdj"]=llikAdj);
+  
+  return List::create(_["dv"]=out,
+                      _["dvid"]=dvid,
+                      _["cmt"]=newCmt,
+                      _["likAdj"]=llikAdj);
 }
 
 
