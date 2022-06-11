@@ -105,17 +105,24 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
   .s <- "_sigma"
   .e0 <- .getEtaNames(.ui)
   .ef <- NULL
+  .iniDf <- .ui$iniDf
   for (.i in seq_along(.e0)) {
     for (.j in seq(1, .i)) {
       if (.i == .j) {
         .ef <- c(.ef, .e0[.i])
       } else {
-        .ef <- c(.ef,
-                 paste0("(", .e0[.i], ",", .e0[.j], ")"))
+        .v <- paste0("(", .e0[.j], ",", .e0[.i], ")")
+        if (!(.v %in% .iniDf$name)) .v <- paste0("(", .e0[.i], ",", .e0[.j], ")")
+        .ef <- c(.ef, .v)
       }
     }
   }
   .d <- c(.t, .s, .ef)
   dimnames(.ret) <- list(.d, .d)
   .ret
+}
+
+#' @export
+rxUiGet.nonmemObjf <- function(x, ...) {
+  rxUiGet.nonmemOutputExt(x, ...)$OFV
 }

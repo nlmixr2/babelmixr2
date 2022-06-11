@@ -68,9 +68,9 @@
   # - $method Estimation method (for printing)
   env$method <- "Nonmem"
   # - $omega Omega matrix
-  env$omega <- .ui$nonmemOmega
+  env$omega <- .ui$nonmemOutputOmega
   # - $theta Is a theta data frame
-  env$theta <- .ui$nonmemTheta
+  env$theta <- .ui$nonmemFullTheta
   # - $model a list of model information for table generation.  Needs a `predOnly` model
   env$model <- .ui$ebe
   # - $message Message for display
