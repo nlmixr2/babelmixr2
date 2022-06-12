@@ -19,7 +19,8 @@ Suggests:
     testthat,
     nlmixr2data,
     withr,
-    lixoftConnectors
+    lixoftConnectors,
+    pmxTools
 Depends: 
     R (>= 3.5),
     nlmixr2

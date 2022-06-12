@@ -35,7 +35,16 @@ nonmemControl <- function(est=c("focei", "posthoc"),
                           iniSigDig=5,
                           protectZeros=TRUE,
                           muRef=TRUE,
-                          noabort=TRUE) {
+                          addProp = c("combined2", "combined1"),
+                          adjObf=TRUE,
+                          rxControl=NULL,
+                          sumProd = FALSE,
+                          optExpression = TRUE,
+                          calcTables = TRUE,
+                          compress = TRUE,
+                          ci = 0.95,
+                          sigdigTable=NULL,
+                          noabort=TRUE, ...) {
   # nonmem manual slides suggest tol=6, sigl=6 sigdig=2
   checkmate::assertIntegerish(maxeval, lower=100, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(sigdig, lower=1, len=1, any.missing=FALSE)
@@ -47,6 +56,49 @@ nonmemControl <- function(est=c("focei", "posthoc"),
   checkmate::assertLogical(protectZeros, len=1, any.missing=FALSE)
   checkmate::assertLogical(muRef, len=1, any.missing=FALSE)
   if (runCommand != "") checkmate::assertCharacter(runCommand, pattern="%s", min.len=1, max.len=1)
+    .xtra <- list(...)
+  .bad <- names(.xtra)
+  .bad <- .bad[!(.bad %in% c("genRxControl"))]
+  if (length(.bad) > 0) {
+    stop("unused argument: ", paste
+    (paste0("'", .bad, "'", sep=""), collapse=", "),
+    call.=FALSE)
+  }
+
+  if (checkmate::testIntegerish(addProp, lower=1, upper=1, len=1)) {
+    addProp <- c("combined1", "combined2")[addProp]
+  } else {
+    addProp <- match.arg(addProp)
+  }
+  checkmate::assertLogical(compress, any.missing=FALSE, len=1)
+
+  if (!is.null(.xtra$genRxControl)) {
+    genRxControl <- .xtra$genRxControl
+  } else {
+    genRxControl <- FALSE
+    if (is.null(rxControl)) {
+      #FIXME how to determine atol/rtol from NONMEM model
+      rxControl <- rxode2::rxControl(
+        covsInterpolation="nocb",
+        method="liblsoda"
+      )
+      genRxControl <- TRUE
+    } else if (is.list(rxControl)) {
+      rxControl$covsInterpolation <- "nocb"
+      rxControl$method <- "liblsoda"
+      rxControl <- do.call(rxode2::rxControl, rxControl)
+    }
+    if (!inherits(rxControl, "rxControl")) {
+      stop("rxControl needs to be ode solving options from rxode2::rxControl()",
+           call.=FALSE)
+    }
+  }
+
+  checkmate::assertLogical(sumProd, any.missing=FALSE, len=1)
+  checkmate::assertLogical(optExpression, any.missing=FALSE, len=1)
+  checkmate::assertNumeric(ci, any.missing=FALSE, len=1, lower=0, upper=1)
+  checkmate::assertLogical(calcTables, len=1, any.missing=FALSE)
+
   .ret <- list(est=match.arg(est),
                cov=match.arg(cov),
                advanOde=match.arg(advanOde),
@@ -59,7 +111,17 @@ nonmemControl <- function(est=c("focei", "posthoc"),
                muRef=muRef,
                sigdig=sigdig,
                runCommand=runCommand,
-               outputExtension=outputExtension)
+               outputExtension=outputExtension,
+               addProp=addProp,
+               adjObf=adjObf,
+               rxControl=rxControl,
+               sumProd = sumProd,
+               optExpression=optExpression,
+               calcTables = calcTables,
+               compress = compress,
+               ci = ci,
+               sigdigTable=sigdigTable,
+               genRxControl=genRxControl)
   class(.ret) <- "nonmemControl"
   .ret
 }
@@ -96,5 +158,42 @@ nmObjGetControl.nonmem <- function(x, ...) {
     if (inherits(.control, "nonmemControl")) return(.control)
   }
   stop("cannot find nonmem related control object", call.=FALSE)
+}
+
+#' @export
+nmObjHandleControlObject.nonmemControl <- function(control, env) {
+  assign("nonmemControl", control, envir=env)
+}
+
+#' @export
+nmObjGetControl.nonmem <- function(x, ...) {
+  .env <- x[[1]]
+  if (exists("nonmemControl", .env)) {
+    .control <- get("nonmemControl", .env)
+    if (inherits(.control, "nonmemControl")) return(.control)
+  }
+  if (exists("control", .env)) {
+    .control <- get("control", .env)
+    if (inherits(.control, "nonmemControl")) return(.control)
+  }
+  stop("cannot find nonmem related control object", call.=FALSE)
+}
+
+.nonmemControlToFoceiControl <- function(env, assign=FALSE) {
+  .nonmemControl <- env$nonmemControl
+  .ui <- env$ui
+  .foceiControl <- nlmixr2est::foceiControl(rxControl = env$nonmemControl$rxControl,
+                                            maxOuterIterations = 0L, maxInnerIterations = 0L, covMethod = 0L,
+                                            etaMat = env$etaMat, sumProd = .nonmemControl$sumProd,
+                                            optExpression = .nonmemControl$optExpression, scaleTo = 0,
+                                            calcTables = .nonmemControl$calcTables,
+                                            addProp = .nonmemControl$addProp,
+                                            skipCov = .ui$foceiSkipCov, interaction = 1L,
+                                            compress = .nonmemControl$compress,
+                                            ci = .nonmemControl$ci,
+                                            sigdigTable = .nonmemControl$sigdigTable)
+  if (assign)
+    env$control <- .foceiControl
+  .foceiControl
 }
 

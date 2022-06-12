@@ -70,7 +70,7 @@
   # - $omega Omega matrix
   env$omega <- .ui$nonmemOutputOmega
   # - $theta Is a theta data frame
-  env$theta <- .ui$nonmemFullTheta
+  env$theta <- .ui$nonmemThetaDf
   # - $model a list of model information for table generation.  Needs a `predOnly` model
   env$model <- .ui$ebe
   # - $message Message for display
@@ -84,7 +84,7 @@
   env$parHist <- .ui$nonmemParHistory
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
-  .nonmemControlToFoceiControl(env)
+  .nonmemControlToFoceiControl(env, TRUE)
   env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData,
                                                control=env$control, table=env$table,
                                                env=env, est="nonmem")
@@ -183,24 +183,22 @@
   } else {
     .minfo("run NONMEM manually or setup NONMEM's run command")
   }
-  if (!file.exists(file.path(.exportPath, ))) {
+  if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
+    .minfo("waiting for nonmem xml output")
+    .i <- 0
+    while (!dir.exists(.exportPath)) {
+      .i <- .i + 1
+      message(".", appendLF=FALSE)
+      if (.i %% 50 == 0) {
+        message(paste0(.i, "\n"), appendLF=TRUE)
+      } else if (.i %% 10 == 0) {
+        message("|", appendLF=FALSE)
+      }
+      Sys.sleep(1)
+    }
+    message("")
 
   }
-  ## if (!dir.exists(.exportPath)) {
-  ##   .minfo("waiting for nonmem output")
-  ##   .i <- 0
-  ##   while (!dir.exists(.exportPath)) {
-  ##     .i <- .i + 1
-  ##     message(".", appendLF=FALSE)
-  ##     if (.i %% 50 == 0) {
-  ##       message(paste0(.i, "\n"), appendLF=TRUE)
-  ##     } else if (.i %% 10 == 0) {
-  ##       message("|", appendLF=FALSE)
-  ##     }
-  ##     Sys.sleep(1)
-  ##   }
-  ##   message("")
-  ## }
   .ret <- .nonmemFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
     qs::qsave(.ret, .qs)
@@ -210,6 +208,9 @@
 
 #' @export
 nlmixr2Est.nonmem <- function(env, ...) {
+  if (!requireNamespace("pmxTools", quietly = TRUE)) {
+    stop("nonmem translation requires 'pmxTools'", call.=FALSE)
+  }
   .ui <- env$ui
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)

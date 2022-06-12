@@ -136,19 +136,15 @@ monolixControl <- function(nbSSDoses=7,
 
   checkmate::assertLogical(sumProd, any.missing=FALSE, len=1)
   checkmate::assertLogical(optExpression, any.missing=FALSE, len=1)
-
   checkmate::assertNumeric(ci, any.missing=FALSE, len=1, lower=0, upper=1)
-
   checkmate::assertLogical(calcTables, len=1, any.missing=FALSE)
-
-
 
   if (runCommand != "") checkmate::assertCharacter(runCommand, pattern="%s", min.len=1, max.len=1)
 
   .ret <- list(nbSSDoses=as.integer(nbSSDoses), stiff=stiff,
                exploratoryAutoStop=exploratoryAutoStop,
                smoothingAutoStop=smoothingAutoStop,
-               addProp=match.arg(addProp),
+               addProp=addProp,
                burnInIterations=burnInIterations,
                simulatedAnnealingIterations=simulatedAnnealingIterations,
                exploratoryInterval=exploratoryInterval,

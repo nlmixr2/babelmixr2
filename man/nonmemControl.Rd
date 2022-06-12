@@ -19,7 +19,17 @@ nonmemControl(
   iniSigDig = 5,
   protectZeros = TRUE,
   muRef = TRUE,
-  noabort = TRUE
+  addProp = c("combined2", "combined1"),
+  adjObf = TRUE,
+  rxControl = NULL,
+  sumProd = FALSE,
+  optExpression = TRUE,
+  calcTables = TRUE,
+  compress = TRUE,
+  ci = 0.95,
+  sigdigTable = NULL,
+  noabort = TRUE,
+  ...
 )
 }
 \arguments{

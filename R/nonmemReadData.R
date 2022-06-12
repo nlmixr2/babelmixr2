@@ -47,6 +47,19 @@ rxUiGet.nonmemFullTheta <- function(x, ...) {
   setNames(.ext$Thetas, .getThetaNames(.ui))
 }
 
+#' @export
+rxUiGet.nonmemThetaDf <- function(x, ...) {
+  .fullTheta <- rxUiGet.nonmemFullTheta(x, ...)
+  .ui <- x[[1]]
+  .iniDf <- .ui$iniDf
+  .n <- names(.fullTheta)
+  .fullTheta <- setNames(.fullTheta, NULL)
+  .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
+  data.frame(lower=.theta$lower, theta=.fullTheta,
+             fixed=.theta$fix, upper=.theta$upper,
+             row.names=.n)
+}
+
 .getEtaNames <- function(ui) {
   .iniDf <- ui$iniDf
   .iniDf <- .iniDf[is.na(.iniDf$ntheta), ]
@@ -90,6 +103,7 @@ rxUiGet.nonmemEtaObf <- function(x, ...) {
                           pmxTools::read_nm_multi_table(.etaTable))
   .n <- c("ID", .getEtaNames(.ui), "OBJI")
   names(.ret) <- .n
+  .ret$ID <- as.integer(.ret$ID)
   .ret
 }
 
@@ -123,12 +137,14 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
                                     pmxTools::read_nmcov(.ui$modelName, quiet=TRUE)))
   .d <- .getNonmemOrderNames(.ui)
   dimnames(.ret) <- list(.d, .d)
-  .ret
+  .t <- .getThetaNames(.ui)
+  .ret[.t, .t]
 }
 
 #' @export
 rxUiGet.nonmemObjf <- function(x, ...) {
-  rxUiGet.nonmemOutputExt(x, ...)$OFV
+  .ret <- rxUiGet.nonmemOutputExt(x, ...)
+  .ret$OFV
 }
 
 #' @export
@@ -148,7 +164,7 @@ rxUiGet.nonmemParHistory <- function(x, ...) {
 rxUiGet.nonmemObjfType <- function(x, ...) {
   .ui <- x[[1]]
   .est <- rxode2::rxGetControl(.ui, "est", "focei")
-  if (.ui %in% c("focei", "posthoc")) {
+  if (.est %in% c("focei", "posthoc")) {
     return("nonmem focei")
   } else {
     stop("unknown objective type", call.=FALSE)
