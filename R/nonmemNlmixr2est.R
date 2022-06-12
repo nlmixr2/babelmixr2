@@ -57,7 +57,7 @@
   if (!is.null(.cov)) {
     env$cov <- .cov
     # - $covMethod for the method of calculating the covariance
-    env$covMethod <- rxode2::rxGetControl(.ui, ".covMethod", "Nonmem")
+    env$covMethod <- paste("nonmem", rxode2::rxGetControl(.ui, "cov", "r,s"))
   }
   # - $adjObf Should the objective function value be adjusted
   env$adjObf <- rxode2::rxGetControl(.ui, "adjObf", TRUE)
@@ -80,6 +80,8 @@
   # - $ofvType (optional) tells the type of ofv is currently being used
   #env$ofvType
   env$ofvType <- .ui$nonmemObjfType
+  # Add parameter history
+  env$parHist <- .ui$nonmemParHistory
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
   .nonmemControlToFoceiControl(env)
@@ -181,8 +183,9 @@
   } else {
     .minfo("run NONMEM manually or setup NONMEM's run command")
   }
+  if (!file.exists(file.path(.exportPath, ))) {
 
-  stop("need to run and test as next step")
+  }
   ## if (!dir.exists(.exportPath)) {
   ##   .minfo("waiting for nonmem output")
   ##   .i <- 0
@@ -198,19 +201,11 @@
   ##   }
   ##   message("")
   ## }
-  ## .ret <- .nonmemFinalizeEnv(.ret, .ui)
-  ## if (inherits(.ret, "nlmixr2FitData")) {
-  ##   .tmp <- .ret$ui$nonmemParHistory
-  ##   if (is.null(.tmp)) {
-  ##     .minfo("nonmem parameter history needs expoted charts, please export charts")
-  ##   } else {
-  ##     assign("parHist", .tmp, .ret$env)
-  ##     .minfo("nonmem parameter history integrated into fit object")
-  ##     qs::qsave(.ret, .qs)
-  ##   }
-  ##   qs::qsave(.ret, .qs)
-  ## }
-  ## return(.ret)
+  .ret <- .nonmemFinalizeEnv(.ret, .ui)
+  if (inherits(.ret, "nlmixr2FitData")) {
+    qs::qsave(.ret, .qs)
+  }
+  return(.ret)
 }
 
 #' @export

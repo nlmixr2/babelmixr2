@@ -93,19 +93,12 @@ rxUiGet.nonmemEtaObf <- function(x, ...) {
   .ret
 }
 
-#' @export
-rxUiGet.nonmemCovariance <- function(x, ...) {
-  .ui <- x[[1]]
-  .exportPath <- rxUiGet.nonmemExportPath(x, ...)
-  .covFile <- rxUiGet.nonmemCovFile(x, ...)
-  if (!file.exists(file.path(.exportPath, .covFile))) return(NULL)
-  .ret <- as.matrix(withr::with_dir(.exportPath,
-                                    pmxTools::read_nmcov(.ui$modelName, quiet=TRUE)))
-  .t <- .getThetaNames(.ui)
+.getNonmemOrderNames <- function(ui) {
+  .t <- .getThetaNames(ui)
   .s <- "_sigma"
-  .e0 <- .getEtaNames(.ui)
+  .e0 <- .getEtaNames(ui)
   .ef <- NULL
-  .iniDf <- .ui$iniDf
+  .iniDf <- ui$iniDf
   for (.i in seq_along(.e0)) {
     for (.j in seq(1, .i)) {
       if (.i == .j) {
@@ -117,7 +110,18 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
       }
     }
   }
-  .d <- c(.t, .s, .ef)
+  c(.t, .s, .ef)
+}
+
+#' @export
+rxUiGet.nonmemCovariance <- function(x, ...) {
+  .ui <- x[[1]]
+  .exportPath <- rxUiGet.nonmemExportPath(x, ...)
+  .covFile <- rxUiGet.nonmemCovFile(x, ...)
+  if (!file.exists(file.path(.exportPath, .covFile))) return(NULL)
+  .ret <- as.matrix(withr::with_dir(.exportPath,
+                                    pmxTools::read_nmcov(.ui$modelName, quiet=TRUE)))
+  .d <- .getNonmemOrderNames(.ui)
   dimnames(.ret) <- list(.d, .d)
   .ret
 }
@@ -125,4 +129,28 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
 #' @export
 rxUiGet.nonmemObjf <- function(x, ...) {
   rxUiGet.nonmemOutputExt(x, ...)$OFV
+}
+
+#' @export
+rxUiGet.nonmemParHistory <- function(x, ...) {
+  .ui <- x[[1]]
+  .exportPath <- rxUiGet.nonmemExportPath(x, ...)
+  .ext <- rxUiGet.nonmemExt(x, ...)
+  .ret <- withr::with_dir(.exportPath,
+                          pmxTools::read_nm_multi_table(.ext))
+  .d <- c("iter", .getNonmemOrderNames(.ui), "objf")
+  names(.ret) <- .d
+  .ret <- .ret[.ret$iter > 0, names(.ret) != "_sigma"]
+  .ret
+}
+
+#' @export
+rxUiGet.nonmemObjfType <- function(x, ...) {
+  .ui <- x[[1]]
+  .est <- rxode2::rxGetControl(.ui, "est", "focei")
+  if (.ui %in% c("focei", "posthoc")) {
+    return("nonmem focei")
+  } else {
+    stop("unknown objective type", call.=FALSE)
+  }
 }
