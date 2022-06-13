@@ -215,6 +215,10 @@
   }
   .ret <- .nonmemFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
+    .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
+    .msg$message <- c(.msg$message,
+                      paste0("nonmem model: '", .nmctlFile, "'"))
+    assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
     qs::qsave(.ret, .qs)
   }
   return(.ret)

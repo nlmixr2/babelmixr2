@@ -21,7 +21,6 @@ monolixControl(
   errorModelTau = 0.95,
   variability = c("none", "firstStage", "decreasing"),
   runCommand = getOption("babelmixr2.monolix", ""),
-  adjObf = TRUE,
   rxControl = NULL,
   sumProd = FALSE,
   optExpression = TRUE,
@@ -104,10 +103,6 @@ the default by
 \code{"\%s"} represents the monolix project file. If it is empty
 and 'lixoftConnectors' is available, use lixoftConnectors to run
 monolix.}
-
-\item{adjObf}{is a boolean to indicate if the objective function
-should be adjusted to be closer to NONMEM's default objective
-function.  By default this is \code{TRUE}}
 
 \item{rxControl}{`rxode2` ODE solving options during fitting, created with `rxControl()`}
 

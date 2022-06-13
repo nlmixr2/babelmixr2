@@ -20,7 +20,6 @@ nonmemControl(
   protectZeros = TRUE,
   muRef = TRUE,
   addProp = c("combined2", "combined1"),
-  adjObf = TRUE,
   rxControl = NULL,
   sumProd = FALSE,
   optExpression = TRUE,

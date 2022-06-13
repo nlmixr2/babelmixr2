@@ -184,6 +184,40 @@ rxUiGet.nonmemPreds <- function(x, ...) {
   .exportPath <- rxUiGet.nonmemExportPath(x, ...)
   .sdTable <- rxUiGet.nonmemSdTableName(x, ...)
   if (!file.exists(file.path(.exportPath, .sdTable))) return(NULL)
-  withr::with_dir(.exportPath,
-                          pmxTools::read_nm_multi_table(.sdTable))
+  setNames(withr::with_dir(.exportPath,
+                           pmxTools::read_nm_multi_table(.sdTable)),
+           c("ID", "TIME", "nonmemIPRED", "nonmemPRED", "RXROW"))
+}
+
+.nonmemMergePredsAndCalcRelativeErr <- function(fit) {
+  .tmp <- as.data.frame(fit)
+  .tmp$ID <-as.integer(.tmp$ID)
+  .tmp$RXROW <- fit$env$.rownum
+  .by <- c("ID", "TIME", "RXROW")
+  .ret <- merge(fit$ui$nonmemPreds, .tmp, by=.by)
+  .ci <- (1 - fit$nonmemControl$ci) / 2
+  .q <- c(0, .ci, 0.5, 1 - .ci, 1)
+  .qi <- quantile(with(.ret, 100*abs((IPRED-nonmemIPRED)/nonmemIPRED)), .q, na.rm=TRUE)
+  .qp <- quantile(with(.ret, 100*abs((PRED-nonmemPRED)/nonmemPRED)), .q, na.rm=TRUE)
+  .qai <- quantile(with(.ret, abs(IPRED-nonmemIPRED)), .q, na.rm=TRUE)
+  .qap <- quantile(with(.ret, abs((PRED-nonmemPRED)/nonmemPRED)), .q, na.rm=TRUE)
+  .sigdig <- 3
+  .msg <- c(paste0("IPRED relative difference compared to Nonmem IPRED: ", round(.qi[3], 2),
+                 "%; ", fit$nonmemControl$ci * 100,"% percentile: (",
+                 round(.qi[2], 2), "%,", round(.qi[4], 2), "%); rtol=", signif(.qi[3] / 100, .sigdig)),
+            paste0("PRED relative difference compared to Nonmem PRED: ", round(.qp[3], 2),
+                   "%; ", fit$nonmemControl$ci * 100,"% percentile: (",
+                   round(.qp[2], 2), "%,", round(.qp[4], 2), "%); rtol=", signif(.qp[3] / 100, , .sigdig)),
+            paste0("IPRED absolute difference compared to Nonmem IPRED: atol=",
+                   signif(.qai[3], .sigdig),
+                 "; ", fit$nonmemControl$ci * 100,"% percentile: (",
+                 signif(.qai[2], .sigdig), ", ", signif(.qai[4], .sigdig), ")"),
+            paste0("PRED absolute difference compared to Nonmem PRED: atol=",
+                   signif(.qap[3], .sigdig),
+                   "; ", fit$nonmemControl$ci * 100,"% percentile: (",
+                   signif(.qap[2], .sigdig), ",
+", signif(.qp[4], .sigdig), ")"))
+  list(individualRel=.qi , popRel=.qp,
+       individualAbs=.qai, popAbs=.qap,
+       message=.msg)
 }
