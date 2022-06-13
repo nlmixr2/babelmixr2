@@ -186,7 +186,6 @@ nmObjGetControl.nonmem <- function(x, ...) {
                                             optExpression = .nonmemControl$optExpression, scaleTo = 0,
                                             calcTables = .nonmemControl$calcTables,
                                             addProp = .nonmemControl$addProp,
-                                            adjLik=FALSE,
                                             skipCov = .ui$foceiSkipCov, interaction = 1L,
                                             compress = .nonmemControl$compress,
                                             ci = .nonmemControl$ci,

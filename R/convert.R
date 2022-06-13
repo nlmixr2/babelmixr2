@@ -1,3 +1,4 @@
+.lastNobs <- 0
 #' Convert nlmixr compatible data to other formats (if possible)
 #'
 #' @param model rxode2 model for conversion
@@ -111,6 +112,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
                   .env$dataSav$II, .env$dataSav$EVID, .env$dataSav$CMT,
                   model$predDf$cmt, model$predDf$dvid, .flag["ncmt"], .flag["ka"], length(.mv$state),
                   replaceEvid=5L)
+  assignInMyNamespace(".lastNobs", .conv0$nobs)
   if (.conv0$hasTinf && .conv0$hasRate) {
     stop("monolix does not support a fixed duration (`tinf`) and rate (`rate`) at the same time",
          call.=FALSE)
@@ -227,6 +229,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
                   .env$dataSav$II, .env$dataSav$EVID, .env$dataSav$CMT,
                   model$predDf$cmt, model$predDf$dvid, .flag["ncmt"], .flag["ka"], length(.mv$state),
                   replaceEvid=5L)
+  assignInMyNamespace(".lastNobs", .conv0$nobs)
   if (!is.na(replaceOK)) {
     if (.conv0$hasPhantom) {
       stop("transit compartment phantom events are not supported in babelmixr2 to ", software, " conversion",
@@ -288,6 +291,7 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), env=NU
   .ret <- .bblDatToNonmem (model, data, table,
                            fun="bblDatToNonmem", replaceEvid=5L,
                            replaceOK=FALSE, software="NONMEM", env=env)
+
   .ret <- .ret[, names(.ret) != "DVID"]
   if (any(names(.ret) == "LIMIT")) {
     # This converts LIMIT to NONMEM's definition of infinity
@@ -297,6 +301,8 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), env=NU
                          ifelse(.ret$LIMIT < 0, -1000000, 1000000))
   }
   .ui <- model
+  env$nobs <- .lastNobs
+  env$nmLikAdj <- 0
   if (length(model$predDf$cond) > 1) {
     .dv2 <- .bblTransform(.ret$DV, .ret$CMT, model)
     .ret$DV <- .dv2$dv

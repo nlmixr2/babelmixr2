@@ -57,10 +57,10 @@
   if (!is.null(.cov)) {
     env$cov <- .cov
     # - $covMethod for the method of calculating the covariance
-    env$covMethod <- paste("nonmem", rxode2::rxGetControl(.ui, "cov", "r,s"))
+    env$covMethod <- paste0("nonmem.", rxode2::rxGetControl(.ui, "cov", "r,s"))
   }
   # - $objective objective function value
-  env$objective <- .ui$nonmemObjf
+  env$objective <- NA_real_ #.ui$nonmemObjf
   # - $extra Extra print information
   env$extra <- paste0(" ver ", env$ui$nonmemOutputVersion)
   # - $method Estimation method (for printing)
@@ -80,6 +80,8 @@
   env$ofvType <- .ui$nonmemObjfType
   # Add parameter history
   env$parHist <- .ui$nonmemParHistory
+  env$nobs <- .lastNobs
+  env$nobs2<- .lastNobs
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
   .nonmemControlToFoceiControl(env, TRUE)
@@ -88,6 +90,20 @@
                                                env=env, est="nonmem")
   .env <- env$env
   .env$method <- "nonmem"
+  .env$adj <- .env$nobs*log(2 * pi)
+  .objf <- .ui$nonmemObjf + env$nmLikAdj
+  .objf2 <- .objf + .env$adj
+  .llik <- -(.objf2) / 2
+  attr(.llik, "df") <- attr(.env$logLik, "df")
+  attr(.llik, "nobs") <- .env$nobs
+  class(.llik) <- "logLik"
+  .env$logLik <- .llik
+  .tmp <- data.frame(
+          OBJF = .objf, AIC = .objf2 + 2 * attr(get("logLik", .env), "df"),
+          BIC = .objf2 + log(.env$nobs) * attr(get("logLik", .env), "df"),
+          "Log-likelihood" = as.numeric(.llik), check.names = FALSE
+  )
+  nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .env$ofvType)
   env
 }
 
@@ -199,9 +215,6 @@
   }
   .ret <- .nonmemFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
-    .foceiControl <- .ret$env$foceiControl0
-    .foceiControl$adjLik <- TRUE
-    assign("foceiControl0", .foceiControl, envir=.ret$env)
     qs::qsave(.ret, .qs)
   }
   return(.ret)

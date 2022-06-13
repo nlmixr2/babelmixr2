@@ -59,7 +59,7 @@
   # - $adjObf Should the objective function value be adjusted
   env$adjObf <- rxode2::rxGetControl(.ui, "adjObf", TRUE)
   # - $objective objective function value
-  env$objective <- .ui$monolixObjf
+  env$objective <- NA_real_
   # - $extra Extra print information
   env$extra <- paste0(" ver ", env$ui$monolixOutputVersion)
   # - $method Estimation method (for printing)
@@ -92,6 +92,20 @@
   env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData, control=env$control, table=env$table, env=env, est="monolix")
   .env <- env$env
   .env$method <- "monolix"
+
+  .env$adj <- .env$nobs*log(2 * pi)
+  .objf2 <- .ui$monolixObjf
+  .objf <- .objf2 - .env$adj
+  .llik <- -(.objf2) / 2
+  attr(.llik, "df") <- attr(.env$logLik, "df")
+  attr(.llik, "nobs") <- .env$nobs
+  class(.llik) <- "logLik"
+  .env$logLik <- .llik
+  .tmp <- data.frame(
+          OBJF = .objf, AIC = .objf2 + 2 * attr(get("logLik", .env), "df"),
+          BIC = .objf2 + log(.env$nobs) * attr(get("logLik", .env), "df"),
+          "Log-likelihood" = as.numeric(.llik), check.names = FALSE)
+  nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .env$ofvType)
   env
 }
 

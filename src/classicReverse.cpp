@@ -164,6 +164,7 @@ List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, Nu
   IntegerVector newCmt(evid.size());
   IntegerVector newAdm(evid.size());
   std::vector<int> admIds;
+  int nobs=0;
   int wh=0, cmt0=0, wh100=0, whI=0, wh0=0;
   bool turnOffCmt=false;
   bool hasTinf = false;
@@ -187,6 +188,7 @@ List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, Nu
     newCmt[i] = cmt[i];
     newAdm[i] = 0;
     if (curEvid == 0 || curEvid==2 || curEvid == 3) {
+      if (curEvid == 0) nobs++;
       // 0, 2 and 3 are preserved
       newDvid[i] = curEvid == 3 ? 0 : getDvid(cmt[i], dvidDvid, cmtDvid);
       keepItem[i] = true;
@@ -324,5 +326,6 @@ List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, Nu
                       _["hasMult"]=hasMult,
                       _["hasSs"]=hasSs,
                       _["hasSs2"]=hasSs2,
-                      _["hasSsRate"]=hasSsRate);
+                      _["hasSsRate"]=hasSsRate,
+                      _["nobs"]=nobs);
 }
