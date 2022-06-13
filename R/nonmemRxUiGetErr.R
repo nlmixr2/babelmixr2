@@ -49,37 +49,40 @@ rxUiGet.nonmemErrF <- function(x, ...) {
   rxode2::rxAssignControlValue(.ui, ".ifelse", TRUE)
   on.exit(rxode2::rxAssignControlValue(.ui, ".ifelse", FALSE))
   .predDf <- .ui$predDf
-  .single <- (length(.predDf$cond) == 1L)
   .cmtCnt <- rxode2::rxGetControl(.ui, ".cmtCnt", rep(0L, length(.predDf$cond)))
-  .singleNoIf <- which(max(.cmtCnt) == .cmtCnt)[1]
   .ipred <- vapply(seq_along(.predDf$cond),
                    function(i){
                      .pred1 <- .predDf[i, ]
-                     .curSingle <- .single
-                     if (.singleNoIf == i) {
-                       .curSingle <- TRUE
-                     }
-                     .ret <- .nonmemErr0(.ui, .pred1, indent=!.curSingle)
-                     .var <- .rxToNonmem(bquote(W ~ sqrt(.(rxode2::.rxGetVarianceForErrorType(.ui, .pred1)))),
-                                         .ui)
+                     .ret <- .nonmemErr0(.ui, .pred1, indent=FALSE)
+                     .ret <- gsub("RX_PRED_F_", paste0("RX_PF", .pred1$dvid), .ret)
+                     .ret <- gsub("RX_PRED_", paste0("RX_F", .pred1$dvid), .ret)
+                     .ret <- gsub("IPRED", paste0("RX_IP", .pred1$dvid), .ret)
+                     .w <- str2lang(paste0("W", .pred1$dvid))
+                     .var <- paste0("\n  RX_PRED_ = IPRED\n",
+                                    .rxToNonmem(bquote(.(.w) ~
+                                                         sqrt(.(rxode2::.rxGetVarianceForErrorType(.ui, .pred1)))),
+                                                .ui))
+                     .var <- gsub("IPRED", paste0("RX_IP", .pred1$dvid), .var)
+                     .var <- gsub("RX_PRED_F_", paste0("RX_PF", .pred1$dvid), .var)
+                     .var <- gsub("RX_PRED_", paste0("RX_F", .pred1$dvid), .var)
                      # depending on the method the prop can be with regards to the F or the transformed F
                      # So, here we add RX_PRED_ to be the transformed to support both
-                     if (!.curSingle) {
-                       .ret <- paste0("  IF (DVID .EQ. ", .pred1$dvid, ") THEN\n",
-                                      paste0("    ; endpoint nobs=", .cmtCnt[i], "\n"),
-                                      .ret,
-                                      paste("\n    RX_PRED_ = IPRED\n ", .var),
-                                      "\n  END IF\n")
-                     } else {
                        .ret <- paste0(paste0("  ; endpoint nobs=", .cmtCnt[i], "\n"),
                                       .ret,
-                                      paste("\n  RX_PRED_ = IPRED\n", .var))
-                     }
+                                      .var,
+                                      paste0("\n  IF (", .w, " .EQ. 0.0) ", .w, " = 1"))
                      .ret
                    }, character(1), USE.NAMES=FALSE)
   .err <- paste(.ipred, collapse="\n")
   .cens <- rxode2::rxGetControl(.ui, ".hasCens", FALSE)
   .limit <- rxode2::rxGetControl(.ui, ".hasLimit", FALSE)
+  if (length(.predDf$cond) == 1L) {
+    .ipred <- "  IPRED = RX_IP2\n  W     = W1\n"
+  } else {
+    .ipred <- vapply(seq_along(.predDf$cond), function(i) {
+      paste0("  IF (DVID .EQ. ", i, ") THEN\n    IPRED = RX_IP", i, "\n    W     = W", i, "\n  END IF\n")
+    }, character(1), USE.NAMES=FALSE)
+  }
   if (.cens && .limit) {
     .y <- .getErr("err-cens-limit.txt", FALSE)
   } else if (.cens) {
@@ -88,12 +91,12 @@ rxUiGet.nonmemErrF <- function(x, ...) {
     stop("ylo/yup not implemented (would require laplacian); drop LIMIT or add CENS column",
          call.=FALSE)
   } else {
-    .y <- "  Y = IPRED + W*EPS(1)"
+    .y <- "  Y     = IPRED + W*EPS(1)"
   }
   paste0("\n  ; Write out expressions for ipred and w\n",
          gsub("\n *\n+",
               "\n",
               paste(c(.err,
-                      "  IF (W .EQ. 0.0) W = 1",
+                      .ipred,
                       .y), collapse="\n")), "\n")
 }

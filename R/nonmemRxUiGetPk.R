@@ -91,6 +91,7 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                              identical(.desModel[[i]], quote(`_drop`))
                            }, logical(1), USE.NAMES=FALSE))
   .desModel <- .desModel[-.rmModel]
+
   .mainModel <- rxode2::rxCombineErrorLines(.ui,
                                             errLines=nmGetDistributionNonmemLines(.ui),
                                             paramsLine=NA,
@@ -98,7 +99,7 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                                             cmtLines=FALSE,
                                             dvidLine=FALSE,
                                             lstExpr=.split$modelWithDrop,
-                                            useIf=TRUE)
+                                            useIf=FALSE)
   .mv <- rxode2::rxModelVars(paste(vapply(seq_along(.desModel),
                                           function(i) {
                                             deparse1(.desModel[[i]])
