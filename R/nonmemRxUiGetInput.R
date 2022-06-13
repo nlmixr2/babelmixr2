@@ -11,7 +11,7 @@ rxUiGet.nonmemInput <- function(x, ...) {
                    USE.NAMES=FALSE),
             ifelse(rxode2::rxGetControl(.ui, ".hasCens", FALSE), "CENS", ""),
             ifelse(rxode2::rxGetControl(.ui, ".hasLimit", FALSE), "LIMIT", ""),
-            "DROP")
+            "RXROW")
   .ret <- .ret[.ret != ""]
   paste0(paste(.ret, collapse=" "), "\n")
 }

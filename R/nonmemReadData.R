@@ -96,7 +96,6 @@ rxUiGet.nonmemIniDf <- function(x, ...) {
 rxUiGet.nonmemEtaObf <- function(x, ...) {
   .ui <- x[[1]]
   .exportPath <- rxUiGet.nonmemExportPath(x, ...)
-  .xml <- rxUiGet.nonmemXml(x, ...)
   .etaTable <- rxUiGet.nonmemEtaTableName(x, ...)
   if (!file.exists(file.path(.exportPath, .etaTable))) return(NULL)
   .ret <- withr::with_dir(.exportPath,
@@ -178,4 +177,13 @@ rxUiGet.nonmemRunTime <- function(x, ...) {
   .start <- as.POSIXct(.xml$start_datetime[[1]],format="%Y-%m-%dT%H:%M:%S",tz=Sys.timezone())
   .stop <- as.POSIXct(.xml$stop_datetime[[1]],format="%Y-%m-%dT%H:%M:%S",tz=Sys.timezone())
   as.numeric(difftime(.stop, .start, tz=Sys.timezone(), units = "secs"))
+}
+
+#' @export
+rxUiGet.nonmemPreds <- function(x, ...) {
+  .exportPath <- rxUiGet.nonmemExportPath(x, ...)
+  .sdTable <- rxUiGet.nonmemSdTableName(x, ...)
+  if (!file.exists(file.path(.exportPath, .sdTable))) return(NULL)
+  withr::with_dir(.exportPath,
+                          pmxTools::read_nm_multi_table(.sdTable))
 }
