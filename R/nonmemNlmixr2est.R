@@ -59,8 +59,6 @@
     # - $covMethod for the method of calculating the covariance
     env$covMethod <- paste("nonmem", rxode2::rxGetControl(.ui, "cov", "r,s"))
   }
-  # - $adjObf Should the objective function value be adjusted
-  env$adjObf <- rxode2::rxGetControl(.ui, "adjObf", TRUE)
   # - $objective objective function value
   env$objective <- .ui$nonmemObjf
   # - $extra Extra print information
@@ -201,6 +199,9 @@
   }
   .ret <- .nonmemFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
+    .foceiControl <- .ret$env$foceiControl0
+    .foceiControl$adjLik <- TRUE
+    assign("foceiControl0", .foceiControl, envir=.ret$env)
     qs::qsave(.ret, .qs)
   }
   return(.ret)

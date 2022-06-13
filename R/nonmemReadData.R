@@ -170,3 +170,12 @@ rxUiGet.nonmemObjfType <- function(x, ...) {
     stop("unknown objective type", call.=FALSE)
   }
 }
+
+#' @export
+rxUiGet.nonmemRunTime <- function(x, ...) {
+  .ui <- x[[1]]
+  .xml <- rxUiGet.nonmemOutputXml(x, ...)
+  .start <- as.POSIXct(.xml$start_datetime[[1]],format="%Y-%m-%dT%H:%M:%S",tz=Sys.timezone())
+  .stop <- as.POSIXct(.xml$stop_datetime[[1]],format="%Y-%m-%dT%H:%M:%S",tz=Sys.timezone())
+  as.numeric(difftime(.stop, .start, tz=Sys.timezone(), units = "secs"))
+}
