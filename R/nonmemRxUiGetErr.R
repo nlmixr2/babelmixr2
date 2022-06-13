@@ -43,7 +43,6 @@
   return(.getErr("err.txt"))
 }
 
-
 #'@export
 rxUiGet.nonmemErrF <- function(x, ...) {
   .ui <- x[[1]]
@@ -51,21 +50,29 @@ rxUiGet.nonmemErrF <- function(x, ...) {
   on.exit(rxode2::rxAssignControlValue(.ui, ".ifelse", FALSE))
   .predDf <- .ui$predDf
   .single <- (length(.predDf$cond) == 1L)
+  .cmtCnt <- rxode2::rxGetControl(.ui, ".cmtCnt", rep(0L, length(.predDf$cond)))
+  .singleNoIf <- which(max(.cmtCnt) == .cmtCnt)[1]
   .ipred <- vapply(seq_along(.predDf$cond),
                    function(i){
                      .pred1 <- .predDf[i, ]
-                     .ret <- .nonmemErr0(.ui, .pred1, indent=!.single)
+                     .curSingle <- .single
+                     if (.singleNoIf == i) {
+                       .curSingle <- TRUE
+                     }
+                     .ret <- .nonmemErr0(.ui, .pred1, indent=!.curSingle)
                      .var <- .rxToNonmem(bquote(W ~ sqrt(.(rxode2::.rxGetVarianceForErrorType(.ui, .pred1)))),
                                          .ui)
                      # depending on the method the prop can be with regards to the F or the transformed F
                      # So, here we add RX_PRED_ to be the transformed to support both
-                     if (!.single) {
+                     if (!.curSingle) {
                        .ret <- paste0("  IF (DVID .EQ. ", .pred1$dvid, ") THEN\n",
+                                      paste0("    ; endpoint nobs=", .cmtCnt[i], "\n"),
                                       .ret,
                                       paste("\n    RX_PRED_ = IPRED\n ", .var),
                                       "\n  END IF\n")
                      } else {
-                       .ret <- paste0(.ret,
+                       .ret <- paste0(paste0("  ; endpoint nobs=", .cmtCnt[i], "\n"),
+                                      .ret,
                                       paste("\n  RX_PRED_ = IPRED\n", .var))
                      }
                      .ret

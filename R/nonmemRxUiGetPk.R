@@ -157,11 +157,5 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   paste0(.pk, .pk2,
          "\n\n$DES\n",
          .des, "\n\n$ERROR\n  ;Redefine LHS in $DES by prefixing with on RXE_ for $ERROR",
-         ifelse(length(.ui$predDf$cond) > 1,
-                       paste0("\n  W          = 1\n",
-                              "  RX_PRED_F_ = DV\n",
-                              "  IPRED      = DV\n",
-                              "  RX_PRED_   = DV\n"),
-                       "\n"),
          .err)
 }

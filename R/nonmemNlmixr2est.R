@@ -31,6 +31,7 @@
   rxode2::rxAssignControlValue(ui, ".hasLimit", any(.n == "LIMIT"))
   rxode2::rxAssignControlValue(ui, ".hasIi", any(.n == "II"))
   rxode2::rxAssignControlValue(ui, ".hasSs", any(.n == "SS"))
+  rxode2::rxAssignControlValue(ui, ".cmtCnt", .lastCmtCnt)
   .ret
 }
 
@@ -200,7 +201,7 @@
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
     .minfo("waiting for nonmem xml output")
     .i <- 0
-    while (!dir.exists(.exportPath)) {
+    while (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
       .i <- .i + 1
       message(".", appendLF=FALSE)
       if (.i %% 50 == 0) {

@@ -111,7 +111,6 @@ static inline int getDvid(int &cmt, IntegerVector &dvidDvid, IntegerVector &cmtD
   return 0;
 }
 
-
 #define MONOLIX_EMPTY_TYPE 1
 #define MONOLIX_MODEL_RATE 2
 #define MONOLIX_MODEL_DUR  3
