@@ -489,18 +489,19 @@ rxUiGet.monolixPreds <- function(x, ...) {
   .sigdig <- 3
   .msg <- c(paste0("IPRED relative difference compared to Monolix IPRED: ", round(.qi[3], 2),
                  "%; ", fit$monolixControl$ci * 100,"% percentile: (",
-                 round(.qi[2], 2), "%-", round(.qi[4], 2), "%); rtol=", signif(.qi[3] / 100, .sigdig)),
+                 round(.qi[2], 2), "%,", round(.qi[4], 2), "%); rtol=", signif(.qi[3] / 100, .sigdig)),
             paste0("PRED relative difference compared to Monolix PRED: ", round(.qp[3], 2),
                    "%; ", fit$monolixControl$ci * 100,"% percentile: (",
-                   round(.qp[2], 2), "%-", round(.qp[4], 2), "%)", signif(.qp[3] / 100, , .sigdig)),
+                   round(.qp[2], 2), "%,", round(.qp[4], 2), "%); rtol=", signif(.qp[3] / 100, , .sigdig)),
             paste0("IPRED absolute difference compared to Monolix IPRED: atol=",
                    signif(.qai[3], .sigdig),
                  "; ", fit$monolixControl$ci * 100,"% percentile: (",
-                 signif(.qai[2], .sigdig), "-", signif(.qai[4], .sigdig), ")"),
+                 signif(.qai[2], .sigdig), ", ", signif(.qai[4], .sigdig), ")"),
             paste0("PRED absolute difference compared to Monolix PRED: atol=",
                    signif(.qap[3], .sigdig),
                    "; ", fit$monolixControl$ci * 100,"% percentile: (",
-                   signif(.qap[2], .sigdig), "-", signif(.qp[4], .sigdig), ")"))
+                   signif(.qap[2], .sigdig), ",
+", signif(.qp[4], .sigdig), ")"))
   list(individualRel=.qi , popRel=.qp,
        individualAbs=.qai, popAbs=.qap,
        message=.msg)
