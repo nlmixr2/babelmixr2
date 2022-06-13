@@ -1,4 +1,5 @@
-.lastNobs <- 0
+.lastNobs <- 0L
+.lastCmtCnt <- 0L
 #' Convert nlmixr compatible data to other formats (if possible)
 #'
 #' @param model rxode2 model for conversion
@@ -303,12 +304,14 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), env=NU
   .ui <- model
   env$nobs <- .lastNobs
   env$nmLikAdj <- 0
+  env$nmNcmt <- .lastNobs
   if (length(model$predDf$cond) > 1) {
     .dv2 <- .bblTransform(.ret$DV, .ret$CMT, model)
     .ret$DV <- .dv2$dv
     .ret$CMT <- .dv2$cmt
     .ret$DVID <- .dv2$dvid
     env$nmLikAdj <- .dv2$likAdj
+    env$nmNcmt <- .dv2$nCmt
   }
   .names <- c(
     "ID", "TIME", "EVID", "AMT",

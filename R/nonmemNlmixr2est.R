@@ -31,7 +31,6 @@
   rxode2::rxAssignControlValue(ui, ".hasLimit", any(.n == "LIMIT"))
   rxode2::rxAssignControlValue(ui, ".hasIi", any(.n == "II"))
   rxode2::rxAssignControlValue(ui, ".hasSs", any(.n == "SS"))
-  rxode2::rxAssignControlValue(ui, ".cmtCnt", .lastCmtCnt)
   .ret
 }
 
@@ -117,6 +116,8 @@
   .ret$nonmemControl <- .control
   .tmp  <- bblDatToNonmem(.ui, .data, table=env$table, env=.ret)
   .ret$nonmemData <- .nonmemFormatData(.tmp, .ui)
+  rxode2::rxAssignControlValue(.ui, ".cmtCnt", env$nmNcmt)
+
   # Now make sure time varying covariates are not considered
   # mu-referenced items
   .et <- rxode2::etTrans(.ret$dataSav, .ui$mv0, addCmt=TRUE)
