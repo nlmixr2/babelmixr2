@@ -1,5 +1,5 @@
 #' @export
-rxUiGet.nonmemContr <- function(x, ...) {
+rxUiGet.nonmemContra <- function(x, ...) {
   #contr.txt
   .ui <- x[[1]]
   .predDf <- .ui$predDf
