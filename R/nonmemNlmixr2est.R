@@ -191,13 +191,15 @@
     .minfo("done")
   }
   .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
-  if (.cmd != "") {
-    .arg <- paste0(.ui$nonmemNmctl, " ", .ui$nonmemNmlst)
-    .minfo(paste0("run NONMEM: ", sprintf(.cmd, .arg)))
-    withr::with_dir(.exportPath,
-                    system(sprintf(.cmd, .arg)))
-  } else {
-    .minfo("run NONMEM manually or setup NONMEM's run command")
+  if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
+    if (.cmd != "") {
+      .arg <- paste0(.ui$nonmemNmctl, " ", .ui$nonmemNmlst)
+      .minfo(paste0("run NONMEM: ", sprintf(.cmd, .arg)))
+      withr::with_dir(.exportPath,
+                      system(sprintf(.cmd, .arg)))
+    } else {
+      .minfo("run NONMEM manually or setup NONMEM's run command")
+    }
   }
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
     .minfo("waiting for nonmem xml output")
