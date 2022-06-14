@@ -215,15 +215,25 @@
       Sys.sleep(1)
     }
     message("")
-
   }
-  if (!.ui$nonmemSuccessful) {
+  .read <- .ui$nonmemSuccessful
+  .readRounding <- rxode2::rxGetControl(.ui, "readRounding", FALSE)
+  .roundingErrors <- .ui$nonmemRoundingErrors
+  if (!.read && .roundingErrors && .readRounding) {
+    warning("NONMEM terminated due to rounding errors, but reading into nlmixr2/rxode2 anyway",
+            call.=FALSE)
+    .read <- TRUE
+  }
+  if (!.read) {
      .msg <- c(.ui$nonmemTransMessage,
               .ui$nonmemTermMessage,
               paste0("nonmem model: '", .nmctlFile, "'"))
-    message(paste(.msg, collapse="\n"))
-    stop("nonmem minimization not successful",
-         call.=FALSE)
+     message(paste(.msg, collapse="\n"))
+     if (.roundingErrors) {
+       rxode2::.malert("terminated with rounding errors, can force nlmixr2/rxode2 to read with nonmemControl(readRounding=TRUE)")
+     }
+     stop("nonmem minimization not successful",
+          call.=FALSE)
   }
   .ret <- .nonmemFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {

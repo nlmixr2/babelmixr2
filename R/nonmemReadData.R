@@ -211,6 +211,13 @@ rxUiGet.nonmemSuccessful <- function(x, ...) {
   (regexpr("0MINIMIZATION SUCCESSFUL", .term) != -1)
 }
 
+#' @export
+rxUiGet.nonmemRoundingErrors <- function(x, ...) {
+  .term <- rxUiGet.nonmemTermMessage(x, ...)
+  (regexpr("DUE TO ROUNDING ERRORS", .term) != -1)
+}
+
+
 .nonmemMergePredsAndCalcRelativeErr <- function(fit) {
   .tmp <- as.data.frame(fit)
   .tmp$ID <-as.integer(.tmp$ID)

@@ -194,9 +194,11 @@ rex::register_shortcuts("babelmixr2")
   .v <- .rxNMcnt[.ret]
   if (is.na(.v)) {
     if (is.numeric(.ret)) {
+      .ret <- gsub("e", "D", as.character(.ret))
       return(.ret)
     } else if (regexpr("^(?:-)?(?:(?:0|(?:[1-9][0-9]*))|(?:(?:[0-9]+\\.[0-9]*)|(?:[0-9]*\\.[0-9]+))(?:(?:[Ee](?:[+\\-])?[0-9]+))?|[0-9]+[Ee](?:[\\-+])?[0-9]+)$",
                        .ret, perl=TRUE) != -1) {
+      .ret <- gsub("e", "D", .ret)
       return(.ret)
     } else {
       .states <- rxode2::rxModelVars(ui)$state

@@ -1,4 +1,15 @@
 #' @export
+rxUiGet.nonmemModelName <- function(x, ...) {
+  .ui <- x[[1]]
+  .modelName <- .ui$modelName
+  print(.modelName)
+  if (isTRUE(checkmate::checkCharacter(.modelName, len=1, any.missing=FALSE))) {
+    return(.modelName)
+  }
+  "x"
+}
+
+#' @export
 rxUiGet.nonmemExportPath <- function(x, ...) {
   .ui <- x[[1]]
   .extra <- ""
@@ -6,79 +17,81 @@ rxUiGet.nonmemExportPath <- function(x, ...) {
   if (.num > 0) {
     .extra <- sprintf("-%03d", .num)
   }
-  paste0(.ui$modelName, .extra, "-nonmem")
+  paste0(rxUiGet.nonmemModelName(x, ...), .extra, "-nonmem")
 }
 
 #' @export
 rxUiGet.nonmemEtaTableName <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, ".eta")
+  paste0(rxUiGet.nonmemModelName(x, ...), ".eta")
 }
 
 #' @export
 rxUiGet.nonmemSdTableName <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, ".pred")
+  paste0(rxUiGet.nonmemModelName(x, ...), ".pred")
 }
 
 #' @export
 rxUiGet.nonmemContraName <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, ".contra")
+  paste0(rxUiGet.nonmemModelName(x, ...), ".contra")
 }
 
 #' @export
 rxUiGet.nonmemCcontraName <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, ".ccontra")
+  paste0(rxUiGet.nonmemModelName(x, ...), ".ccontra")
 }
 
 #' @export
 rxUiGet.nonmemCsv <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, ".csv")
+  paste0(rxUiGet.nonmemModelName(x, ...), ".csv")
 }
 
 #' @export
 rxUiGet.nonmemNmctl <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, rxode2::rxGetControl(.ui, "extension", ".nmctl"))
+  paste0(rxUiGet.nonmemModelName(x, ...), rxode2::rxGetControl(.ui, "extension", ".nmctl"))
 }
 
 #' @export
 rxUiGet.nonmemNmlst <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, rxode2::rxGetControl(.ui, "outputExtension", ".lst"))
+  paste0(rxUiGet.nonmemModelName(x, ...), rxode2::rxGetControl(.ui, "outputExtension", ".lst"))
 }
 
 #' @export
 rxUiGet.nonmemHashFile <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, ".md5")
+  paste0(rxUiGet.nonmemModelName(x, ...), ".md5")
 }
 
 #' @export
 rxUiGet.nonmemQs <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, ".qs")
+  paste0(rxUiGet.nonmemModelName(x, ...),
+         ifelse(rxode2::rxGetControl(.ui, "readRounding", FALSE), "-rounding", ""),
+         ".qs")
 }
 
 
 #' @export
 rxUiGet.nonmemXml <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, ".xml")
+  paste0(rxUiGet.nonmemModelName(x, ...), ".xml")
 }
 
 #' @export
 rxUiGet.nonmemExt <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, ".ext")
+  paste0(rxUiGet.nonmemModelName(x, ...), ".ext")
 }
 
 
 #' @export
 rxUiGet.nonmemCovFile <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(.ui$modelName, ".cov")
+  paste0(rxUiGet.nonmemModelName(x, ...), ".cov")
 }

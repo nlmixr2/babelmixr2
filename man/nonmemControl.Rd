@@ -27,6 +27,7 @@ nonmemControl(
   compress = TRUE,
   ci = 0.95,
   sigdigTable = NULL,
+  readRounding = TRUE,
   noabort = TRUE,
   ...
 )

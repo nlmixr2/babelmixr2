@@ -43,6 +43,7 @@ nonmemControl <- function(est=c("focei", "posthoc"),
                           compress = TRUE,
                           ci = 0.95,
                           sigdigTable=NULL,
+                          readRounding=FALSE,
                           noabort=TRUE, ...) {
   # nonmem manual slides suggest tol=6, sigl=6 sigdig=2
   checkmate::assertIntegerish(maxeval, lower=100, len=1, any.missing=FALSE)
@@ -54,6 +55,7 @@ nonmemControl <- function(est=c("focei", "posthoc"),
   checkmate::assertIntegerish(iniSigDig, lower=1, len=1, any.missing=FALSE)
   checkmate::assertLogical(protectZeros, len=1, any.missing=FALSE)
   checkmate::assertLogical(muRef, len=1, any.missing=FALSE)
+  checkmate::assertLogical(readRounding, len=1, any.missing=FALSE)
   if (runCommand != "") checkmate::assertCharacter(runCommand, pattern="%s", min.len=1, max.len=1)
     .xtra <- list(...)
   .bad <- names(.xtra)
@@ -119,6 +121,7 @@ nonmemControl <- function(est=c("focei", "posthoc"),
                compress = compress,
                ci = ci,
                sigdigTable=sigdigTable,
+               readRounding=readRounding,
                genRxControl=genRxControl)
   class(.ret) <- "nonmemControl"
   .ret
