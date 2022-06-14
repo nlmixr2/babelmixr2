@@ -313,7 +313,7 @@ rex::register_shortcuts("babelmixr2")
     .protectZeros <- FALSE
   }
   .denom <- .rxToNonmem(x, ui=ui)
-  if (.denom % in% ui$allCovs) {
+  if (.denom %in% ui$allCovs) {
     .protectZeros <- FALSE
   }
   if (.protectZeros) {
