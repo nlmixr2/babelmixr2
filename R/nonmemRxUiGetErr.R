@@ -74,8 +74,7 @@ rxUiGet.nonmemErrF <- function(x, ...) {
                      .var <- .repEndpoint(.var, .pred1$dvid)
                      # depending on the method the prop can be with regards to the F or the transformed F
                      # So, here we add RX_PRED_ to be the transformed to support both
-                     .ret <- paste0(paste0("  ; endpoint nobs=", .cmtCnt[i], "\n"),
-                                    .ret,
+                     .ret <- paste0(.ret,
                                     .var,
                                     paste0("\n  IF (", .w, " .EQ. 0.0) ", .w, " = 1"))
                      .ret
@@ -84,10 +83,13 @@ rxUiGet.nonmemErrF <- function(x, ...) {
   .cens <- rxode2::rxGetControl(.ui, ".hasCens", FALSE)
   .limit <- rxode2::rxGetControl(.ui, ".hasLimit", FALSE)
   if (length(.predDf$cond) == 1L) {
-    .ipred <- "  IPRED = RX_IP2\n  W     = W1\n"
+    .ipred <- "  IPRED = RX_IP1\n  W     = W1\n"
   } else {
     .ipred <- vapply(seq_along(.predDf$cond), function(i) {
-      paste0("  IF (DVID .EQ. ", i, ") THEN\n    IPRED = RX_IP", i, "\n    W     = W", i, "\n  END IF\n")
+      paste0("  IF (DVID .EQ. ", i, ") THEN",
+             "\n    IPRED = RX_IP", i,
+             "\n    W     = W", i,
+             "\n  END IF\n")
     }, character(1), USE.NAMES=FALSE)
   }
   if (.cens && .limit) {

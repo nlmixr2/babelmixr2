@@ -51,7 +51,7 @@ nmGetDistributionNonmemLines.norm <- function(line) {
   }
   # Take out transformation; not supported right for multiple endpoint models
   .ret <- vector("list", 1)
-  .ret[[1]] <- bquote(.(str2lang(paste0("rx_f", .pred1$dvid)))~ .(rxode2::.rxGetPredictionF(.env, .pred1)))
+  .ret[[1]] <- bquote(.(str2lang(paste0("rx_pf", .pred1$dvid)))~ .(rxode2::.rxGetPredictionF(.env, .pred1)))
   .ret
 }
 
