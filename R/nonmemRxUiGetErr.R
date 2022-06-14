@@ -43,6 +43,17 @@
   return(.getErr("err.txt"))
 }
 
+.repEndpoint <- function(var, dvid) {
+  .pf <- paste0("RX_PF", dvid)
+  .p <- paste0("RX_P", dvid)
+  .i <- paste0("RX_IP", dvid)
+  .w <- paste0("W", dvid)
+  .ret <- gsub("RX_PRED_F_", .pf, var)
+  .ret <- gsub("RX_PRED_", .p, .ret)
+  .ret <- gsub("IPRED", .i, .ret)
+  .ret
+}
+
 #'@export
 rxUiGet.nonmemErrF <- function(x, ...) {
   .ui <- x[[1]]
@@ -54,23 +65,19 @@ rxUiGet.nonmemErrF <- function(x, ...) {
                    function(i){
                      .pred1 <- .predDf[i, ]
                      .ret <- .nonmemErr0(.ui, .pred1, indent=FALSE)
-                     .ret <- gsub("RX_PRED_F_", paste0("RX_PF", .pred1$dvid), .ret)
-                     .ret <- gsub("RX_PRED_", paste0("RX_F", .pred1$dvid), .ret)
-                     .ret <- gsub("IPRED", paste0("RX_IP", .pred1$dvid), .ret)
+                     .ret <- .repEndpoint(.ret, .pred1$dvid)
                      .w <- str2lang(paste0("W", .pred1$dvid))
                      .var <- paste0("\n  RX_PRED_ = IPRED\n",
                                     .rxToNonmem(bquote(.(.w) ~
                                                          sqrt(.(rxode2::.rxGetVarianceForErrorType(.ui, .pred1)))),
                                                 .ui))
-                     .var <- gsub("IPRED", paste0("RX_IP", .pred1$dvid), .var)
-                     .var <- gsub("RX_PRED_F_", paste0("RX_PF", .pred1$dvid), .var)
-                     .var <- gsub("RX_PRED_", paste0("RX_F", .pred1$dvid), .var)
+                     .var <- .repEndpoint(.var, .pred1$dvid)
                      # depending on the method the prop can be with regards to the F or the transformed F
                      # So, here we add RX_PRED_ to be the transformed to support both
-                       .ret <- paste0(paste0("  ; endpoint nobs=", .cmtCnt[i], "\n"),
-                                      .ret,
-                                      .var,
-                                      paste0("\n  IF (", .w, " .EQ. 0.0) ", .w, " = 1"))
+                     .ret <- paste0(paste0("  ; endpoint nobs=", .cmtCnt[i], "\n"),
+                                    .ret,
+                                    .var,
+                                    paste0("\n  IF (", .w, " .EQ. 0.0) ", .w, " = 1"))
                      .ret
                    }, character(1), USE.NAMES=FALSE)
   .err <- paste(.ipred, collapse="\n")
