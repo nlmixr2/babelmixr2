@@ -257,7 +257,7 @@ rex::register_shortcuts("babelmixr2")
     .protectZeros <- FALSE
   }
   .ret <- .rxToNonmem(x, ui=ui)
-  if (.ret % in% ui$allCovs) {
+  if (.ret %in% ui$allCovs) {
     .protectZeros <- FALSE
   }
   if (.protectZeros) {
