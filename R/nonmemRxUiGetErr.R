@@ -62,7 +62,7 @@ rxUiGet.nonmemErrF <- function(x, ...) {
   .predDf <- .ui$predDf
   .cmtCnt <- rxode2::rxGetControl(.ui, ".cmtCnt", rep(0L, length(.predDf$cond)))
   .ipred <- vapply(seq_along(.predDf$cond),
-                   function(i){
+                   function(i) {
                      .pred1 <- .predDf[i, ]
                      .ret <- .nonmemErr0(.ui, .pred1, indent=FALSE)
                      .ret <- .repEndpoint(.ret, .pred1$dvid)
@@ -86,10 +86,16 @@ rxUiGet.nonmemErrF <- function(x, ...) {
     .ipred <- "  IPRED = RX_IP1\n  W     = W1\n"
   } else {
     .ipred <- vapply(seq_along(.predDf$cond), function(i) {
-      paste0("  IF (DVID .EQ. ", i, ") THEN",
-             "\n    IPRED = RX_IP", i,
-             "\n    W     = W", i,
-             "\n  END IF\n")
+      if (i == 1) {
+        paste0("\n  IPRED = RX_IP1",
+               "\n  W     = W1")
+      } else {
+        paste0("  IF (DVID .EQ. ", i, ") THEN",
+               "\n    IPRED = RX_IP", i,
+               "\n    W     = W", i,
+               "\n  END IF\n")
+      }
+
     }, character(1), USE.NAMES=FALSE)
   }
   if (.cens && .limit) {
