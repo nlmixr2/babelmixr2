@@ -207,10 +207,8 @@ rxUiGet.nonmemTermMessage <- function(x, ...) {
 
 #' @export
 rxUiGet.nonmemSuccessful <- function(x, ...) {
-  .xml <- rxUiGet.nonmemOutputXml(x, ...)
-  if (is.null(.xml)) return(NULL)
-  .term <- as.integer(.xml$nonmem$problem$termination_status[[1]])
-  (.term == 0)
+  .term <- rxUiGet.nonmemTermMessage(x, ...)
+  (regexpr("0MINIMIZATION SUCCESSFUL", .term) != -1)
 }
 
 .nonmemMergePredsAndCalcRelativeErr <- function(fit) {
