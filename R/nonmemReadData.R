@@ -156,7 +156,8 @@ rxUiGet.nonmemParHistory <- function(x, ...) {
   .d <- c("iter", .getNonmemOrderNames(.ui), "objf")
   names(.ret) <- .d
   .ret <- .ret[.ret$iter > 0, names(.ret) != "_sigma"]
-  .ret
+  .n <- c("iter", .ui$iniDf$name, "objf")
+  .ret[, .n]
 }
 
 #' @export
