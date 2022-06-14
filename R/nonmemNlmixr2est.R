@@ -215,10 +215,20 @@
     message("")
 
   }
+  if (!.ui$nonmemSuccessful) {
+     .msg <- c(.ui$nonmemTransMessage,
+              .ui$nonmemTermMessage,
+              paste0("nonmem model: '", .nmctlFile, "'"))
+    message(paste(.msg, collapse="\n"))
+    stop("nonmem minimization not successful",
+         call.=FALSE)
+  }
   .ret <- .nonmemFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
     .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
-    .msg$message <- c(.msg$message,
+    .msg$message <- c(.ui$nonmemTransMessage,
+                      .ui$nonmemTermMessage,
+                      .msg$message,
                       paste0("nonmem model: '", .nmctlFile, "'"))
     assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
     qs::qsave(.ret, .qs)

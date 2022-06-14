@@ -175,6 +175,7 @@ rxUiGet.nonmemObjfType <- function(x, ...) {
 rxUiGet.nonmemRunTime <- function(x, ...) {
   .ui <- x[[1]]
   .xml <- rxUiGet.nonmemOutputXml(x, ...)
+  if (is.null(.xml)) return(NULL)
   .start <- as.POSIXct(.xml$start_datetime[[1]],format="%Y-%m-%dT%H:%M:%S",tz=Sys.timezone())
   .stop <- as.POSIXct(.xml$stop_datetime[[1]],format="%Y-%m-%dT%H:%M:%S",tz=Sys.timezone())
   as.numeric(difftime(.stop, .start, tz=Sys.timezone(), units = "secs"))
@@ -188,6 +189,28 @@ rxUiGet.nonmemPreds <- function(x, ...) {
   setNames(withr::with_dir(.exportPath,
                            pmxTools::read_nm_multi_table(.sdTable)),
            c("ID", "TIME", "nonmemIPRED", "nonmemPRED", "RXROW"))
+}
+
+#' @export
+rxUiGet.nonmemTransMessage <- function(x, ...) {
+  .xml <- rxUiGet.nonmemOutputXml(x, ...)
+  if (is.null(.xml)) return(NULL)
+  .xml$nmtran[[1]]
+}
+
+#' @export
+rxUiGet.nonmemTermMessage <- function(x, ...) {
+  .xml <- rxUiGet.nonmemOutputXml(x, ...)
+  if (is.null(.xml)) return(NULL)
+  .xml$nonmem$problem$estimation$termination_information[[1]]
+}
+
+#' @export
+rxUiGet.nonmemSuccessful <- function(x, ...) {
+  .xml <- rxUiGet.nonmemOutputXml(x, ...)
+  if (is.null(.xml)) return(NULL)
+  .term <- as.integer(.xml$nonmem$problem$termination_status[[1]])
+  (.term == 0)
 }
 
 .nonmemMergePredsAndCalcRelativeErr <- function(fit) {
