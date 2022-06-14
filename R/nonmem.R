@@ -253,7 +253,13 @@ rex::register_shortcuts("babelmixr2")
   .protectZeros <- rxode2::rxGetControl(ui, "protectZeros", TRUE)
   .inIfElse <- rxode2::rxGetControl(ui, ".ifelse", FALSE)
   .protectZeros <- .protectZeros && !.inIfElse
+  if (inherits(x, "numeric")) {
+    .protectZeros <- FALSE
+  }
   .ret <- .rxToNonmem(x, ui=ui)
+  if (.ret % in% ui$allCovs) {
+    .protectZeros <- FALSE
+  }
   if (.protectZeros) {
     .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
                                 data.frame(expr=character(0),
@@ -303,7 +309,13 @@ rex::register_shortcuts("babelmixr2")
   .protectZeros <- rxode2::rxGetControl(ui, "protectZeros", TRUE)
   .inIfElse <- rxode2::rxGetControl(ui, ".ifelse", FALSE)
   .protectZeros <- .protectZeros && !.inIfElse
+  if (inherits(x, "numeric")) {
+    .protectZeros <- FALSE
+  }
   .denom <- .rxToNonmem(x, ui=ui)
+  if (.denom % in% ui$allCovs) {
+    .protectZeros <- FALSE
+  }
   if (.protectZeros) {
     .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
                                 data.frame(expr=character(0),
