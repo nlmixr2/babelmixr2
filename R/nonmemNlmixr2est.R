@@ -52,6 +52,16 @@
   env$fullTheta <- .ui$nonmemFullTheta
   # - $etaObf data frame with ID, etas and OBJI
   env$etaObf <- .ui$nonmemEtaObf
+  if (is.null(env$etaObf)) {
+    .df <- data.frame(ID=unique(env$dataSav$ID))
+    for (.n in .getEtaNames(.ui)) {
+      .df[[.n]] <- 0
+    }
+    .df[["OBJI"]] <- NA_real_
+    env$etaObf <- .df
+    warning("since NONMEM did not output between subject variability, assuming all ETA(#) are zero",
+            call.=FALSE)
+  }
   # - $cov For covariance
   .cov <- .ui$nonmemCovariance
   if (!is.null(.cov)) {
