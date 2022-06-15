@@ -217,6 +217,12 @@ rxUiGet.nonmemRoundingErrors <- function(x, ...) {
   (regexpr("DUE TO ROUNDING ERRORS", .term) != -1)
 }
 
+#' @export
+rxUiGet.nonmemCovarianceInfo <- function(x, ...) {
+  .xml <- rxUiGet.nonmemOutputXml(x, ...)
+  if (is.null(.xml)) return(NULL)
+  .xml$nonmem$problem$estimation$covariance_information[[1]]
+}
 
 .nonmemMergePredsAndCalcRelativeErr <- function(fit) {
   .tmp <- as.data.frame(fit)

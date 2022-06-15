@@ -53,9 +53,46 @@ test_that("warfarin NONMEM reading", {
     })
   }
 
-  w <- pk.turnover.emax3()
+  if (file.exists("pk.turnover.emax3.zip")) {
+    .path <- normalizePath("pk.turnover.emax3.zip")
+    withr::with_tempdir({
+      unzip(.path)
+      # This has rounding errors
+      expect_error(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
+                                   nonmemControl(readRounding=FALSE)))
 
+      # Can still load the model to get information (possibly pipe) and create a new model
+      f <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
+                  nonmemControl(readRounding=TRUE))
 
+      expect_true(inherits(f, "nlmixr2FitData"))
+
+      # Will still error if you try to read this with readRounding=FALSE
+      expect_error(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
+                          nonmemControl(readRounding=FALSE)))
+
+      # Note this shouldn't have a covariance step so you can add it (at least a nlmixr2 covariance step)
+      getVarCov(f)
+
+      # nlmixr2 is more generous in what constitutes a covariance
+      # step, in this case it is |r|,|s| which should be regarded with
+      # caution but can give some clues on why this is not working in
+      # NONMEM.
+
+      # Here you can see the shrinkage is high for temax tktr and tka,
+      # so they could be dropped with a model in nonmem that is more
+      # likely to converge in NONMEM, starting from the model
+
+      # In addition to dropping the problematic parameters, this will
+      # restart the fit at the final initial estimates
+
+      f %>% model(ktr <- exp(tktr)) %>%
+        model(ka <- exp(tka)) %>%
+        model(kout <- exp(tkout + eta.kout)) %>%
+        nlmixr(data=nlmixr2data::warfarin, est="nonmem", control=nonmemControl(readRounding=FALSE))
+
+    })
+  }
 })
 
 test_that("pheno NONMEM reading", {
@@ -88,5 +125,71 @@ test_that("pheno NONMEM reading", {
       expect_true(inherits(f, "nlmixr2FitData"))
     })
   }
+
+})
+
+test_that("wbc NONMEM reading", {
+
+  wbc <- function() {
+    ini({
+      ## Note that the UI can take expressions
+      ## Also note that these initial estimates should be provided on the log-scale
+      log_CIRC0 <- log(7.21)
+      log_MTT <- log(124)
+      log_SLOPU <- log(28.9)
+      log_GAMMA <- log(0.239)
+      ## Initial estimates should be high for SAEM ETAs
+      eta.CIRC0  ~ .1
+      eta.MTT  ~ .03
+      eta.SLOPU ~ .2
+      ##  Also true for additive error (also ignored in SAEM)
+      prop.err <- 10
+    })
+    model({
+      CIRC0 =  exp(log_CIRC0 + eta.CIRC0)
+      MTT =  exp(log_MTT + eta.MTT)
+      SLOPU =  exp(log_SLOPU + eta.SLOPU)
+      GAMMA = exp(log_GAMMA)
+
+      # PK parameters from input dataset
+      CL = CLI;
+      V1 = V1I;
+      V2 = V2I;
+      Q = 204;
+
+      CONC = A_centr/V1;
+
+      # PD parameters
+      NN = 3;
+      KTR = (NN + 1)/MTT;
+      EDRUG = 1 - SLOPU * CONC;
+      FDBK = (CIRC0 / A_circ)^GAMMA;
+
+      CIRC = A_circ;
+
+      A_prol(0) = CIRC0;
+      A_tr1(0) = CIRC0;
+      A_tr2(0) = CIRC0;
+      A_tr3(0) = CIRC0;
+      A_circ(0) = CIRC0;
+
+      d/dt(A_centr) = A_periph * Q/V2 - A_centr * (CL/V1 + Q/V1);
+      d/dt(A_periph) = A_centr * Q/V1 - A_periph * Q/V2;
+      d/dt(A_prol) = KTR * A_prol * EDRUG * FDBK - KTR * A_prol;
+      d/dt(A_tr1) = KTR * A_prol - KTR * A_tr1;
+      d/dt(A_tr2) = KTR * A_tr1 - KTR * A_tr2;
+      d/dt(A_tr3) = KTR * A_tr2 - KTR * A_tr3;
+      d/dt(A_circ) = KTR * A_tr3 - KTR * A_circ;
+
+      CIRC ~ prop(prop.err)
+    })
+  }
+
+  .path <- normalizePath("wbc.zip")
+  withr::with_tempdir({
+      unzip(.path)
+      f <- nlmixr2(wbc, nlmixr2data::wbcSim, "nonmem")
+  })
+
 
 })

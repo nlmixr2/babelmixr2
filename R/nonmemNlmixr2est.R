@@ -226,7 +226,8 @@
   }
   if (!.read) {
      .msg <- c(.ui$nonmemTransMessage,
-              .ui$nonmemTermMessage,
+               .ui$nonmemTermMessage)
+     .msg <- c(.msg,
               paste0("nonmem model: '", .nmctlFile, "'"))
      message(paste(.msg, collapse="\n"))
      if (.roundingErrors) {
@@ -238,10 +239,17 @@
   .ret <- .nonmemFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
     .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
+    .prderrPath <- file.path(.exportPath, "PRDERR")
     .msg$message <- c(.ui$nonmemTransMessage,
                       .ui$nonmemTermMessage,
-                      .msg$message,
-                      paste0("nonmem model: '", .nmctlFile, "'"))
+                      .msg$message)
+     if (file.exists(.prderrPath)) {
+       .prderr <- paste(readLines(.prderrPath), collapse="\n")
+       .msg$message <- c(.msg$message,
+                 "there are solving errors during optimization (see '$prderr')")
+       assign("prderr", .prderr, envir=.ret$env)
+     }
+    .msg$message <- c(.msg$message, paste0("nonmem model: '", .nmctlFile, "'"))
     assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
     qs::qsave(.ret, .qs)
   }
