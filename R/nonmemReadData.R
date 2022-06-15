@@ -225,11 +225,17 @@ rxUiGet.nonmemCovarianceInfo <- function(x, ...) {
 }
 
 .nonmemMergePredsAndCalcRelativeErr <- function(fit) {
+  .np <- fit$ui$nonmemPreds
+  if (is.null(.np)) {
+    warning("without predictions output, absolute/relative difference between nlmixr2 and NONMEM predictions cannot be calculated",
+            call.=FALSE)
+    return(NULL)
+  }
   .tmp <- as.data.frame(fit)
   .tmp$ID <-as.integer(.tmp$ID)
   .tmp$RXROW <- fit$env$.rownum
   .by <- c("ID", "TIME", "RXROW")
-  .ret <- merge(fit$ui$nonmemPreds, .tmp, by=.by)
+  .ret <- merge(.np, .tmp, by=.by)
   .ci <- (1 - fit$nonmemControl$ci) / 2
   .q <- c(0, .ci, 0.5, 1 - .ci, 1)
   .qi <- quantile(with(.ret, 100*abs((IPRED-nonmemIPRED)/nonmemIPRED)), .q, na.rm=TRUE)
