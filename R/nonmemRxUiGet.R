@@ -71,7 +71,8 @@ rxUiGet.nonmemHashFile <- function(x, ...) {
 rxUiGet.nonmemQs <- function(x, ...) {
   .ui <- x[[1]]
   paste0(rxUiGet.nonmemModelName(x, ...),
-         ifelse(rxode2::rxGetControl(.ui, "readRounding", FALSE), "-rounding", ""),
+         ifelse(rxode2::rxGetControl(.ui, "readRounding", FALSE), "-rounding",
+                ifelse(rxode2::rxGetControl(.ui, "readBadOpt", FALSE), "-bad-opt", "")),
          ".qs")
 }
 

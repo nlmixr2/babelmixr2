@@ -224,6 +224,14 @@
             call.=FALSE)
     .read <- TRUE
   }
+  .readBadOpt <- rxode2::rxGetControl(.ui, "readBadOpt", FALSE)
+  .isBadOpt <- FALSE
+  if (!read && .readBadOpt) {
+    warning("NONMEM unsuccessful, but reading into nlmixr2/rxode2 anyway",
+            call.=FALSE)
+    .isBadOpt <- TRUE
+    .read <- TRUE
+  }
   if (!.read) {
      .msg <- c(.ui$nonmemTransMessage,
                .ui$nonmemTermMessage)
@@ -232,6 +240,8 @@
      message(paste(.msg, collapse="\n"))
      if (.roundingErrors) {
        rxode2::.malert("terminated with rounding errors, can force nlmixr2/rxode2 to read with nonmemControl(readRounding=TRUE)")
+     } else {
+       rxode2::.malert("terminated with bad optimization, can force nlmixr2/rxode2 to read with nonmemControl(readBadOpt=TRUE)")
      }
      stop("nonmem minimization not successful",
           call.=FALSE)
