@@ -133,7 +133,7 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
   .covFile <- rxUiGet.nonmemCovFile(x, ...)
   if (!file.exists(file.path(.exportPath, .covFile))) return(NULL)
   .ret <- as.matrix(withr::with_dir(.exportPath,
-                                    pmxTools::read_nmcov(.ui$modelName, quiet=TRUE)))
+                                    pmxTools::read_nmcov(rxUiGet.nonmemModelName(x, ...), quiet=TRUE)))
   .d <- .getNonmemOrderNames(.ui)
   dimnames(.ret) <- list(.d, .d)
   .t <- .getThetaNames(.ui)
