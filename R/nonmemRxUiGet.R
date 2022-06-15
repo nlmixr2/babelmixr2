@@ -2,7 +2,6 @@
 rxUiGet.nonmemModelName <- function(x, ...) {
   .ui <- x[[1]]
   .modelName <- .ui$modelName
-  print(.modelName)
   if (isTRUE(checkmate::checkCharacter(.modelName, len=1, any.missing=FALSE))) {
     return(.modelName)
   }
