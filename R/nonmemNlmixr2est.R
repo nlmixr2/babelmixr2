@@ -226,7 +226,7 @@
   }
   .readBadOpt <- rxode2::rxGetControl(.ui, "readBadOpt", FALSE)
   .isBadOpt <- FALSE
-  if (!read && .readBadOpt) {
+  if (!.read && .readBadOpt) {
     warning("NONMEM unsuccessful, but reading into nlmixr2/rxode2 anyway",
             call.=FALSE)
     .isBadOpt <- TRUE
