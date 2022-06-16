@@ -536,15 +536,13 @@ rex::register_shortcuts("babelmixr2")
   if (length(x[[2]]) == 2L) {
     if (identical(x[[2]][[2]], 0)) {
       .state <- as.character(x[[2]][[1]])
-      if (length(x[[3]]) == 1L) {
-        .extra <- .rxToNonmem(x[[3]], ui=ui)
-        .nonmemSetCmtProperty(ui, .state, .extra, type="init")
-        return(paste0(.rxToNonmemGetIndent(ui),
-                      paste0(";", as.character(x[[2]])[1], "(0) defined in $PK block")))
-      } else {
-        stop("the complex initialization time is not supported by babelmixr2",
-             call.=FALSE)
-      }
+      #if (length(x[[3]]) == 1L) {
+      rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
+      on.exit(rxode2::rxAssignControlValue(ui, ".ifelse", FALSE))
+      .extra <- .rxToNonmem(x[[3]], ui=ui)
+      .nonmemSetCmtProperty(ui, .state, .extra, type="init")
+      return(paste0(.rxToNonmemGetIndent(ui),
+                    paste0(";", as.character(x[[2]])[1], "(0) defined in $PK block")))
     }
     if (any(as.character(x[[2]])[1] == c("alag", "lag", "F", "f", "rate", "dur"))) {
       # I believe these have to be in the $PK block
