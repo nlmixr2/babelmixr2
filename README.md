@@ -10,7 +10,7 @@ used tools.
 ## Installation
 
 If we decide to submit to CRAN, you can install the released version of
-babelmixr from [CRAN](https://CRAN.R-project.org) with:
+babelmixr2 from [CRAN](https://CRAN.R-project.org) with:
 
 ``` r
 install.packages("babelmixr2")
@@ -19,7 +19,7 @@ install.packages("babelmixr2")
 Otherwise you can always install from github:
 
 ```r
-remotes::install_github("nlmixr2/babelmixr")
+remotes::install_github("nlmixr2/babelmixr2")
 ```
 
 ## Example
