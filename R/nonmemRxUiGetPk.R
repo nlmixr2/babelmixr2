@@ -57,6 +57,10 @@ rxUiGet.nonmemThetaRep <- function(x, ...) {
 #'@export
 rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   .ui <- x[[1]]
+  rxode2::rxAssignControlValue(.ui, ".nmVarResNum", 1)
+  rxode2::rxAssignControlValue(.ui, ".nmGetVarReservedDf",
+                               data.frame(var=character(0),
+                                          nm=character(0)))
   .split <- rxUiGet.getSplitMuModel(x, ...)
   .mu <- rxUiGet.nonmemThetaRep(x, ...)
   .ret <- vapply(seq_along(.mu$mu), function(i) {

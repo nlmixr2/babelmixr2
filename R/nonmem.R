@@ -142,23 +142,36 @@ rex::register_shortcuts("babelmixr2")
 #' @author Matthew L. Fidler
 #' @noRd
 .nmGetVar <- function(var, ui) {
+  .reserved <- rxode2::rxGetControl(ui, ".nmGetVarReservedDf",
+                                    data.frame(var=character(0),
+                                               nm=character(0)))
+  .uvar <- gsub(".", "_", toupper(var), fixed=TRUE)
+  .w <- which(.reserved$var == var)
+  if (length(.w) == 1) {
+    var <- .reserved$nm[.w]
+    print(var)
+  } else if (regexpr(.nmRes, .uvar, perl=TRUE) != -1) {
+    .num <- rxode2::rxGetControl(ui, ".nmVarResNum", 1)
+    .newVar <- sprintf("RXR%d", .num)
+    rxode2::rxAssignControlValue(ui, ".nmVarResNum", .num + 1)
+    .reserved <- rbind(.reserved, data.frame(var=var, nm=.newVar))
+    rxode2::rxAssignControlValue(ui, ".nmGetVarReservedDf", .reserved)
+    var <- .newVar
+  }
+  .uvar <- gsub(".", "_", toupper(var), fixed=TRUE)
   .var <- rxode2::rxGetControl(ui, ".nmGetVarDf",
                                data.frame(var=character(0),
                                           nm=character(0)))
   .w <- which(.var$var == var)
   if (length(.w) == 1) return(.var$nm[.w])
-  .uvar <- gsub(".", "_", toupper(var), fixed=TRUE)
   .w <- which(.var$nm == .uvar)
   .doRx <- FALSE
   if (length(.w) == 1) {
     .doRx <- TRUE
   }
-  if (regexpr(.nmRes, .uvar, perl=TRUE) != -1) {
-    .doRx <- TRUE
-  }
+  .extra <- rxode2::rxGetControl(ui, ".nmVarExtra", "")
   if (.doRx) {
     .num <- rxode2::rxGetControl(ui, ".nmVarNum", 1)
-    .extra <- rxode2::rxGetControl(ui, ".nmVarExtra", "")
     .newVar <- sprintf("RX%s%03d", .extra, .num)
     rxode2::rxAssignControlValue(ui, ".nmVarNum", .num + 1)
   } else {

@@ -27,7 +27,6 @@ rxUiGet.nonmemMod <- function(x, ...) {
                                           nm=character(0)))
   rxode2::rxAssignControlValue(ui, ".nmPrefixLines", NULL)
   rxode2::rxAssignControlValue(ui, ".nmVarExtra", extra)
-
 }
 
 #' @export
