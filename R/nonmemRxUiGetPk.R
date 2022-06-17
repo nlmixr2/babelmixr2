@@ -37,10 +37,10 @@
 
 #'@export
 rxUiGet.nonmemThetaRep <- function(x, ...) {
-  .split <- rxUiGet.getSplitMuModel(x, ...)
+  .ui <- x[[1]]
+  .split <- .ui$getSplitMuModel
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .thetas <- names(.muRef)
-  .ui <- x[[1]]
   .covRefDf <- .ui$saemMuRefCovariateDataFrame
   .ret <- data.frame(theta=.thetas,
                      nmTheta=vapply(.thetas, .nonmemGetThetaNum, character(1), ui=.ui,
@@ -61,7 +61,7 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   rxode2::rxAssignControlValue(.ui, ".nmGetVarReservedDf",
                                data.frame(var=character(0),
                                           nm=character(0)))
-  .split <- rxUiGet.getSplitMuModel(x, ...)
+  .split <- .ui$getSplitMuModel
   .mu <- rxUiGet.nonmemThetaRep(x, ...)
   .ret <- vapply(seq_along(.mu$mu), function(i) {
     if (is.na(.mu$mu[i])) return(NA_character_)

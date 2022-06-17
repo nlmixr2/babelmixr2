@@ -66,7 +66,7 @@
 #' @export
 rxUiGet.monolixModel <- function(x, ...) {
   .ui <- x[[1]]
-  .split <- rxUiGet.getSplitMuModel(x, ...)
+  .split <- .ui$getSplitMuModel
   assignInMyNamespace(".monolixResponses", NULL)
   # first drop the error lines
   .mainModel <- rxode2::rxCombineErrorLines(.ui,

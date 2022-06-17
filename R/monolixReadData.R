@@ -58,7 +58,7 @@ rxUiGet.monolixParHistory <- function(x, ...) {
   if (!is.null(.raw)) {
     .ui <- x[[1]]
     .iniDf <- .ui$iniDf
-    .split <- rxUiGet.getSplitMuModel(x, ...)
+    .split <- .ui$getSplitMuModel
     .muRef <- c(.split$pureMuRef, .split$taintMuRef)
     .muRefCurEval <- .ui$muRefCurEval
     .eta <- .iniDf[is.na(.iniDf$ntheta), ]
@@ -130,7 +130,7 @@ rxUiGet.monolixOmega <- function(x, ...) {
   .pop <- rxUiGet.monolixPopulationParameters(x, ...)
   if (is.null(.pop)) return(NULL)
   .iniDf <- .ui$iniDf
-  .split <- rxUiGet.getSplitMuModel(x, ...)
+  .split <- .ui$getSplitMuModel
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .muRefCurEval <- .ui$muRefCurEval
   .eta <- .iniDf[is.na(.iniDf$ntheta), ]
@@ -215,7 +215,7 @@ rxUiGet.monolixFullTheta <- function(x, ...) {
   .iniDf <- .ui$iniDf
   .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
   .muRefCurEval <- .ui$muRefCurEval
-  .split <- rxUiGet.getSplitMuModel(x, ...)
+  .split <- ui$getSplitMuModel
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
   .fullTheta <- setNames(vapply(seq_along(.theta$name),
@@ -303,7 +303,7 @@ rxUiGet.monolixEtaObf <- function(x, ...) {
   .ui <- x[[1]]
   .etas <- .ui$iniDf[!is.na(.ui$iniDf$neta1), ]
   .etas <- .etas[.etas$neta1 == .etas$neta2, ]
-  .split <- rxUiGet.getSplitMuModel(x, ...)
+  .split <- ui$getSplitMuModel
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .etaMonolix <- rxUiGet.monolixIndividualParameters(x, ...)
   if (is.null(.etaMonolix)) return(NULL)
@@ -406,7 +406,7 @@ rxUiGet.monolixCovarianceEstimatesSA <- function(x, ...) {
 #' @export
 rxUiGet.monolixCovariance <- function(x, ...) {
   .cov <- rxUiGet.monolixCovarianceEstimatesSA(x, ...)
-  .split <- rxUiGet.getSplitMuModel(x, ...)
+  .split <- ui$getSplitMuModel
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .sa <- TRUE
   if (is.null(.cov)) {
