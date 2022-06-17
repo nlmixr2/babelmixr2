@@ -27,7 +27,7 @@ rxUiGet.nonmemEst <- function(x, ...) {
            " ISCALE_MAX=", sprintf("%f", rxode2::rxGetControl(.ui, "iscaleMax", 10.0)),
            "\n  ",
            " DF=", sprintf("%f", rxode2::rxGetControl(.ui, "df", 4)),
-           " MAPITER=", sprintf("%f", rxode2::rxGetControl(.ui, "mapiter", 1)),
+           " MAPITER=", sprintf("%d", rxode2::rxGetControl(.ui, "mapiter", 1)),
            ifelse(rxode2::rxGetControl(.ui, "noabort", TRUE),
                   " NOABORT", ""), "\n")
   } else {
