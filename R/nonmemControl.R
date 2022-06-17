@@ -21,7 +21,7 @@
 #'
 #' @examples
 #' nonmemControl()
-nonmemControl <- function(est=c("focei", "posthoc"),
+nonmemControl <- function(est=c("focei", "imp", "posthoc"),
                           advanOde=c("advan13", "advan8", "advan6"),
                           cov=c("r,s", "r", "s", ""),
                           maxeval=100000,
@@ -45,6 +45,15 @@ nonmemControl <- function(est=c("focei", "posthoc"),
                           sigdigTable=NULL,
                           readRounding=FALSE,
                           readBadOpt=FALSE,
+                          niter=100L,
+                          isample=1000L,
+                          iaccept=0.4,
+                          iscaleMin=0.1,
+                          iscaleMax=10,
+                          df=4,
+                          seed=14456,
+                          mapiter=1,
+                          mapinter=0,
                           noabort=TRUE, ...) {
   # nonmem manual slides suggest tol=6, sigl=6 sigdig=2
   checkmate::assertIntegerish(maxeval, lower=100, len=1, any.missing=FALSE)
@@ -58,6 +67,14 @@ nonmemControl <- function(est=c("focei", "posthoc"),
   checkmate::assertLogical(muRef, len=1, any.missing=FALSE)
   checkmate::assertLogical(readRounding, len=1, any.missing=FALSE)
   checkmate::assertLogical(readBadOpt, len=1, any.missing=FALSE)
+  checkmate::assertIntegerish(niter, lower=1, len=1, any.missing=FALSE)
+  checkmate::assertIntegerish(isample, lower=1, len=1, any.missing=FALSE)
+  checkmate::assertNumeric(iaccept, lower=0, upper=1, len=1, any.missing=FALSE)
+  checkmate::assertNumeric(iscaleMin, lower=0, len=1, any.missing=FALSE)
+  checkmate::assertNumeric(iscaleMax, lower=0, len=1, any.missing=FALSE)
+  checkmate::assertNumeric(df, lower=0, len=1, any.missing=FALSE)
+  checkmate::assertIntegerish(seed, lower=1, len=1, any.missing=FALSE)
+  checkmate::assertIntegerish(mapiter, len=1, any.missing=FALSE)
   if (runCommand != "") checkmate::assertCharacter(runCommand, pattern="%s", min.len=1, max.len=1)
     .xtra <- list(...)
   .bad <- names(.xtra)
@@ -125,7 +142,16 @@ nonmemControl <- function(est=c("focei", "posthoc"),
                sigdigTable=sigdigTable,
                readRounding=readRounding,
                readBadOpt=readBadOpt,
-               genRxControl=genRxControl)
+               genRxControl=genRxControl,
+               niter=niter,
+               isample=isample,
+               iaccept=iaccept,
+               iscaleMin=iscaleMin,
+               iscaleMax=iscaleMax,
+               df=df,
+               seed=seed,
+               matiter=mapiter
+               )
   class(.ret) <- "nonmemControl"
   .ret
 }

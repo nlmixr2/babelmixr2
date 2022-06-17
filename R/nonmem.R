@@ -149,7 +149,6 @@ rex::register_shortcuts("babelmixr2")
   .w <- which(.reserved$var == var)
   if (length(.w) == 1) {
     var <- .reserved$nm[.w]
-    print(var)
   } else if (regexpr(.nmRes, .uvar, perl=TRUE) != -1) {
     .num <- rxode2::rxGetControl(ui, ".nmVarResNum", 1)
     .newVar <- sprintf("RXR%d", .num)
