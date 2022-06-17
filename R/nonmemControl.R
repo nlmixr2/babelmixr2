@@ -150,7 +150,7 @@ nonmemControl <- function(est=c("focei", "imp", "posthoc"),
                iscaleMax=iscaleMax,
                df=df,
                seed=seed,
-               matiter=mapiter
+               mapiter=mapiter
                )
   class(.ret) <- "nonmemControl"
   .ret
