@@ -21,7 +21,7 @@
 #'
 #' @examples
 #' nonmemControl()
-nonmemControl <- function(est=c("focei", "imp", "posthoc"),
+nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           advanOde=c("advan13", "advan8", "advan6"),
                           cov=c("r,s", "r", "s", ""),
                           maxeval=100000,

@@ -16,6 +16,11 @@ rxUiGet.nonmemEst <- function(x, ...) {
            " SIGL=",sprintf("%d", rxode2::rxGetControl(.ui, "sigl", 10000)),
            ifelse(rxode2::rxGetControl(.ui, "noabort", TRUE),
                   " NOABORT", ""), "\n")
+  } else if (.est == "its") {
+    paste0("$ESTIMATION METHOD=IMP INTERACTION PRINT=", rxode2::rxGetControl(.ui, "print", 1),
+           " NITER=",sprintf("%d", rxode2::rxGetControl(.ui, "niter", 100)),
+           ifelse(rxode2::rxGetControl(.ui, "noabort", TRUE),
+                  " NOABORT", ""), "\n")
   } else if (.est == "imp") {
     paste0("$ESTIMATION METHOD=IMP INTERACTION PRINT=", rxode2::rxGetControl(.ui, "print", 1),
            " SEED=",sprintf("%d", rxode2::rxGetControl(.ui, "seed", 14456)),
