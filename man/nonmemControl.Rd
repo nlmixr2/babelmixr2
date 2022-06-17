@@ -28,6 +28,7 @@ nonmemControl(
   ci = 0.95,
   sigdigTable = NULL,
   readRounding = FALSE,
+  readBadOpt = FALSE,
   noabort = TRUE,
   ...
 )
