@@ -12,6 +12,10 @@ on:
 
 name: R-CMD-check
 
+# Fix "Error: Package suggested but not available: 'lixoftConnectors'"
+env:
+  _R_CHECK_FORCE_SUGGESTS_: false
+
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
