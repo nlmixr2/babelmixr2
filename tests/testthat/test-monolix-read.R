@@ -1,4 +1,5 @@
 test_that("test monolix reading for 2019, 2020, and 2021", {
+  skip_if_not_installed("lixoftConnectors")
 
   pk.turnover.emax3 <- function() {
     ini({
@@ -84,6 +85,7 @@ test_that("test monolix reading for 2019, 2020, and 2021", {
 
 
 test_that("test more nlmixr2/monolix features", {
+  skip_if_not_installed("lixoftConnectors")
 
   pk.turnover.emax4 <- function() {
     ini({
@@ -151,6 +153,7 @@ test_that("test more nlmixr2/monolix features", {
 
 
 test_that("test pheno", {
+  skip_if_not_installed("lixoftConnectors")
 
   pheno <- function() {
     ini({
@@ -184,6 +187,7 @@ test_that("test pheno", {
 })
 
 test_that("pbpk mavoglurant", {
+  skip_if_not_installed("lixoftConnectors")
 
   pbpk <- function(){
     ini({
@@ -298,6 +302,7 @@ test_that("pbpk mavoglurant", {
 })
 
 test_that("nimo test", {
+  skip_if_not_installed("lixoftConnectors")
 
   nimo <- function() {
     ini({
@@ -361,6 +366,7 @@ test_that("nimo test", {
 })
 
 test_that("wbc", {
+  skip_if_not_installed("lixoftConnectors")
 
   wbc <- function() {
     ini({
@@ -467,6 +473,4 @@ test_that("wbc", {
       expect_true(inherits(p2, "nlmixr2FitData"))
     })
   }
-
-
 })
