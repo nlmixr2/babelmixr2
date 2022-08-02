@@ -2,7 +2,7 @@
       IF (IPRED .GE. 0.0) THEN
          IF (LAMBDA .EQ. 0.0) THEN
             IPRED = DLOG(IPRED + 1.0)
-         ELSE IF (LAMBDA .EQ. 1) THEN
+         ELSE IF (LAMBDA .EQ. 1.0) THEN
             IPRED = IPRED
          ELSE
             IPRED = ((IPRED+1.0)**LAMBDA - 1.0)/LAMBDA
