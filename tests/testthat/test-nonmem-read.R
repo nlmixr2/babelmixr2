@@ -1,4 +1,9 @@
 test_that("warfarin NONMEM reading", {
+  # Skip if NONMEM cannot be run
+  skip_if(
+    getOption("babelmixr2.nonmem", "") == "",
+    message="NONMEM is not setup to be run"
+  )
 
   pk.turnover.emax3 <- function() {
     ini({
@@ -96,6 +101,11 @@ test_that("warfarin NONMEM reading", {
 })
 
 test_that("pheno NONMEM reading", {
+  # Skip if NONMEM cannot be run
+  skip_if(
+    getOption("babelmixr2.nonmem", "") == "",
+    message="NONMEM is not setup to be run"
+  )
 
   pheno <- function() {
     ini({
@@ -129,6 +139,11 @@ test_that("pheno NONMEM reading", {
 })
 
 test_that("wbc NONMEM reading", {
+  # Skip if NONMEM cannot be run
+  skip_if(
+    getOption("babelmixr2.nonmem", "") == "",
+    message="NONMEM is not setup to be run"
+  )
 
   wbc <- function() {
     ini({
