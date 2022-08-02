@@ -5,21 +5,26 @@ Version: 0.1.0
 Authors@R: c(person("Matthew","Fidler", role = c("aut", "cre"), email = "matthew.fidler@gmail.com", comment=c(ORCID="0000-0001-8538-6691"))
   )
 Description: Run other estimation and simulation software via the nlmixr2
-  interface including NONMEM and Monolix.
+  interface including NONMEM and Monolix. While not required, you can
+  get/install the R 'lixoftConnectors' package in the 'Monolix' installation, as
+  described at the following url
+  <https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/>. When
+  'lixoftConnectors' is available, R can 'Monolix' directly instead of using a
+  command line.
 License: GPL (>= 3)
 NeedsCompilation: yes
 Encoding: UTF-8
 LazyData: true
-Suggests: 
+Suggests:
     testthat,
     nlmixr2data,
     withr,
     lixoftConnectors,
     pmxTools
-Depends: 
+Depends:
     R (>= 3.5),
     nlmixr2
-Imports: 
+Imports:
     checkmate,
     digest,
     lotri,
@@ -31,5 +36,5 @@ Imports:
 RoxygenNote: 7.2.1
 Additional_repositories: https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/
 Config/testthat/edition: 3
-LinkingTo: 
+LinkingTo:
     Rcpp, rxode2, RcppArmadillo, RcppEigen
