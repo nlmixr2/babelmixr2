@@ -406,7 +406,7 @@ rxUiGet.monolixCovarianceEstimatesSA <- function(x, ...) {
 #' @export
 rxUiGet.monolixCovariance <- function(x, ...) {
   .cov <- rxUiGet.monolixCovarianceEstimatesSA(x, ...)
-  .split <- ui$getSplitMuModel
+  .split <- x$getSplitMuModel
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .sa <- TRUE
   if (is.null(.cov)) {
@@ -482,26 +482,26 @@ rxUiGet.monolixPreds <- function(x, ...) {
   .ret <- merge(fit$ui$monolixPreds, .tmp, by=.by)
   .ci <- (1 - fit$monolixControl$ci) / 2
   .q <- c(0, .ci, 0.5, 1 - .ci, 1)
-  .qi <- quantile(with(.ret, 100*abs((IPRED-indivPred_SAEM)/indivPred_SAEM)), .q, na.rm=TRUE)
-  .qp <- quantile(with(.ret, 100*abs((PRED-popPred)/popPred)), .q, na.rm=TRUE)
-  .qai <- quantile(with(.ret, abs(IPRED-indivPred_SAEM)), .q, na.rm=TRUE)
-  .qap <- quantile(with(.ret, abs((PRED-popPred)/popPred)), .q, na.rm=TRUE)
+  .qi <- stats::quantile(with(.ret, 100*abs((IPRED-indivPred_SAEM)/indivPred_SAEM)), .q, na.rm=TRUE)
+  .qp <- stats::quantile(with(.ret, 100*abs((PRED-popPred)/popPred)), .q, na.rm=TRUE)
+  .qai <- stats::quantile(with(.ret, abs(IPRED-indivPred_SAEM)), .q, na.rm=TRUE)
+  .qap <- stats::quantile(with(.ret, abs((PRED-popPred)/popPred)), .q, na.rm=TRUE)
   .sigdig <- 3
   .msg <- c(paste0("IPRED relative difference compared to Monolix IPRED: ", round(.qi[3], 2),
                  "%; ", fit$monolixControl$ci * 100,"% percentile: (",
-                 round(.qi[2], 2), "%,", round(.qi[4], 2), "%); rtol=", signif(.qi[3] / 100, .sigdig)),
+                 round(.qi[2], 2), "%,", round(.qi[4], 2), "%); rtol=", signif(.qi[3] / 100, digits=.sigdig)),
             paste0("PRED relative difference compared to Monolix PRED: ", round(.qp[3], 2),
                    "%; ", fit$monolixControl$ci * 100,"% percentile: (",
-                   round(.qp[2], 2), "%,", round(.qp[4], 2), "%); rtol=", signif(.qp[3] / 100, , .sigdig)),
+                   round(.qp[2], 2), "%,", round(.qp[4], 2), "%); rtol=", signif(.qp[3] / 100, digits=.sigdig)),
             paste0("IPRED absolute difference compared to Monolix IPRED: atol=",
-                   signif(.qai[3], .sigdig),
+                   signif(.qai[3], digits=.sigdig),
                  "; ", fit$monolixControl$ci * 100,"% percentile: (",
-                 signif(.qai[2], .sigdig), ", ", signif(.qai[4], .sigdig), ")"),
+                 signif(.qai[2], digits=.sigdig), ", ", signif(.qai[4], digits=.sigdig), ")"),
             paste0("PRED absolute difference compared to Monolix PRED: atol=",
-                   signif(.qap[3], .sigdig),
+                   signif(.qap[3], digits=.sigdig),
                    "; ", fit$monolixControl$ci * 100,"% percentile: (",
-                   signif(.qap[2], .sigdig), ",
-", signif(.qp[4], .sigdig), ")"))
+                   signif(.qap[2], digits=.sigdig), ",
+", signif(.qp[4], digits=.sigdig), ")"))
   list(individualRel=.qi , popRel=.qp,
        individualAbs=.qai, popAbs=.qap,
        message=.msg)

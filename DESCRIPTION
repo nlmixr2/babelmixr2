@@ -1,16 +1,11 @@
 Package: babelmixr2
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Use nlmixr2 as a Front-End for Other Software
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-    While not required, you can get/install the R 'lixoftConnectors'
-    package in the 'Monolix' installation, as described at the following url
-    <https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/>.
-    When 'lixoftConnectors' is available, R can 'Monolix' directly instead of
-    using a command line.
+Authors@R: c(person("Matthew","Fidler", role = c("aut", "cre"), email = "matthew.fidler@gmail.com", comment=c(ORCID="0000-0001-8538-6691"))
+  )
+Description: Run other estimation and simulation software via the nlmixr2
+  interface including NONMEM and Monolix.
 License: GPL (>= 3)
 NeedsCompilation: yes
 Encoding: UTF-8
@@ -25,12 +20,15 @@ Depends:
     R (>= 3.5),
     nlmixr2
 Imports: 
-    rxode2,
-    nlmixr2est,
     checkmate,
+    digest,
+    lotri,
+    nlmixr2est,
     methods,
-    qs
-RoxygenNote: 7.2.0
+    qs,
+    rex,
+    rxode2
+RoxygenNote: 7.2.1
 Additional_repositories: https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/
 Config/testthat/edition: 3
 LinkingTo: 
