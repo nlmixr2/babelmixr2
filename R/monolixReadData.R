@@ -215,7 +215,7 @@ rxUiGet.monolixFullTheta <- function(x, ...) {
   .iniDf <- .ui$iniDf
   .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
   .muRefCurEval <- .ui$muRefCurEval
-  .split <- ui$getSplitMuModel
+  .split <- .ui$getSplitMuModel
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
   .fullTheta <- setNames(vapply(seq_along(.theta$name),
@@ -303,7 +303,7 @@ rxUiGet.monolixEtaObf <- function(x, ...) {
   .ui <- x[[1]]
   .etas <- .ui$iniDf[!is.na(.ui$iniDf$neta1), ]
   .etas <- .etas[.etas$neta1 == .etas$neta2, ]
-  .split <- ui$getSplitMuModel
+  .split <- .ui$getSplitMuModel
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .etaMonolix <- rxUiGet.monolixIndividualParameters(x, ...)
   if (is.null(.etaMonolix)) return(NULL)
