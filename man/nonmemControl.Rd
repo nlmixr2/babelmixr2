@@ -5,7 +5,7 @@
 \title{NONMEM estimation control}
 \usage{
 nonmemControl(
-  est = c("focei", "posthoc"),
+  est = c("focei", "imp", "its", "posthoc"),
   advanOde = c("advan13", "advan8", "advan6"),
   cov = c("r,s", "r", "s", ""),
   maxeval = 1e+05,
@@ -29,6 +29,15 @@ nonmemControl(
   sigdigTable = NULL,
   readRounding = FALSE,
   readBadOpt = FALSE,
+  niter = 100L,
+  isample = 1000L,
+  iaccept = 0.4,
+  iscaleMin = 0.1,
+  iscaleMax = 10,
+  df = 4,
+  seed = 14456,
+  mapiter = 1,
+  mapinter = 0,
   noabort = TRUE,
   ...
 )
@@ -52,13 +61,34 @@ nonmemControl(
 
 \item{extension}{NONMEM file extensions}
 
+\item{outputExtension}{Extension to use for the NONMEM output listing}
+
+\item{runCommand}{Command to run NONMEM (typically the path to "nmfe75")}
+
+\item{iniSigDig}{How many significant digits are printed in $THETA and $OMEGA}
+
 \item{protectZeros}{Add methods to protect divide by zero}
 
+\item{muRef}{Automatically mu-reference the control stream}
+
+\item{addProp, sumProd, optExpression, calcTables, compress, ci, sigdigTable}{Passed to \code{nlmixr2est::foceiControl}}
+
+\item{rxControl}{Options to pass to \code{rxode2::rxControl} for simulations}
+
+\item{readRounding}{Try to read NONMEM output when NONMEM terminated due to
+rounding errors}
+
+\item{readBadOpt}{Try to read NONMEM output when NONMEM terminated due to an
+apparent failed optimization}
+
 \item{noabort}{Add the `NOABORT` option for `$EST`}
+
+\item{...}{optional \code{genRxControl} argument controlling automatic
+\code{rxControl} generation.}
 }
 \value{
-babelmixr control option for generating NONMEM control stream and reading it back into
-  `babelmixr2`/`nlmixr2`
+babelmixr control option for generating NONMEM control stream and
+  reading it back into `babelmixr2`/`nlmixr2`
 }
 \description{
 NONMEM estimation control

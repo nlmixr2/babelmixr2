@@ -238,10 +238,10 @@ rxUiGet.nonmemCovarianceInfo <- function(x, ...) {
   .ret <- merge(.np, .tmp, by=.by)
   .ci <- (1 - fit$nonmemControl$ci) / 2
   .q <- c(0, .ci, 0.5, 1 - .ci, 1)
-  .qi <- quantile(with(.ret, 100*abs((IPRED-nonmemIPRED)/nonmemIPRED)), .q, na.rm=TRUE)
-  .qp <- quantile(with(.ret, 100*abs((PRED-nonmemPRED)/nonmemPRED)), .q, na.rm=TRUE)
-  .qai <- quantile(with(.ret, abs(IPRED-nonmemIPRED)), .q, na.rm=TRUE)
-  .qap <- quantile(with(.ret, abs((PRED-nonmemPRED)/nonmemPRED)), .q, na.rm=TRUE)
+  .qi <- stats::quantile(with(.ret, 100*abs((IPRED-nonmemIPRED)/nonmemIPRED)), .q, na.rm=TRUE)
+  .qp <- stats::quantile(with(.ret, 100*abs((PRED-nonmemPRED)/nonmemPRED)), .q, na.rm=TRUE)
+  .qai <- stats::quantile(with(.ret, abs(IPRED-nonmemIPRED)), .q, na.rm=TRUE)
+  .qap <- stats::quantile(with(.ret, abs((PRED-nonmemPRED)/nonmemPRED)), .q, na.rm=TRUE)
   .sigdig <- 3
   .msg <- c(paste0("IPRED relative difference compared to Nonmem IPRED: ", round(.qi[3], 2),
                  "%; ", fit$nonmemControl$ci * 100,"% percentile: (",
