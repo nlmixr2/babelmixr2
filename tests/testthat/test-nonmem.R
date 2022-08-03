@@ -29,14 +29,12 @@ test_that("NONMEM dsl", {
     rxToNonmem(x, ui)
   }
 
+  # Function Definitions ####
   expect_equal(.rxToN("sqrt(a)"), "DSQRT(RXDZ001)")
   expect_equal(.rxToN("max(a,b)"), "MAX(RXR1,RXR2)")
   expect_equal(.rxToN("max(c,b,a)"), "MAX(RXR3,RXR2,RXR1)")
   expect_equal(.rxToN("sum(a,b,c,d)"), "((RXR1)+(RXR2)+(RXR3)+(RXR4))")
   expect_equal(.rxToN("prod(a,b,c,d)"), "((RXR1)*(RXR2)*(RXR3)*(RXR4))")
-  expect_equal(.rxToN("a<-1+b"), "              RXR1=1+RXR2")
-  expect_equal(.rxToN("a~1+b"), "              RXR1=1+RXR2")
-  expect_equal(.rxToN("a=1+b"), "  RXR1=1+RXR2")
   expect_equal(.rxToN("expit(a)"), "1/(1+DEXP(-(RXR1)))")
   expect_equal(.rxToN("expit(a,b)"), "(1.0-(RXR2))*(1/(1+DEXP(-(RXR1))))+(RXR2)")
   expect_equal(.rxToN("expit(a,b,c)"), "((RXR3)-(RXR2))*(1/(1+DEXP(-(RXR1))))+(RXR2)")
@@ -53,10 +51,25 @@ test_that("NONMEM dsl", {
   expect_error(.rxToN("probit(a)"))
   expect_error(.rxToN("probit(a,b)"))
   expect_error(.rxToN("probit(a,b,c)"))
-  expect_equal(.rxToN("d/dt(depot)=-depot*kel"), "  DADT(1)=- A(1)*KEL")
-  expect_equal(.rxToN("f(depot)=3"), "  ;f defined in $PK block")
   expect_equal(.rxToN("a**b"), "RXDZ001**RXR2")
   expect_equal(.rxToN("a^b"), "RXDZ001**RXR2")
+  
+  # Simple assignments ####
+  expect_equal(.rxToN("a<-1+b"), "  RXR1=1+RXR2 ; a <- 1 + b")
+  expect_equal(.rxToN("a~1+b"), "  RXR1=1+RXR2 ; a ~ 1 + b")
+  expect_equal(.rxToN("a=1+b"), "  RXR1=1+RXR2 ; a = 1 + b")
+  
+  # Complex assignments ####
+  expect_equal(.rxToN("depot(0) <- b"), "  A_0(1) = RXR2 ; depot(0) <- b")
+  expect_equal(.rxToN("central(0) <- c"), "  A_0(2) = RXR3 ; central(0) <- c")
+  expect_equal(.rxToN("d/dt(depot)=-depot*kel"), "  DADT(1) = - A(1)*KEL ; d/dt(depot) = -depot * kel")
+  expect_equal(.rxToN("f(depot)=3"), "  F1 = 3 ; f(depot) = 3")
+  expect_equal(.rxToN("F(depot)=3"), "  F1 = 3 ; F(depot) = 3")
+  expect_equal(.rxToN("alag(depot)=3"), "  ALAG1 = 3 ; alag(depot) = 3")
+  expect_equal(.rxToN("lag(depot)=3"), "  ALAG1 = 3 ; lag(depot) = 3")
+  expect_equal(.rxToN("rate(depot)=3"), "  R1 = 3 ; rate(depot) = 3")
+  expect_equal(.rxToN("dur(depot)=3"), "  D1 = 3 ; dur(depot) = 3")
+  
   expect_error(
     .rxToN("if (a<=b){c=1} else if (a==4) {c=2} else {c=4}"),
     # Prior result:
@@ -79,7 +92,7 @@ test_that("NONMEM dsl", {
     .rxToN("if (a<=b){c=1}"),
     paste(c(
     "        IF (RXR1.LE.RXR2) THEN",
-    "          RXR3=1",
+    "          RXR3=1 ; c = 1",
     "        END IF",
     ""
     ), collapse="\n")
@@ -211,7 +224,7 @@ test_that("tbs tests", {
       "     RX_IP1 = -1000000000",
       "  END IF",
       "  RX_P1 = RX_IP1",
-      "  W1=DSQRT((THETA(3))**2)",
+      "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((add.err)^2)",
       "  IF (W1 .EQ. 0.0) W1 = 1",
       "  IPRED = RX_IP1",
       "  W     = W1",
@@ -274,7 +287,7 @@ test_that("tbs tests", {
       "     END IF",
       "  END IF",
       "  RX_P1 = RX_IP1",
-      "  W1=DSQRT((THETA(3))**2)",
+      "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((add.err)^2)",
       "  IF (W1 .EQ. 0.0) W1 = 1",
       "  IPRED = RX_IP1",
       "  W     = W1",
@@ -320,7 +333,7 @@ test_that("tbs tests", {
       "     RX_IP1 = DLOG(RX_IP1)",
       "  END IF",
       "  RX_P1 = RX_IP1",
-      "  W1=DSQRT((THETA(3))**2)",
+      "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((lnorm.err)^2)",
       "  IF (W1 .EQ. 0.0) W1 = 1",
       "  IPRED = RX_IP1",
       "  W     = W1",
@@ -363,7 +376,7 @@ test_that("tbs tests", {
       "  XL  = (RX_IP1 - (-0.1))/((70.0) - (-0.1))",
       "  RX_IP1 = -DLOG(1.0/XL - 1.0)",
       "  RX_P1 = RX_IP1",
-      "  W1=DSQRT((THETA(3))**2)",
+      "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((lnorm.err)^2)",
       "  IF (W1 .EQ. 0.0) W1 = 1",
       "  IPRED = RX_IP1",
       "  W     = W1",
@@ -423,7 +436,7 @@ test_that("tbs tests", {
       "     END IF",
       "  END IF",
       "  RX_P1 = RX_IP1",
-      "  W1=DSQRT((THETA(3))**2)",
+      "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((lnorm.err)^2)",
       "  IF (W1 .EQ. 0.0) W1 = 1",
       "  IPRED = RX_IP1",
       "  W     = W1",
@@ -498,7 +511,7 @@ test_that("NONMEM WBC model", {
       "  ; Write out expressions for ipred and w",
       "  RX_IP1 = RX_PF1",
       "  RX_P1 = RX_IP1",
-      "  W1=DSQRT((RX_PF1*THETA(5))**2)",
+      "  W1=DSQRT((RX_PF1*THETA(5))**2) ; W1 ~ sqrt((rx_pred_f_ * prop.err)^2)",
       "  IF (W1 .EQ. 0.0) W1 = 1",
       "  IPRED = RX_IP1",
       "  W     = W1",
@@ -581,7 +594,7 @@ test_that("NONMEM multiple endpoint methods", {
       "     RX_IP1 = -1000000000",
       "  END IF",
       "  RX_P1 = RX_IP1",
-      "  W1=DSQRT((THETA(5))**2)",
+      "  W1=DSQRT((THETA(5))**2) ; W1 ~ sqrt((cpadd.sd)^2)",
       "  IF (W1 .EQ. 0.0) W1 = 1",
       "  RX_IP2 = RX_PF2",
       "  IF (RX_IP2 .GE. 0.0) THEN",
@@ -602,7 +615,7 @@ test_that("NONMEM multiple endpoint methods", {
       "     END IF",
       "  END IF",
       "  RX_P2 = RX_IP2",
-      "  W2=DSQRT((THETA(12))**2)",
+      "  W2=DSQRT((THETA(12))**2) ; W2 ~ sqrt((pdadd.err)^2)",
       "  IF (W2 .EQ. 0.0) W2 = 1",
       "  IPRED = RX_IP1",
       "  W     = W1",
