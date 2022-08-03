@@ -1,6 +1,6 @@
 .lastNobs <- 0L
 .lastCmtCnt <- 0L
-#' Convert nlmixr compatible data to other formats (if possible)
+#' Convert nlmixr2-compatible data to other formats (if possible)
 #'
 #' @param model rxode2 model for conversion
 #'

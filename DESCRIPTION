@@ -38,3 +38,4 @@ Additional_repositories: https://monolix.lixoft.com/monolix-api/lixoftconnectors
 Config/testthat/edition: 3
 LinkingTo:
     Rcpp, rxode2, RcppArmadillo, RcppEigen
+Language: en-US

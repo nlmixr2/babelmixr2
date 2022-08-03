@@ -5,7 +5,7 @@
 \alias{bblDatToNonmem}
 \alias{bblDatToRxode}
 \alias{bblDatToMrgsolve}
-\title{Convert nlmixr compatible data to other formats (if possible)}
+\title{Convert nlmixr2-compatible data to other formats (if possible)}
 \usage{
 bblDatToMonolix(model, data, table = nlmixr2est::tableControl(), env = NULL)
 
@@ -44,7 +44,7 @@ dataset to use newer `evid` definitions that are closer to NONMEM
 instead of any classic definitions that are used at a lower level
 }
 \description{
-Convert nlmixr compatible data to other formats (if possible)
+Convert nlmixr2-compatible data to other formats (if possible)
 }
 \examples{
 
