@@ -569,10 +569,10 @@ babelmixr2Deparse <- function(x) {
   # Verify that it is really d/dt(cmt)
   lhs <- x[[2]]
   stopifnot(length(lhs) == 3)
-  stopifnot(lhs[[1]] == as.name("/"))
-  stopifnot(lhs[[2]] == as.name("d"))
+  stopifnot(identical(lhs[[1]], quote(`/`)))
+  stopifnot(identical(lhs[[2]], quote(`d`)))
   stopifnot(length(lhs[[3]]) == 2)
-  stopifnot(lhs[[3]][[1]] == as.name("dt"))
+  stopifnot(identical(lhs[[3]][[1]], quote(`dt`)))
   # Generate the output
   compartmentNumber <- .nonmemGetCmtNumber(lhs[[3]][[2]], ui)
   sprintf("DADT(%g) = %s", compartmentNumber, .rxToNonmem(x[[3]], ui=ui))
