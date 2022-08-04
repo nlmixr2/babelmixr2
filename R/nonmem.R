@@ -274,8 +274,6 @@ rex::register_shortcuts("babelmixr2")
          .rxToNonmem(x[[3]], ui=ui))
 }
 
-
-
 #' Protect Zeros for dlog(x) or dsqrt(x)
 #'
 #' @param x Expression to protect
@@ -420,6 +418,8 @@ rex::register_shortcuts("babelmixr2")
 #' @noRd
 .rxToNonmemHandleBinaryOperator <- function(x, ui) {
   if (identical(x[[1]], quote(`/`))) {
+    .x2 <- x[[2]]
+    .x3 <- x[[3]]
     if (.rxIsDdt(x)) {
       return(.rxToNonmemHandleDdt(x, ui))
     } else {
@@ -524,6 +524,74 @@ rex::register_shortcuts("babelmixr2")
   return(.ret)
 }
 
+.nonmemGetCmtProperties <- function(ui) {
+  rxode2::rxGetControl(ui, ".cmtProperties",
+                       data.frame(cmt=integer(0),
+                                  f=character(0),
+                                  dur=character(0),
+                                  lag=character(0),
+                                  rate=character(0),
+                                  init=character(0)))
+}
+
+.nonmemSetCmtProperty <- function(ui, state, extra, type="f") {
+  .prop <- .nonmemGetCmtProperties(ui)
+  .state <- rxode2::rxState(ui)
+  .cmt <- which(state == .state)
+  .w <- which(.prop$cmt == .cmt)
+  if (length(.w) == 0L) {
+    .prop <- rbind(.prop,
+                   data.frame(cmt=.cmt,
+                              f=NA_character_,
+                              dur=NA_character_,
+                              lag=NA_character_,
+                              rate=NA_character_,
+                              init=NA_character_))
+    .w <- which(.prop$cmt == .cmt)
+  }
+  if (type == "f") {
+    .prop[.w, "f"] <- extra
+  } else if (type == "dur") {
+    .prop[.w, "dur"] <- extra
+  } else if (type == "lag") {
+    .prop[.w, "lag"] <- extra
+  } else if (type == "rate") {
+    .prop[.w, "rate"] <- extra
+  } else if (type == "init") {
+    .prop[.w, "init"] <- extra
+  }
+  rxode2::rxAssignControlValue(ui, ".cmtProperties", .prop)
+}
+
+.nonmemSetCmtProperty <- function(ui, state, extra, type="f") {
+  .prop <- .nonmemGetCmtProperties(ui)
+  .state <- rxode2::rxState(ui)
+  .cmt <- .rxGetCmtNumber(state, ui)
+  .w <- which(.prop$cmt == .cmt)
+  if (length(.w) == 0L) {
+    .prop <- rbind(.prop,
+                   data.frame(cmt=.cmt,
+                              f=NA_character_,
+                              dur=NA_character_,
+                              lag=NA_character_,
+                              rate=NA_character_,
+                              init=NA_character_))
+    .w <- which(.prop$cmt == .cmt)
+  }
+  if (type == "f") {
+    .prop[.w, "f"] <- extra
+  } else if (type == "dur") {
+    .prop[.w, "dur"] <- extra
+  } else if (type == "lag") {
+    .prop[.w, "lag"] <- extra
+  } else if (type == "rate") {
+    .prop[.w, "rate"] <- extra
+  } else if (type == "init") {
+    .prop[.w, "init"] <- extra
+  }
+  rxode2::rxAssignControlValue(ui, ".cmtProperties", .prop)
+}
+
 .rxToNonmemHandleAssignmentOperator <- function(x, ui) {
   if (length(x[[2]]) == 1L) {
     .rxToNonmemHandleAssignmentOperatorSimpleLHS(x, ui)
@@ -562,9 +630,11 @@ rex::register_shortcuts("babelmixr2")
     .ret <- .rxToNonmemHandleDdtLine(x, ui)
   } else if (identical(x[[2]][[2]], 0)) {
     # set initial conditions
-    .ret <- .rxToNonmemHandleInitialConditions(x, ui)
+    return(paste0(.rxToNonmemGetIndent(ui),
+                  .rxToNonmemHandleInitialConditions(x, ui)))
   } else if (length(x[[2]]) == 2) {
-    .ret <- .rxToNonmemHandleAssignmentPrefix(x, ui)
+    return(paste0(.rxToNonmemGetIndent(ui),
+                  .rxToNonmemHandleAssignmentPrefix(x, ui)))
   } else {
     stop("the left hand expression '", deparse1(x), "' is not supported",
          call.=FALSE)
@@ -581,35 +651,46 @@ rex::register_shortcuts("babelmixr2")
 #' @param x rxode2 expression line 
 #' @param ui User interface
 #' @return String for NONMEM style initial condition
-#' @author Bill Denney
+#' @author Matt Fidler and Bill Denney
 #' @noRd
 .rxToNonmemHandleInitialConditions <- function(x, ui) {
-  .compartmentNumber <- .rxGetCmtNumber(x[[2]][[1]], ui)
-  sprintf(
-    "A_0(%g) = %s",
-    .compartmentNumber,
-    .rxToNonmem(x[[3]], ui=ui)
-  )
+  .state <-  as.character(x[[2]][[1]])
+  # Cannot use ifelse in the block
+  rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
+  on.exit(rxode2::rxAssignControlValue(ui, ".ifelse", FALSE))
+  if (length(x[[3]]) != 1L) {
+    stop("the complex initial condition is not supported in the nonmem conversion\n",
+         deparse1(x), call.=FALSE)
+  }
+  .extra <- paste0(.rxToNonmem(x[[3]], ui=ui),
+                   .babelmixr2Deparse(x))
+  .nonmemSetCmtProperty(ui, .state, .extra, type="init")
+  return(paste0(.rxToNonmemGetIndent(ui),
+                    ";", .state, "(0) defined in $PK block"))
 }
 
 .rxToNonmemHandleAssignmentPrefix <- function(x, ui) {
   .lhs <- x[[2]]
   stopifnot(length(.lhs) == 2)
+  .state <- as.character(.lhs[2])
   .prefix <-
     list(
-      f="F", # bioavailability
-      F="F",
-      alag="ALAG", # lag time
-      lag="ALAG",
-      rate="R", # rate of infusion
-      dur="D" # duration of infusion
+      f="f", # bioavailability
+      F="f",
+      alag="lag", # lag time
+      lag="lag",
+      rate="rate", # rate of infusion
+      dur="dur" # duration of infusion
     )[[as.character(.lhs[[1]])]]
   if (is.null(.prefix)) {
-    stop("unknown rxode2 assignment type", .babelmixr2Deparse(x),
+    stop("unknown rxode2 assignment type:\n", deparse1(x),
          .call.=FALSE)
   }
-  .compartmentNumber <- .rxGetCmtNumber(.lhs[[2]], ui)
-  sprintf("%s%g = %s", .prefix, .compartmentNumber, .rxToNonmem(x[[3]], ui=ui))
+  .extra <- paste0(.rxToNonmem(x[[3]], ui=ui),
+                   .babelmixr2Deparse(x))
+  .nonmemSetCmtProperty(ui, .state, .extra, type=.prefix)
+  paste0(.rxToNonmemGetIndent(ui),
+                    "; ", .prefix, "(", .state, ") defined in $PK block")
 }
 
 .rxToNonmemHandleCall <- function(x, ui) {

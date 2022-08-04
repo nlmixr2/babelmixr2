@@ -12,6 +12,8 @@
   } else {
     if (is.name(nm)) {
       nm <- as.character(nm)
+    } else if (is.character(nm)) {
+      checkmate::assertCharacter(nm, len=1, any.missing=FALSE)
     } else if (error) {
       stop("invalid attempt to find a compartment number: ", as.character(nm))
     } else {

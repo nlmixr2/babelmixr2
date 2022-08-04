@@ -111,7 +111,7 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                                    collapse="\n"))
   .normMain <- strsplit(rxode2::rxNorm(eval(.mainModel)), "\n")[[1]]
   .normMainL <- vapply(seq_along(.normMain),
-                       function(i){
+                       function(i) {
                          regexpr("^((alag|f|F|rate|dur|lag)[(][^)]+[)]|[^(]+[(]0[)]|d[/]dt[(][^(]+[)])=", .normMain[i]) == -1
                        }, logical(1), USE.NAMES=FALSE)
 
