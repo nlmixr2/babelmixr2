@@ -25,7 +25,7 @@
 #' @param ... optional \code{genRxControl} argument controlling automatic
 #'   \code{rxControl} generation.
 #'
-#' @return babelmixr control option for generating NONMEM control stream and
+#' @return babelmixr2 control option for generating NONMEM control stream and
 #'   reading it back into `babelmixr2`/`nlmixr2`
 #'
 #' @author Matthew L. Fidler

@@ -2,7 +2,7 @@
 % Please edit documentation in R/monolixControl.R
 \name{monolixControl}
 \alias{monolixControl}
-\title{Monolix Controller for nlmixr}
+\title{Monolix Controller for nlmixr2}
 \usage{
 monolixControl(
   nbSSDoses = 7,
@@ -67,7 +67,7 @@ The combined2 error model can be described by the following equation:
 \item{exploratoryAutoStop}{logical to turn on or off exploratory
 phase auto-stop of SAEM (default 250)}
 
-\item{smoothingAutoStop}{Boolen indicating if the smoothing should
+\item{smoothingAutoStop}{Boolean indicating if the smoothing should
 automatically stop (default `FALSE`)}
 
 \item{burnInIterations}{Number of burn in iterations}
@@ -80,7 +80,7 @@ phase (default 250)}
 \item{simulatedAnnealingIterations}{Number of simulating annealing
 iterations}
 
-\item{exploratoryInterval}{Minimum number of interation in the
+\item{exploratoryInterval}{Minimum number of iterations in the
 exploratory phase (default 200)}
 
 \item{exploratoryAlpha}{Convergence memory in the exploratory phase
@@ -93,11 +93,11 @@ annealing}
 annealing}
 
 \item{variability}{This describes the methodology for parameters
-without varaiblity.  It could be: - Fixed throughout (none) -
+without variability.  It could be: - Fixed throughout (none) -
 Variability in the first stage (firstStage) - Decreasing until it
 reaches the fixed value (decreasing)}
 
-\item{runCommand}{is a shell command to run monolix; You can specfy
+\item{runCommand}{is a shell command to run monolix; You can specify
 the default by
 \code{options("babelmixr2.monolix"="runMonolix \%s")} where the
 \code{"\%s"} represents the monolix project file. If it is empty
@@ -135,7 +135,7 @@ be used for the monolix runs.}
 A monolix control object
 }
 \description{
-Monolix Controller for nlmixr
+Monolix Controller for nlmixr2
 }
 \author{
 Matthew Fidler
