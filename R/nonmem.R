@@ -243,6 +243,30 @@ babelmixr2Deparse <- function(x) {
     identical(expr, quote(`/`))
 }
 
+#'  Handle d/dt() expression
+#'
+#' @param x2 numerator expression
+#' @param x3 denominator expression
+#' @param ui rxode2 ui
+#' @return DADT(#) for NONMEM
+#' @author Matthew L. Fidler
+#' @noRd
+.rxToNonmemHandleDdt <- function(x2, x3, ui) {
+  if (length(x3[[2]]) == 1) {
+    .state <- as.character(x3[[2]])
+  } else {
+    .state <- .rxToNonmem(x3[[2]], ui=ui)
+  }
+  .states <- rxode2::rxModelVars(ui)$state
+  .num <- which(.state == .states)
+  if (length(.num) != 1) {
+    stop("cannot find '", .state, "' in the model",
+         call.=FALSE)
+  }
+  return(paste0("DADT(", .num, ")"))
+}
+
+
 #' Protect Zeros for dlog(x) or dsqrt(x)
 #'
 #' @param x Expression to protect
@@ -391,7 +415,7 @@ babelmixr2Deparse <- function(x) {
     .x3 <- x[[3]]
     if (identical(.x2, quote(`d`)) &&
           identical(.x3[[1]], quote(`dt`))) {
-      stop('d/dt() is not supported on the right hand side with NONMEM conversion', call.=FALSE)
+      return(.rxToNonmemHandleDdt(.x2, .x3, ui))
     } else {
       if (length(.x2) == 2 && length(.x3) == 2) {
         if (identical(.x2[[1]], quote(`df`)) &&
