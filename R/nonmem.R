@@ -600,7 +600,7 @@ babelmixr2Deparse <- function(x) {
       dur="D" # duration of infusion
     )[[as.character(lhs[[1]])]]
   if (is.null(prefix)) {
-    stop("unknown NONMEM complex assignment type", babelmixr2Deparse(x))
+    stop("unknown NONMEM assignment type", babelmixr2Deparse(x))
   }
   compartmentNumber <- .nonmemGetCmtNumber(lhs[[2]], ui)
   sprintf("%s%g = %s", prefix, compartmentNumber, .rxToNonmem(x[[3]], ui=ui))
