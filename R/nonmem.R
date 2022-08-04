@@ -228,8 +228,7 @@ rex::register_shortcuts("babelmixr2")
       .ret <- gsub("e", "D", .ret)
       return(.ret)
     } else {
-      # could use
-      .cmt <-.rxGetCmtNumber(.rxGetCmtNumber, ui, error=FALSE)
+      .cmt <-.rxGetCmtNumber(.ret, ui, error=FALSE)
       if (!is.na(.cmt)) {
         return(paste0("A(", .cmt, ")"))
       }
@@ -686,11 +685,14 @@ rex::register_shortcuts("babelmixr2")
     stop("unknown rxode2 assignment type:\n", deparse1(x),
          .call.=FALSE)
   }
+  if (length(x[[3]]) != 1L) {
+    stop("the complex initial condition is not supported in the nonmem conversion\n",
+         deparse1(x), call.=FALSE)
+  }
   .extra <- paste0(.rxToNonmem(x[[3]], ui=ui),
                    .babelmixr2Deparse(x))
   .nonmemSetCmtProperty(ui, .state, .extra, type=.prefix)
-  paste0(.rxToNonmemGetIndent(ui),
-                    "; ", .prefix, "(", .state, ") defined in $PK block")
+  paste0("; ", .prefix, "(", .state, ") defined in $PK block")
 }
 
 .rxToNonmemHandleCall <- function(x, ui) {
