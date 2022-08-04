@@ -251,21 +251,30 @@ rex::register_shortcuts("babelmixr2")
 
 #'  Handle d/dt() expression
 #'
-#' @param x2 numerator expression
-#' @param x3 denominator expression
+#' @param x d/dt() expression
 #' @param ui rxode2 ui
 #' @return DADT(#) for NONMEM
 #' @author Matthew L. Fidler
 #' @noRd
-.rxToNonmemHandleDdt <- function(x2, x3, ui) {
-  if (length(x3[[2]]) == 1) {
-    .state <- as.character(x3[[2]])
-  } else {
-    .state <- .rxToNonmem(x3[[2]], ui=ui)
-  }
-  .cmt <- .rxGetCmtNumber(.state, ui)
-  return(paste0("DADT(", .cmt, ")"))
+.rxToNonmemHandleDdt <- function(expr, ui) {
+  stopifnot(.rxIsDdt(expr))
+  .cmt <-.rxGetCmtNumber(expr[[3]][[2]], ui)
+  sprintf("DADT(%g)", .cmt)
 }
+
+#' Handle d/dt() line and add rxode code as a comment
+#'
+#' @param x expression 
+#' @param ui rxode2 ui object
+#' @return d/dt() nonmem line
+#' @author Matthew L. Fidler with influence from Bill Denney
+#' @noRd
+.rxToNonmemHandleDdtLine <- function(x, ui) {
+  paste0(.rxToNonmemHandleDdt(x[[2]], ui), " = ",
+         .rxToNonmem(x[[3]], ui=ui),
+         .babelmixr2Deparse(x))
+}
+
 
 
 #' Protect Zeros for dlog(x) or dsqrt(x)
@@ -412,11 +421,8 @@ rex::register_shortcuts("babelmixr2")
 #' @noRd
 .rxToNonmemHandleBinaryOperator <- function(x, ui) {
   if (identical(x[[1]], quote(`/`))) {
-    .x2 <- x[[2]]
-    .x3 <- x[[3]]
-    if (identical(.x2, quote(`d`)) &&
-          identical(.x3[[1]], quote(`dt`))) {
-      return(.rxToNonmemHandleDdt(.x2, .x3, ui))
+    if (.rxIsDdt(x)) {
+      return(.rxToNonmemHandleDdt(x, ui))
     } else {
       if (length(.x2) == 2 && length(.x3) == 2) {
         if (identical(.x2[[1]], quote(`df`)) &&
@@ -548,13 +554,13 @@ rex::register_shortcuts("babelmixr2")
 # When there is a more complex left-hand-side assignment (e.g. initial condition
 # setting or lag time setting)
 .rxToNonmemHandleAssignmentOperatorComplexLHS <- function(x, ui) {
-  if (length(x[[2]]) == 3) {
+  if (.rxIsDdt(x)) {
     # Currently d/dt() the only 3-long option that is used in practice
     # Specifying the jacobian is possible but an error will the thrown
     # anyway in this implementation and I don't think people use it in
     # nlmixr models.  The information may be thrown away depending on
     # what procedure is run.
-    .ret <- .rxToNonmemHandleDdt(x, ui)
+    .ret <- .rxToNonmemHandleDdtLine(x, ui)
   } else if (identical(x[[2]][[2]], 0)) {
     # set initial conditions
     .ret <- .rxToNonmemHandleInitialConditions(x, ui)
@@ -570,37 +576,7 @@ rex::register_shortcuts("babelmixr2")
     .babelmixr2Deparse(x)
   )
 }
-#' Determine if the expression is d/dt() 
-#'
-#' @param expr expression
-#' @return boolean determining if expression is a d/dt() expression
-#' @author Matthew L. Fidler
-#' @noRd
-.rxIsDdt <- function(expr) {
-  if (length(expr) != 3) return(FALSE)
-  if (!identical(expr[[1]], quote(`/`))) return(FALSE)
-  if (!identical(expr[[2]], quote(`d`))) return(FALSE)
-  if (length(expr[[3]]) != 2) return(FALSE)
-  if (1identical(expr[[3]][[1]], quote(`dt`))) return(FALSE)
-  TRUE
-}
 
-#'  Handle d/dt() expression
-#'
-#' @param x2 numerator expression
-#' @param x3 denominator expression
-#' @param ui rxode2 ui
-#' @return DADT(#) for NONMEM
-#' @author Matthew L. Fidler
-#' @noRd
-.rxToNonmemHandleDdt <- function(x, ui) {
-  # Verify that it is really d/dt(cmt)
-  .lhs <- x[[2]]
-  stopifnot(.rxIsDdt(.lhs))
-  # Generate the output
-  .compartmentNumber <- .rxGetCmtNumber(.lhs[[3]][[2]], ui)
-  sprintf("DADT(%g) = %s", .compartmentNumber, .rxToNonmem(x[[3]], ui=ui))
-}
 #' Handle compartment number initial conditions
 #'
 #' @param x rxode2 expression line 
