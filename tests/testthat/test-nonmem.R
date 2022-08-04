@@ -53,22 +53,29 @@ test_that("NONMEM dsl", {
   expect_error(.rxToN("probit(a,b,c)"))
   expect_equal(.rxToN("a**b"), "RXDZ001**RXR2")
   expect_equal(.rxToN("a^b"), "RXDZ001**RXR2")
+
+  .eeline <- function(a, b) {
+    # This ignores any left over divide by zero protectcion
+    .l1 <- a
+    .l1 <- .l1[length(.l1)]
+    expect_equal(.l1, b)
+  }
   
   # Simple assignments ####
-  expect_equal(.rxToN("a<-1+b"), "  RXR1=1+RXR2 ; a <- 1 + b")
-  expect_equal(.rxToN("a~1+b"), "  RXR1=1+RXR2 ; a ~ 1 + b")
-  expect_equal(.rxToN("a=1+b"), "  RXR1=1+RXR2 ; a = 1 + b")
+  .eeline(.rxToN("a<-1+b"), "  RXR1=1+RXR2 ; a <- 1 + b")
+  .eeline(.rxToN("a~1+b"), "  RXR1=1+RXR2 ; a ~ 1 + b")
+  .eeline(.rxToN("a=1+b"), "  RXR1=1+RXR2 ; a = 1 + b")
   
   # Complex assignments ####
-  expect_equal(.rxToN("depot(0) <- b"), "  A_0(1) = RXR2 ; depot(0) <- b")
-  expect_equal(.rxToN("central(0) <- c"), "  A_0(2) = RXR3 ; central(0) <- c")
-  expect_equal(.rxToN("d/dt(depot)=-depot*kel"), "  DADT(1) = - A(1)*KEL ; d/dt(depot) = -depot * kel")
-  expect_equal(.rxToN("f(depot)=3"), "  F1 = 3 ; f(depot) = 3")
-  expect_equal(.rxToN("F(depot)=3"), "  F1 = 3 ; F(depot) = 3")
-  expect_equal(.rxToN("alag(depot)=3"), "  ALAG1 = 3 ; alag(depot) = 3")
-  expect_equal(.rxToN("lag(depot)=3"), "  ALAG1 = 3 ; lag(depot) = 3")
-  expect_equal(.rxToN("rate(depot)=3"), "  R1 = 3 ; rate(depot) = 3")
-  expect_equal(.rxToN("dur(depot)=3"), "  D1 = 3 ; dur(depot) = 3")
+  .eeline(.rxToN("depot(0) <- b"), "  A_0(1) = RXR2 ; depot(0) <- b")
+  .eeline(.rxToN("central(0) <- c"), "  A_0(2) = RXR3 ; central(0) <- c")
+  .eeline(.rxToN("d/dt(depot)=-depot*kel"), "  DADT(1) = - A(1)*KEL ; d/dt(depot) = -depot * kel")
+  .eeline(.rxToN("f(depot)=3"), "  F1 = 3 ; f(depot) = 3")
+  .eeline(.rxToN("F(depot)=3"), "  F1 = 3 ; F(depot) = 3")
+  .eeline(.rxToN("alag(depot)=3"), "  ALAG1 = 3 ; alag(depot) = 3")
+  .eeline(.rxToN("lag(depot)=3"), "  ALAG1 = 3 ; lag(depot) = 3")
+  .eeline(.rxToN("rate(depot)=3"), "  R1 = 3 ; rate(depot) = 3")
+  .eeline(.rxToN("dur(depot)=3"), "  D1 = 3 ; dur(depot) = 3")
   
   expect_error(
     .rxToN("if (a<=b){c=1} else if (a==4) {c=2} else {c=4}"),

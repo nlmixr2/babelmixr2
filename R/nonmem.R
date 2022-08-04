@@ -271,8 +271,7 @@ rex::register_shortcuts("babelmixr2")
 #' @noRd
 .rxToNonmemHandleDdtLine <- function(x, ui) {
   paste0(.rxToNonmemHandleDdt(x[[2]], ui), " = ",
-         .rxToNonmem(x[[3]], ui=ui),
-         .babelmixr2Deparse(x))
+         .rxToNonmem(x[[3]], ui=ui))
 }
 
 
@@ -554,7 +553,7 @@ rex::register_shortcuts("babelmixr2")
 # When there is a more complex left-hand-side assignment (e.g. initial condition
 # setting or lag time setting)
 .rxToNonmemHandleAssignmentOperatorComplexLHS <- function(x, ui) {
-  if (.rxIsDdt(x)) {
+  if (.rxIsDdt(x[[2]])) {
     # Currently d/dt() the only 3-long option that is used in practice
     # Specifying the jacobian is possible but an error will the thrown
     # anyway in this implementation and I don't think people use it in
@@ -609,7 +608,7 @@ rex::register_shortcuts("babelmixr2")
     stop("unknown rxode2 assignment type", .babelmixr2Deparse(x),
          .call.=FALSE)
   }
-  .compartmentNumber <- .rxGetCmtNumber(lhs[[2]], ui)
+  .compartmentNumber <- .rxGetCmtNumber(.lhs[[2]], ui)
   sprintf("%s%g = %s", .prefix, .compartmentNumber, .rxToNonmem(x[[3]], ui=ui))
 }
 
