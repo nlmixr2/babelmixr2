@@ -548,7 +548,7 @@ babelmixr2Deparse <- function(x) {
     # set initial conditions
     ret <- .rxToNonmemHandleInitialConditions(x, ui)
   } else {
-    ret <- .rxToNonmemHandleComplexOther(x, ui)
+    ret <- .rxToNonmemHandleAssignmentPrefix(x, ui)
   }
   paste0(
     .rxToNonmemGetIndent(ui),
@@ -587,7 +587,7 @@ babelmixr2Deparse <- function(x) {
   )
 }
 
-.rxToNonmemHandleComplexOther <- function(x, ui) {
+.rxToNonmemHandleAssignmentPrefix <- function(x, ui) {
   lhs <- x[[2]]
   stopifnot(length(lhs) == 2)
   prefix <-
