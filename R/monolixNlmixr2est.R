@@ -239,6 +239,9 @@
         lixoftConnectors::runScenario()
         .minfo("done")
         .runLS <- TRUE
+      } else if (!interactive()) {
+        # Don't wait when running in a script or test
+        stop("setup monolix's run command")
       } else {
         .minfo("run monolix manually or stop and setup monolix's run command")
       }
