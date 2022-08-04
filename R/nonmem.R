@@ -566,7 +566,11 @@ babelmixr2Deparse <- function(x) {
 .rxToNonmemHandleAssignmentOperatorComplexLHS <- function(x, ui) {
   stopifnot(length(x[[2]]) %in% c(2, 3))
   if (length(x[[2]]) == 3) {
-    # Is d/dt() the only 3-long option?
+    # Currently d/dt() the only 3-long option that is used in practice
+    # Specifying the jacobian is possible but an error will the thrown
+    # anyway in this implementation and I don't think people use it in
+    # nlmixr models.  The information may be thrown away depending on
+    # what procedure is run.
     ret <- .rxToNonmemHandleDdt(x, ui)
   } else if (identical(x[[2]][[2]], 0)) {
     # set initial conditions
