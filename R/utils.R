@@ -41,6 +41,6 @@
   if (!identical(expr[[1]], quote(`/`))) return(FALSE)
   if (!identical(expr[[2]], quote(`d`))) return(FALSE)
   if (length(expr[[3]]) != 2) return(FALSE)
-  if (1identical(expr[[3]][[1]], quote(`dt`))) return(FALSE)
+  if (!identical(expr[[3]][[1]], quote(`dt`))) return(FALSE)
   TRUE
 }
