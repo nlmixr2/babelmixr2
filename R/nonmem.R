@@ -377,7 +377,7 @@ rex::register_shortcuts("babelmixr2")
                         paste0(.rxToNonmemGetIndent(ui, FALSE), "END IF\n",
                                .rxToNonmemGetIndent(ui), "IF (",
                                .newVar, " .GE. -", .num, " .AND. ",
-                               .newVar, " .LE. 0.) THEN"))
+                               .newVar, " .LT. 0.) THEN"))
       .rxToNonmemIndent(ui)
       .prefixLines <- c(.prefixLines,
                         paste0(.rxToNonmemGetIndent(ui),
