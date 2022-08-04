@@ -511,45 +511,6 @@ babelmixr2Deparse <- function(x) {
   }
 }
 
-.nonmemGetCmtProperties <- function(ui) {
-  rxode2::rxGetControl(ui, ".cmtProperties",
-                       data.frame(cmt=integer(0),
-                                  f=character(0),
-                                  dur=character(0),
-                                  lag=character(0),
-                                  rate=character(0),
-                                  init=character(0)))
-}
-
-.nonmemSetCmtProperty <- function(ui, state, extra, type="f") {
-  .prop <- .nonmemGetCmtProperties(ui)
-  .state <- rxode2::rxState(ui)
-  .cmt <- which(state == .state)
-  .w <- which(.prop$cmt == .cmt)
-  if (length(.w) == 0L) {
-    .prop <- rbind(.prop,
-                   data.frame(cmt=.cmt,
-                              f=NA_character_,
-                              dur=NA_character_,
-                              lag=NA_character_,
-                              rate=NA_character_,
-                              init=NA_character_))
-    .w <- which(.prop$cmt == .cmt)
-  }
-  if (type == "f") {
-    .prop[.w, "f"] <- extra
-  } else if (type == "dur") {
-    .prop[.w, "dur"] <- extra
-  } else if (type == "lag") {
-    .prop[.w, "lag"] <- extra
-  } else if (type == "rate") {
-    .prop[.w, "rate"] <- extra
-  } else if (type == "init") {
-    .prop[.w, "init"] <- extra
-  }
-  rxode2::rxAssignControlValue(ui, ".cmtProperties", .prop)
-}
-
 .rxToNonmemHandleAssignmentOperator <- function(x, ui) {
   if (length(x[[2]]) == 1L) {
     .rxToNonmemHandleAssignmentOperatorSimpleLHS(x, ui)
