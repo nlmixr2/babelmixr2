@@ -4,7 +4,7 @@ rxUiGet.nonmemMod <- function(x, ...) {
   .state <- rxode2::rxModelVars(.ui)$state
   paste(c(paste0("$MODEL NCOMPARTMENTS=", length(.state)),
           vapply(.state,
-               function(s){
+               function(s) {
                  paste0("     COMP(", .nmGetVar(s, .ui),
                         ifelse(s == .state[1], ", DEFDOSE", ""), ") ; ",
                         s)

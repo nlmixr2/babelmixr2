@@ -104,10 +104,16 @@ rex::register_shortcuts("babelmixr2")
               `-`="-",
               `/`="/")
 
-# Help show where code came from (but stop at 500 characters of deparsing and
-# stop on the first line)
-babelmixr2Deparse <- function(x) {
-  ret <- deparse(x, width.cutoff=500L)
+#' Help show where code came from (but stop at 500 characters of deparsing and
+#' stop on the first line)
+#' 
+#' @param x rxode2 expression line
+#' @inheritParams deparse
+#' @return R expression as NONMEM comement
+#' @author Bill Denney
+#' @noRd
+.babelmixr2Deparse <- function(x, width.cutoff=500L) {
+  ret <- deparse(x, width.cutoff=width.cutoff)
   if (length(ret) > 1) {
     ret <- paste0(ret[1], "...")
   }
@@ -222,10 +228,10 @@ babelmixr2Deparse <- function(x) {
       .ret <- gsub("e", "D", .ret)
       return(.ret)
     } else {
-      .states <- rxode2::rxModelVars(ui)$state
-      .w <- which(.ret == .states)
-      if (length(.w) == 1) {
-        return(paste0("A(", .w, ")"))
+      # could use
+      .cmt <-.rxGetCmtNumber(.rxGetCmtNumber, ui, error=FALSE)
+      if (!is.na(.cmt)) {
+        return(paste0("A(", .cmt, ")"))
       }
       return(.nmGetVar(.ret, ui))
     }
@@ -257,13 +263,8 @@ babelmixr2Deparse <- function(x) {
   } else {
     .state <- .rxToNonmem(x3[[2]], ui=ui)
   }
-  .states <- rxode2::rxModelVars(ui)$state
-  .num <- which(.state == .states)
-  if (length(.num) != 1) {
-    stop("cannot find '", .state, "' in the model",
-         call.=FALSE)
-  }
-  return(paste0("DADT(", .num, ")"))
+  .cmt <- .rxGetCmtNumber(.state, ui)
+  return(paste0("DADT(", .cmt, ")"))
 }
 
 
@@ -518,23 +519,6 @@ babelmixr2Deparse <- function(x) {
   return(.ret)
 }
 
-.nonmemGetCmtNumber <- function(nm, ui) {
-  if (is.numeric(nm)) {
-    nm
-  } else {
-    if (is.name(nm)) {
-      nm <- as.character(nm)
-    } else {
-      stop("invalid attempt to find a compartment number: ", as.character(nm))
-    }
-    cmt <- which(rxode2::rxModelVars(ui)$state %in% nm)
-    if (length(cmt) == 0) {
-      stop("CMT not found")
-    }
-    cmt
-  }
-}
-
 .rxToNonmemHandleAssignmentOperator <- function(x, ui) {
   if (length(x[[2]]) == 1L) {
     .rxToNonmemHandleAssignmentOperatorSimpleLHS(x, ui)
@@ -557,32 +541,48 @@ babelmixr2Deparse <- function(x) {
   paste0(
     .extra,
     .rxToNonmemGetIndent(ui), .var, "=", .val,
-    babelmixr2Deparse(x) # Show the source where this code came from
+    .babelmixr2Deparse(x) # Show the source where this code came from
   )
 }
 
 # When there is a more complex left-hand-side assignment (e.g. initial condition
 # setting or lag time setting)
 .rxToNonmemHandleAssignmentOperatorComplexLHS <- function(x, ui) {
-  stopifnot(length(x[[2]]) %in% c(2, 3))
   if (length(x[[2]]) == 3) {
     # Currently d/dt() the only 3-long option that is used in practice
     # Specifying the jacobian is possible but an error will the thrown
     # anyway in this implementation and I don't think people use it in
     # nlmixr models.  The information may be thrown away depending on
     # what procedure is run.
-    ret <- .rxToNonmemHandleDdt(x, ui)
+    .ret <- .rxToNonmemHandleDdt(x, ui)
   } else if (identical(x[[2]][[2]], 0)) {
     # set initial conditions
-    ret <- .rxToNonmemHandleInitialConditions(x, ui)
+    .ret <- .rxToNonmemHandleInitialConditions(x, ui)
+  } else if (length(x[[2]]) == 2) {
+    .ret <- .rxToNonmemHandleAssignmentPrefix(x, ui)
   } else {
-    ret <- .rxToNonmemHandleAssignmentPrefix(x, ui)
+    stop("the left hand expression '", deparse1(x), "' is not supported",
+         call.=FALSE)
   }
   paste0(
     .rxToNonmemGetIndent(ui),
-    ret,
-    babelmixr2Deparse(x)
+    .ret,
+    .babelmixr2Deparse(x)
   )
+}
+#' Determine if the expression is d/dt() 
+#'
+#' @param expr expression
+#' @return boolean determining if expression is a d/dt() expression
+#' @author Matthew L. Fidler
+#' @noRd
+.rxIsDdt <- function(expr) {
+  if (length(expr) != 3) return(FALSE)
+  if (!identical(expr[[1]], quote(`/`))) return(FALSE)
+  if (!identical(expr[[2]], quote(`d`))) return(FALSE)
+  if (length(expr[[3]]) != 2) return(FALSE)
+  if (1identical(expr[[3]][[1]], quote(`dt`))) return(FALSE)
+  TRUE
 }
 
 #'  Handle d/dt() expression
@@ -595,30 +595,32 @@ babelmixr2Deparse <- function(x) {
 #' @noRd
 .rxToNonmemHandleDdt <- function(x, ui) {
   # Verify that it is really d/dt(cmt)
-  lhs <- x[[2]]
-  stopifnot(length(lhs) == 3)
-  stopifnot(identical(lhs[[1]], quote(`/`)))
-  stopifnot(identical(lhs[[2]], quote(`d`)))
-  stopifnot(length(lhs[[3]]) == 2)
-  stopifnot(identical(lhs[[3]][[1]], quote(`dt`)))
+  .lhs <- x[[2]]
+  stopifnot(.rxIsDdt(.lhs))
   # Generate the output
-  compartmentNumber <- .nonmemGetCmtNumber(lhs[[3]][[2]], ui)
-  sprintf("DADT(%g) = %s", compartmentNumber, .rxToNonmem(x[[3]], ui=ui))
+  .compartmentNumber <- .rxGetCmtNumber(.lhs[[3]][[2]], ui)
+  sprintf("DADT(%g) = %s", .compartmentNumber, .rxToNonmem(x[[3]], ui=ui))
 }
-
+#' Handle compartment number initial conditions
+#'
+#' @param x rxode2 expression line 
+#' @param ui User interface
+#' @return String for NONMEM style initial condition
+#' @author Bill Denney
+#' @noRd
 .rxToNonmemHandleInitialConditions <- function(x, ui) {
-  compartmentNumber <- .nonmemGetCmtNumber(x[[2]][[1]], ui)
+  .compartmentNumber <- .rxGetCmtNumber(x[[2]][[1]], ui)
   sprintf(
     "A_0(%g) = %s",
-    compartmentNumber,
+    .compartmentNumber,
     .rxToNonmem(x[[3]], ui=ui)
   )
 }
 
 .rxToNonmemHandleAssignmentPrefix <- function(x, ui) {
-  lhs <- x[[2]]
-  stopifnot(length(lhs) == 2)
-  prefix <-
+  .lhs <- x[[2]]
+  stopifnot(length(.lhs) == 2)
+  .prefix <-
     list(
       f="F", # bioavailability
       F="F",
@@ -626,12 +628,13 @@ babelmixr2Deparse <- function(x) {
       lag="ALAG",
       rate="R", # rate of infusion
       dur="D" # duration of infusion
-    )[[as.character(lhs[[1]])]]
-  if (is.null(prefix)) {
-    stop("unknown NONMEM assignment type", babelmixr2Deparse(x))
+    )[[as.character(.lhs[[1]])]]
+  if (is.null(.prefix)) {
+    stop("unknown rxode2 assignment type", .babelmixr2Deparse(x),
+         .call.=FALSE)
   }
-  compartmentNumber <- .nonmemGetCmtNumber(lhs[[2]], ui)
-  sprintf("%s%g = %s", prefix, compartmentNumber, .rxToNonmem(x[[3]], ui=ui))
+  .compartmentNumber <- .rxGetCmtNumber(lhs[[2]], ui)
+  sprintf("%s%g = %s", .prefix, .compartmentNumber, .rxToNonmem(x[[3]], ui=ui))
 }
 
 .rxToNonmemHandleCall <- function(x, ui) {

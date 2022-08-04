@@ -120,10 +120,8 @@
 #' @noRd
 .monolixSetAdm <- function(ui, state, param, type="f") {
   .adm <- .monolixGetAdm(ui)
-  .state <- rxode2::rxState(ui)
-  .cmt <- which(state == .state)
-  .w <- which(.adm$cmt == .cmt)
-  if (length(.w) == 0L) return(invisible())
+  .w <- .rxGetCmtNumber(state, ui, error=FALSE)
+  if (is.na(.w)) return(invisible())
   if (type == "f") {
     .adm[.w, "f"] <- param
   } else if (type == "dur") {
