@@ -15,7 +15,7 @@ babelmixr2 from [CRAN](https://CRAN.R-project.org) with:
 install.packages("babelmixr2")
 ```
 
-Otherwise you can always install from github:
+Otherwise you can always install from GitHub:
 
 ```r
 remotes::install_github("nlmixr2/babelmixr2")

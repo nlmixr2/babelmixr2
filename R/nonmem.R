@@ -142,11 +142,11 @@ babelmixr2Deparse <- function(x) {
                       "GETETA", "SIMETA", "SIMEPS", "COMSAV", "NWIND", "ETEXT",
                       "IERPRD", "MSEC", "MFIRST", "NETEXT", "IPRED"),
                    end)
-#' Gets variable, respecting the many resereved names in NONMEM
+#' Gets variable, respecting the many reserved names in NONMEM
 #'
 #'
 #' @param var Variable name in rxode2 syntax
-#' @param ui UI for saving and retriving information
+#' @param ui UI for saving and retrieving information
 #' @return NONMEM-compatible variable name
 #' @author Matthew L. Fidler
 #' @noRd

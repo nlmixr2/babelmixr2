@@ -87,7 +87,7 @@ apparent failed optimization}
 \code{rxControl} generation.}
 }
 \value{
-babelmixr control option for generating NONMEM control stream and
+babelmixr2 control option for generating NONMEM control stream and
   reading it back into `babelmixr2`/`nlmixr2`
 }
 \description{

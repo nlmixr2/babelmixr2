@@ -1,4 +1,4 @@
-#' Monolix Controller for nlmixr
+#' Monolix Controller for nlmixr2
 #'
 #' @param nbSSDoses Number of steady state doses (default 7)
 #' @param stiff boolean for using the stiff ODE solver
@@ -6,7 +6,7 @@
 #'   phase auto-stop of SAEM (default 250)
 #' @param exploratoryIterations Number of iterations for exploratory
 #'   phase (default 250)
-#' @param exploratoryInterval Minimum number of interation in the
+#' @param exploratoryInterval Minimum number of iterations in the
 #'   exploratory phase (default 200)
 #' @param exploratoryAlpha Convergence memory in the exploratory phase
 #'   (only used when `exploratoryAutoStop` is `TRUE`)
@@ -14,7 +14,7 @@
 #'   iterations
 #' @param burnInIterations Number of burn in iterations
 #' @param smoothingIterations Number of smoothing iterations
-#' @param smoothingAutoStop Boolen indicating if the smoothing should
+#' @param smoothingAutoStop Boolean indicating if the smoothing should
 #'   automatically stop (default `FALSE`)
 #' @param useLinearization Use linearization for log likelihood and
 #'   fim.
@@ -24,10 +24,10 @@
 #' @param errorModelTau Proportional rate on error model for simulated
 #'   annealing
 #' @param variability This describes the methodology for parameters
-#'   without varaiblity.  It could be: - Fixed throughout (none) -
+#'   without variability.  It could be: - Fixed throughout (none) -
 #'   Variability in the first stage (firstStage) - Decreasing until it
 #'   reaches the fixed value (decreasing)
-#' @param runCommand is a shell command to run monolix; You can specfy
+#' @param runCommand is a shell command to run monolix; You can specify
 #'   the default by
 #'   \code{options("babelmixr2.monolix"="runMonolix \%s")} where the
 #'   \code{"\%s"} represents the monolix project file. If it is empty

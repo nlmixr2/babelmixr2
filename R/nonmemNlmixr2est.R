@@ -207,6 +207,9 @@
       .minfo(paste0("run NONMEM: ", sprintf(.cmd, .arg)))
       withr::with_dir(.exportPath,
                       system(sprintf(.cmd, .arg)))
+    } else if (!interactive()) {
+      # Don't wait when running in a script or test
+      stop("setup NONMEM's run command")
     } else {
       .minfo("run NONMEM manually or setup NONMEM's run command")
     }
