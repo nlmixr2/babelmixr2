@@ -257,7 +257,7 @@ rex::register_shortcuts("babelmixr2")
 #' @noRd
 .rxToNonmemHandleDdt <- function(expr, ui) {
   stopifnot(.rxIsDdt(expr))
-  .cmt <- .rxGetCmtNumber(expr[[3]][[2]], ui)
+  .cmt <-.rxGetCmtNumber(expr[[3]][[2]], ui)
   sprintf("DADT(%g)", .cmt)
 }
 
@@ -269,14 +269,7 @@ rex::register_shortcuts("babelmixr2")
 #' @author Matthew L. Fidler with influence from Bill Denney
 #' @noRd
 .rxToNonmemHandleDdtLine <- function(x, ui) {
-  .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
-  .extra <- ""
-  if (!is.null(.prefixLines)) {
-    .extra <- paste0(paste(.prefixLines, collapse="\n"), "\n")
-    rxode2::rxAssignControlValue(ui, ".nmPrefixLines", NULL)
-  }
-  paste0(.extra,
-         .rxToNonmemHandleDdt(x[[2]], ui), " = ",
+  paste0(.rxToNonmemHandleDdt(x[[2]], ui), " = ",
          .rxToNonmem(x[[3]], ui=ui))
 }
 
@@ -645,7 +638,14 @@ rex::register_shortcuts("babelmixr2")
     stop("the left hand expression '", deparse1(x), "' is not supported",
          call.=FALSE)
   }
+  .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
+  .extra <- ""
+  if (!is.null(.prefixLines)) {
+    .extra <- paste0(paste(.prefixLines, collapse="\n"), "\n")
+    rxode2::rxAssignControlValue(ui, ".nmPrefixLines", NULL)
+  }
   paste0(
+    .extra,
     .rxToNonmemGetIndent(ui),
     .ret,
     .babelmixr2Deparse(x)

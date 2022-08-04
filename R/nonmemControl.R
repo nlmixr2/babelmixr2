@@ -9,21 +9,27 @@
 #' @param sigdig the significant digits for NONMEM
 #' @param print The print number for NONMEM
 #' @param extension NONMEM file extensions
-#' @param outputExtension Extension to use for the NONMEM output listing
-#' @param runCommand Command to run NONMEM (typically the path to "nmfe75")
-#' @param iniSigDig How many significant digits are printed in $THETA and $OMEGA
+#' @param outputExtension Extension to use for the NONMEM output
+#'   listing
+#' @param runCommand Command to run NONMEM (typically the path to
+#'   "nmfe75")
+#' @param iniSigDig How many significant digits are printed in $THETA
+#'   and $OMEGA when the estimate is zero.  Also controls the zero
+#'   protection numbers
 #' @param protectZeros Add methods to protect divide by zero
 #' @param muRef Automatically mu-reference the control stream
-#' @param rxControl Options to pass to \code{rxode2::rxControl} for simulations
-#' @param addProp,sumProd,optExpression,calcTables,compress,ci,sigdigTable
+#' @param rxControl Options to pass to \code{rxode2::rxControl} for
+#'   simulations
+#' @param
+#'   addProp,sumProd,optExpression,calcTables,compress,ci,sigdigTable
 #'   Passed to \code{nlmixr2est::foceiControl}
-#' @param readRounding Try to read NONMEM output when NONMEM terminated due to
-#'   rounding errors
-#' @param readBadOpt Try to read NONMEM output when NONMEM terminated due to an
-#'   apparent failed optimization
+#' @param readRounding Try to read NONMEM output when NONMEM
+#'   terminated due to rounding errors
+#' @param readBadOpt Try to read NONMEM output when NONMEM terminated
+#'   due to an apparent failed optimization
 #' @param noabort Add the `NOABORT` option for `$EST`
-#' @param ... optional \code{genRxControl} argument controlling automatic
-#'   \code{rxControl} generation.
+#' @param ... optional \code{genRxControl} argument controlling
+#'   automatic \code{rxControl} generation.
 #'
 #' @return babelmixr2 control option for generating NONMEM control stream and
 #'   reading it back into `babelmixr2`/`nlmixr2`
