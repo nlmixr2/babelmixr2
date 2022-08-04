@@ -53,46 +53,45 @@ test_that("warfarin NONMEM reading", {
     })
   }
 
-  if (file.exists("pk.turnover.emax3.zip")) {
-    .path <- normalizePath("pk.turnover.emax3.zip")
-    withr::with_tempdir({
-      unzip(.path)
-      # This has rounding errors
-      expect_error(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
-                                   nonmemControl(readRounding=FALSE)))
-
-      # Can still load the model to get information (possibly pipe) and create a new model
-      f <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
-                  nonmemControl(readRounding=TRUE))
-
-      expect_true(inherits(f, "nlmixr2FitData"))
-
-      # Will still error if you try to read this with readRounding=FALSE
-      expect_error(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
-                          nonmemControl(readRounding=FALSE)))
-
-      # Note this shouldn't have a covariance step so you can add it (at least a nlmixr2 covariance step)
-      getVarCov(f)
-
-      # nlmixr2 is more generous in what constitutes a covariance
-      # step, in this case it is |r|,|s| which should be regarded with
-      # caution but can give some clues on why this is not working in
-      # NONMEM.
-
-      # Here you can see the shrinkage is high for temax tktr and tka,
-      # so they could be dropped with a model in nonmem that is more
-      # likely to converge in NONMEM, starting from the model
-
-      # In addition to dropping the problematic parameters, this will
-      # restart the fit at the final initial estimates
-
-      f %>% model(ktr <- exp(tktr)) %>%
-        model(ka <- exp(tka)) %>%
-        model(kout <- exp(tkout + eta.kout)) %>%
-        nlmixr(data=nlmixr2data::warfarin, est="nonmem", control=nonmemControl(readRounding=FALSE))
-
-    })
-  }
+  skip_if_not(file.exists("pk.turnover.emax3.zip"))
+  .path <- normalizePath("pk.turnover.emax3.zip")
+  withr::with_tempdir({
+    unzip(.path)
+    # This has rounding errors
+    expect_error(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
+                        nonmemControl(readRounding=FALSE)))
+    
+    # Can still load the model to get information (possibly pipe) and create a new model
+    f <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
+                nonmemControl(readRounding=TRUE))
+    
+    expect_true(inherits(f, "nlmixr2FitData"))
+    
+    # Will still error if you try to read this with readRounding=FALSE
+    expect_error(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
+                        nonmemControl(readRounding=FALSE)))
+    
+    # Note this shouldn't have a covariance step so you can add it (at least a nlmixr2 covariance step)
+    getVarCov(f)
+    
+    # nlmixr2 is more generous in what constitutes a covariance
+    # step, in this case it is |r|,|s| which should be regarded with
+    # caution but can give some clues on why this is not working in
+    # NONMEM.
+    
+    # Here you can see the shrinkage is high for temax tktr and tka,
+    # so they could be dropped with a model in nonmem that is more
+    # likely to converge in NONMEM, starting from the model
+    
+    # In addition to dropping the problematic parameters, this will
+    # restart the fit at the final initial estimates
+    
+    f %>% model(ktr <- exp(tktr)) %>%
+      model(ka <- exp(tka)) %>%
+      model(kout <- exp(tkout + eta.kout)) %>%
+      nlmixr(data=nlmixr2data::warfarin, est="nonmem", control=nonmemControl(readRounding=FALSE))
+    
+  })
 })
 
 test_that("pheno NONMEM reading", {
@@ -117,15 +116,13 @@ test_that("pheno NONMEM reading", {
     })
   }
 
-  if (file.exists("pheno.zip")) {
-    .path <- normalizePath("pheno.zip")
-    withr::with_tempdir({
-      unzip(.path)
-      f <- nlmixr2::nlmixr(pheno, nlmixr2data::pheno_sd, "nonmem")
-      expect_true(inherits(f, "nlmixr2FitData"))
-    })
-  }
-
+  skip_if_not(file.exists("pheno.zip"))
+  .path <- normalizePath("pheno.zip")
+  withr::with_tempdir({
+    unzip(.path)
+    f <- nlmixr2::nlmixr(pheno, nlmixr2data::pheno_sd, "nonmem")
+    expect_true(inherits(f, "nlmixr2FitData"))
+  })
 })
 
 test_that("wbc NONMEM reading", {
@@ -185,11 +182,10 @@ test_that("wbc NONMEM reading", {
     })
   }
 
+  skip_if_not(file.exists("wbc.zip"))
   .path <- normalizePath("wbc.zip")
   withr::with_tempdir({
       unzip(.path)
       f <- nlmixr2(wbc, nlmixr2data::wbcSim, "nonmem")
   })
-
-
 })
