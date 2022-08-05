@@ -58,15 +58,15 @@
     if (.rxIsKnownNonZeroVariable(names(variable), ui)) return(TRUE)
   }
   variable <- as.character(variable)
-  if (variable %in% ui$allCovs) return(TRUE)
+  if (variable %in% toupper(ui$allCovs)) return(TRUE)
   .split <- ui$getSplitMuModel
   .mus <- c(.split$pureMuRef, .split$taintMuRef)
-  .w <- which(variable == .mus)
+  .w <- which(variable == toupper(.mus))
   if (length(.w) != 1) return(FALSE)
   .tv <- names(.w)
   .w <- which(ui$muRefCurEval$parameter == .tv)
   if (length(.w) != 1) return(FALSE)
-  .curEval <- ui$muRefCurEval$parameter$curEval[.w]
+  .curEval <- ui$muRefCurEval$curEval[.w]
   if (.curEval == "exp") return(TRUE)
   if (any(.curEval == c("expit", "probitInv"))) {
     .low <- ui$muRefCurEval$parameter$low[.w]
