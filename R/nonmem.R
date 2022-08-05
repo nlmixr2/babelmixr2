@@ -282,17 +282,8 @@ rex::register_shortcuts("babelmixr2")
 #' @author Matthew L. Fidler
 #' @noRd
 .rxProtectPlusZero <- function(x, ui, one=FALSE) {
-  .protectZeros <- rxode2::rxGetControl(ui, "protectZeros", TRUE)
-  .inIfElse <- rxode2::rxGetControl(ui, ".ifelse", FALSE)
-  .protectZeros <- .protectZeros && !.inIfElse
-  if (inherits(x, "numeric")) {
-    .protectZeros <- FALSE
-  }
   .ret <- .rxToNonmem(x, ui=ui)
-  if (.ret %in% ui$allCovs) {
-    .protectZeros <- FALSE
-  }
-  if (.protectZeros) {
+  if (.rxShouldProtectZeros(.ret, ui)) {
     .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
                                 data.frame(expr=character(0),
                                            nm=character(0)))
@@ -338,17 +329,13 @@ rex::register_shortcuts("babelmixr2")
 #' @author Matthew L. Fidler
 #' @noRd
 .rxProtectPlusOrMinusZero <- function(x, ui) {
-  .protectZeros <- rxode2::rxGetControl(ui, "protectZeros", TRUE)
-  .inIfElse <- rxode2::rxGetControl(ui, ".ifelse", FALSE)
-  .protectZeros <- .protectZeros && !.inIfElse
-  if (inherits(x, "numeric")) {
-    .protectZeros <- FALSE
+  if (is.name(x)) {
+    .var <- as.character(x)
+  } else if (is.character(x)) {
   }
   .denom <- .rxToNonmem(x, ui=ui)
-  if (.denom %in% ui$allCovs) {
-    .protectZeros <- FALSE
-  }
-  if (.protectZeros) {
+  print(.denom)
+  if (.rxShouldProtectZeros(.denom, ui)) {
     .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
                                 data.frame(expr=character(0),
                                            nm=character(0)))
