@@ -61,11 +61,15 @@ nonmemControl(
 
 \item{extension}{NONMEM file extensions}
 
-\item{outputExtension}{Extension to use for the NONMEM output listing}
+\item{outputExtension}{Extension to use for the NONMEM output
+listing}
 
-\item{runCommand}{Command to run NONMEM (typically the path to "nmfe75")}
+\item{runCommand}{Command to run NONMEM (typically the path to
+"nmfe75")}
 
-\item{iniSigDig}{How many significant digits are printed in $THETA and $OMEGA}
+\item{iniSigDig}{How many significant digits are printed in $THETA
+and $OMEGA when the estimate is zero.  Also controls the zero
+protection numbers}
 
 \item{protectZeros}{Add methods to protect divide by zero}
 
@@ -73,18 +77,19 @@ nonmemControl(
 
 \item{addProp, sumProd, optExpression, calcTables, compress, ci, sigdigTable}{Passed to \code{nlmixr2est::foceiControl}}
 
-\item{rxControl}{Options to pass to \code{rxode2::rxControl} for simulations}
+\item{rxControl}{Options to pass to \code{rxode2::rxControl} for
+simulations}
 
-\item{readRounding}{Try to read NONMEM output when NONMEM terminated due to
-rounding errors}
+\item{readRounding}{Try to read NONMEM output when NONMEM
+terminated due to rounding errors}
 
-\item{readBadOpt}{Try to read NONMEM output when NONMEM terminated due to an
-apparent failed optimization}
+\item{readBadOpt}{Try to read NONMEM output when NONMEM terminated
+due to an apparent failed optimization}
 
 \item{noabort}{Add the `NOABORT` option for `$EST`}
 
-\item{...}{optional \code{genRxControl} argument controlling automatic
-\code{rxControl} generation.}
+\item{...}{optional \code{genRxControl} argument controlling
+automatic \code{rxControl} generation.}
 }
 \value{
 babelmixr2 control option for generating NONMEM control stream and
