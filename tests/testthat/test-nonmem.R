@@ -1,4 +1,4 @@
-test_that("NONMEM dsl", {
+test_that("NONMEM dsl, individual lines", {
 
   one.cmt <- function() {
     ini({
@@ -121,6 +121,40 @@ test_that("NONMEM dsl", {
 
   expect_equal(.rxToN("v.wt"), "THETA(5)")
   expect_equal(.rxToN("eta.cl"), "ETA(2)")
+})
+
+test_that("NONMEM dsl, full model", {
+  one.cmt <- function() {
+    ini({
+      tka <- 0.45 ; label("Ka")
+      tcl <- log(c(0, 2.7, 100)) ; label("Log Cl")
+      tv <- 3.45; label("log V")
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl/v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+  
+  nullNonmemRunFun <- function(ui) {
+    writeLines('<_/>', con=file.path(ui$nonmemExportPath, ui$nonmemXml))
+  }
+  
+  ui <-
+    nlmixr(
+      one.cmt, data=nlmixr2data::Oral_1CPT, est="nonmem",
+      control=nonmemControl(runCommand=nullNonmemRunFun, readBadOpt=TRUE)
+    )
+  
 })
 
 # pk.turnover.emax3 <- function() {

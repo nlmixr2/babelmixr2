@@ -200,18 +200,14 @@
               quote=FALSE)
     .minfo("done")
   }
-  .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
-    if (.cmd != "") {
-      .arg <- paste0(.ui$nonmemNmctl, " ", .ui$nonmemNmlst)
-      .minfo(paste0("run NONMEM: ", sprintf(.cmd, .arg)))
-      withr::with_dir(.exportPath,
-                      system(sprintf(.cmd, .arg)))
-    } else if (!interactive()) {
-      # Don't wait when running in a script or test
-      stop("setup NONMEM's run command")
+    .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
+    if (is.character(.cmd)) {
+      .nonmemRunCommand(ui=.ui, cmd=.cmd)
+    } else if (is.function(.cmd)) {
+      .cmd(ui=.ui)
     } else {
-      .minfo("run NONMEM manually or setup NONMEM's run command")
+      stop("invalid value for nonmemControl(runCommand=)")
     }
   }
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
@@ -277,6 +273,20 @@
     qs::qsave(.ret, .qs)
   }
   return(.ret)
+}
+
+.nonmemRunCommand <- function(ui, cmd) {
+  if (cmd != "") {
+    .arg <- paste0(ui$nonmemNmctl, " ", ui$nonmemNmlst)
+    .minfo(paste0("run NONMEM: ", sprintf(cmd, .arg)))
+    withr::with_dir(ui$nonmemExportPath,
+                    system(sprintf(cmd, .arg)))
+  } else if (!interactive()) {
+    # Don't wait when running in a script or test
+    stop("setup NONMEM's run command")
+  } else {
+    .minfo("run NONMEM manually or setup NONMEM's run command")
+  }
 }
 
 #' @export

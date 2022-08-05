@@ -5,10 +5,9 @@ rxUiGet.nonmemOutputXml <- function(x, ...) {
   if (!is.null(.info)) return(.info)
   .exportPath <- rxUiGet.nonmemExportPath(x, ...)
   .xml <- rxUiGet.nonmemXml(x, ...)
-  if (!file.exists(file.path(.exportPath, .xml))) return(NULL)
-  .info <- withr::with_dir(.exportPath, {
-    pmxTools::read_nm(.xml, quiet=TRUE)
-  })
+  filename <- file.path(.exportPath, .xml)
+  if (!file.exists(filename)) return(NULL)
+  .info <- pmxTools::read_nm(filename, quiet=TRUE)
   rxode2::rxAssignControlValue(.ui, ".xml", .info)
   .info
 }
@@ -28,9 +27,9 @@ rxUiGet.nonmemOutputExt <- function(x, ...) {
   if (!is.null(.info)) return(.info)
   .exportPath <- rxUiGet.nonmemExportPath(x, ...)
   .ext <- rxUiGet.nonmemExt(x, ...)
-  if (!file.exists(file.path(.exportPath, .ext)))  return(NULL)
-  .ext <- withr::with_dir(.exportPath,
-                          pmxTools::read_nmext(.ext, quiet=TRUE))
+  filename <- file.path(.exportPath, .ext)
+  if (!file.exists(filename)) return(NULL)
+  .ext <- pmxTools::read_nmext(filename, quiet=TRUE)
   rxode2::rxAssignControlValue(.ui, ".ext", .ext)
   .ext
 }
@@ -44,7 +43,14 @@ rxUiGet.nonmemOutputExt <- function(x, ...) {
 rxUiGet.nonmemFullTheta <- function(x, ...) {
   .ui <- x[[1]]
   .ext <- rxUiGet.nonmemOutputExt(x, ...)
-  setNames(.ext$Thetas, .getThetaNames(.ui))
+  thetaNames <- .getThetaNames(.ui)
+  if (is.null(.ext)) {
+    # Handle complete nonconvergence
+    thetaValues <- setNames(rep(NA_real_, length(thetaNames)), nm=thetaNames)
+  } else {
+    thetaValues <- setNames(thetaValues, nm=thetaNames)
+  }
+  thetaValues
 }
 
 #' @export
@@ -78,6 +84,10 @@ rxUiGet.nonmemOutputOmega <- function(x, ...) {
   for (.i in seq_along(.omegaLst)) {
     .v <- c(.v, .omegaLst[[.i]])
   }
+  if (is.null(.v)) {
+    # Handle complete nonconvergence (no available output)
+    .v <- rep(NA_real_, length(.n) + length(.n)*(length(.n)-1)/2)
+  }
   eval(str2lang(paste("lotri::lotri(",
                       paste(paste(.n, collapse="+"),
                             "~", deparse1(.v)),
@@ -97,9 +107,9 @@ rxUiGet.nonmemEtaObf <- function(x, ...) {
   .ui <- x[[1]]
   .exportPath <- rxUiGet.nonmemExportPath(x, ...)
   .etaTable <- rxUiGet.nonmemEtaTableName(x, ...)
-  if (!file.exists(file.path(.exportPath, .etaTable))) return(NULL)
-  .ret <- withr::with_dir(.exportPath,
-                          pmxTools::read_nm_multi_table(.etaTable))
+  filename <- file.path(.exportPath, .etaTable)
+  if (!file.exists(filename)) return(NULL)
+  .ret <- pmxTools::read_nm_multi_table(filename)
   .n <- c("ID", .getEtaNames(.ui), "OBJI")
   names(.ret) <- .n
   .ret$ID <- as.integer(.ret$ID)
@@ -132,8 +142,14 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
   .exportPath <- rxUiGet.nonmemExportPath(x, ...)
   .covFile <- rxUiGet.nonmemCovFile(x, ...)
   if (!file.exists(file.path(.exportPath, .covFile))) return(NULL)
-  .ret <- as.matrix(withr::with_dir(.exportPath,
-                                    pmxTools::read_nmcov(rxUiGet.nonmemModelName(x, ...), quiet=TRUE)))
+  .ret <-
+    as.matrix(
+      pmxTools::read_nmcov(
+        fileName=rxUiGet.nonmemModelName(x, ...),
+        directory=.exportPath,
+        quiet=TRUE
+      )
+    )
   .d <- .getNonmemOrderNames(.ui)
   dimnames(.ret) <- list(.d, .d)
   .t <- .getThetaNames(.ui)
@@ -151,8 +167,9 @@ rxUiGet.nonmemParHistory <- function(x, ...) {
   .ui <- x[[1]]
   .exportPath <- rxUiGet.nonmemExportPath(x, ...)
   .ext <- rxUiGet.nonmemExt(x, ...)
-  .ret <- withr::with_dir(.exportPath,
-                          pmxTools::read_nm_multi_table(.ext))
+  filename <- file.path(.exportPath, .ext)
+  if (!file.exists(filename)) return(NULL)
+  .ret <- pmxTools::read_nm_multi_table(filename)
   .d <- c("iter", .getNonmemOrderNames(.ui), "objf")
   names(.ret) <- .d
   .ret <- .ret[.ret$iter > 0, names(.ret) != "_sigma"]
@@ -185,9 +202,9 @@ rxUiGet.nonmemRunTime <- function(x, ...) {
 rxUiGet.nonmemPreds <- function(x, ...) {
   .exportPath <- rxUiGet.nonmemExportPath(x, ...)
   .sdTable <- rxUiGet.nonmemSdTableName(x, ...)
-  if (!file.exists(file.path(.exportPath, .sdTable))) return(NULL)
-  setNames(withr::with_dir(.exportPath,
-                           pmxTools::read_nm_multi_table(.sdTable)),
+  filename <- file.path(.exportPath, .sdTable)
+  if (!file.exists(filename)) return(NULL)
+  setNames(pmxTools::read_nm_multi_table(filename),
            c("ID", "TIME", "nonmemIPRED", "nonmemPRED", "RXROW"))
 }
 
@@ -208,13 +225,21 @@ rxUiGet.nonmemTermMessage <- function(x, ...) {
 #' @export
 rxUiGet.nonmemSuccessful <- function(x, ...) {
   .term <- rxUiGet.nonmemTermMessage(x, ...)
-  (regexpr("0MINIMIZATION SUCCESSFUL", .term) != -1)
+  if (is.null(.term)) {
+    FALSE
+  } else {
+    regexpr("0MINIMIZATION SUCCESSFUL", .term) != -1
+  }
 }
 
 #' @export
 rxUiGet.nonmemRoundingErrors <- function(x, ...) {
   .term <- rxUiGet.nonmemTermMessage(x, ...)
-  (regexpr("DUE TO ROUNDING ERRORS", .term) != -1)
+  if (is.null(.term)) {
+    FALSE
+  } else {
+    regexpr("DUE TO ROUNDING ERRORS", .term) != -1
+  }
 }
 
 #' @export

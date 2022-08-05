@@ -1,4 +1,25 @@
 #' NONMEM estimation control
+#' 
+#' @details
+#' 
+#' If \code{runCommand} is given as a string, it will be called with the
+#' \code{system()} command like:
+#' 
+#' \code{runCommand controlFile outputFile}.
+#' 
+#' For example, if \code{runCommand="'/path/to/nmfe75'"} then the command line
+#' used would look like the following:
+#' 
+#' \code{'/path/to/nmfe75' one.cmt.nmctl one.cmt.lst}
+#' 
+#' If \code{runCommand} is given as a function, it will be called as
+#' \code{FUN(ui)} to run NONMEM.  This allows you to run NONMEM in any way that
+#' you may need, as long as you can write it in R.  You will need to run NONMEM
+#' where the files are in the \code{ui$nonmemExportPath} directory, the control
+#' stream is in \code{ui$nonmemNmctl}, and all outputs must be placed in the
+#' same directory when the run is complete.  babelmixr2 will wait for the NONMEM
+#' XML output file (\code{ui$nonmemXml}) to exist in the directory before
+#' proceeding.
 #'
 #' @param est NONMEM estimation method
 #' @param advanOde The ODE solving method for NONMEM
@@ -11,8 +32,8 @@
 #' @param extension NONMEM file extensions
 #' @param outputExtension Extension to use for the NONMEM output
 #'   listing
-#' @param runCommand Command to run NONMEM (typically the path to
-#'   "nmfe75")
+#' @param runCommand Command to run NONMEM (typically the path to "nmfe75") or a
+#'   function with an argument \code{ui}.  See the details for more information.
 #' @param iniSigDig How many significant digits are printed in $THETA
 #'   and $OMEGA when the estimate is zero.  Also controls the zero
 #'   protection numbers
@@ -94,8 +115,13 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertNumeric(df, lower=0, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(seed, lower=1, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(mapiter, len=1, any.missing=FALSE)
-  if (runCommand != "") checkmate::assertCharacter(runCommand, pattern="%s", min.len=1, max.len=1)
-    .xtra <- list(...)
+  if (!identical(runCommand, "")) {
+    if (!(checkmate::testCharacter(runCommand, pattern="%s", min.len=1, max.len=1) |
+          checkmate::testFunction(runCommand, args="ui"))) {
+      stop("runCommand must be a character string or a function with argument 'ui'")
+    }
+  }
+  .xtra <- list(...)
   .bad <- names(.xtra)
   .bad <- .bad[!(.bad %in% c("genRxControl"))]
   if (length(.bad) > 0) {

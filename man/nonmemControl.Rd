@@ -64,8 +64,8 @@ nonmemControl(
 \item{outputExtension}{Extension to use for the NONMEM output
 listing}
 
-\item{runCommand}{Command to run NONMEM (typically the path to
-"nmfe75")}
+\item{runCommand}{Command to run NONMEM (typically the path to "nmfe75") or a
+function with an argument \code{ui}.  See the details for more information.}
 
 \item{iniSigDig}{How many significant digits are printed in $THETA
 and $OMEGA when the estimate is zero.  Also controls the zero
@@ -97,6 +97,26 @@ babelmixr2 control option for generating NONMEM control stream and
 }
 \description{
 NONMEM estimation control
+}
+\details{
+If \code{runCommand} is given as a string, it will be called with the
+\code{system()} command like:
+
+\code{runCommand controlFile outputFile}.
+
+For example, if \code{runCommand="'/path/to/nmfe75'"} then the command line
+used would look like the following:
+
+\code{'/path/to/nmfe75' one.cmt.nmctl one.cmt.lst}
+
+If \code{runCommand} is given as a function, it will be called as
+\code{FUN(ui)} to run NONMEM.  This allows you to run NONMEM in any way that
+you may need, as long as you can write it in R.  You will need to run NONMEM
+where the files are in the \code{ui$nonmemExportPath} directory, the control
+stream is in \code{ui$nonmemNmctl}, and all outputs must be placed in the
+same directory when the run is complete.  babelmixr2 will wait for the NONMEM
+XML output file (\code{ui$nonmemXml}) to exist in the directory before
+proceeding.
 }
 \examples{
 nonmemControl()
