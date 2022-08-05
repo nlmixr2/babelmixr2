@@ -406,7 +406,9 @@ rxUiGet.monolixCovarianceEstimatesSA <- function(x, ...) {
 #' @export
 rxUiGet.monolixCovariance <- function(x, ...) {
   .cov <- rxUiGet.monolixCovarianceEstimatesSA(x, ...)
-  .split <- x$getSplitMuModel
+  .ui <- x[[1]]
+  .split <- .ui$getSplitMuModel
+  
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .sa <- TRUE
   if (is.null(.cov)) {
