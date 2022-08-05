@@ -1,7 +1,10 @@
 #' @export
 rxUiGet.nonmemModelName <- function(x, ...) {
   .ui <- x[[1]]
-  .modelName <- .ui$modelName
+  .modelName <- rxode2::rxGetControl(.ui, "modelName", NULL)
+  if (is.null(.modelName)) {
+    .modelName <- .ui$modelName
+  }
   if (isTRUE(checkmate::checkCharacter(.modelName, len=1, any.missing=FALSE))) {
     return(.modelName)
   }

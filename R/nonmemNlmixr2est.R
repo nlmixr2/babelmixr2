@@ -176,6 +176,8 @@
     }
   }
   .exportPath <- .ui$nonmemExportPath
+
+   
   if (!dir.exists(.exportPath)) dir.create(.exportPath)
   .csv <- file.path(.exportPath, .ui$nonmemCsv)
   .nmctlFile <- file.path(.exportPath, .ui$nonmemNmctl)

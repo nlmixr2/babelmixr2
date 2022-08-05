@@ -39,6 +39,7 @@ nonmemControl(
   mapiter = 1,
   mapinter = 0,
   noabort = TRUE,
+  modelName = NULL,
   ...
 )
 }
@@ -86,7 +87,29 @@ terminated due to rounding errors}
 \item{readBadOpt}{Try to read NONMEM output when NONMEM terminated
 due to an apparent failed optimization}
 
+\item{niter}{number of iterations in NONMEM estimation methods}
+
+\item{isample}{Isample argument for NONMEM  ITS estimation method}
+
+\item{iaccept}{Iaccept for NONMEM ITS estimation methods}
+
+\item{iscaleMin}{parameter for IMP NONMEM method (ISCALE_MIN)}
+
+\item{iscaleMax}{parameter for IMP NONMEM method (ISCALE_MAX)}
+
+\item{df}{degrees of freedom for IMP method}
+
+\item{seed}{is the seed for NONMEM methods}
+
+\item{mapiter}{the number of map iterations for IMP method}
+
+\item{mapinter}{is the MAPINTER parameter for the IMP method}
+
 \item{noabort}{Add the `NOABORT` option for `$EST`}
+
+\item{modelName}{Model name used to generate the NONMEM output.  If
+`NULL` try to infer from the model name (could be `x` if not
+clear).  Otherwise use this character for outputs.}
 
 \item{...}{optional \code{genRxControl} argument controlling
 automatic \code{rxControl} generation.}

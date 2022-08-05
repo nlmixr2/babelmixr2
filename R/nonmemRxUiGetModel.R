@@ -13,7 +13,7 @@ rxUiGet.nonmemMod <- function(x, ...) {
 }
 
 .nonmemResetUi <- function(ui, extra="") {
-    rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf",
+  rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf",
                                data.frame(expr=character(0),
                                           nm=character(0)))
   rxode2::rxAssignControlValue(ui, ".nmVarNum", 1)

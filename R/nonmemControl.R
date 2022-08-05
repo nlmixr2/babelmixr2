@@ -20,14 +20,25 @@
 #' @param muRef Automatically mu-reference the control stream
 #' @param rxControl Options to pass to \code{rxode2::rxControl} for
 #'   simulations
-#' @param
-#'   addProp,sumProd,optExpression,calcTables,compress,ci,sigdigTable
+#' @param mapiter the number of map iterations for IMP method
+#' @param niter number of iterations in NONMEM estimation methods
+#' @param isample Isample argument for NONMEM  ITS estimation method
+#' @param iaccept Iaccept for NONMEM ITS estimation methods
+#' @param iscaleMin parameter for IMP NONMEM method (ISCALE_MIN)
+#' @param iscaleMax parameter for IMP NONMEM method (ISCALE_MAX)
+#' @param df degrees of freedom for IMP method
+#' @param seed is the seed for NONMEM methods
+#' @param mapinter is the MAPINTER parameter for the IMP method
+#' @param  addProp,sumProd,optExpression,calcTables,compress,ci,sigdigTable
 #'   Passed to \code{nlmixr2est::foceiControl}
 #' @param readRounding Try to read NONMEM output when NONMEM
 #'   terminated due to rounding errors
 #' @param readBadOpt Try to read NONMEM output when NONMEM terminated
 #'   due to an apparent failed optimization
 #' @param noabort Add the `NOABORT` option for `$EST`
+#' @param modelName Model name used to generate the NONMEM output.  If
+#'   `NULL` try to infer from the model name (could be `x` if not
+#'   clear).  Otherwise use this character for outputs.
 #' @param ... optional \code{genRxControl} argument controlling
 #'   automatic \code{rxControl} generation.
 #'
@@ -73,7 +84,9 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           seed=14456,
                           mapiter=1,
                           mapinter=0,
-                          noabort=TRUE, ...) {
+                          noabort=TRUE,
+                          modelName=NULL,
+                          ...) {
   # nonmem manual slides suggest tol=6, sigl=6 sigdig=2
   checkmate::assertIntegerish(maxeval, lower=100, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(sigdig, lower=1, len=1, any.missing=FALSE)
@@ -94,6 +107,9 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertNumeric(df, lower=0, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(seed, lower=1, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(mapiter, len=1, any.missing=FALSE)
+  if (!is.null(modelName)) {
+    checkmate::assertCharacter(modelName, len=1, any.missing=FALSE)
+  }
   if (runCommand != "") checkmate::assertCharacter(runCommand, pattern="%s", min.len=1, max.len=1)
     .xtra <- list(...)
   .bad <- names(.xtra)
@@ -169,7 +185,8 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                iscaleMax=iscaleMax,
                df=df,
                seed=seed,
-               mapiter=mapiter
+               mapiter=mapiter,
+               modelName=modelName
                )
   class(.ret) <- "nonmemControl"
   .ret
