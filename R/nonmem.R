@@ -329,12 +329,7 @@ rex::register_shortcuts("babelmixr2")
 #' @author Matthew L. Fidler
 #' @noRd
 .rxProtectPlusOrMinusZero <- function(x, ui) {
-  if (is.name(x)) {
-    .var <- as.character(x)
-  } else if (is.character(x)) {
-  }
   .denom <- .rxToNonmem(x, ui=ui)
-  print(.denom)
   if (.rxShouldProtectZeros(.denom, ui)) {
     .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
                                 data.frame(expr=character(0),
@@ -419,8 +414,14 @@ rex::register_shortcuts("babelmixr2")
     }
   } else if (identical(x[[1]], quote(`^`)) ||
                identical(x[[1]], quote(`**`))) {
+    .needProtect <-TRUE
+    if (is.numeric(x[[3]]) && x[[3]] > 0) {
+      .needProtect <- FALSE
+    }
     .ret <- paste0(
-      .rxProtectPlusOrMinusZero(x[[2]], ui),
+      ifelse(.needProtect,
+             .rxProtectPlusOrMinusZero(x[[2]], ui),
+             .rxToNonmem(x[[2]], ui)),
       .rxNMbin[as.character(x[[1]])],
       .rxToNonmem(x[[3]], ui=ui)
     )

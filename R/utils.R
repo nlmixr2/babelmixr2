@@ -53,7 +53,7 @@
 #' @return logical to say if the variable is known to be non-zero
 #' @author Matthew L. Fidler
 #' @noRd
-.rxIsKnownNonZeroVariable <-function(variable, ui) {
+.rxIsKnownNonZeroVariable <- function(variable, ui) {
   if (!is.null(names(variable))) {
     if (.rxIsKnownNonZeroVariable(names(variable), ui)) return(TRUE)
   }
@@ -76,13 +76,18 @@
   }
   FALSE
 }
-
-
+#' Should the variable be protected from being zero?
+#'
+#' @param variable name of the variable
+#' @param ui rxode2 ui
+#' @return boolean of if the variable needs protection
+#' @author Matthew L. Fidler
+#' @noRd
 .rxShouldProtectZeros <- function(variable, ui) {
   # should protect zeros if requested, not in an if/else block
   # and if the variable is known to be something non-zero
   if (!rxode2::rxGetControl(ui, "protectZeros", TRUE)) return(FALSE)
   if (rxode2::rxGetControl(ui, ".ifelse", FALSE)) return(FALSE)
-  if (!.rxIsKnownNonZeroVariable(variable, ui)) return(FALSE)
+  if (.rxIsKnownNonZeroVariable(variable, ui)) return(FALSE)
   return(TRUE)
 }

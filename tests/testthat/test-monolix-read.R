@@ -52,6 +52,7 @@ pk.turnover.emax3 <- function() {
 }
 
 test_that("test monolix reading for 2019, 2020, and 2021", {
+  
   if (file.exists("pk.turnover.emax3-2019.zip")) {
     .path <- normalizePath("pk.turnover.emax3-2019.zip")
     withr::with_tempdir({
@@ -78,6 +79,7 @@ test_that("test monolix reading for 2019, 2020, and 2021", {
       expect_true(inherits(f, "nlmixr2FitData"))
     })
   }
+  
 })
 
 
@@ -144,6 +146,7 @@ test_that("test more nlmixr2/monolix features", {
     f <- nlmixr2::nlmixr(pk.turnover.emax4, nlmixr2data::warfarin, "monolix")
     expect_true(inherits(f, "nlmixr2FitData"))
   })
+  
 })
 
 test_that("test Monolix pheno", {
@@ -168,7 +171,6 @@ test_that("test Monolix pheno", {
     })
   }
 
-
   skip_if_not(file.exists("pheno-2021.zip"))
   .path <- normalizePath("pheno-2021.zip")
   withr::with_tempdir({
@@ -176,6 +178,7 @@ test_that("test Monolix pheno", {
     f <- nlmixr2::nlmixr(pheno, nlmixr2data::pheno_sd, "monolix")
     expect_true(inherits(f, "nlmixr2FitData"))
   })
+  
 })
 
 test_that("pbpk mavoglurant", {
@@ -288,9 +291,11 @@ test_that("pbpk mavoglurant", {
     f <- nlmixr2::nlmixr(pbpk, nlmixr2data::mavoglurant, "monolix")
     expect_true(inherits(f, "nlmixr2FitData"))
   })
+  
 })
 
 test_that("nimo test", {
+  
   nimo <- function() {
     ini({
       ## Note that the UI can take expressions
@@ -349,6 +354,7 @@ test_that("nimo test", {
     f <- suppressWarnings(nlmixr2::nlmixr2(nimo, tmp, "monolix"))
     expect_true(inherits(f, "nlmixr2FitData"))
   })
+  
 })
 
 # WBC Model tests ####
