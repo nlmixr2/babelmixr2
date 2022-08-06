@@ -1,4 +1,4 @@
-test_that("NONMEM dsl", {
+test_that("NONMEM dsl, individual lines", {
 
   one.cmt <- function() {
     ini({
@@ -121,6 +121,108 @@ test_that("NONMEM dsl", {
 
   expect_equal(.rxToN("v.wt"), "THETA(5)")
   expect_equal(.rxToN("eta.cl"), "ETA(2)")
+})
+
+test_that("NONMEM dsl, full model", {
+  one.cmt <- function() {
+    ini({
+      tka <- 0.45 ; label("Ka")
+      tcl <- log(c(0, 2.7, 100)) ; label("Log Cl")
+      tv <- 3.45; label("log V")
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl/v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+  
+  expect_message(
+    ui <-
+      nlmixr(
+        one.cmt, data=nlmixr2data::Oral_1CPT, est="nonmem",
+        control=nonmemControl(runCommand=NA)
+      ),
+    regexp="not running NONMEM"
+  )
+  expect_s3_class(ui, "rxUi")
+  expect_type(ui$nonmemModel, "character")
+  expect_equal(
+    ui$nonmemModel,
+    paste(
+      c(
+        "$PROBLEM  translated from babelmixr2",
+        "; comments show mu referenced model in ui$getSplitMuModel",
+        "",
+        "$DATA one.cmt.csv IGNORE=@",
+        "",
+        "$INPUT ID TIME EVID AMT DV CMT RXROW",
+        "",
+        "$SUBROUTINES ADVAN13 TOL=6",
+        "",
+        "$MODEL NCOMPARTMENTS=2",
+        "     COMP(DEPOT, DEFDOSE) ; depot",
+        "     COMP(CENTRAL) ; central",
+        "",
+        "$PK",
+        "  MU_1=THETA(1)",
+        "  MU_2=THETA(2)",
+        "  MU_3=THETA(3)",
+        "  KA=DEXP(MU_1+ETA(1)) ; ka <- exp(tka)",
+        "  CL=DEXP(MU_2+ETA(2)) ; cl <- exp(tcl)",
+        "  V=DEXP(MU_3+ETA(3)) ; v <- exp(tv)",
+        "",
+        "$DES",
+        "  DADT(1) = - KA*A(1) ; d/dt(depot) = -ka * depot",
+        "  DADT(2) = KA*A(1)-CL/V*A(2) ; d/dt(central) = ka * depot - cl/v * central",
+        "  CP=A(2)/V ; cp = central/v",
+        "",
+        "$ERROR",
+        "  ;Redefine LHS in $DES by prefixing with on RXE_ for $ERROR",
+        "  RXE_CP=A(2)/V ; cp = central/v",
+        "  RX_PF1=RXE_CP ; rx_pf1 ~ cp",
+        "  ; Write out expressions for ipred and w",
+        "  RX_IP1 = RX_PF1",
+        "  RX_P1 = RX_IP1",
+        "  W1=DSQRT((THETA(4))**2) ; W1 ~ sqrt((add.sd)^2)",
+        "  IF (W1 .EQ. 0.0) W1 = 1",
+        "  IPRED = RX_IP1",
+        "  W     = W1",
+        "  Y     = IPRED + W*EPS(1)",
+        "",
+        "$THETA (0.45                 ) ; 1 - tka   ",
+        "       (-INF, 0.99325, 4.6052) ; 2 - tcl   ",
+        "       (3.45                 ) ; 3 - tv    ",
+        "       (0,    0.7            ) ; 4 - add.sd",
+        "",
+        "$OMEGA 0.6 ; eta.ka",
+        "$OMEGA 0.3 ; eta.cl",
+        "$OMEGA 0.1 ; eta.v",
+        "",
+        "$SIGMA 1 FIX",
+        "",
+        "$ESTIMATION METHOD=1 INTER MAXEVALS=10000 SIGDIG=3 SIGL=12 PRINT=1 NOABORT",
+        "",
+        "$COVARIANCE",
+        "",
+        "$TABLE ID ETAS(1:LAST) OBJI FIRSTONLY ONEHEADER NOPRINT",
+        "    NOAPPEND FILE=one.cmt.eta",
+        "",
+        "$TABLE ID TIME IPRED PRED RXROW ONEHEADER NOPRINT",
+        "    NOAPPEND FILE=one.cmt.pred",
+        ""
+        ),
+      collapse="\n"
+    )
+  )
 })
 
 # pk.turnover.emax3 <- function() {
