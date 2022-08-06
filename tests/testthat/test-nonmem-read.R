@@ -53,10 +53,12 @@ test_that("warfarin NONMEM reading", {
     })
   }
 
-  skip_if_not(file.exists("pk.turnover.emax3.zip"))
-  .path <- normalizePath("pk.turnover.emax3.zip")
+  skip_if_not(file.exists("pk.turnover.emax3-nonmem.zip"))
+  .path <- normalizePath("pk.turnover.emax3-nonmem.zip")
+  .path4 <- normalizePath("pk.turnover.emax4-nonmem.zip")
   withr::with_tempdir({
     unzip(.path)
+    unzip(.path4)
     # This has rounding errors
     expect_error(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
                         nonmemControl(readRounding=FALSE)))
@@ -67,12 +69,8 @@ test_that("warfarin NONMEM reading", {
     
     expect_true(inherits(f, "nlmixr2FitData"))
     
-    # Will still error if you try to read this with readRounding=FALSE
-    expect_error(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
-                        nonmemControl(readRounding=FALSE)))
-    
     # Note this shouldn't have a covariance step so you can add it (at least a nlmixr2 covariance step)
-    getVarCov(f)
+    expect_error(getVarCov(f), NA)
     
     # nlmixr2 is more generous in what constitutes a covariance
     # step, in this case it is |r|,|s| which should be regarded with
@@ -89,7 +87,8 @@ test_that("warfarin NONMEM reading", {
     f %>% model(ktr <- exp(tktr)) %>%
       model(ka <- exp(tka)) %>%
       model(kout <- exp(tkout + eta.kout)) %>%
-      nlmixr(data=nlmixr2data::warfarin, est="nonmem", control=nonmemControl(readRounding=FALSE))
+      nlmixr(data=nlmixr2data::warfarin, est="nonmem",
+             control=nonmemControl(readRounding=FALSE,modelName="pk.turnover.emax4"))
     
   })
 })
