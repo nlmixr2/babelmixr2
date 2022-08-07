@@ -31,7 +31,9 @@
   rxode2::rxAssignControlValue(ui, ".hasLimit", any(.n == "LIMIT"))
   rxode2::rxAssignControlValue(ui, ".hasIi", any(.n == "II"))
   rxode2::rxAssignControlValue(ui, ".hasSs", any(.n == "SS"))
-  .ret
+  # NONMEM stops execution when AMT=0 & EVID=1; remove those rows.
+  maskAMTzero <- .ret$AMT %in% 0 & .ret$EVID %in% 1
+  .ret[!maskAMTzero, ]
 }
 
 .nonmemFinalizeEnv <- function(env, oldUi) {
@@ -208,6 +210,7 @@
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
     .nonmemRunner(ui=.ui)
   }
+  browser()
   .read <- .ui$nonmemSuccessful
   .readRounding <- rxode2::rxGetControl(.ui, "readRounding", FALSE)
   .roundingErrors <- .ui$nonmemRoundingErrors
