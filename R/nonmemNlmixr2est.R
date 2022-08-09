@@ -100,6 +100,7 @@
   env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData,
                                                control=env$control, table=env$table,
                                                env=env, est="nonmem")
+  .env <- env$env
   .env$adj <- .env$nobs*log(2 * pi)
   .objf2 <- .objf + .env$adj
   .llik <- -(.objf2) / 2
@@ -112,7 +113,6 @@
     BIC = .objf2 + log(.env$nobs) * attr(get("logLik", .env), "df"),
     "Log-likelihood" = as.numeric(.llik), check.names = FALSE
   )
-  .env <- env$env
   .env$method <- "nonmem"
   nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .env$ofvType)
   env
