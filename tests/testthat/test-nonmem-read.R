@@ -91,6 +91,8 @@ test_that("warfarin NONMEM reading", {
              control=nonmemControl(readRounding=FALSE,
                                    modelName="pk.turnover.emax4")) ->
       f2
+
+    expect_true(inherits(f2, "nlmixr2FitData"))
     
   })
 })
