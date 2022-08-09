@@ -1,16 +1,11 @@
 #' @export
 rxUiGet.nonmemModelName <- function(x, ...) {
   .ui <- x[[1]]
-  if (exists("modelName", .ui)) {
-    .modelName <- get("modelName", .ui)
-  } else {
-    .modelName <- rxode2::rxGetControl(.ui, "modelName", NULL)
-    if (!is.null(.modelName)) {
-      assign("modelName", .modelName, .ui)
-    }
-  }
+  .modelName <- rxode2::rxGetControl(.ui, "modelName", NULL)
   if (is.null(.modelName)) {
     .modelName <- .ui$modelName
+  } else {
+    assign("modelName", .modelName, .ui)
   }
   if (isTRUE(checkmate::checkCharacter(.modelName, len=1, any.missing=FALSE))) {
     return(.modelName)
