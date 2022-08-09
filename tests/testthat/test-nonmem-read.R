@@ -59,6 +59,7 @@ test_that("warfarin NONMEM reading", {
   withr::with_tempdir({
     unzip(.path)
     unzip(.path4)
+    
     # This has rounding errors
     expect_error(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
                         nonmemControl(readRounding=FALSE)))
@@ -119,8 +120,8 @@ test_that("pheno NONMEM reading", {
     })
   }
 
-  skip_if_not(file.exists("pheno.zip"))
-  .path <- normalizePath("pheno.zip")
+  skip_if_not(file.exists("pheno-nonmem.zip"))
+  .path <- normalizePath("pheno-nonmem.zip")
   withr::with_tempdir({
     unzip(.path)
     f <- nlmixr2::nlmixr(pheno, nlmixr2data::pheno_sd, "nonmem")
