@@ -93,8 +93,14 @@
   env$nobs <- .lastNobs
   env$nobs2<- .lastNobs
   # Run before converting to nonmemControl
-  .env$adj <- .env$nobs*log(2 * pi)
   .objf <- .ui$nonmemObjf + env$nmLikAdj
+  # When running the focei problem to create the nlmixr object, you also need a
+  #  foceiControl object
+  .nonmemControlToFoceiControl(env, TRUE)
+  env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData,
+                                               control=env$control, table=env$table,
+                                               env=env, est="nonmem")
+  .env$adj <- .env$nobs*log(2 * pi)
   .objf2 <- .objf + .env$adj
   .llik <- -(.objf2) / 2
   attr(.llik, "df") <- attr(.env$logLik, "df")
@@ -106,13 +112,6 @@
     BIC = .objf2 + log(.env$nobs) * attr(get("logLik", .env), "df"),
     "Log-likelihood" = as.numeric(.llik), check.names = FALSE
   )
-
-  # When running the focei problem to create the nlmixr object, you also need a
-  #  foceiControl object
-  .nonmemControlToFoceiControl(env, TRUE)
-  env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData,
-                                               control=env$control, table=env$table,
-                                               env=env, est="nonmem")
   .env <- env$env
   .env$method <- "nonmem"
   nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .env$ofvType)
