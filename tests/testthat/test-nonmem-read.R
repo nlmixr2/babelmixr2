@@ -83,12 +83,14 @@ test_that("warfarin NONMEM reading", {
     
     # In addition to dropping the problematic parameters, this will
     # restart the fit at the final initial estimates
-    
-    f %>% model(ktr <- exp(tktr)) %>%
+
+    f2 <- f %>% model(ktr <- exp(tktr)) %>%
       model(ka <- exp(tka)) %>%
-      model(kout <- exp(tkout + eta.kout)) %>%
+      model(emax = expit(temax)) %>%
       nlmixr(data=nlmixr2data::warfarin, est="nonmem",
-             control=nonmemControl(readRounding=FALSE,modelName="pk.turnover.emax4"))
+             control=nonmemControl(readRounding=FALSE,
+                                   modelName="pk.turnover.emax4")) ->
+      f2
     
   })
 })
