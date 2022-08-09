@@ -186,10 +186,30 @@ test_that("wbc NONMEM reading", {
     })
   }
 
-  skip_if_not(file.exists("wbc.zip"))
-  .path <- normalizePath("wbc.zip")
+  skip_if_not(file.exists("wbc-nonmem.zip"))
+  .path <- normalizePath("wbc-nonmem.zip")
+  .path2 <- normalizePath("wbc2-nonmem.zip")
+
   withr::with_tempdir({
-      unzip(.path)
-      f <- nlmixr2(wbc, nlmixr2data::wbcSim, "nonmem")
-  })
+
+    unzip(.path)
+    unzip(.path2)
+
+    # Note this can even be done with bad or unfinished optimizations
+    # in NONMEM:
+    f <- nlmixr2(wbc, nlmixr2data::wbcSim, "nonmem",
+                 nonmemControl(readBadOpt=TRUE))
+
+    expect_true(inherits(f, "nlmixr2FitData"))
+
+    # One way to take care of this is by removing the 100% shrinkage etas:
+    f2 <-f %>%
+      model(SLOPU =  exp(log_SLOPU)) %>%
+      model(MTT =  exp(log_MTT)) %>%
+      nlmixr2(., nlmixr2data::wbcSim, "nonmem",
+              control=nonmemControl(modelName="wbc2"))
+
+    expect_true(inherits(f, "nlmixr2FitData"))
+    # Of course you could also use nlmixr2 and then re-estimate with NONMEM too.
+    })
 })
