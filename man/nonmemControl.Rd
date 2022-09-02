@@ -65,8 +65,8 @@ nonmemControl(
 \item{outputExtension}{Extension to use for the NONMEM output
 listing}
 
-\item{runCommand}{Command to run NONMEM (typically the path to
-"nmfe75")}
+\item{runCommand}{Command to run NONMEM (typically the path to "nmfe75") or a
+function.  See the details for more information.}
 
 \item{iniSigDig}{How many significant digits are printed in $THETA
 and $OMEGA when the estimate is zero.  Also controls the zero
@@ -120,6 +120,25 @@ babelmixr2 control option for generating NONMEM control stream and
 }
 \description{
 NONMEM estimation control
+}
+\details{
+If \code{runCommand} is given as a string, it will be called with the
+\code{system()} command like:
+
+\code{runCommand controlFile outputFile}.
+
+For example, if \code{runCommand="'/path/to/nmfe75'"} then the command line
+used would look like the following:
+
+\code{'/path/to/nmfe75' one.cmt.nmctl one.cmt.lst}
+
+If \code{runCommand} is given as a function, it will be called as
+\code{FUN(ctl, directory, ui)} to run NONMEM.  This allows you to run NONMEM
+in any way that you may need, as long as you can write it in R.  babelmixr2
+will wait for the function to return before proceeding.
+
+If \code{runCommand} is \code{NA}, \code{nlmixr()} will stop after writing
+the model files and without starting NONMEM.
 }
 \examples{
 nonmemControl()

@@ -177,7 +177,6 @@
   }
   .exportPath <- .ui$nonmemExportPath
 
-   
   if (!dir.exists(.exportPath)) dir.create(.exportPath)
   .csv <- file.path(.exportPath, .ui$nonmemCsv)
   .nmctlFile <- file.path(.exportPath, .ui$nonmemNmctl)
@@ -202,34 +201,12 @@
               quote=FALSE)
     .minfo("done")
   }
-  .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
-  if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
-    if (.cmd != "") {
-      .arg <- paste0(.ui$nonmemNmctl, " ", .ui$nonmemNmlst)
-      .minfo(paste0("run NONMEM: ", sprintf(.cmd, .arg)))
-      withr::with_dir(.exportPath,
-                      system(sprintf(.cmd, .arg)))
-    } else if (!interactive()) {
-      # Don't wait when running in a script or test
-      stop("setup NONMEM's run command")
-    } else {
-      .minfo("run NONMEM manually or setup NONMEM's run command")
-    }
+  if (is.na(rxode2::rxGetControl(.ui, "runCommand", ""))) {
+    .minfo("not running NONMEM")
+    return(.ui)
   }
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
-    .minfo("waiting for nonmem xml output")
-    .i <- 0
-    while (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
-      .i <- .i + 1
-      message(".", appendLF=FALSE)
-      if (.i %% 50 == 0) {
-        message(paste0(.i, "\n"), appendLF=TRUE)
-      } else if (.i %% 10 == 0) {
-        message("|", appendLF=FALSE)
-      }
-      Sys.sleep(1)
-    }
-    message("")
+    .nonmemRunner(ui=.ui)
   }
   .read <- .ui$nonmemSuccessful
   .readRounding <- rxode2::rxGetControl(.ui, "readRounding", FALSE)
@@ -279,6 +256,33 @@
     qs::qsave(.ret, .qs)
   }
   return(.ret)
+}
+
+#' Run NONMEM using either the user-specified command or function
+#' 
+#' @param ui The nlmixr2 UI object for running
+#' @return NULL
+#' @noRd
+.nonmemRunner <- function(ui) {
+  cmd <- rxode2::rxGetControl(ui, "runCommand", "")
+  if (is.character(cmd)) {
+    cmd <- .nonmemRunCommand
+  } else if (!is.function(cmd)) {
+    stop("invalid value for nonmemControl(runCommand=)")
+  }
+  cmd(ctl=ui$nonmemNmctl, directory=ui$nonmemExportPath, ui=.ui)
+  NULL
+}
+
+.nonmemRunCommand <- function(ctl, directory, ui) {
+  cmd <- rxode2::rxGetControl(ui, "runCommand", "")
+  if (cmd != "") {
+    fullCmd <- paste(cmd, ctl, ui$nonmemNmlst)
+    .minfo(paste0("run NONMEM: ", fullCmd))
+    withr::with_dir(ui$nonmemExportPath, system(fullCmd))
+  } else {
+    stop("run NONMEM manually and rerun nlmixr() or setup NONMEM's run command")
+  }
 }
 
 #' @export
