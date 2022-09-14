@@ -271,7 +271,7 @@
   } else if (!is.function(cmd)) {
     stop("invalid value for nonmemControl(runCommand=)")
   }
-  cmd(ctl=ui$nonmemNmctl, directory=ui$nonmemExportPath, ui=.ui)
+  cmd(ctl=ui$nonmemNmctl, directory=ui$nonmemExportPath, ui=ui)
   NULL
 }
 
