@@ -239,6 +239,7 @@
         lixoftConnectors::runScenario()
         .minfo("done")
         .runLS <- TRUE
+      } else if (dir.exists(.exportPath)) { # needs to skip for tests
       } else if (!interactive()) {
         # Don't wait when running in a script or test
         stop("setup monolix's run command")
