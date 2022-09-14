@@ -86,8 +86,8 @@
 .rxShouldProtectZeros <- function(variable, ui) {
   # should protect zeros if requested, not in an if/else block
   # and if the variable is known to be something non-zero
-  if (!rxode2::rxGetControl(ui, "protectZeros", TRUE)) return(FALSE)
-  if (rxode2::rxGetControl(ui, ".ifelse", FALSE)) return(FALSE)
+  if (!rxode2::rxGetControl(ui, "protectZeros", getOption("babelmixr2.protectZeros", TRUE))) return(FALSE)
+  if (rxode2::rxGetControl(ui, ".ifelse", getOption("babelmixr2.ifelse", FALSE))) return(FALSE)
   if (.rxIsKnownNonZeroVariable(variable, ui)) return(FALSE)
   return(TRUE)
 }

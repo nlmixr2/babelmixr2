@@ -1,7 +1,7 @@
 .nonmemThetaPad <- function(what, left=FALSE) {
   .s <- seq_along(what)
   .max <- max(vapply(.s, function(i) nchar(what[i]), integer(1), USE.NAMES=FALSE))
-  vapply(.s, function(i){
+  vapply(.s, function(i) {
     .nc <- nchar(what[i])
     if (.nc == .max) return(what[i])
     .pad <- paste(rep(" ", .max - .nc), collapse='')
