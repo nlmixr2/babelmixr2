@@ -4,6 +4,8 @@ rxUiGet.nonmemModelName <- function(x, ...) {
   .modelName <- rxode2::rxGetControl(.ui, "modelName", NULL)
   if (is.null(.modelName)) {
     .modelName <- .ui$modelName
+  } else {
+    assign("modelName", .modelName, .ui)
   }
   if (isTRUE(checkmate::checkCharacter(.modelName, len=1, any.missing=FALSE))) {
     return(.modelName)
@@ -15,9 +17,14 @@ rxUiGet.nonmemModelName <- function(x, ...) {
 rxUiGet.nonmemExportPath <- function(x, ...) {
   .ui <- x[[1]]
   .extra <- ""
-  .num <- rxode2::rxGetControl(.ui, ".modelNumber", 0)
+  if (exists(".num", .ui)) {
+    .num <- get(".num", .num, .ui)
+  } else {
+    .num <- rxode2::rxGetControl(.ui, ".modelNumber", 0)
+  }
   if (.num > 0) {
     .extra <- sprintf("-%03d", .num)
+    assign(".num", .num, .ui)
   }
   paste0(rxUiGet.nonmemModelName(x, ...), .extra, "-nonmem")
 }

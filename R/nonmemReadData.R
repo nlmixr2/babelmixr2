@@ -166,6 +166,10 @@ rxUiGet.nonmemObjfType <- function(x, ...) {
   .est <- rxode2::rxGetControl(.ui, "est", "focei")
   if (.est %in% c("focei", "posthoc")) {
     return("nonmem focei")
+  } else if (.est %in% "imp") {
+    return("nonmem imp")
+  } else if (.est %in% "its") {
+    return("nonmem its")
   } else {
     stop("unknown objective type", call.=FALSE)
   }
