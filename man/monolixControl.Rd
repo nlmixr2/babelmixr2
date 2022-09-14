@@ -29,6 +29,7 @@ monolixControl(
   ci = 0.95,
   sigdigTable = NULL,
   absolutePath = FALSE,
+  modelName = NULL,
   ...
 )
 }
@@ -127,7 +128,11 @@ If not specified, then it matches the significant digits in the
 `sigdig` optimization algorithm.  If `sigdig` is NULL, use 3.}
 
 \item{absolutePath}{Boolean indicating if the absolute path should
-be used for the monolix runs.}
+be used for the monolix runs}
+
+\item{modelName}{Model name used to generate the NONMEM output.  If
+`NULL` try to infer from the model name (could be `x` if not
+clear).  Otherwise use this character for outputs.}
 
 \item{...}{Ignored parameters}
 }

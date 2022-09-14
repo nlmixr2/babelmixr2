@@ -57,7 +57,8 @@ test_that("test monolix reading for 2019, 2020, and 2021", {
     .path <- normalizePath("pk.turnover.emax3-2019.zip")
     withr::with_tempdir({
       unzip(.path)
-      f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
+      f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix",
+                           control=monolixControl(modelName="pk.turnover.emax3"))
       expect_true(inherits(f, "nlmixr2FitData"))
     })
   }
@@ -66,7 +67,8 @@ test_that("test monolix reading for 2019, 2020, and 2021", {
     .path <- normalizePath("pk.turnover.emax3-2020.zip")
     withr::with_tempdir({
       unzip(.path)
-      f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
+      f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix",
+                           control=monolixControl(modelName="pk.turnover.emax3"))
       expect_true(inherits(f, "nlmixr2FitData"))
     })
   }
@@ -75,7 +77,8 @@ test_that("test monolix reading for 2019, 2020, and 2021", {
     .path <- normalizePath("pk.turnover.emax3-2021.zip")
     withr::with_tempdir({
       unzip(.path)
-      f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix")
+      f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix",
+                           control=monolixControl(modelName="pk.turnover.emax3"))
       expect_true(inherits(f, "nlmixr2FitData"))
     })
   }
@@ -143,7 +146,8 @@ test_that("test more nlmixr2/monolix features", {
   .path <- normalizePath("pk.turnover.emax4-2021.zip")
   withr::with_tempdir({
     unzip(.path)
-    f <- nlmixr2::nlmixr(pk.turnover.emax4, nlmixr2data::warfarin, "monolix")
+    f <- nlmixr2::nlmixr(pk.turnover.emax4, nlmixr2data::warfarin, "monolix",
+                         control=monolixControl(modelName="pk.turnover.emax4"))
     expect_true(inherits(f, "nlmixr2FitData"))
   })
   
@@ -175,7 +179,8 @@ test_that("test Monolix pheno", {
   .path <- normalizePath("pheno-2021.zip")
   withr::with_tempdir({
     unzip(.path)
-    f <- nlmixr2::nlmixr(pheno, nlmixr2data::pheno_sd, "monolix")
+    f <- nlmixr2::nlmixr(pheno, nlmixr2data::pheno_sd, "monolix",
+                         control=monolixControl(modelName="pheno"))
     expect_true(inherits(f, "nlmixr2FitData"))
   })
   
@@ -288,7 +293,8 @@ test_that("pbpk mavoglurant", {
   .path <- normalizePath("pbpk-2021.zip")
   withr::with_tempdir({
     unzip(.path)
-    f <- nlmixr2::nlmixr(pbpk, nlmixr2data::mavoglurant, "monolix")
+    f <- nlmixr2::nlmixr(pbpk, nlmixr2data::mavoglurant, "monolix",
+                         control=monolixControl(modelName="pbpk"))
     expect_true(inherits(f, "nlmixr2FitData"))
   })
   
@@ -351,7 +357,8 @@ test_that("nimo test", {
   .path <- normalizePath("nimo-2021.zip")
   withr::with_tempdir({
     unzip(.path)
-    f <- suppressWarnings(nlmixr2::nlmixr2(nimo, tmp, "monolix"))
+    f <- suppressWarnings(nlmixr2::nlmixr2(nimo, tmp, "monolix",
+                                           control=monolixControl(modelName="nimo")))
     expect_true(inherits(f, "nlmixr2FitData"))
   })
   
@@ -422,7 +429,8 @@ test_that("Monolix wbc", {
   withr::with_tempdir({
     unzip(.path)
     
-    f <- suppressWarnings(nlmixr2::nlmixr2(wbc, nlmixr2data::wbcSim, "monolix"))
+    f <- suppressWarnings(nlmixr2::nlmixr2(wbc, nlmixr2data::wbcSim, "monolix",
+                                           control=monolixControl(modelName="wbc")))
     expect_true(inherits(f, "nlmixr2FitData"))
     expect_equal(f$env$parHist, NULL)
     
@@ -441,7 +449,8 @@ test_that("Monolix wbc", {
   withr::with_tempdir({
     unzip(.path)
     unzip(.pathCharts)
-    f <- suppressWarnings(nlmixr2::nlmixr2(wbc, nlmixr2data::wbcSim, "monolix"))
+    f <- suppressWarnings(nlmixr2::nlmixr2(wbc, nlmixr2data::wbcSim, "monolix",
+                                           control=monolixControl(modelName="wbc")))
     expect_true(inherits(f, "nlmixr2FitData"))
     expect_true(inherits(f$env$parHist, "data.frame"))
   })
@@ -455,13 +464,15 @@ test_that("Monolix wbc test 2", {
     # with piping, the original model name is scrubbed, and is changed to x
     p1 <- wbc %>%
       ini(prop.err=15) %>%
-      nlmixr2(., nlmixr2data::wbcSim, "monolix")
+      nlmixr2(., nlmixr2data::wbcSim, "monolix",
+              control=monolixControl(modelName="x"))
     
     expect_true(inherits(p1, "nlmixr2FitData"))
     
     p2 <-wbc %>%
       ini(prop.err=7) %>%
-      nlmixr2(., nlmixr2data::wbcSim, "monolix")
+      nlmixr2(., nlmixr2data::wbcSim, "monolix",
+              control=monolixControl(modelName="x"))
     
     expect_true(inherits(p2, "nlmixr2FitData"))
   })

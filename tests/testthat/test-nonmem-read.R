@@ -62,11 +62,12 @@ test_that("warfarin NONMEM reading", {
     
     # This has rounding errors
     expect_error(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
-                        nonmemControl(readRounding=FALSE)))
+                        nonmemControl(readRounding=FALSE, modelName="pk.turnover.emax3")))
+
     
     # Can still load the model to get information (possibly pipe) and create a new model
     f <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
-                nonmemControl(readRounding=TRUE))
+                nonmemControl(readRounding=TRUE, modelName="pk.turnover.emax3"))
     
     expect_true(inherits(f, "nlmixr2FitData"))
     
@@ -124,7 +125,8 @@ test_that("pheno NONMEM reading", {
   .path <- normalizePath("pheno-nonmem.zip")
   withr::with_tempdir({
     unzip(.path)
-    f <- nlmixr2::nlmixr(pheno, nlmixr2data::pheno_sd, "nonmem")
+    f <- nlmixr2::nlmixr(pheno, nlmixr2data::pheno_sd, "nonmem",
+                         control=nonmemControl(modelName="pheno"))
     expect_true(inherits(f, "nlmixr2FitData"))
   })
 })
@@ -198,7 +200,7 @@ test_that("wbc NONMEM reading", {
     # Note this can even be done with bad or unfinished optimizations
     # in NONMEM:
     f <- nlmixr2(wbc, nlmixr2data::wbcSim, "nonmem",
-                 nonmemControl(readBadOpt=TRUE))
+                 nonmemControl(readBadOpt=TRUE, modelName="wbc"))
 
     expect_true(inherits(f, "nlmixr2FitData"))
 

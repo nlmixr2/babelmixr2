@@ -34,7 +34,8 @@
 #'   and 'lixoftConnectors' is available, use lixoftConnectors to run
 #'   monolix.
 #' @param absolutePath Boolean indicating if the absolute path should
-#'   be used for the monolix runs.
+#'   be used for the monolix runs
+#' @inheritParams nonmemControl
 #' @inheritParams nlmixr2est::saemControl
 #' @return A monolix control object
 #' @author Matthew Fidler
@@ -67,6 +68,7 @@ monolixControl <- function(nbSSDoses=7,
                            ci = 0.95,
                            sigdigTable=NULL,
                            absolutePath=FALSE,
+                           modelName=NULL,
                            ...) {
 
   checkmate::assertLogical(stiff, max.len=1, any.missing=FALSE)
@@ -85,6 +87,10 @@ monolixControl <- function(nbSSDoses=7,
   checkmate::assertNumeric(exploratoryAlpha, lower=0.0, upper=1.0)
   checkmate::assertNumeric(omegaTau, lower=0.0, upper=1.0)
   checkmate::assertNumeric(errorModelTau, lower=0.0, upper=1.0)
+
+  if (!is.null(modelName)) {
+    checkmate::assertCharacter(modelName, len=1, any.missing=FALSE)
+  }
 
   .xtra <- list(...)
   .bad <- names(.xtra)
@@ -162,7 +168,8 @@ monolixControl <- function(nbSSDoses=7,
                ci = ci,
                sigdigTable=sigdigTable,
                genRxControl=genRxControl,
-               useLinearization=useLinearization)
+               useLinearization=useLinearization,
+               modelName=modelName)
   class(.ret) <- "monolixControl"
   .ret
 }
