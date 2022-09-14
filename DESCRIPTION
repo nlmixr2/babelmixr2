@@ -2,8 +2,8 @@ Package: babelmixr2
 Type: Package
 Title: Use nlmixr2 as a Front-End for Other Software
 Version: 0.1.0
-Authors@R: c(person("Matthew","Fidler", role = c("aut", "cre"), email = "matthew.fidler@gmail.com", comment=c(ORCID="0000-0001-8538-6691"))
-  )
+Authors@R: c(person("Matthew","Fidler", role = c("aut", "cre"), email = "matthew.fidler@gmail.com", comment=c(ORCID="0000-0001-8538-6691")),
+           person("Bill", "Denney", email="wdenney@humanpredictions.com", role="aut", comment=c(ORCID="0000-0002-5759-428X")))
 Description: Run other estimation and simulation software via the nlmixr2
   interface including NONMEM and Monolix. While not required, you can
   get/install the R 'lixoftConnectors' package in the 'Monolix' installation, as
