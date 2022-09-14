@@ -242,6 +242,7 @@
       } else if (dir.exists(.exportPath)) { # needs to skip for tests
       } else if (!interactive()) {
         # Don't wait when running in a script or test
+        print(.exportPath)
         stop("setup monolix's run command")
       } else {
         .minfo("run monolix manually or stop and setup monolix's run command")

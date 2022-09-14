@@ -207,6 +207,7 @@
     return(.ui)
   }
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
+    print(file.path(.exportPath, .ui$nonmemXml))
     .nonmemRunner(ui=.ui)
   }
   .read <- .ui$nonmemSuccessful
