@@ -441,7 +441,8 @@ test_that("Monolix wbc", {
     expect_true(inherits(f, "nlmixr2FitData"))
     expect_true(inherits(f$env$parHist, "data.frame"))
     
-    f <- suppressWarnings(nlmixr2::nlmixr2(wbc, nlmixr2data::wbcSim, "monolix"))
+    f <- suppressWarnings(nlmixr2::nlmixr2(wbc, nlmixr2data::wbcSim, "monolix", 
+                                           control=monolixControl(modelName="wbc")))
     expect_true(inherits(f, "nlmixr2FitData"))
     expect_true(inherits(f$env$parHist, "data.frame"))
     
