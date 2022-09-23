@@ -123,13 +123,13 @@ nlmixr2Est.pknca <- function(env, ...) {
   # one compartment parameters including unit conversion
   tmaxValues <-
     c(0.1, 1, 10)*
-    quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "tmax"], probs = c(0.01, 0.5, .99), na.rm=TRUE, names = FALSE)
+    stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "tmax"], probs = c(0.01, 0.5, .99), na.rm=TRUE, names = FALSE)
   cmaxdnValues <-
     c(0.1, 1, 10)*
-    quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "cmax.dn"], probs = c(0.01, 0.5, .99), na.rm=TRUE, names = FALSE)
+    stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "cmax.dn"], probs = c(0.01, 0.5, .99), na.rm=TRUE, names = FALSE)
   cllastValues <-
     c(0.1, 1, 10)*
-    quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "cl.last"], probs = c(0.01, 0.5, .99), na.rm=TRUE, names = FALSE)
+    stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "cl.last"], probs = c(0.01, 0.5, .99), na.rm=TRUE, names = FALSE)
 
   ncaEstimates <-
     list(
@@ -226,7 +226,7 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
 #' @return A list of parameters
 #' @export
 pkncaControl <- function(concu = NULL, doseu = NULL, amountu = NULL, timeu = NULL,
-                         volumeu = NULL, modeltimeu = NULL,
+                         volumeu = NULL,
                          groups = character(),
                          sparse = FALSE) {
   getValidNlmixrCtl.pknca(
@@ -236,7 +236,6 @@ pkncaControl <- function(concu = NULL, doseu = NULL, amountu = NULL, timeu = NUL
       timeu = timeu,
       amountu = amountu,
       volumeu = volumeu,
-      modeltimeu = modeltimeu,
       groups = groups,
       sparse = sparse
     )
@@ -255,7 +254,7 @@ getValidNlmixrCtl.pknca <- function(control) {
   )
   # verify units look like units
   for (unitNm in c("concu", "doseu", "amountu", "timeu",
-                   "volumeu", "modeltimeu")) {
+                   "volumeu")) {
     checkmate::expect_character(control[[unitNm]], label = unitNm, null.ok = TRUE, len = 1, min.chars = 1)
   }
   checkmate::expect_logical(control$sparse, len = 1, any.missing = FALSE)

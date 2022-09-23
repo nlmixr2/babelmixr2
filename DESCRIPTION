@@ -28,13 +28,16 @@ Depends:
     nlmixr2
 Imports:
     checkmate,
+    cli,
     digest,
     lotri,
     nlmixr2est,
     methods,
+    PKNCA,
     qs,
     rex,
-    rxode2
+    rxode2,
+    units
 RoxygenNote: 7.2.1
 Additional_repositories: https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/
 Config/testthat/edition: 3

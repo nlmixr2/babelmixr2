@@ -10,7 +10,6 @@ pkncaControl(
   amountu = NULL,
   timeu = NULL,
   volumeu = NULL,
-  modeltimeu = NULL,
   groups = character(),
   sparse = FALSE
 )
