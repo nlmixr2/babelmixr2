@@ -303,8 +303,8 @@ List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, Nu
             newEvid[i] = 1;
             newSs[i] =getSs(wh0, hasSs, hasSs2, hasSsRate);
             newAdm[i] = getAdm(cmt[i], MONOLIX_BOLUS, admIds);
-            keepItem[i] = true;
           }
+          keepItem[i] = true;
         }
       }
     }
