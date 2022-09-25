@@ -112,7 +112,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
   .conv0 <- .Call(`_babelmixr2_convertDataBack`, .env$dataSav$ID, .env$dataSav$TIME, .env$dataSav$AMT,
                   .env$dataSav$II, .env$dataSav$EVID, .env$dataSav$CMT,
                   model$predDf$cmt, model$predDf$dvid, .flag["ncmt"], .flag["ka"], length(.mv$state),
-                  replaceEvid=5L)
+                  replaceEvid=5L, zeroDose2 = FALSE)
   assignInMyNamespace(".lastNobs", .conv0$nobs)
   if (.conv0$hasTinf && .conv0$hasRate) {
     stop("monolix does not support a fixed duration (`tinf`) and rate (`rate`) at the same time",
@@ -180,7 +180,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
   .predDf <- ui$predDf
   .iniDf <- ui$iniDf
   .ret <- vapply(seq_along(.predDf$cond),
-                 function(i){
+                 function(i) {
                    .cond <- .predDf$cond[i]
                    .df <- .iniDf[which(.iniDf$condition == .cond), ]
                    if (length(.df$cond) == 0) return(1.0)
@@ -229,7 +229,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
   .conv0 <- .Call(`_babelmixr2_convertDataBack`, .env$dataSav$ID, .env$dataSav$TIME, .env$dataSav$AMT,
                   .env$dataSav$II, .env$dataSav$EVID, .env$dataSav$CMT,
                   model$predDf$cmt, model$predDf$dvid, .flag["ncmt"], .flag["ka"], length(.mv$state),
-                  replaceEvid=5L)
+                  replaceEvid=5L, zeroDose2 = TRUE)
   assignInMyNamespace(".lastNobs", .conv0$nobs)
   if (!is.na(replaceOK)) {
     if (.conv0$hasPhantom) {
