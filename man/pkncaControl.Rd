@@ -10,6 +10,10 @@ pkncaControl(
   amountu = NULL,
   timeu = NULL,
   volumeu = NULL,
+  vpMult = 2,
+  qMult = 1/2,
+  vp2Mult = 4,
+  q2Mult = 1/4,
   groups = character(),
   sparse = FALSE
 )
@@ -20,6 +24,9 @@ units from the source data (passed to \code{PKNCA::pknca_units_table()}).}
 
 \item{volumeu}{compartment volume for the model (if \code{NULL}, simplified
 units from source data will be used)}
+
+\item{vpMult, qMult, vp2Mult, q2Mult}{Multipliers for vc and cl to provide
+initial estimates for vp, q, vp2, and q2}
 
 \item{groups}{Grouping columns for NCA summaries by group (required if
 \code{sparse = TRUE})}

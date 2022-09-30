@@ -26,7 +26,7 @@
 nlmixr2Est.pknca <- function(env, ...) {
   # TODO: Detect column names for EVID, CMT, ID
   obsData <- env$data[env$data$EVID == 0, ]
-  doseData <- env$data[env$data$EVID == 1, ]
+  doseData <- env$data[env$data$EVID %in% c(1, 4), ]
   obsCmt <- unique(obsData$CMT)
   doseCmt <- unique(doseData$CMT)
   stopifnot(length(obsCmt) == 1)
@@ -123,13 +123,13 @@ nlmixr2Est.pknca <- function(env, ...) {
   # one compartment parameters including unit conversion
   tmaxValues <-
     c(0.1, 1, 10)*
-    stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "tmax"], probs = c(0.01, 0.5, .99), na.rm=TRUE, names = FALSE)
+    stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "tmax"], probs = c(0.01, 0.5, 0.99), na.rm=TRUE, names = FALSE)
   cmaxdnValues <-
     c(0.1, 1, 10)*
-    stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "cmax.dn"], probs = c(0.01, 0.5, .99), na.rm=TRUE, names = FALSE)
+    stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "cmax.dn"], probs = c(0.01, 0.5, 0.99), na.rm=TRUE, names = FALSE)
   cllastValues <-
     c(0.1, 1, 10)*
-    stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "cl.last"], probs = c(0.01, 0.5, .99), na.rm=TRUE, names = FALSE)
+    stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "cl.last"], probs = c(0.01, 0.5, 0.99), na.rm=TRUE, names = FALSE)
 
   ncaEstimates <-
     list(
@@ -147,11 +147,11 @@ nlmixr2Est.pknca <- function(env, ...) {
       ncaEstimates$ka
     )
   # two compartment parameters
-  ncaEstimates$vp <- ncaEstimates$vc*2
-  ncaEstimates$q <-  ncaEstimates$cl/2
+  ncaEstimates$vp <- ncaEstimates$vc*control$vpMult
+  ncaEstimates$q <-  ncaEstimates$cl*control$qMult
   # three compartment parameters
-  ncaEstimates$vp2 <-  ncaEstimates$vc*4
-  ncaEstimates$q2 <-  ncaEstimates$cl/4
+  ncaEstimates$vp2 <-  ncaEstimates$vc*control$vp2Mult
+  ncaEstimates$q2 <-  ncaEstimates$cl*control$q2Mult
 
   # What parameters should be modified?  And then modify them.
   murefNames <- env$ui$getSplitMuModel$pureMuRef
@@ -168,6 +168,7 @@ nlmixr2Est.pknca <- function(env, ...) {
 
   env$ui <- newEnv
   env$nca <- oNCA
+
   env
 }
 
@@ -221,12 +222,16 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
 #'   units from the source data (passed to \code{PKNCA::pknca_units_table()}).
 #' @param volumeu compartment volume for the model (if \code{NULL}, simplified
 #'   units from source data will be used)
+#' @param vpMult,qMult,vp2Mult,q2Mult Multipliers for vc and cl to provide
+#'   initial estimates for vp, q, vp2, and q2
 #' @param groups Grouping columns for NCA summaries by group (required if
 #'   \code{sparse = TRUE})
 #' @return A list of parameters
 #' @export
 pkncaControl <- function(concu = NULL, doseu = NULL, amountu = NULL, timeu = NULL,
                          volumeu = NULL,
+                         vpMult=2, qMult=1/2,
+                         vp2Mult=4, q2Mult=1/4,
                          groups = character(),
                          sparse = FALSE) {
   getValidNlmixrCtl.pknca(
@@ -257,6 +262,11 @@ getValidNlmixrCtl.pknca <- function(control) {
                    "volumeu")) {
     checkmate::expect_character(control[[unitNm]], label = unitNm, null.ok = TRUE, len = 1, min.chars = 1)
   }
+  # Verify that multipliers are numbers
+  for (multNm in c("vpMult", "qMult", "vp2Mult", "q2Mult")) {
+    checkmate::expect_number(control[[multNm]], label = multNm, na.ok = FALSE, finite = TRUE)
+  }
+
   checkmate::expect_logical(control$sparse, len = 1, any.missing = FALSE)
   checkmate::expect_character(control$groups, min.chars = 1, min.len = as.numeric(control$sparse))
   orig
