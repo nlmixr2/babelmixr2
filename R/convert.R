@@ -229,7 +229,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
   .conv0 <- .Call(`_babelmixr2_convertDataBack`, .env$dataSav$ID, .env$dataSav$TIME, .env$dataSav$AMT,
                   .env$dataSav$II, .env$dataSav$EVID, .env$dataSav$CMT,
                   model$predDf$cmt, model$predDf$dvid, .flag["ncmt"], .flag["ka"], length(.mv$state),
-                  replaceEvid=5L)
+                  replaceEvid=replaceEvid)
   assignInMyNamespace(".lastNobs", .conv0$nobs)
   if (!is.na(replaceOK)) {
     if (.conv0$hasPhantom) {
