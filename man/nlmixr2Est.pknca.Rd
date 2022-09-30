@@ -35,8 +35,12 @@ Parameters are estimated as follows:
 \item{ka}{4 half-lives to Tmax but not higher than 3:  \code{log(2)/(tmax/4)}}
 \item{vc}{Inverse of dose-normalized Cmax}
 \item{cl}{Estimated as the median clearance}
-\item{vp,vp2}{2- and 4-fold the \code{vc}, respectively}
-\item{q,q2}{0.5- and 0.25-fold the \code{cl}, respectively}
+\item{vp,vp2}{2- and 4-fold the \code{vc}, respectively by default,
+  controlled by the \code{vpMult} and \code{vp2Mult} arguments to
+  \code{pkncaControl}}
+\item{q,q2}{0.5- and 0.25-fold the \code{cl}, respectively by default,
+  controlled by the \code{qMult} and \code{q2Mult} arguments to
+  \code{pkncaControl}}
 }
 
 The bounds for the parameter estimates are set to 10% of the first percentile
