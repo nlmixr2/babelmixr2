@@ -28,13 +28,10 @@
 #'   calculation.
 #' @export
 nlmixr2Est.pknca <- function(env, ...) {
+  browser()
   # TODO: Detect column names for EVID, CMT, ID
-  obsData <- env$data[env$data$EVID == 0, ]
-  doseData <- env$data[env$data$EVID %in% c(1, 4), ]
-  obsCmt <- unique(obsData$CMT)
-  doseCmt <- unique(doseData$CMT)
-  stopifnot(length(obsCmt) == 1)
-  stopifnot(length(doseCmt) == 1)
+  # Normalize column names
+  cleanData <- bblDatToPknca(model = env$ui, data = env$data)
   control <- env$control[[1]]
   oConcFormula <-
     stats::as.formula(paste0(

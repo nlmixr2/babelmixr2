@@ -18,8 +18,19 @@ test_that("est='pknca'", {
 
   # It works with no `control` argument
   expect_s3_class(
-    nlmixr(object = modelGood, data = nlmixr2data::theo_sd, est = "pknca"),
+    nlmixr(object = modelGood, data = nlmixr2data::Oral_1CPT, est = "pknca"),
     "babelPkncaEst"
+  )
+
+  expect_error(
+    nlmixr(object = modelGood, data = nlmixr2data::theo_sd, est = "pknca"),
+    regexp = "no dosing rows (EVID = 1 or 4) detected",
+    fixed = TRUE
+  )
+  expect_error(
+    nlmixr(object = modelGood, data = nlmixr2data::theo_sd[nlmixr2data::theo_sd$EVID != 0, ], est = "pknca"),
+    regexp = "no observation rows (EVID = 0) detected",
+    fixed = TRUE
   )
 })
 
