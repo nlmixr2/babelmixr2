@@ -165,6 +165,7 @@ nlmixr2Est.pknca <- function(env, ...) {
   # Add unit conversion to the estimation
   # TODO: This will only work when cp is assigned to center/vc.  Need detection
   # of the correct unit conversion assignment.
+  browser()
   newEnv <-
     eval(str2lang(
       sprintf("rxode2::model(newEnv, cp <- %g*center/vc)", 1/unitConversions[["cmax"]])
@@ -233,6 +234,9 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
 #'   units from source data will be used)
 #' @param vpMult,qMult,vp2Mult,q2Mult Multipliers for vc and cl to provide
 #'   initial estimates for vp, q, vp2, and q2
+#' @param dvParam The parameter name in the model that should be modified for
+#'   concentration unit conversions.  It must be assigned on a line by itself,
+#'   separate from the residual error model line.
 #' @param groups Grouping columns for NCA summaries by group (required if
 #'   \code{sparse = TRUE})
 #' @return A list of parameters
@@ -241,6 +245,7 @@ pkncaControl <- function(concu = NULL, doseu = NULL, timeu = NULL,
                          volumeu = NULL,
                          vpMult=2, qMult=1/2,
                          vp2Mult=4, q2Mult=1/4,
+                         dvParam = "cp",
                          groups = character(),
                          sparse = FALSE) {
   getValidNlmixrCtl.pknca(
@@ -253,6 +258,7 @@ pkncaControl <- function(concu = NULL, doseu = NULL, timeu = NULL,
       qMult = qMult,
       vp2Mult = vp2Mult,
       q2Mult = q2Mult,
+      dvParam = dvParam,
       groups = groups,
       sparse = sparse
     )
@@ -263,6 +269,10 @@ pkncaControl <- function(concu = NULL, doseu = NULL, timeu = NULL,
 getValidNlmixrCtl.pknca <- function(control) {
   orig <- control
   if (inherits(control, "getValidNlmixrControl")) {
+    if (is.null(orig[[1]])) {
+      # Use default values
+      orig[[1]] <- pkncaControl()
+    }
     control <- orig[[1]]
   }
   checkmate::expect_names(
@@ -278,7 +288,8 @@ getValidNlmixrCtl.pknca <- function(control) {
     checkmate::expect_number(control[[multNm]], label = multNm, na.ok = FALSE, finite = TRUE)
   }
 
-  checkmate::expect_logical(control$sparse, len = 1, any.missing = FALSE)
+  checkmate::expect_character(control$dvParam, min.chars = 1, len = 1, null.ok = FALSE)
   checkmate::expect_character(control$groups, min.chars = 1, min.len = as.numeric(control$sparse))
+  checkmate::expect_logical(control$sparse, len = 1, any.missing = FALSE)
   orig
 }

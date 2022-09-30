@@ -13,6 +13,7 @@ pkncaControl(
   qMult = 1/2,
   vp2Mult = 4,
   q2Mult = 1/4,
+  dvParam = "cp",
   groups = character(),
   sparse = FALSE
 )
@@ -26,6 +27,10 @@ units from source data will be used)}
 
 \item{vpMult, qMult, vp2Mult, q2Mult}{Multipliers for vc and cl to provide
 initial estimates for vp, q, vp2, and q2}
+
+\item{dvParam}{The parameter name in the model that should be modified for
+concentration unit conversions.  It must be assigned on a line by itself,
+separate from the residual error model line.}
 
 \item{groups}{Grouping columns for NCA summaries by group (required if
 \code{sparse = TRUE})}
