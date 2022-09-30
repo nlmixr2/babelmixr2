@@ -152,7 +152,7 @@ List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, Nu
                      IntegerVector evid, IntegerVector cmt,
                      IntegerVector cmtDvid, IntegerVector dvidDvid,
                      int linNcmt=0, int linKa=0, int neq=0,
-                     int replaceEvid=5) {
+                     int replaceEvid=5, bool zeroDose2 = true) {
   IntegerVector newEvid(evid.size());
   IntegerVector newSs(evid.size());
   IntegerVector newDvid(evid.size());
@@ -296,11 +296,15 @@ List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, Nu
           hasMult=true;
           break;
         case EVIDF_NORMAL:
-          // defined by 
-          newEvid[i] = 1;
-          newSs[i] =getSs(wh0, hasSs, hasSs2, hasSsRate);
-          newAdm[i] = getAdm(cmt[i], MONOLIX_BOLUS, admIds);
-          keepItem[i] = true;          
+          // defined by
+          if (zeroDose2 && newAmt[i] == 0.0) {
+            newEvid[i] = 2;
+          } else {
+            newEvid[i] = 1;
+            newSs[i] =getSs(wh0, hasSs, hasSs2, hasSsRate);
+            newAdm[i] = getAdm(cmt[i], MONOLIX_BOLUS, admIds);
+          }
+          keepItem[i] = true;
         }
       }
     }
