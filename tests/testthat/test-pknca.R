@@ -27,4 +27,39 @@ test_that("pkncaControl", {
       sparse = FALSE
     )
   )
+
+  # Confirm some degree of error checking on all arguments
+  expect_error(pkncaControl(concu = 1))
+  expect_error(pkncaControl(doseu = 1))
+  expect_error(pkncaControl(timeu = 1))
+  expect_error(pkncaControl(volumeu = 1))
+  expect_error(pkncaControl(vpMult = "A"))
+  expect_error(pkncaControl(qMult = "A"))
+  expect_error(pkncaControl(vp2Mult = "A"))
+  expect_error(pkncaControl(q2Mult = "A"))
+  expect_error(pkncaControl(groups = 1))
+  expect_error(pkncaControl(sparse = NA))
+})
+
+test_that("ini_transform", {
+  model <- function() {
+    ini({
+      tvka <- 0.45 ; label("Absorption rate (Ka)")
+      lcl <- 1 ; label("Clearance (CL)")
+      lvc  <- 3.45 ; label("Central volume of distribution (V)")
+      prop.err <- 0.5 ; label("Proportional residual error (fraction)")
+    })
+    model({
+      ka <- tvka
+      cl <- exp(lcl)
+      vc  <- exp(lvc)
+
+      linCmt() ~ prop(prop.err)
+    })
+  }
+  suppressMessages(newmod <- ini_transform(rxode2::rxode(model), ka=1.5, cl=2, lvc=3))
+  expect_equal(fixef(newmod)[["tvka"]], 1.5)
+  expect_equal(fixef(newmod)[["lcl"]], log(2))
+  expect_equal(fixef(newmod)[["lvc"]], 3)
+
 })

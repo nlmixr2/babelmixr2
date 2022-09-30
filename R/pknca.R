@@ -198,9 +198,14 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
     } else if (nm %in% murefNames) {
       iniName <- names(murefNames)[murefNames == nm]
       currentTrans <- murefTrans$curEval[murefTrans$parameter == iniName]
-      transFun <- inverseTrans[[currentTrans]]
+      if (currentTrans == "") {
+        # No transformation
+        transFun <- identity
+      } else {
+        transFun <- inverseTrans[[currentTrans]]
+      }
       if (is.null(transFun)) {
-        cli::cli_abort(paste("cannot invert the transform:", transFun))
+        cli::cli_abort(paste("cannot invert the transform (please report a bug):", transFun)) # nocov
       }
       x <-
         do.call(
