@@ -7,7 +7,6 @@
 pkncaControl(
   concu = NULL,
   doseu = NULL,
-  amountu = NULL,
   timeu = NULL,
   volumeu = NULL,
   vpMult = 2,
@@ -19,8 +18,8 @@ pkncaControl(
 )
 }
 \arguments{
-\item{concu, doseu, amountu, timeu}{concentration, dose, dosing amount, and time
-units from the source data (passed to \code{PKNCA::pknca_units_table()}).}
+\item{concu, doseu, timeu}{concentration, dose, and time units from the source
+data (passed to \code{PKNCA::pknca_units_table()}).}
 
 \item{volumeu}{compartment volume for the model (if \code{NULL}, simplified
 units from source data will be used)}

@@ -222,8 +222,8 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
 #' PKNCA estimation control
 #'
 #' @inheritParams PKNCA::PKNCAconc
-#' @param concu,doseu,amountu,timeu concentration, dose, dosing amount, and time
-#'   units from the source data (passed to \code{PKNCA::pknca_units_table()}).
+#' @param concu,doseu,timeu concentration, dose, and time units from the source
+#'   data (passed to \code{PKNCA::pknca_units_table()}).
 #' @param volumeu compartment volume for the model (if \code{NULL}, simplified
 #'   units from source data will be used)
 #' @param vpMult,qMult,vp2Mult,q2Mult Multipliers for vc and cl to provide
@@ -232,7 +232,7 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
 #'   \code{sparse = TRUE})
 #' @return A list of parameters
 #' @export
-pkncaControl <- function(concu = NULL, doseu = NULL, amountu = NULL, timeu = NULL,
+pkncaControl <- function(concu = NULL, doseu = NULL, timeu = NULL,
                          volumeu = NULL,
                          vpMult=2, qMult=1/2,
                          vp2Mult=4, q2Mult=1/4,
@@ -243,8 +243,11 @@ pkncaControl <- function(concu = NULL, doseu = NULL, amountu = NULL, timeu = NUL
       concu = concu,
       doseu = doseu,
       timeu = timeu,
-      amountu = amountu,
       volumeu = volumeu,
+      vpMult = vpMult,
+      qMult = qMult,
+      vp2Mult = vp2Mult,
+      q2Mult = q2Mult,
       groups = groups,
       sparse = sparse
     )
@@ -262,8 +265,7 @@ getValidNlmixrCtl.pknca <- function(control) {
     permutation.of = names(formals(pkncaControl))
   )
   # verify units look like units
-  for (unitNm in c("concu", "doseu", "amountu", "timeu",
-                   "volumeu")) {
+  for (unitNm in c("concu", "doseu", "timeu", "volumeu")) {
     checkmate::expect_character(control[[unitNm]], label = unitNm, null.ok = TRUE, len = 1, min.chars = 1)
   }
   # Verify that multipliers are numbers
