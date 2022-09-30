@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // convertDataBack
-List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, NumericVector ii, IntegerVector evid, IntegerVector cmt, IntegerVector cmtDvid, IntegerVector dvidDvid, int linNcmt, int linKa, int neq, int replaceEvid);
-RcppExport SEXP _babelmixr2_convertDataBack(SEXP idSEXP, SEXP timeSEXP, SEXP amtSEXP, SEXP iiSEXP, SEXP evidSEXP, SEXP cmtSEXP, SEXP cmtDvidSEXP, SEXP dvidDvidSEXP, SEXP linNcmtSEXP, SEXP linKaSEXP, SEXP neqSEXP, SEXP replaceEvidSEXP) {
+List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, NumericVector ii, IntegerVector evid, IntegerVector cmt, IntegerVector cmtDvid, IntegerVector dvidDvid, int linNcmt, int linKa, int neq, int replaceEvid, bool zeroDose2);
+RcppExport SEXP _babelmixr2_convertDataBack(SEXP idSEXP, SEXP timeSEXP, SEXP amtSEXP, SEXP iiSEXP, SEXP evidSEXP, SEXP cmtSEXP, SEXP cmtDvidSEXP, SEXP dvidDvidSEXP, SEXP linNcmtSEXP, SEXP linKaSEXP, SEXP neqSEXP, SEXP replaceEvidSEXP, SEXP zeroDose2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -29,7 +29,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type linKa(linKaSEXP);
     Rcpp::traits::input_parameter< int >::type neq(neqSEXP);
     Rcpp::traits::input_parameter< int >::type replaceEvid(replaceEvidSEXP);
-    rcpp_result_gen = Rcpp::wrap(convertDataBack(id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, linNcmt, linKa, neq, replaceEvid));
+    Rcpp::traits::input_parameter< bool >::type zeroDose2(zeroDose2SEXP);
+    rcpp_result_gen = Rcpp::wrap(convertDataBack(id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, linNcmt, linKa, neq, replaceEvid, zeroDose2));
     return rcpp_result_gen;
 END_RCPP
 }
