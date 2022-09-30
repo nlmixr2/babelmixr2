@@ -112,7 +112,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
   .conv0 <- .Call(`_babelmixr2_convertDataBack`, .env$dataSav$ID, .env$dataSav$TIME, .env$dataSav$AMT,
                   .env$dataSav$II, .env$dataSav$EVID, .env$dataSav$CMT,
                   model$predDf$cmt, model$predDf$dvid, .flag["ncmt"], .flag["ka"], length(.mv$state),
-                  replaceEvid=replaceEvid, zeroDose2 = FALSE)
+                  replaceEvid=5L, zeroDose2 = FALSE)
   assignInMyNamespace(".lastNobs", .conv0$nobs)
   if (.conv0$hasTinf && .conv0$hasRate) {
     stop("monolix does not support a fixed duration (`tinf`) and rate (`rate`) at the same time",
