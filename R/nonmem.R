@@ -909,6 +909,7 @@ rex::register_shortcuts("babelmixr2")
 #' @export
 rxToNonmem <- function(x, ui) {
   ui <- rxode2::assertRxUi(ui)
+  ui <- rxode2::rxUiDecompress(ui)
   if (is(substitute(x), "character")) {
     force(x)
   } else if (is(substitute(x), "{")) {

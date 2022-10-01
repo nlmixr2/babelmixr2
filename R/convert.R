@@ -87,7 +87,6 @@
 #'   })
 #' }
 #'
-#' bblDatToMonolix(pk.turnover.emax3, nlmixr2data::warfarin)
 #'
 #' bblDatToNonmem(pk.turnover.emax3, nlmixr2data::warfarin)
 #'
@@ -98,7 +97,10 @@
 #' @useDynLib babelmixr2, .registration=TRUE
 bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=NULL) {
   # https://dataset.lixoft.com/faq/translating-your-dataset-from-nonmem-format-to-the-monolix-suite-format/
+  nlmixr2est::nmObjUiSetCompressed(FALSE)
+  on.exit({nlmixr2est::nmObjUiSetCompressed(TRUE)})
   model <- rxode2::assertRxUi(model, extra=" to convert the data with 'bblDatToMonolix'")
+  model <- rxode2::rxUiDecompress(model)
   rxode2::assertRxUiPrediction(model, extra=" to convert the data with 'bblDatToMonolix'")
   if (is.environment(env)) {
     .env <- env
@@ -213,9 +215,12 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
 
 .bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
                                 fun="bblDatToNonmem", replaceEvid=5L,
-                                replaceOK=FALSE, software="NONMEM", env=NULL) {
+                            replaceOK=FALSE, software="NONMEM", env=NULL) {
+  nlmixr2est::nmObjUiSetCompressed(FALSE)
+  on.exit({  nlmixr2est::nmObjUiSetCompressed(TRUE)})
   .xtra <- paste0(" to convert the data with '", fun, "'")
   model <- rxode2::assertRxUi(model, extra=.xtra)
+  model <- rxode2::rxUiDecompress(model)
   rxode2::assertRxUiPrediction(model, extra=.xtra)
   if (is.environment(env)) {
     .env <- env
@@ -287,12 +292,15 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
 #' @rdname bblDatToMonolix
 #' @export
 bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), env=NULL) {
+  nlmixr2est::nmObjUiSetCompressed(FALSE)
+  on.exit({nlmixr2est::nmObjUiSetCompressed(TRUE)})
   .xtra <- paste0(" to convert the data with 'bblDatToNonmem'")
   model <- rxode2::assertRxUi(model, extra=.xtra)
+  model <- rxode2::rxUiDecompress(model)
   .ret <- .bblDatToNonmem (model, data, table,
                            fun="bblDatToNonmem", replaceEvid=5L,
                            replaceOK=FALSE, software="NONMEM", env=env)
-
+  nlmixr2est::nmObjUiSetCompressed(FALSE)
   .ret <- .ret[, names(.ret) != "DVID"]
   if (any(names(.ret) == "LIMIT")) {
     # This converts LIMIT to NONMEM's definition of infinity

@@ -6,6 +6,7 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .monolixMapDataUse <- function(name, ui) {
+  ui <- rxode2::rxUiDecompress(ui)
   .use <- switch(name,
                  "ID"="identifier",
                  "TIME"="time",
