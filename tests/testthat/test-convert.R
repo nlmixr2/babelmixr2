@@ -101,6 +101,63 @@ test_that("pknca conversion keeps extra columns", {
   expect_equal(dClean$obs$id, 2)
   expect_equal(dClean$dose$id, 2)
 
+  # Drop right censored subject
+  et <-
+    dplyr::bind_rows(
+      data.frame(amt=10, id=1:2, evid=1, time=0),
+      data.frame(time=1, id=1:2, cens=c(-1, NA), DV=1)
+    )
+  suppressMessages(
+    expect_message(expect_message(
+      dClean <- bblDatToPknca(one.compartment, et),
+      regexp = "Right censoring and left censoring with a value above zero is not supported with PKNCA estimation, dropping subjects with those censoring types: 1 rows"),
+      regexp = "Dropping 1 dosing rows with no observations for the subject with PKNCA estimation"
+    )
+  )
+  expect_named(dClean, c("obs", "dose"))
+  expect_equal(nrow(dClean$obs), 1)
+  expect_equal(nrow(dClean$dose), 1)
+  expect_equal(dClean$obs$id, 2)
+  expect_equal(dClean$dose$id, 2)
+
+  # Drop left censored subject with LIMIT > 0
+  et <-
+    dplyr::bind_rows(
+      data.frame(amt=10, id=1:2, evid=1, time=0),
+      data.frame(time=1, id=1:2, cens=c(1, NA), limit=c(0.5, NA), DV=1)
+    )
+  suppressMessages(
+    expect_message(expect_message(
+      dClean <- bblDatToPknca(one.compartment, et),
+      regexp = "Right censoring and left censoring with a value above zero is not supported with PKNCA estimation, dropping subjects with those censoring types: 1 rows"),
+      regexp = "Dropping 1 dosing rows with no observations for the subject with PKNCA estimation"
+    )
+  )
+  expect_named(dClean, c("obs", "dose"))
+  expect_equal(nrow(dClean$obs), 1)
+  expect_equal(nrow(dClean$dose), 1)
+  expect_equal(dClean$obs$id, 2)
+  expect_equal(dClean$dose$id, 2)
+
+  # Keep left censored subject with no LIMIT, convert DV to 0
+  et <-
+    dplyr::bind_rows(
+      data.frame(amt=10, id=1:2, evid=1, time=0),
+      data.frame(time=1, id=1:2, cens=c(1, NA), DV=1)
+    )
+  suppressMessages(
+    expect_message(
+      dClean <- bblDatToPknca(one.compartment, et),
+      regexp = "Setting DV to zero for PKNCA estimation with left censoring: 1 rows"
+    )
+  )
+  expect_named(dClean, c("obs", "dose"))
+  expect_equal(nrow(dClean$obs), 2)
+  expect_equal(nrow(dClean$dose), 2)
+  expect_equal(dClean$obs$id, 1:2)
+  expect_equal(dClean$dose$id, 1:2)
+  expect_equal(dClean$obs$DV, 0:1)
+
   # No dosing
   et <- rxode2::et(amt=0) %>% rxode2::et(1)
   et$DV <- 100

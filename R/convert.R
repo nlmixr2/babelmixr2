@@ -402,12 +402,47 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(), env=NUL
     doseData <- doseData[!dropDoseAddl, ]
   }
 
+  if (!is.na(cleanStdNames["cens"])) {
+    # Drop subjects using right-censored data or LIMIT > 0 with left-censored data
+    rowsRightCens <- !is.na(obsData[[cleanStdNames["cens"]]]) & obsData[[cleanStdNames["cens"]]] == -1
+    rowsLeftCens <- !is.na(obsData[[cleanStdNames["cens"]]]) & obsData[[cleanStdNames["cens"]]] == 1
+    idWithRightCens <- unique(obsData[[cleanStdNames["id"]]][rowsRightCens])
+    idWithLeftCensNonzero <- c()
+    if (!is.na(cleanStdNames["limit"])) {
+      rowsWithLeftCensNonzero <-
+        rowsLeftCens &
+        !is.na(obsData[[cleanStdNames["limit"]]]) &
+        obsData[[cleanStdNames["limit"]]] > 0
+      idWithLeftCensNonzero <- unique(obsData[[cleanStdNames["id"]]][rowsWithLeftCensNonzero])
+    }
+    dropIdCens <- c(idWithRightCens, idWithLeftCensNonzero)
+    dropObsCens <- obsData[[cleanStdNames["id"]]] %in% dropIdCens
+    if (any(dropObsCens)) {
+      cli::cli_alert_info(paste("Right censoring and left censoring with a value above zero is not supported with PKNCA estimation, dropping subjects with those censoring types:", sum(dropObsCens), "rows"))
+      obsData <- obsData[!dropObsCens, ]
+    }
+
+    # Modify LIMIT <= 0 so that DV is 0
+    if (!is.na(cleanStdNames["limit"])) {
+      rowsWithLeftCensZero <-
+        rowsLeftCens &
+        !is.na(obsData[[cleanStdNames["limit"]]]) &
+        obsData[[cleanStdNames["limit"]]] <= 0
+    } else {
+      rowsWithLeftCensZero <- rowsLeftCens
+    }
+    if (any(rowsWithLeftCensZero)) {
+      cli::cli_alert_info(paste("Setting DV to zero for PKNCA estimation with left censoring:", sum(rowsWithLeftCensZero), "rows"))
+      obsData[[cleanStdNames["dv"]]][rowsWithLeftCensZero] <- 0
+    }
+  }
+
   # Drop subjects in only one dataset
   dropDoseData <- !(doseData[[cleanStdNames["id"]]] %in% unique(obsData[[cleanStdNames["id"]]]))
   dropObsData <- !(obsData[[cleanStdNames["id"]]] %in% unique(doseData[[cleanStdNames["id"]]]))
   if (any(dropDoseData)) {
     cli::cli_alert_info(paste("Dropping", sum(dropDoseData), "dosing rows with no observations for the subject with PKNCA estimation"))
-    DoseData <- DoseData[!dropDoseData, ]
+    doseData <- doseData[!dropDoseData, ]
   }
   if (any(dropObsData)) {
     # This is mostly handled with the original data mapping above with
@@ -416,7 +451,6 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(), env=NUL
     cli::cli_alert_info(paste("Dropping", sum(dropObsData), "observation rows with no doses for the subject with PKNCA estimation"))
     obsData <- obsData[!dropObsData, ]
   }
-
 
   if (nrow(obsData) < 1) {
     cli::cli_abort("No observation rows after filtering for analysis")
