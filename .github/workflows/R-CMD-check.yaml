@@ -52,7 +52,7 @@ jobs:
             github::nlmixr2/nlmixr2extra
             github::nlmixr2/nlmixr2plot
             github::nlmixr2/nlmixr2
-            lixoftConnectors?ignore
+            lixoftConnectors=?ignore
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
