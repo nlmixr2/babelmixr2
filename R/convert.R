@@ -394,17 +394,29 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(), env=NUL
   stopifnot(length(obsCmt) == 1)
   stopifnot(length(doseCmt) == 1)
 
+  # Drop subjects using ADDL for dosing
+  idWithAddl <- unique(doseData[[cleanStdNames["id"]]][doseData[[cleanStdNames["addl"]]] > 0])
+  dropDoseAddl <- doseData[[cleanStdNames["id"]]] %in% idWithAddl
+  if (any(dropDoseAddl)) {
+    cli::cli_alert_info(paste("ADDL dosing not supported with PKNCA estimation, dropping subjects using ADDL:", sum(dropDoseAddl), "rows"))
+    doseData <- doseData[!dropDoseAddl, ]
+  }
+
   # Drop subjects in only one dataset
-  dropDoseCmt <- !(doseData[[cleanStdNames["id"]]] %in% unique(obsData[[cleanStdNames["id"]]]))
-  dropObsCmt <- !(obsData[[cleanStdNames["id"]]] %in% unique(doseData[[cleanStdNames["id"]]]))
-  if (any(dropDoseCmt)) {
-    cli::cli_alert_info(paste("Dropping", sum(dropDoseCmt), "dosing rows with no observations for PKNCA estimation"))
-    doseCmt <- doseCmt[!dropDoseCmt, ]
+  dropDoseData <- !(doseData[[cleanStdNames["id"]]] %in% unique(obsData[[cleanStdNames["id"]]]))
+  dropObsData <- !(obsData[[cleanStdNames["id"]]] %in% unique(doseData[[cleanStdNames["id"]]]))
+  if (any(dropDoseData)) {
+    cli::cli_alert_info(paste("Dropping", sum(dropDoseData), "dosing rows with no observations for the subject with PKNCA estimation"))
+    DoseData <- DoseData[!dropDoseData, ]
   }
-  if (any(dropObsCmt)) {
-    cli::cli_alert_info(paste("Dropping", sum(dropObsCmt), "observation rows with no doses for PKNCA estimation"))
-    obsCmt <- obsCmt[!dropObsCmt, ]
+  if (any(dropObsData)) {
+    # This is mostly handled with the original data mapping above with
+    # .bblDatToNonmem, but in some cases, the subject may be dropped subsequent
+    # to that.
+    cli::cli_alert_info(paste("Dropping", sum(dropObsData), "observation rows with no doses for the subject with PKNCA estimation"))
+    obsData <- obsData[!dropObsData, ]
   }
+
 
   if (nrow(obsData) < 1) {
     cli::cli_abort("No observation rows after filtering for analysis")

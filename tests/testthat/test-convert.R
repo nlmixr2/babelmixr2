@@ -29,6 +29,8 @@ test_that("nonmem amt=0 evid=1 conversion test", {
 
 })
 
+
+
 test_that("pknca conversion keeps extra columns", {
   one.compartment <- function() {
     ini({
@@ -51,10 +53,55 @@ test_that("pknca conversion keeps extra columns", {
     })
   }
 
+  # Normal
   et <- rxode2::et(amt=10) %>% rxode2::et(1)
   et$DV <- 100
-  bblDatToPknca(one.compartment, et)
+  suppressMessages(dClean <- bblDatToPknca(one.compartment, et))
+  expect_named(dClean, c("obs", "dose"))
+  expect_equal(nrow(dClean$obs), 1)
+  expect_equal(nrow(dClean$dose), 1)
 
+  # Only dosing and only observation rows for some subjects
+  et <-
+    dplyr::bind_rows(
+      as.data.frame(rxode2::et(amt=10, id=1:2)),
+      as.data.frame(rxode2::et(time=1, id=2:3))
+    )
+  et$DV <- 1
+  suppressWarnings(suppressMessages(
+    expect_message(
+      dClean <- bblDatToPknca(one.compartment, et),
+      regexp = "Dropping 1 observation rows with no doses for the subject with PKNCA estimation"
+    )
+  ))
+  expect_named(dClean, c("obs", "dose"))
+  expect_equal(nrow(dClean$obs), 1)
+  expect_equal(nrow(dClean$dose), 1)
+  expect_equal(dClean$obs$id, 2)
+  expect_equal(dClean$dose$id, 2)
+
+  # Drop a whole subject if they use ADDL
+  et <-
+    dplyr::bind_rows(
+      as.data.frame(rxode2::et(amt=10, id=1, addl=1, ii=1)),
+      as.data.frame(rxode2::et(amt=10, id=2)),
+      as.data.frame(rxode2::et(time=1, id=1:2))
+    )
+  et$DV <- 1
+  suppressWarnings(suppressMessages(
+    expect_message(expect_message(
+      dClean <- bblDatToPknca(one.compartment, et),
+      regexp = "ADDL dosing not supported with PKNCA estimation, dropping subjects using ADDL: 1 rows"),
+      regexp = "Dropping 1 observation rows with no doses for the subject with PKNCA estimation"
+    )
+  ))
+  expect_named(dClean, c("obs", "dose"))
+  expect_equal(nrow(dClean$obs), 1)
+  expect_equal(nrow(dClean$dose), 1)
+  expect_equal(dClean$obs$id, 2)
+  expect_equal(dClean$dose$id, 2)
+
+  # No dosing
   et <- rxode2::et(amt=0) %>% rxode2::et(1)
   et$DV <- 100
   suppressMessages(expect_error(
