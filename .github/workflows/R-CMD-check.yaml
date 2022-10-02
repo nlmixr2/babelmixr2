@@ -41,7 +41,9 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
+          extra-packages: |
+            any::rcmdcheck
+            github::billdenney/pknca # use the deveopment version of PKNCA until a version >0.9.5 is on CRAN
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
