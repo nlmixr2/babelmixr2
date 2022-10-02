@@ -41,9 +41,17 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          pak-version: devel
           extra-packages: |
             any::rcmdcheck
             github::billdenney/pknca
+            github::nlmixr2/lotri
+            github::nlmixr2/rxode2ll
+            github::nlmixr2/rxode2
+            github::nlmixr2/nlmixr2est
+            github::nlmixr2/nlmixr2extra
+            github::nlmixr2/nlmixr2plot
+            github::nlmixr2/nlmixr2
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
