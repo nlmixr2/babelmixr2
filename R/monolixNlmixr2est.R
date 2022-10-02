@@ -285,10 +285,20 @@
 
 nlmixr2Est.monolix <- function(env, ...) {
   .ui <- env$ui
+  .ui <- rxode2::rxUiDecompress(env$ui)
+  nlmixr2est::nmObjUiSetCompressed(FALSE)
+  on.exit({nlmixr2est::nmObjUiSetCompressed(TRUE)})
+  assign("ui", .ui, envir=env)
+  on.exit({
+    assign("ui", rxode2::rxUiCompress(env$ui), envir=env)
+  })
+
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   .monolixFamilyControl(env, ...)
+    nlmixr2est::nmObjUiSetCompressed(FALSE)
+
   on.exit({
     if (exists("control", envir=.ui)) {
       rm("control", envir=.ui)

@@ -221,6 +221,7 @@
 }
 
 .rxToMonolix <- function(x, ui) {
+  ui <- rxode2::rxUiDecompress(ui)
   if (is.name(x) || is.atomic(x)) {
     if (is.character(x)) {
       stop("strings in nlmixr<->monolix are not supported", call.=FALSE)

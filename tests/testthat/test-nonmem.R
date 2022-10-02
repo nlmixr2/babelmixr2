@@ -33,7 +33,7 @@ withr::with_tempdir({
       # Function Definitions ####
       expect_equal(.rxToN("sqrt(a)"), "DSQRT(RXR1)")
       expect_equal(.rxToN("max(a,b)"), "MAX(RXR1,RXR2)")
-      expect_equal(.rxToN("max(c,b,a)"), "MAX(RXR3,RXR2,RXR1)")
+      expect_equal(.rxToN("max(c,b,a)"), "MAX(RXR1,RXR2,RXR3)")
       expect_equal(.rxToN("sum(a,b,c,d)"), "((RXR1)+(RXR2)+(RXR3)+(RXR4))")
       expect_equal(.rxToN("prod(a,b,c,d)"), "((RXR1)*(RXR2)*(RXR3)*(RXR4))")
       expect_equal(.rxToN("expit(a)"), "1/(1+DEXP(-(RXR1)))")
@@ -99,9 +99,9 @@ withr::with_tempdir({
       expect_equal(
         .rxToN("if (a<=b){c=1}"),
         paste(c(
-          "        IF (RXR1.LE.RXR2) THEN",
-          "          RXR3=1 ; c = 1",
-          "        END IF",
+          "  IF (RXR1.LE.RXR2) THEN",
+          "    RXR3=1 ; c = 1",
+          "  END IF",
           ""
         ), collapse="\n")
       )
