@@ -158,6 +158,25 @@ test_that("pknca conversion keeps extra columns", {
   expect_equal(dClean$dose$id, 1:2)
   expect_equal(dClean$obs$DV, 0:1)
 
+  # Keep left censored subject with zero LIMIT, convert DV to 0
+  et <-
+    dplyr::bind_rows(
+      data.frame(amt=10, id=1:2, evid=1, time=0),
+      data.frame(time=1, id=1:2, cens=c(1, NA), limit=c(0, NA), DV=1)
+    )
+  suppressMessages(
+    expect_message(
+      dClean <- bblDatToPknca(one.compartment, et),
+      regexp = "Setting DV to zero for PKNCA estimation with left censoring: 1 rows"
+    )
+  )
+  expect_named(dClean, c("obs", "dose"))
+  expect_equal(nrow(dClean$obs), 2)
+  expect_equal(nrow(dClean$dose), 2)
+  expect_equal(dClean$obs$id, 1:2)
+  expect_equal(dClean$dose$id, 1:2)
+  expect_equal(dClean$obs$DV, 0:1)
+
   # No dosing
   et <- rxode2::et(amt=0) %>% rxode2::et(1)
   et$DV <- 100
