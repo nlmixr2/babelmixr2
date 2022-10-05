@@ -33,17 +33,26 @@ nlmixr2Est.pknca <- function(env, ...) {
   # Normalize column names
   cleanData <- bblDatToPknca(model = env$ui, data = env$data)
   control <- env$control[[1]]
+  cleanColNames <- getStandardColNames(cleanData$obs)
   oConcFormula <-
-    stats::as.formula(paste0(
-      "DV~TIME|", paste(c(control$groups, "ID"), collapse="+")
+    stats::as.formula(sprintf(
+      "%s~%s|%s",
+      cleanColNames[["dv"]], cleanColNames[["time"]],
+      paste(c(control$groups, cleanColNames[["id"]]), collapse="+")
     ))
   oDoseFormula <-
-    stats::as.formula(paste0(
-      "AMT~TIME|", paste(c(control$groups, "ID"), collapse="+")
+    stats::as.formula(sprintf(
+      "%s~%s|%s",
+      cleanColNames[["amt"]], cleanColNames[["time"]],
+      paste(c(control$groups, cleanColNames[["id"]]), collapse="+")
     ))
-  oConc <- PKNCA::PKNCAconc(data = obsData, oConcFormula, sparse = control$sparse)
+  # Determine route of administration
+  obsCmt <- unique(cleanData$obs[[cleanColNames[["cmt"]]]])
+  doseCmt <- unique(cleanData$dose[[cleanColNames[["cmt"]]]])
   doseRoute <- ifelse(obsCmt == doseCmt, yes = "intravascular", no = "extravascular")
-  oDose <- PKNCA::PKNCAdose(data = doseData, oDoseFormula, route = doseRoute)
+
+  oConc <- PKNCA::PKNCAconc(data = cleanData$obs, oConcFormula, sparse = control$sparse)
+  oDose <- PKNCA::PKNCAdose(data = cleanData$dose, oDoseFormula, route = doseRoute)
 
   # Get the units from the basic units (before unit conversion)
   dUnitsData <-
@@ -52,36 +61,7 @@ nlmixr2Est.pknca <- function(env, ...) {
       doseu = control$doseu,
       timeu = control$timeu
     )
-  # Setup unit conversions for human-usable units
-  unitsSetup <- setNames(dUnitsData$PPORRESU, nm = dUnitsData$PPTESTCD)
-  if (is.null(control$volumeu)) {
-    # simplify the volume units
-    volumeuRaw <-
-      attr(
-        units::set_units(1, unitsSetup[["vss.last"]], mode = "standard"),
-        "units"
-      )
-    for (idx in rev(seq_along(volumeuRaw$numerator))) {
-      foundDenom <- which(volumeuRaw$denominator == volumeuRaw$numerator[idx])
-      if (length(foundDenom) > 0) {
-        # Cancel out the units
-        volumeuRaw$numerator <- volumeuRaw$numerator[-idx]
-        volumeuRaw$denominator <- volumeuRaw$denominator[-foundDenom[1]]
-      }
-    }
-    numerator <- paste(volumeuRaw$numerator, collapse = "*")
-    if (length(volumeuRaw$numerator) > 1) {
-      numerator <- sprintf("(%s)", numerator)
-    }
-    denominator <- paste(volumeuRaw$denominator, collapse = "*")
-    if (length(volumeuRaw$denominator) > 1) {
-      denominator <- sprintf("(%s)", denominator)
-    }
-    control$volumeu <- paste0(numerator, "/", denominator)
-  }
-
-  clearanceu <- paste0(control$volumeu, "/", control$timeu)
-  modelConcu <- paste0("(", control$doseu, ")/(", control$volumeu, ")")
+  modelUnitConversion(dvu = control$concu, amtu = control$doseu, timeu = control$timeu, volumeu = control$volumeu)
   modelDataConversions <-
     data.frame(
       PPORRESU=

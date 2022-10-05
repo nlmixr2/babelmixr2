@@ -104,7 +104,6 @@ pk.turnover.emax3 <- function() {
   })
 }
 
-bblDatToMonolix(pk.turnover.emax3, nlmixr2data::warfarin)
 
 bblDatToNonmem(pk.turnover.emax3, nlmixr2data::warfarin)
 
