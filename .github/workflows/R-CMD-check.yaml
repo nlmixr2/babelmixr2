@@ -46,6 +46,7 @@ jobs:
             any::rcmdcheck
             github::billdenney/pknca
             github::nlmixr2/lotri
+            github::nlmixr2/rxode2parse
             github::nlmixr2/rxode2ll
             github::nlmixr2/rxode2
             github::nlmixr2/nlmixr2est
