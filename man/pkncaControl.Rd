@@ -5,10 +5,10 @@
 \title{PKNCA estimation control}
 \usage{
 pkncaControl(
-  concu = NULL,
-  doseu = NULL,
-  timeu = NULL,
-  volumeu = NULL,
+  concu = NA_character_,
+  doseu = NA_character_,
+  timeu = NA_character_,
+  volumeu = NA_character_,
   vpMult = 2,
   qMult = 1/2,
   vp2Mult = 4,

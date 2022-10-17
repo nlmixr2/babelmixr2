@@ -79,10 +79,10 @@ simplifyUnit <- function(numerator="", denominator="") {
 #' modelUnitConversion(dvu = "ng/mL", amtu = "mg", timeu = "hr", volumeu = "L")
 #' @export
 modelUnitConversion <- function(dvu = NA_character_, amtu = NA_character_, timeu = NA_character_, volumeu = NA_character_) {
-  checkmate::expect_character(dvu, min.chars = 1, len = 1, null.ok = FALSE, any.missing = TRUE)
-  checkmate::expect_character(amtu, min.chars = 1, len = 1, null.ok = FALSE, any.missing = TRUE)
-  checkmate::expect_character(timeu, min.chars = 1, len = 1, null.ok = FALSE, any.missing = TRUE)
-  checkmate::expect_character(volumeu, min.chars = 1, len = 1, null.ok = FALSE, any.missing = TRUE)
+  checkmate::assert_character(dvu, min.chars = 1, len = 1, null.ok = FALSE, any.missing = TRUE)
+  checkmate::assert_character(amtu, min.chars = 1, len = 1, null.ok = FALSE, any.missing = TRUE)
+  checkmate::assert_character(timeu, min.chars = 1, len = 1, null.ok = FALSE, any.missing = TRUE)
+  checkmate::assert_character(volumeu, min.chars = 1, len = 1, null.ok = FALSE, any.missing = TRUE)
 
   dvuConversion <- 1
   dvuBase <- NA_character_

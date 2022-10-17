@@ -29,7 +29,106 @@
 #' @export
 nlmixr2Est.pknca <- function(env, ...) {
   browser()
-  # TODO: Detect column names for EVID, CMT, ID
+  control <- env$control[[1]]
+  # Get the units from the basic units (before unit conversion)
+  dUnitsData <-
+    PKNCA::pknca_units_table(
+      concu = control$concu,
+      doseu = control$doseu,
+      timeu = control$timeu
+    )
+
+  oNCA <- calcPknca(env, pkncaUnits = dUnitsData)
+
+  unitsSetup <-
+    stats::setNames(
+      object = dUnitsData$PPORRESU,
+      nm = dUnitsData$PPTESTCD
+    )
+  conversionFactors <-
+    modelUnitConversion(
+      dvu = control$concu,
+      amtu = control$doseu,
+      timeu = control$timeu,
+      volumeu = control$volumeu
+    )
+  modelDataConversions <-
+    data.frame(
+      PPORRESU=
+        c(
+          unitsSetup[["cmax"]],
+          unitsSetup[["cmax.dn"]],
+          unitsSetup[["cl.last"]],
+          unitsSetup[["vss.last"]]
+        ),
+      PPSTRESU=
+        c(
+          conversionFactors$cmtu,
+          conversionFactors$volumeu,
+          conversionFactors$clearanceu,
+          conversionFactors$volumeu
+        )
+    )
+  # Drop unit conversion when units are not specified
+  modelDataConversions <-
+    modelDataConversions[
+      !is.na(modelDataConversions$PPORRESU) &
+        !is.na(modelDataConversions$PPSTRESU),
+    ]
+  dUnitsModel <-
+    PKNCA::pknca_units_table(
+      concu = control$concu,
+      doseu = control$doseu,
+      timeu = control$timeu,
+      conversions = modelDataConversions
+    )
+  # set any missing conversion factors to 1
+  if (!("conversion_factor" %in% names(dUnitsModel))) {
+    dUnitsModel$conversion_factor <- 1
+  } else {
+    dUnitsModel$conversion_factor[is.na(dUnitsModel$conversion_factor)] <- 1
+  }
+  unitConversions <-
+    stats::setNames(
+      dUnitsModel$conversion_factor,
+      nm = dUnitsModel$PPTESTCD
+    )
+
+  pkncaEst <- calcPkncaEst(objectPknca = oNCA)
+  paramEstimates <-
+    ncaToEst(
+      tmax = pkncaEst$tmax,
+      cmaxdn = pkncaEst$cmaxdn,
+      cl = pkncaEst$cllast,
+      control = control,
+      unitConversions = unitConversions
+    )
+  # What parameters should be modified?  And then modify them.
+  murefNames <- env$ui$getSplitMuModel$pureMuRef
+  updateNames <- intersect(murefNames, names(paramEstimates))
+  newEnv <- do.call(ini_transform, append(list(x=env$ui), paramEstimates[updateNames]))
+
+  # Add unit conversion to the estimation
+  # TODO: This will only work when cp is assigned to center/vc.  Need detection
+  # of the correct unit conversion assignment.
+  browser()
+  newEnv <-
+    eval(str2lang(
+      sprintf("rxode2::model(newEnv, cp <- %g*center/vc)", 1/unitConversions[["cmax"]])
+    ))
+
+  env$ui <- newEnv
+  env$nca <- oNCA
+
+  env
+}
+
+#' Perform NCA calculations with PKNCA
+#'
+#' @inheritParams nlmixr2est::nlmixr2Est
+#' @return A PKNCAresults object
+#' @noRd
+calcPknca <- function(env, pkncaUnits) {
   # Normalize column names
   cleanData <- bblDatToPknca(model = env$ui, data = env$data)
   control <- env$control[[1]]
@@ -54,53 +153,18 @@ nlmixr2Est.pknca <- function(env, ...) {
   oConc <- PKNCA::PKNCAconc(data = cleanData$obs, oConcFormula, sparse = control$sparse)
   oDose <- PKNCA::PKNCAdose(data = cleanData$dose, oDoseFormula, route = doseRoute)
 
-  # Get the units from the basic units (before unit conversion)
-  dUnitsData <-
-    PKNCA::pknca_units_table(
-      concu = control$concu,
-      doseu = control$doseu,
-      timeu = control$timeu
-    )
-  modelUnitConversion(dvu = control$concu, amtu = control$doseu, timeu = control$timeu, volumeu = control$volumeu)
-  modelDataConversions <-
-    data.frame(
-      PPORRESU=
-        c(
-          unitsSetup[["cmax"]],
-          unitsSetup[["cmax.dn"]],
-          unitsSetup[["cl.last"]],
-          unitsSetup[["vss.last"]]
-        ),
-      PPSTRESU=
-        c(
-          modelConcu,
-          paste0("1/(", control$volumeu, ")"),
-          clearanceu,
-          control$volumeu
-        )
-    )
-  dUnitsModel <-
-    PKNCA::pknca_units_table(
-      concu = control$concu,
-      doseu = control$doseu,
-      timeu = control$timeu,
-      conversions = modelDataConversions
-    )
-  unitConversions <-
-    stats::setNames(
-      dUnitsModel$conversion_factor,
-      nm = dUnitsModel$PPTESTCD
-    )
-
-  oData <- PKNCA::PKNCAdata(oConc, oDose, units = dUnitsData)
+  oData <- PKNCA::PKNCAdata(oConc, oDose, units = pkncaUnits)
   intervals <- oData$intervals
   intervals$cl.last <- intervals$auclast
   intervals$cmax.dn <- intervals$cmax
   intervals$vss.last <- intervals$auclast
   oData$intervals <- intervals
   oNCA <- PKNCA::pk.nca(oData)
+  oNCA
+}
 
-  ncaParams <- as.data.frame(oNCA)
+calcPkncaEst <- function(objectPknca) {
+  ncaParams <- as.data.frame(objectPknca)
   # one compartment parameters including unit conversion
   tmaxValues <-
     c(0.1, 1, 10)*
@@ -112,6 +176,34 @@ nlmixr2Est.pknca <- function(env, ...) {
     c(0.1, 1, 10)*
     stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "cl.last"], probs = c(0.01, 0.5, 0.99), na.rm=TRUE, names = FALSE)
 
+  # Ensure that NCA as sufficiently successful
+  naValues <- character()
+  if (any(is.na(tmaxValues))) {
+    naValues <- c(naValues, "tmax")
+  }
+  if (any(is.na(cmaxdnValues))) {
+    naValues <- c(naValues, "cmax.dn")
+  }
+  if (any(is.na(cllastValues))) {
+    naValues <- c(naValues, "cl.last")
+  }
+  if (length(naValues) > 0) {
+    cli::cli_abort(paste(
+      "All",
+      paste(naValues, collapse = ", "),
+      "values were NA for NCA, cannot proceed with PKNCA estimation of parameters"
+    ))
+  }
+  list(
+    tmax = tmaxValues,
+    cmaxdn = cmaxdnValues,
+    cllast = cllastValues
+  )
+}
+
+#' Convert NCA parameters to compartmental parameter values
+#' @noRd
+ncaToEst <- function(tmax, cmaxdn, cl, control, unitConversions) {
   ncaEstimates <-
     list(
       ka=
@@ -133,25 +225,7 @@ nlmixr2Est.pknca <- function(env, ...) {
   # three compartment parameters
   ncaEstimates$vp2 <-  ncaEstimates$vc*control$vp2Mult
   ncaEstimates$q2 <-  ncaEstimates$cl*control$q2Mult
-
-  # What parameters should be modified?  And then modify them.
-  murefNames <- env$ui$getSplitMuModel$pureMuRef
-  updateNames <- intersect(murefNames, names(ncaEstimates))
-  newEnv <- do.call(ini_transform, append(list(x=env$ui), ncaEstimates[updateNames]))
-
-  # Add unit conversion to the estimation
-  # TODO: This will only work when cp is assigned to center/vc.  Need detection
-  # of the correct unit conversion assignment.
-  browser()
-  newEnv <-
-    eval(str2lang(
-      sprintf("rxode2::model(newEnv, cp <- %g*center/vc)", 1/unitConversions[["cmax"]])
-    ))
-
-  env$ui <- newEnv
-  env$nca <- oNCA
-
-  env
+  ncaEstimates
 }
 
 # Update the ini() with parameters given by ...; transformations to the
@@ -218,8 +292,8 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
 #'   \code{sparse = TRUE})
 #' @return A list of parameters
 #' @export
-pkncaControl <- function(concu = NULL, doseu = NULL, timeu = NULL,
-                         volumeu = NULL,
+pkncaControl <- function(concu = NA_character_, doseu = NA_character_, timeu = NA_character_,
+                         volumeu = NA_character_,
                          vpMult=2, qMult=1/2,
                          vp2Mult=4, q2Mult=1/4,
                          dvParam = "cp",
@@ -258,7 +332,7 @@ getValidNlmixrCtl.pknca <- function(control) {
   )
   # verify units look like units
   for (unitNm in c("concu", "doseu", "timeu", "volumeu")) {
-    checkmate::expect_character(control[[unitNm]], label = unitNm, null.ok = TRUE, len = 1, min.chars = 1)
+    checkmate::expect_character(control[[unitNm]], label = unitNm, null.ok = FALSE, len = 1, min.chars = 1)
   }
   # Verify that multipliers are numbers
   for (multNm in c("vpMult", "qMult", "vp2Mult", "q2Mult")) {
