@@ -430,6 +430,7 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(), env=NUL
     if (any(dropObsCens)) {
       cli::cli_alert_info(paste("Right censoring and left censoring with a value above zero is not supported with PKNCA estimation, dropping subjects with those censoring types:", sum(dropObsCens), "rows"))
       obsData <- obsData[!dropObsCens, ]
+      rowsLeftCens <- rowsLeftCens[!dropObsCens]
     }
 
     # Modify LIMIT <= 0 so that DV is 0

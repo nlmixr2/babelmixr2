@@ -33,7 +33,7 @@ Imports:
     lotri,
     nlmixr2est,
     methods,
-    PKNCA,
+    PKNCA (>= 0.10.0),
     qs,
     rex,
     rxode2,

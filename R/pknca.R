@@ -143,6 +143,7 @@ nlmixr2Est.pknca <- function(env, ...) {
   env$ui <- newEnv
   env$nca <- oNCA
 
+  class(env) <- "pkncaEst"
   env
 }
 
@@ -249,6 +250,10 @@ calcPknca <- function(env, pkncaUnits) {
   oNCA
 }
 
+#' Extract desired PKNCAresults to a list and set bounds
+#' @param objectPknca A PKNCAresults object with at least tmax, cmax.dn, and cl.last calculated
+#' @return A list with named values for tmax, cmaxdn, cllast
+#' @noRd
 calcPkncaEst <- function(objectPknca) {
   ncaParams <- as.data.frame(objectPknca)
   # one compartment parameters including unit conversion
@@ -418,9 +423,13 @@ getValidNlmixrCtl.pknca <- function(control) {
     if (is.null(orig[[1]])) {
       # Use default values
       orig[[1]] <- pkncaControl()
+    } else if (is.list(orig[[1]]) && length(orig[[1]]) == 0) {
+      # Use default values
+      orig[[1]] <- pkncaControl()
     }
     control <- orig[[1]]
   }
+
   checkmate::assert_names(
     x = names(control),
     permutation.of = names(formals(pkncaControl))
@@ -440,4 +449,30 @@ getValidNlmixrCtl.pknca <- function(control) {
   checkmate::assert_character(control$groups, min.chars = 1, min.len = as.numeric(control$sparse))
   checkmate::assert_logical(control$sparse, len = 1, any.missing = FALSE)
   orig
+}
+
+#' @export
+nlmixr2.pkncaEst <- function(object, data, est = NULL,
+                             control = list(), table = tableControl(),
+                             ..., save = NULL, envir = parent.frame()) {
+  # Estimate using the ui part of the object
+  nlmixr2(
+    object = object$ui,
+    data = data,
+    est = est,
+    control = control,
+    table = table,
+    ...,
+    save = save,
+    envir = envir
+  )
+}
+
+#' @export
+print.pkncaEst <- function(x, ...) {
+  cat("x$ui:\n")
+  print(x$ui)
+  cat("x$nca:\n")
+  print(summary(x$nca))
+  invisible(x)
 }
