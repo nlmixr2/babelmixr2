@@ -28,7 +28,6 @@
 #'   calculation.
 #' @export
 nlmixr2Est.pknca <- function(env, ...) {
-  browser()
   control <- env$control[[1]]
   # Get the units from the basic units (before unit conversion)
   dUnitsData <-
@@ -38,7 +37,11 @@ nlmixr2Est.pknca <- function(env, ...) {
       timeu = control$timeu
     )
 
-  oNCA <- calcPknca(env, pkncaUnits = dUnitsData)
+  if (is.null(control$ncaResults)) {
+    oNCA <- calcPknca(env, pkncaUnits = dUnitsData)
+  } else {
+    oNCA <- control$ncaResults
+  }
 
   unitsSetup <-
     stats::setNames(
@@ -108,19 +111,97 @@ nlmixr2Est.pknca <- function(env, ...) {
   updateNames <- intersect(murefNames, names(paramEstimates))
   newEnv <- do.call(ini_transform, append(list(x=env$ui), paramEstimates[updateNames]))
 
-  # Add unit conversion to the estimation
-  # TODO: This will only work when cp is assigned to center/vc.  Need detection
-  # of the correct unit conversion assignment.
-  browser()
-  newEnv <-
-    eval(str2lang(
-      sprintf("rxode2::model(newEnv, cp <- %g*center/vc)", 1/unitConversions[["cmax"]])
-    ))
+  if (unitConversions[["cmax"]] != 1) {
+    # No need to bother with modifications if the unit conversion is unity
+    dvParam <- control$dvParam
+    if (is.null(dvParam)) {
+      dvResid <- getDvLines(env$ui$fun)
+      if (length(dvResid) == 1) {
+        dvParam <- dvResid[[1]][[2]]
+        if (is.name(dvParam)) {
+          cli::cli_abort("Could not detect the dependent variable (not a name), use pkncaControl(dvParam) to fix")
+        }
+      } else {
+        cli::cli_abort("Could not detect the dependent variable (no specific line found), use pkncaControl(dvParam) to fix")
+      }
+    }
+    dvAssign <- getDvLines(modelfun = env$ui$fun, dvAssign = dvParam)
+    if (length(dvAssign) != 1) {
+      cli::cli_abort("Could not detect DV assignment for unit conversion")
+    }
+    newEnv <-
+      eval(str2lang(
+        sprintf(
+          "rxode2::model(newEnv, %s <- %g*%s)",
+          dvParam,
+          1/unitConversions[["cmax"]],
+          deparse1(dvAssign[[1]][[3]])
+        )
+      ))
+  }
 
   env$ui <- newEnv
   env$nca <- oNCA
 
   env
+}
+
+#' Get the lines of the model which assign the dependent variable(s)
+#' @return A list of dependent variable lines (or NULL if there are no dependent
+#'   variables)
+#' @noRd
+getDvLines <- function(modelfun, inModel = FALSE, dvAssign = NULL) {
+  if (!is.null(dvAssign)) {
+    if (is.character(dvAssign)) {
+      dvAssign <- lapply(X = dvAssign, FUN = as.name)
+    } else if (is.name(dvAssign)) {
+      dvAssign <- list(dvAssign)
+    }
+    allAreNames <- vapply(X = dvAssign, FUN = is.name, FUN.VALUE = TRUE)
+    if (!allAreNames) {
+      cli::cli_abort("dvAssign must be a name, a character string, or a list of names")
+    }
+  }
+  if (is.function(modelfun)) {
+    ret <- getDvLines(functionBody(modelfun), inModel = inModel, dvAssign = dvAssign)
+  } else if (inherits(modelfun, "{")) {
+    ret <- lapply(X = modelfun, FUN = getDvLines, inModel = inModel, dvAssign = dvAssign)
+  } else if (is.name(modelfun)) {
+    ret <- NULL
+  } else if (inherits(modelfun, "<-") | inherits(modelfun, "=")) {
+    if (inModel & !is.null(dvAssign)) {
+      if (any(vapply(X = dvAssign, FUN = identical, FUN.VALUE = TRUE, y = modelfun[[2]]))) {
+        # Return the DV assignment line(s) for the DV of interest
+        ret <- list(modelfun)
+      } else {
+        ret <- NULL
+      }
+    } else {
+      ret <- NULL
+    }
+  } else if (is.call(modelfun)) {
+    if (identical(modelfun[[1]], as.name("~")) & inModel & is.null(dvAssign)) {
+      # Return the residual error lines
+      ret <- list(modelfun)
+    } else if (identical(modelfun[[1]], as.name("ini"))) {
+      # The ini block doesn't have the DV lines
+      ret <- NULL
+    } else if (identical(modelfun[[1]], as.name("model"))) {
+      # This is what we want
+      ret <- lapply(X = modelfun, FUN = getDvLines, inModel = TRUE, dvAssign = dvAssign)
+    } else {
+      # No other call has information that we want (I think), but recurse in
+      # case the model is within the other call.
+      ret <- lapply(X = modelfun, FUN = getDvLines, inModel = inModel, dvAssign = dvAssign)
+    }
+  } else {
+    cli::cli_abort("Error finding DV lines, please report a bug") # nocov
+  }
+  if (is.list(ret)) {
+    # The list of calls will still be a list, but it will not be nested.
+    ret <- unlist(ret, use.names = FALSE)
+  }
+  ret
 }
 
 #' Perform NCA calculations with PKNCA
@@ -130,8 +211,13 @@ nlmixr2Est.pknca <- function(env, ...) {
 #' @noRd
 calcPknca <- function(env, pkncaUnits) {
   # Normalize column names
-  cleanData <- bblDatToPknca(model = env$ui, data = env$data)
   control <- env$control[[1]]
+  rawData <- env$data
+  if (!is.null(control$ncaData)) {
+    # as.data.frame() due to https://github.com/nlmixr2/nlmixr2est/pull/262
+    rawData <- as.data.frame(control$ncaData)
+  }
+  cleanData <- bblDatToPknca(model = env$ui, data = rawData)
   cleanColNames <- getStandardColNames(cleanData$obs)
   oConcFormula <-
     stats::as.formula(sprintf(
@@ -208,11 +294,11 @@ ncaToEst <- function(tmax, cmaxdn, cl, control, unitConversions) {
     list(
       ka=
         # 4 absorption half-lives
-        sort(log(2)/(tmaxValues/4)),
+        sort(log(2)/(tmax/4)),
       vc=
-        sort(unitConversions[["vss.last"]] / cmaxdnValues),
+        sort(unitConversions[["vss.last"]] / cmaxdn),
       cl=
-        unitConversions[["cl.last"]] * cllastValues
+        unitConversions[["cl.last"]] * cl
     )
   ncaEstimates$ka <-
     pmin(
@@ -233,7 +319,7 @@ ncaToEst <- function(tmax, cmaxdn, cl, control, unitConversions) {
 ini_transform <- function(x, ..., envir = parent.frame()) {
   changeArgs <- list(...)
   # This only works for fixed effects, so formula are not allowed
-  checkmate::expect_names(names(changeArgs))
+  checkmate::assert_names(names(changeArgs))
   murefNames <- x$getSplitMuModel$pureMuRef
   murefTrans <- x$muRefCurEval
   inverseTrans <-
@@ -290,6 +376,11 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
 #'   separate from the residual error model line.
 #' @param groups Grouping columns for NCA summaries by group (required if
 #'   \code{sparse = TRUE})
+#' @param ncaData Data to use for calculating NCA parameters.  Typical use is
+#'   when a subset of the original data are informative for NCA.
+#' @param ncaResults Already computed NCA results (a PKNCAresults object) to
+#'   bypass automatic calculations.  At least the following parameters must be
+#'   calculated in the NCA: tmax, cmax.dn, cl.last
 #' @return A list of parameters
 #' @export
 pkncaControl <- function(concu = NA_character_, doseu = NA_character_, timeu = NA_character_,
@@ -298,7 +389,9 @@ pkncaControl <- function(concu = NA_character_, doseu = NA_character_, timeu = N
                          vp2Mult=4, q2Mult=1/4,
                          dvParam = "cp",
                          groups = character(),
-                         sparse = FALSE) {
+                         sparse = FALSE,
+                         ncaData = NULL,
+                         ncaResults = NULL) {
   getValidNlmixrCtl.pknca(
     list(
       concu = concu,
@@ -311,7 +404,9 @@ pkncaControl <- function(concu = NA_character_, doseu = NA_character_, timeu = N
       q2Mult = q2Mult,
       dvParam = dvParam,
       groups = groups,
-      sparse = sparse
+      sparse = sparse,
+      ncaData = ncaData,
+      ncaResults = ncaResults
     )
   )
 }
@@ -326,21 +421,23 @@ getValidNlmixrCtl.pknca <- function(control) {
     }
     control <- orig[[1]]
   }
-  checkmate::expect_names(
+  checkmate::assert_names(
     x = names(control),
     permutation.of = names(formals(pkncaControl))
   )
   # verify units look like units
   for (unitNm in c("concu", "doseu", "timeu", "volumeu")) {
-    checkmate::expect_character(control[[unitNm]], label = unitNm, null.ok = FALSE, len = 1, min.chars = 1)
+    checkmate::assert_character(control[[unitNm]], .var.name = unitNm, null.ok = FALSE, len = 1, min.chars = 1)
   }
   # Verify that multipliers are numbers
   for (multNm in c("vpMult", "qMult", "vp2Mult", "q2Mult")) {
-    checkmate::expect_number(control[[multNm]], label = multNm, na.ok = FALSE, finite = TRUE)
+    checkmate::assert_number(control[[multNm]], .var.name = multNm, na.ok = FALSE, finite = TRUE)
   }
 
-  checkmate::expect_character(control$dvParam, min.chars = 1, len = 1, null.ok = FALSE)
-  checkmate::expect_character(control$groups, min.chars = 1, min.len = as.numeric(control$sparse))
-  checkmate::expect_logical(control$sparse, len = 1, any.missing = FALSE)
+  checkmate::assert_data_frame(control$ncaData, min.rows = 1, null.ok = TRUE)
+  checkmate::assert_class(control$ncaResults, classes = "PKNCAresults", null.ok = TRUE)
+  checkmate::assert_character(control$dvParam, min.chars = 1, len = 1, null.ok = FALSE)
+  checkmate::assert_character(control$groups, min.chars = 1, min.len = as.numeric(control$sparse))
+  checkmate::assert_logical(control$sparse, len = 1, any.missing = FALSE)
   orig
 }

@@ -15,7 +15,9 @@ pkncaControl(
   q2Mult = 1/4,
   dvParam = "cp",
   groups = character(),
-  sparse = FALSE
+  sparse = FALSE,
+  ncaData = NULL,
+  ncaResults = NULL
 )
 }
 \arguments{
@@ -38,6 +40,13 @@ separate from the residual error model line.}
 \item{sparse}{Are the concentration-time data sparse PK (commonly used in
 small nonclinical species or with terminal or difficult sampling) or dense
 PK (commonly used in clinical studies or larger nonclinical species)?}
+
+\item{ncaData}{Data to use for calculating NCA parameters.  Typical use is
+when a subset of the original data are informative for NCA.}
+
+\item{ncaResults}{Already computed NCA results (a PKNCAresults object) to
+bypass automatic calculations.  At least the following parameters must be
+calculated in the NCA: tmax, cmax.dn, cl.last}
 }
 \value{
 A list of parameters

@@ -385,7 +385,9 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(), env=NUL
   oldDataPrep <- oldData[, setdiff(names(oldData), dropFromOld), drop=FALSE]
   newDataPrep <- newData[, setdiff(names(newData), dropFromNew), drop=FALSE]
   stopifnot(intersect(names(oldDataPrep), names(newDataPrep)) == "nlmixrRowNums")
-  mergedData <- merge(oldDataPrep, newDataPrep, by = "nlmixrRowNums")
+  # Some data may be dropped by .bblDatToNonmem above, so only keep the rows
+  # that are maintained for both datasets.
+  mergedData <- merge(oldDataPrep, newDataPrep, by = "nlmixrRowNums", all = FALSE)
   cleanStdNames <- getStandardColNames(mergedData)
 
   # Extract out the observation and dosing data
