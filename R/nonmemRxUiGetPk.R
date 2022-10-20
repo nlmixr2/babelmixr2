@@ -12,15 +12,17 @@
 
 .nonmemGetThetaNum <- function(theta, ui) {
   .iniDf <- ui$iniDf
+  .theta <- gsub("rx__", "", as.character(theta))
   .w <- which(.iniDf$name == theta)
   if (length(.w) != 1) return(NA_character_)
   if (is.na(.iniDf$ntheta[.w])) return(NA_character_)
   paste0("THETA(", .iniDf$ntheta[.w], ")")
 }
 
-.nonmemGetEtaNum <- function(theta, ui) {
+.nonmemGetEtaNum <- function(eta, ui) {
   .iniDf <- ui$iniDf
-  .w <- which(.iniDf$name == theta)
+  .eta <- gsub("rx__", "", as.character(eta))
+  .w <- which(.iniDf$name == .eta)
   if (length(.w) != 1) return(NA_character_)
   if (is.na(.iniDf$neta1[.w])) return(NA_character_)
   paste0("ETA(", .iniDf$neta1[.w], ")")
@@ -80,7 +82,8 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
       rm(".thetaMu", envir=.ui)
     }
   })
-  .pk <- paste0("$PK\n",
+  .isPred <- (length(rxode2::rxState(.ui)) == 0)
+  .pk <- paste0(ifelse(.isPred,"$PRED\n","$PK\n"),
                  .ret,"\n",
                  paste(vapply(seq_along(.split$muRefDef),
                               function(i) {
@@ -160,7 +163,8 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   .pk2 <- .pk2[!is.na(.pk2)]
   .pk2 <- ifelse(length(.pk2) > 0, paste0("\n", paste(.pk2, collapse="\n")), "")
   paste0(.pk, .pk2,
-         "\n\n$DES\n",
-         .des, "\n\n$ERROR\n  ;Redefine LHS in $DES by prefixing with on RXE_ for $ERROR\n",
+         ifelse(.isPred, "\n", "\n\n$DES\n"),
+         .des,
+         ifelse(.isPred, "\n", "\n\n$ERROR\n  ;Redefine LHS in $DES by prefixing with on RXE_ for $ERROR\n"),
          .err)
 }
