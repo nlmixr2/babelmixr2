@@ -17,18 +17,20 @@ test_that("est='pknca'", {
   }
 
   # It works with no `control` argument
-  expect_s3_class(
+  suppressMessages(expect_s3_class(
     nlmixr(object = modelGood, data = nlmixr2data::theo_sd, est = "pknca"),
     "pkncaEst"
-  )
+  ))
 
+  onlyevid0 <- nlmixr2data::theo_sd[nlmixr2data::theo_sd$EVID == 0, ]
   expect_error(
-    nlmixr(object = modelGood, data = nlmixr2data::theo_sd %>% dplyr::filter(EVID == 0), est = "pknca"),
+    nlmixr(object = modelGood, data = onlyevid0, est = "pknca"),
     regexp = "no dosing rows (EVID = 1 or 4) detected",
     fixed = TRUE
   )
+  noevid0 <- nlmixr2data::theo_sd[nlmixr2data::theo_sd$EVID != 0, ]
   expect_error(
-    nlmixr(object = modelGood, data = nlmixr2data::theo_sd[nlmixr2data::theo_sd$EVID != 0, ], est = "pknca"),
+    nlmixr(object = modelGood, data = noevid0, est = "pknca"),
     regexp = "no rows in event table or input data",
     fixed = TRUE
   )

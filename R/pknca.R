@@ -164,7 +164,7 @@ getDvLines <- function(modelfun, inModel = FALSE, dvAssign = NULL) {
     }
   }
   if (is.function(modelfun)) {
-    ret <- getDvLines(functionBody(modelfun), inModel = inModel, dvAssign = dvAssign)
+    ret <- getDvLines(methods::functionBody(modelfun), inModel = inModel, dvAssign = dvAssign)
   } else if (inherits(modelfun, "{")) {
     ret <- lapply(X = modelfun, FUN = getDvLines, inModel = inModel, dvAssign = dvAssign)
   } else if (is.name(modelfun)) {
@@ -452,7 +452,7 @@ getValidNlmixrCtl.pknca <- function(control) {
 }
 
 nlmixr2.pkncaEst <- function(object, data, est = NULL,
-                             control = list(), table = tableControl(),
+                             control = list(), table = nlmixr2est::tableControl(),
                              ..., save = NULL, envir = parent.frame()) {
   # Estimate using the ui part of the object
   nlmixr2(

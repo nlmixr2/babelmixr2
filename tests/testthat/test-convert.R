@@ -63,11 +63,13 @@ test_that("pknca conversion keeps extra columns", {
 
   # Only dosing and only observation rows for some subjects
   et <-
-    dplyr::bind_rows(
-      as.data.frame(rxode2::et(amt=10, id=1:2)),
-      as.data.frame(rxode2::et(time=1, id=2:3))
+    data.frame(
+      id = c(1, 2, 2, 3),
+      amt = c(10, 10, 0, 0),
+      evid = c(1, 1, 0, 0),
+      time = c(0, 0, 1, 1),
+      DV = 1
     )
-  et$DV <- 1
   suppressWarnings(suppressMessages(
     expect_message(
       dClean <- bblDatToPknca(one.compartment, et),
@@ -82,12 +84,15 @@ test_that("pknca conversion keeps extra columns", {
 
   # Drop a whole subject if they use ADDL
   et <-
-    dplyr::bind_rows(
-      as.data.frame(rxode2::et(amt=10, id=1, addl=1, ii=1)),
-      as.data.frame(rxode2::et(amt=10, id=2)),
-      as.data.frame(rxode2::et(time=1, id=1:2))
-    )
-  et$DV <- 1
+    data.frame(
+      id = c(1, 2, 1, 2),
+      time = c(0, 0, 1, 1),
+      amt=c(10, 10, NA, NA),
+      ii=c(1, NA, NA, NA),
+      addl=c(1, NA, NA, NA),
+      evid =c(1, 1, 0, 0),
+      DV = 1
+  )
   suppressWarnings(suppressMessages(
     expect_message(expect_message(
       dClean <- bblDatToPknca(one.compartment, et),
@@ -103,9 +108,13 @@ test_that("pknca conversion keeps extra columns", {
 
   # Drop right censored subject
   et <-
-    dplyr::bind_rows(
-      data.frame(amt=10, id=1:2, evid=1, time=0),
-      data.frame(time=1, id=1:2, cens=c(-1, NA), DV=1)
+    data.frame(
+      amt=c(10, 10, NA, NA),
+      id=c(1L, 2L, 1L, 2L),
+      evid=c(1, 1, NA, NA),
+      time=c(0, 0, 1, 1),
+      cens=c(NA, NA, -1, NA),
+      DV=c(NA, NA, 1, 1)
     )
   suppressMessages(
     expect_message(expect_message(
@@ -122,9 +131,14 @@ test_that("pknca conversion keeps extra columns", {
 
   # Drop left censored subject with LIMIT > 0
   et <-
-    dplyr::bind_rows(
-      data.frame(amt=10, id=1:2, evid=1, time=0),
-      data.frame(time=1, id=1:2, cens=c(1, NA), limit=c(0.5, NA), DV=1)
+    data.frame(
+      amt=c(10, 10, NA, NA),
+      id=c(1L, 2L, 1L, 2L),
+      evid=c(1, 1, NA, NA),
+      time=c(0, 0, 1, 1),
+      cens=c(NA, NA, 1, NA),
+      limit=c(NA, NA, 0.5, NA),
+      DV=c(NA, NA, 1, 1)
     )
   suppressMessages(
     expect_message(expect_message(
@@ -141,9 +155,13 @@ test_that("pknca conversion keeps extra columns", {
 
   # Keep left censored subject with no LIMIT, convert DV to 0
   et <-
-    dplyr::bind_rows(
-      data.frame(amt=10, id=1:2, evid=1, time=0),
-      data.frame(time=1, id=1:2, cens=c(1, NA), DV=1)
+    data.frame(
+      amt=c(10, 10, NA, NA),
+      id=c(1L, 2L, 1L, 2L),
+      evid=c(1, 1, NA, NA),
+      time=c(0, 0, 1, 1),
+      cens=c(NA, NA, 1, NA),
+      DV=c(NA, NA, 1, 1)
     )
   suppressMessages(
     expect_message(
@@ -160,9 +178,14 @@ test_that("pknca conversion keeps extra columns", {
 
   # Keep left censored subject with zero LIMIT, convert DV to 0
   et <-
-    dplyr::bind_rows(
-      data.frame(amt=10, id=1:2, evid=1, time=0),
-      data.frame(time=1, id=1:2, cens=c(1, NA), limit=c(0, NA), DV=1)
+    data.frame(
+      amt=c(10, 10, NA, NA),
+      id=c(1L, 2L, 1L, 2L),
+      evid=c(1, 1, NA, NA),
+      time=c(0, 0, 1, 1),
+      cens=c(NA, NA, 1, NA),
+      limit=c(NA, NA, 0, NA),
+      DV=c(NA, NA, 1, 1)
     )
   suppressMessages(
     expect_message(

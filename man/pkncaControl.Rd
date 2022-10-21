@@ -37,6 +37,10 @@ separate from the residual error model line.}
 \item{groups}{Grouping columns for NCA summaries by group (required if
 \code{sparse = TRUE})}
 
+\item{sparse}{Are the concentration-time data sparse PK (commonly used in
+small nonclinical species or with terminal or difficult sampling) or dense
+PK (commonly used in clinical studies or larger nonclinical species)?}
+
 \item{ncaData}{Data to use for calculating NCA parameters.  Typical use is
 when a subset of the original data are informative for NCA.}
 

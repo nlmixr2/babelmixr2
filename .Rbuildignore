@@ -2,3 +2,4 @@
 ^\.Rproj\.user$
 ^\.github$
 ^dev-setup.R$
+^cran-comments\.md$
