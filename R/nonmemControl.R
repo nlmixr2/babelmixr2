@@ -131,7 +131,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
     checkmate::assertCharacter(modelName, len=1, any.missing=FALSE)
   }
   if (!identical(runCommand, "")) {
-    if (!(checkmate::testCharacter(runCommand, pattern="%s", min.len=1, max.len=1) |
+    if (!(checkmate::testCharacter(runCommand, min.len=1, max.len=1) |
           checkmate::testFunction(runCommand, args=c("ctl", "directory", "ui")))) {
       stop("runCommand must be a character string or a function with arguments 'ctl', 'directory', and 'ui'")
     }
