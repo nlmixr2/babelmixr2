@@ -451,7 +451,6 @@ getValidNlmixrCtl.pknca <- function(control) {
   orig
 }
 
-#' @export
 nlmixr2.pkncaEst <- function(object, data, est = NULL,
                              control = list(), table = tableControl(),
                              ..., save = NULL, envir = parent.frame()) {
