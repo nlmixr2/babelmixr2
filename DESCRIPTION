@@ -20,6 +20,7 @@ Suggests:
     nlmixr2data,
     withr,
     lixoftConnectors,
+    PKNCA (>= 0.10.0),
     pmxTools,
     knitr,
     rmarkdown
@@ -33,7 +34,6 @@ Imports:
     lotri,
     nlmixr2est,
     methods,
-    PKNCA (>= 0.10.0),
     qs,
     rex,
     rxode2,
