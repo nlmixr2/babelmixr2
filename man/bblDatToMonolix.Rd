@@ -5,6 +5,7 @@
 \alias{bblDatToNonmem}
 \alias{bblDatToRxode}
 \alias{bblDatToMrgsolve}
+\alias{bblDatToPknca}
 \title{Convert nlmixr2-compatible data to other formats (if possible)}
 \usage{
 bblDatToMonolix(model, data, table = nlmixr2est::tableControl(), env = NULL)
@@ -14,6 +15,8 @@ bblDatToNonmem(model, data, table = nlmixr2est::tableControl(), env = NULL)
 bblDatToRxode(model, data, table = nlmixr2est::tableControl(), env = NULL)
 
 bblDatToMrgsolve(model, data, table = nlmixr2est::tableControl(), env = NULL)
+
+bblDatToPknca(model, data, table = nlmixr2est::tableControl(), env = NULL)
 }
 \arguments{
 \item{model}{rxode2 model for conversion}
@@ -101,7 +104,6 @@ pk.turnover.emax3 <- function() {
   })
 }
 
-bblDatToMonolix(pk.turnover.emax3, nlmixr2data::warfarin)
 
 bblDatToNonmem(pk.turnover.emax3, nlmixr2data::warfarin)
 

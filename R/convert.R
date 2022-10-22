@@ -342,16 +342,165 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), env=NU
 #' @rdname bblDatToMonolix
 #' @export
 bblDatToRxode <- function(model, data, table=nlmixr2est::tableControl(), env=NULL) {
-  .bblDatToNonmem (model, data, table,
-                       fun="bblDatToRxode", replaceEvid=5L,
-                       replaceOK=NA, software="rxode2", env=env)
+  .bblDatToNonmem(model, data, table,
+                  fun="bblDatToRxode", replaceEvid=5L,
+                  replaceOK=NA, software="rxode2", env=env)
 }
 
 
 #' @rdname bblDatToMonolix
 #' @export
 bblDatToMrgsolve <- function(model, data, table=nlmixr2est::tableControl(), env=NULL) {
-  .bblDatToNonmem (model, data, table,
-                       fun="bblDatToMrgsolve", replaceEvid=8L,
-                       replaceOK=TRUE, software="mrgsolve", env=env)
+  .bblDatToNonmem(model, data, table,
+                  fun="bblDatToMrgsolve", replaceEvid=8L,
+                  replaceOK=TRUE, software="mrgsolve", env=env)
+}
+
+#' @rdname bblDatToMonolix
+#' @export
+bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(), env=NULL) {
+  newData <-
+    .bblDatToNonmem(
+      model, data, table,
+      fun="bblDatToPknca", replaceEvid=5L,
+      replaceOK=TRUE, software="pknca", env=env
+    )
+  # When we have columns in both the old and new data, which should be
+  # preferred?
+  betterNewCols <- c("time", "amt", "rate", "dur", "evid", "ss", "ii", "addl", "dv", "mdv", "cens", "limit")
+  betterOldCols <- c("id", "cmt", "dvid")
+
+  oldData <- data
+  oldData$nlmixrRowNums <- seq_len(nrow(oldData))
+  oldStdNames <- na.omit(getStandardColNames(oldData))
+  newStdNames <- na.omit(getStandardColNames(newData))
+
+  # Standardized column names to drop from the old and new data
+  prepDropFromOld <- betterNewCols[betterNewCols %in% names(newStdNames)]
+  prepDropFromNew <- betterOldCols[betterOldCols %in% names(oldStdNames)]
+  # Actual column names to drop from the old and new data
+  dropFromOld <- oldStdNames[prepDropFromOld]
+  dropFromNew <- newStdNames[prepDropFromNew]
+
+  # Prepare for merging and merge
+  oldDataPrep <- oldData[, setdiff(names(oldData), dropFromOld), drop=FALSE]
+  newDataPrep <- newData[, setdiff(names(newData), dropFromNew), drop=FALSE]
+  stopifnot(intersect(names(oldDataPrep), names(newDataPrep)) == "nlmixrRowNums")
+  # Some data may be dropped by .bblDatToNonmem above, so only keep the rows
+  # that are maintained for both datasets.
+  mergedData <- merge(oldDataPrep, newDataPrep, by = "nlmixrRowNums", all = FALSE)
+  cleanStdNames <- getStandardColNames(mergedData)
+
+  # Extract out the observation and dosing data
+  obsData <- mergedData[mergedData[[cleanStdNames[["evid"]]]] == 0, ]
+  if (nrow(obsData) < 1) {
+    cli::cli_abort("no observation rows (EVID = 0) detected")
+  }
+  doseData <- mergedData[mergedData[[cleanStdNames[["evid"]]]] %in% c(1, 4), ]
+  if (nrow(doseData) < 1) {
+    cli::cli_abort("no dosing rows (EVID = 1 or 4) detected")
+  }
+  obsCmt <- unique(obsData[[cleanStdNames[["cmt"]]]])
+  doseCmt <- unique(doseData[[cleanStdNames[["cmt"]]]])
+  stopifnot(length(obsCmt) == 1)
+  stopifnot(length(doseCmt) == 1)
+
+  # Drop subjects using ADDL for dosing
+  idWithAddl <- unique(doseData[[cleanStdNames["id"]]][doseData[[cleanStdNames["addl"]]] > 0])
+  dropDoseAddl <- doseData[[cleanStdNames["id"]]] %in% idWithAddl
+  if (any(dropDoseAddl)) {
+    cli::cli_alert_info(paste("ADDL dosing not supported with PKNCA estimation, dropping subjects using ADDL:", sum(dropDoseAddl), "rows"))
+    doseData <- doseData[!dropDoseAddl, ]
+  }
+
+  if (!is.na(cleanStdNames["cens"])) {
+    # Drop subjects using right-censored data or LIMIT > 0 with left-censored data
+    rowsRightCens <- !is.na(obsData[[cleanStdNames["cens"]]]) & obsData[[cleanStdNames["cens"]]] == -1
+    rowsLeftCens <- !is.na(obsData[[cleanStdNames["cens"]]]) & obsData[[cleanStdNames["cens"]]] == 1
+    idWithRightCens <- unique(obsData[[cleanStdNames["id"]]][rowsRightCens])
+    idWithLeftCensNonzero <- c()
+    if (!is.na(cleanStdNames["limit"])) {
+      rowsWithLeftCensNonzero <-
+        rowsLeftCens &
+        !is.na(obsData[[cleanStdNames["limit"]]]) &
+        obsData[[cleanStdNames["limit"]]] > 0
+      idWithLeftCensNonzero <- unique(obsData[[cleanStdNames["id"]]][rowsWithLeftCensNonzero])
+    }
+    dropIdCens <- c(idWithRightCens, idWithLeftCensNonzero)
+    dropObsCens <- obsData[[cleanStdNames["id"]]] %in% dropIdCens
+    if (any(dropObsCens)) {
+      cli::cli_alert_info(paste("Right censoring and left censoring with a value above zero is not supported with PKNCA estimation, dropping subjects with those censoring types:", sum(dropObsCens), "rows"))
+      obsData <- obsData[!dropObsCens, ]
+      rowsLeftCens <- rowsLeftCens[!dropObsCens]
+    }
+
+    # Modify LIMIT <= 0 so that DV is 0
+    if (!is.na(cleanStdNames["limit"])) {
+      rowsWithLeftCensZero <-
+        rowsLeftCens &
+        !is.na(obsData[[cleanStdNames["limit"]]]) &
+        obsData[[cleanStdNames["limit"]]] <= 0
+    } else {
+      rowsWithLeftCensZero <- rowsLeftCens
+    }
+    if (any(rowsWithLeftCensZero)) {
+      cli::cli_alert_info(paste("Setting DV to zero for PKNCA estimation with left censoring:", sum(rowsWithLeftCensZero), "rows"))
+      obsData[[cleanStdNames["dv"]]][rowsWithLeftCensZero] <- 0
+    }
+  }
+
+  # Drop subjects in only one dataset
+  dropDoseData <- !(doseData[[cleanStdNames["id"]]] %in% unique(obsData[[cleanStdNames["id"]]]))
+  dropObsData <- !(obsData[[cleanStdNames["id"]]] %in% unique(doseData[[cleanStdNames["id"]]]))
+  if (any(dropDoseData)) {
+    cli::cli_alert_info(paste("Dropping", sum(dropDoseData), "dosing rows with no observations for the subject with PKNCA estimation"))
+    doseData <- doseData[!dropDoseData, ]
+  }
+  if (any(dropObsData)) {
+    # This is mostly handled with the original data mapping above with
+    # .bblDatToNonmem, but in some cases, the subject may be dropped subsequent
+    # to that.
+    cli::cli_alert_info(paste("Dropping", sum(dropObsData), "observation rows with no doses for the subject with PKNCA estimation"))
+    obsData <- obsData[!dropObsData, ]
+  }
+
+  if (nrow(obsData) < 1) {
+    cli::cli_abort("No observation rows after filtering for analysis")
+  } else if (nrow(doseData) < 1) {
+    cli::cli_abort("No dose rows after filtering for analysis")
+  }
+  list(
+    obs=obsData,
+    dose=doseData
+  )
+}
+
+#' Determine standardized rxode2 column names from data
+#'
+#' @param data A data.frame as the source for column names
+#' @return A named character vector where the names are the standardized names
+#'   and the values are either the name of the column from the data or \code{NA}
+#'   if the column is not present in the data.
+#' @examples
+#' getStandardColNames(data.frame(ID=1, DV=2, Time=3, CmT=4))
+#' @export
+getStandardColNames <- function(data) {
+  stdCols <-
+    c(
+      # rxode2 columns
+      "id", "time", "amt", "rate", "dur", "evid", "cmt", "ss", "ii", "addl",
+      # nlmixr2 columns
+      "dv", "mdv", "dvid", "cens", "limit"
+    )
+  stdCols <- setNames(rep(NA_character_, length(stdCols)), nm = stdCols)
+  lowerNames <- tolower(names(data))
+  for (nm in names(stdCols)) {
+    found <- which(lowerNames %in% nm)
+    if (length(found) == 1) {
+      stdCols[nm] <- names(data)[found]
+    } else if (length(found) > 1) {
+      cli::cli_abort(paste("Multiple data columns match", nm, "when converted to lower case"))
+    }
+  }
+  stdCols
 }

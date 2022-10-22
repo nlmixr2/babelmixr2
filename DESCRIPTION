@@ -20,22 +20,28 @@ Suggests:
     nlmixr2data,
     withr,
     lixoftConnectors,
-    pmxTools
+    PKNCA (>= 0.10.0),
+    pmxTools,
+    knitr,
+    rmarkdown
 Depends:
     R (>= 3.5),
     nlmixr2
 Imports:
     checkmate,
+    cli,
     digest,
     lotri,
     nlmixr2est,
     methods,
     qs,
     rex,
-    rxode2
+    rxode2,
+    units
 RoxygenNote: 7.2.1
 Additional_repositories: https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/
 Config/testthat/edition: 3
 LinkingTo:
     Rcpp, rxode2, RcppArmadillo, RcppEigen, rxode2parse
 Language: en-US
+VignetteBuilder: knitr

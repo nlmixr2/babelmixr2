@@ -6,3 +6,5 @@
 /src/babelmixr2.so
 babelmixr2.Rproj
 /src/Makevars
+inst/doc
+*.Rout

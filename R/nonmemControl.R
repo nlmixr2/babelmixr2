@@ -1,22 +1,22 @@
 #' NONMEM estimation control
-#' 
+#'
 #' @details
-#' 
+#'
 #' If \code{runCommand} is given as a string, it will be called with the
 #' \code{system()} command like:
-#' 
+#'
 #' \code{runCommand controlFile outputFile}.
-#' 
+#'
 #' For example, if \code{runCommand="'/path/to/nmfe75'"} then the command line
 #' used would look like the following:
-#' 
+#'
 #' \code{'/path/to/nmfe75' one.cmt.nmctl one.cmt.lst}
-#' 
+#'
 #' If \code{runCommand} is given as a function, it will be called as
 #' \code{FUN(ctl, directory, ui)} to run NONMEM.  This allows you to run NONMEM
 #' in any way that you may need, as long as you can write it in R.  babelmixr2
 #' will wait for the function to return before proceeding.
-#' 
+#'
 #' If \code{runCommand} is \code{NA}, \code{nlmixr()} will stop after writing
 #' the model files and without starting NONMEM.
 #'
@@ -131,7 +131,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
     checkmate::assertCharacter(modelName, len=1, any.missing=FALSE)
   }
   if (!identical(runCommand, "")) {
-    if (!(checkmate::testCharacter(runCommand, min.len=1, max.len=1) |
+    if (!(checkmate::testCharacter(runCommand, len=1) ||
           checkmate::testFunction(runCommand, args=c("ctl", "directory", "ui")))) {
       stop("runCommand must be a character string or a function with arguments 'ctl', 'directory', and 'ui'")
     }
