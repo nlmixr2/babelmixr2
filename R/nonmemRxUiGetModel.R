@@ -2,6 +2,7 @@
 rxUiGet.nonmemMod <- function(x, ...) {
   .ui <- x[[1]]
   .state <- rxode2::rxModelVars(.ui)$state
+  if (length(.state) == 0) return("")
   paste(c(paste0("$MODEL NCOMPARTMENTS=", length(.state)),
           vapply(.state,
                function(s) {

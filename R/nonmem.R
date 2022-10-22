@@ -204,11 +204,13 @@ rex::register_shortcuts("babelmixr2")
 .rxToNonmemHandleNamesOrAtomic <- function(x, ui) {
   if (is.character(x)) stop("strings in nlmixr<->monolix are not supported", call.=FALSE)
   .ret <- as.character(x)
+  if (tolower(.ret) %in% c("t", "time")) return("TIME")
   if (exists(".thetaMu", ui)) {
     .thetaMu <- ui$.thetaMu
     .w <- which(names(.thetaMu) == .ret)
     if (length(.w) == 1) {
-      return(.thetaMu[.w])
+      .ret <- .thetaMu[.w]
+      if (!is.na(.ret)) return(.ret)
     }
   }
   .ref <- .nonmemGetThetaNum(x, ui)
