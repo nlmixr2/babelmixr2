@@ -2,6 +2,7 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/nlmixr2/babelmixr2/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/nlmixr2/babelmixr2/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/nlmixr2/babelmixr2/branch/main/graph/badge.svg)](https://app.codecov.io/gh/nlmixr2/babelmixr2?branch=main)
 <!-- badges: end -->
 
 The goal of babelmixr2 is to convert nlmixr2 syntax to other commonly
