@@ -8,6 +8,10 @@ on:
 
 name: test-coverage
 
+# Fix "Error: Package suggested but not available: 'lixoftConnectors'"
+env:
+  _R_CHECK_FORCE_SUGGESTS_: false
+
 jobs:
   test-coverage:
     runs-on: ubuntu-latest
