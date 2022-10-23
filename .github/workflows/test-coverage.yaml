@@ -8,10 +8,6 @@ on:
 
 name: test-coverage
 
-# Fix "Error: Package suggested but not available: 'lixoftConnectors'"
-env:
-  _R_CHECK_FORCE_SUGGESTS_: false
-
 jobs:
   test-coverage:
     runs-on: ubuntu-latest
@@ -27,7 +23,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::covr
+          extra-packages: any::covr, lixoftConnectors=?ignore
           needs: coverage
 
       - name: Test coverage
