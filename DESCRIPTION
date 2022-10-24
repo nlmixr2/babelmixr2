@@ -24,7 +24,8 @@ Suggests:
     pmxTools,
     knitr,
     rmarkdown,
-    spelling
+    spelling,
+    units
 Depends:
     R (>= 3.5),
     nlmixr2
@@ -37,8 +38,7 @@ Imports:
     methods,
     qs,
     rex,
-    rxode2,
-    units
+    rxode2
 RoxygenNote: 7.2.1
 Additional_repositories: https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/
 Config/testthat/edition: 3
