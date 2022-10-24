@@ -23,8 +23,11 @@ Suggests:
     PKNCA (>= 0.10.0),
     pmxTools,
     rmarkdown,
+    knitr,
+    rmarkdown,
     testthat,
-    withr
+    withr,
+    spelling
 Depends:
     R (>= 3.5),
     nlmixr2
