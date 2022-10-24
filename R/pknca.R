@@ -72,29 +72,34 @@ nlmixr2Est.pknca <- function(env, ...) {
           conversionFactors$volumeu
         )
     )
-  # Drop unit conversion when units are not specified
-  modelDataConversions <-
-    modelDataConversions[
-      !is.na(modelDataConversions$PPORRESU) &
-        !is.na(modelDataConversions$PPSTRESU),
-    ]
-  dUnitsModel <-
-    PKNCA::pknca_units_table(
-      concu = control$concu,
-      doseu = control$doseu,
-      timeu = control$timeu,
-      conversions = modelDataConversions
+  ncaUnitsToModelUnits <-
+    merge(
+      dUnitsData[dUnitsData$PPTESTCD %in% c("vss.last", "cmax", "cl.last"), ],
+      modelDataConversions,
+      all.x = TRUE
     )
-  # set any missing conversion factors to 1
-  if (!("conversion_factor" %in% names(dUnitsModel))) {
-    dUnitsModel$conversion_factor <- 1
-  } else {
-    dUnitsModel$conversion_factor[is.na(dUnitsModel$conversion_factor)] <- 1
+  ncaUnitsToModelUnits$conversionFactor <- NA_real_
+  for (idx in seq_len(nrow(ncaUnitsToModelUnits))) {
+    if (is.na(ncaUnitsToModelUnits$PPORRESU[idx]) | is.na(ncaUnitsToModelUnits$PPSTRESU[idx])) {
+      ncaUnitsToModelUnits$conversionFactor[idx] <- 1
+    } else {
+      ncaUnitsToModelUnits$conversionFactor[idx] <-
+        units::set_units(
+          units::set_units(
+            1,
+            ncaUnitsToModelUnits$PPORRESU[idx],
+            mode = "standard"
+          ),
+          ncaUnitsToModelUnits$PPSTRESU[idx],
+          mode = "standard"
+        )
+    }
   }
+
   unitConversions <-
     stats::setNames(
-      dUnitsModel$conversion_factor,
-      nm = dUnitsModel$PPTESTCD
+      ncaUnitsToModelUnits$conversionFactor,
+      nm = ncaUnitsToModelUnits$PPTESTCD
     )
 
   pkncaEst <- calcPkncaEst(objectPknca = oNCA)
