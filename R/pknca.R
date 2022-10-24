@@ -28,6 +28,7 @@
 #'   calculation.
 #' @export
 nlmixr2Est.pknca <- function(env, ...) {
+  rxode2::rxReq("PKNCA")
   control <- env$control[[1]]
   # Get the units from the basic units (before unit conversion)
   dUnitsData <-
