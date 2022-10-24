@@ -3,3 +3,4 @@
 ^\.github$
 ^dev-setup.R$
 ^cran-comments\.md$
+^codecov\.yml$

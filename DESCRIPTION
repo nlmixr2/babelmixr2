@@ -16,14 +16,17 @@ NeedsCompilation: yes
 Encoding: UTF-8
 LazyData: true
 Suggests:
-    testthat,
-    nlmixr2data,
-    withr,
+    covr,
+    knitr,
     lixoftConnectors,
+    nlmixr2data,
     PKNCA (>= 0.10.0),
     pmxTools,
+    rmarkdown,
     knitr,
     rmarkdown,
+    testthat,
+    withr,
     spelling
 Depends:
     R (>= 3.5),
