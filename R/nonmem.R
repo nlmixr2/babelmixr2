@@ -146,7 +146,8 @@ rex::register_shortcuts("babelmixr2")
                       .nmNumReg("XSCALE", TRUE), "A_0FLG", "A_0", "DADT",
                       "CALLFL", "Y", "NEWL2", "ICALL", "EXIT", "CALL",
                       "GETETA", "SIMETA", "SIMEPS", "COMSAV", "NWIND", "ETEXT",
-                      "IERPRD", "MSEC", "MFIRST", "NETEXT", "IPRED"),
+                      "IERPRD", "MSEC", "MFIRST", "NETEXT", "IPRED",
+                      "IPRE", "IPR"),
                    end)
 #' Gets variable, respecting the many reserved names in NONMEM
 #'
