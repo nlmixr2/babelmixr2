@@ -19,6 +19,7 @@ Tmax
 UI
 adm
 advan
+al
 amtu
 api
 babelmixr
@@ -27,8 +28,10 @@ cancelled
 clearanceu
 cmax
 dn
+doi
 dvu
 env
+et
 evid
 exploratoryAutoStop
 fim
@@ -52,6 +55,7 @@ nmfe
 nonmem
 pharmacokinetic
 posthoc
+psp
 rxControl
 rxode
 saem
