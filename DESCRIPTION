@@ -23,7 +23,8 @@ Suggests:
     PKNCA (>= 0.10.0),
     pmxTools,
     knitr,
-    rmarkdown
+    rmarkdown,
+    spelling
 Depends:
     R (>= 3.5),
     nlmixr2
