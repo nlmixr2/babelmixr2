@@ -98,12 +98,11 @@ without variability.  It could be: - Fixed throughout (none) -
 Variability in the first stage (firstStage) - Decreasing until it
 reaches the fixed value (decreasing)}
 
-\item{runCommand}{is a shell command to run monolix; You can specify
+\item{runCommand}{is a shell command or function to run monolix; You can specify
 the default by
-\code{options("babelmixr2.monolix"="runMonolix \%s")} where the
-\code{"\%s"} represents the monolix project file. If it is empty
+\code{options("babelmixr2.monolix"="runMonolix")}. If it is empty
 and 'lixoftConnectors' is available, use lixoftConnectors to run
-monolix.}
+monolix. See details for function usage.}
 
 \item{rxControl}{`rxode2` ODE solving options during fitting, created with `rxControl()`}
 
@@ -141,6 +140,25 @@ A monolix control object
 }
 \description{
 Monolix Controller for nlmixr2
+}
+\details{
+If \code{runCommand} is given as a string, it will be called with the
+\code{system()} command like:
+
+\code{runCommand mlxtran}.
+
+For example, if \code{runCommand="'/path/to/monolix/mlxbsub2021' -p "} then the command line
+used would look like the following:
+
+\code{'/path/to/monolix/mlxbsub2021' monolix.mlxtran}
+
+If \code{runCommand} is given as a function, it will be called as
+\code{FUN(mlxtran, directory, ui)} to run Monolix.  This allows you to run Monolix
+in any way that you may need, as long as you can write it in R.  babelmixr2
+will wait for the function to return before proceeding.
+
+If \code{runCommand} is \code{NA}, \code{nlmixr()} will stop after writing
+the model files and without starting Monolix.
 }
 \author{
 Matthew Fidler

@@ -263,6 +263,7 @@
 #' Run NONMEM using either the user-specified command or function
 #' 
 #' @param ui The nlmixr2 UI object for running
+#' @param monolix are we actually running monolix
 #' @return NULL
 #' @noRd
 .nonmemRunner <- function(ui) {
@@ -270,7 +271,8 @@
   if (is.character(cmd)) {
     cmd <- .nonmemRunCommand
   } else if (!is.function(cmd)) {
-    stop("invalid value for nonmemControl(runCommand=)")
+    stop("invalid value for nonmemControl(runCommand=)",
+         call.=FALSE)
   }
   cmd(ctl=ui$nonmemNmctl, directory=ui$nonmemExportPath, ui=ui)
   NULL

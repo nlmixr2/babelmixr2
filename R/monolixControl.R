@@ -27,18 +27,37 @@
 #'   without variability.  It could be: - Fixed throughout (none) -
 #'   Variability in the first stage (firstStage) - Decreasing until it
 #'   reaches the fixed value (decreasing)
-#' @param runCommand is a shell command to run monolix; You can specify
+#' @param runCommand is a shell command or function to run monolix; You can specify
 #'   the default by
-#'   \code{options("babelmixr2.monolix"="runMonolix \%s")} where the
-#'   \code{"\%s"} represents the monolix project file. If it is empty
+#'   \code{options("babelmixr2.monolix"="runMonolix")}. If it is empty
 #'   and 'lixoftConnectors' is available, use lixoftConnectors to run
-#'   monolix.
+#'   monolix. See details for function usage.
 #' @param absolutePath Boolean indicating if the absolute path should
 #'   be used for the monolix runs
 #' @inheritParams nonmemControl
 #' @inheritParams nlmixr2est::saemControl
 #' @return A monolix control object
 #' @author Matthew Fidler
+#' @details
+#'
+#' If \code{runCommand} is given as a string, it will be called with the
+#' \code{system()} command like:
+#'
+#' \code{runCommand mlxtran}.
+#'
+#' For example, if \code{runCommand="'/path/to/monolix/mlxbsub2021' -p "} then the command line
+#' used would look like the following:
+#'
+#' \code{'/path/to/monolix/mlxbsub2021' monolix.mlxtran}
+#'
+#' If \code{runCommand} is given as a function, it will be called as
+#' \code{FUN(mlxtran, directory, ui)} to run Monolix.  This allows you to run Monolix
+#' in any way that you may need, as long as you can write it in R.  babelmixr2
+#' will wait for the function to return before proceeding.
+#'
+#' If \code{runCommand} is \code{NA}, \code{nlmixr()} will stop after writing
+#' the model files and without starting Monolix.
+#' 
 #' @export
 #' @importFrom nlmixr2 nlmixr2
 #' @importFrom methods is
@@ -70,7 +89,6 @@ monolixControl <- function(nbSSDoses=7,
                            absolutePath=FALSE,
                            modelName=NULL,
                            ...) {
-
   checkmate::assertLogical(stiff, max.len=1, any.missing=FALSE)
   checkmate::assertLogical(exploratoryAutoStop, max.len=1, any.missing=FALSE)
   checkmate::assertLogical(smoothingAutoStop, max.len=1, any.missing=FALSE)
@@ -144,7 +162,12 @@ monolixControl <- function(nbSSDoses=7,
   checkmate::assertNumeric(ci, any.missing=FALSE, len=1, lower=0, upper=1)
   checkmate::assertLogical(calcTables, len=1, any.missing=FALSE)
 
-  if (runCommand != "") checkmate::assertCharacter(runCommand, pattern="%s", min.len=1, max.len=1)
+  if (!identical(runCommand, "")) {
+    if (!(checkmate::testCharacter(runCommand, len=1) ||
+            checkmate::testFunction(runCommand, args=c("ctl", "directory", "ui")))) {
+      stop("runCommand must be a character string or a function with arguments 'ctl', 'directory', and 'ui'")
+    }
+  }
 
   .ret <- list(nbSSDoses=as.integer(nbSSDoses), stiff=stiff,
                exploratoryAutoStop=exploratoryAutoStop,

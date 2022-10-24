@@ -127,6 +127,24 @@
   invisible(.lixoftStarted)
 }
 
+#' Run NONMEM using either the user-specified command or function
+#' 
+#' @param ui The nlmixr2 UI object for running
+#' @param monolix are we actually running monolix
+#' @return NULL
+#' @noRd
+.monolixRunner <- function(ui) {
+  cmd <- rxode2::rxGetControl(ui, "runCommand", "")
+  if (is.character(cmd)) {
+    cmd <- .monolixRunCommand
+  } else if (!is.function(cmd)) {
+    stop("invalid value for monolixControl(runCommand=)",
+         call.=FALSE)
+  }
+  cmd(mlxtran=ui$monolixMlxtranFile, directory=ui$monolixExportPath, ui=ui)
+  NULL
+}
+
 .monolixFamilyFit <- function(env, ...) {
   .ui <- env$ui
   .control <- .ui$control
@@ -225,9 +243,8 @@
     .minfo("done")
     .runLS <- FALSE
     .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
-    if (.cmd != "") {
-      .minfo(paste0("run monolix: ", sprintf(.cmd, .mlxtran)))
-      system(sprintf(.cmd, .mlxtran))
+    if (identical(.cmd, "")) {
+      .monolixRunner(ui=.ui)
     } else {
       if (.hasLixoftConnectors()) {
         .x <- try(lixoftConnectors::loadProject(.mlxtran), silent=TRUE)
@@ -283,6 +300,17 @@
   return(.ret)
 }
 
+.monolixRunCommand <- function(mlxtran, directory, ui) {
+  cmd <- rxode2::rxGetControl(ui, "runCommand", "")
+  if (cmd != "") {
+    fullCmd <- paste(cmd, mlxtran)
+    .minfo(paste0("run Monolix: ", fullCmd))
+    withr::with_dir(ui$monolixExportPath, system(fullCmd))
+  } else {
+    stop("run Monolix manually and rerun nlmixr() or setup Monolix's run command")
+  }
+}
+
 nlmixr2Est.monolix <- function(env, ...) {
   .ui <- env$ui
   .ui <- rxode2::rxUiDecompress(env$ui)
@@ -292,7 +320,6 @@ nlmixr2Est.monolix <- function(env, ...) {
   on.exit({
     assign("ui", rxode2::rxUiCompress(env$ui), envir=env)
   })
-
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
