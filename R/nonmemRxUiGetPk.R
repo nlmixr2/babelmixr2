@@ -1,3 +1,27 @@
+.muRefDefFix <- function(muRefDef, ui) {
+  .muRefCurEval <- ui$muRefCurEval
+  .v <- setNames(lapply(ui$nonMuEtas, function(eta) {
+    .w <- which(.muRefCurEval$parameter == eta)
+    if (length(.w) == 1) {
+      .e <- try(str2lang(paste0(.muRefCurEval$curEval[.w], "(", eta, ")")), silent=TRUE)
+      if (inherits(.e, "try-error")) return(NULL)
+      return(.e)
+    }
+    NULL
+  }), ui$nonMuEtas)
+  
+  lapply(seq_along(muRefDef), function(i) {
+    .expr <- muRefDef[[i]]
+    if (length(.expr) < 3) return(.expr)
+    .w <- which(vapply(ui$nonMuEtas, function(i) {
+      identical(.v[[i]], .expr[[3]])
+    }, logical(1)))
+    if (length(.w)!=1) return(.expr)
+    .expr[[3]] <- str2lang(ui$nonMuEtas)
+    .expr
+  })
+}
+
 .nonmemGetMuNum <- function(theta, ui) {
   .muRefDf <- ui$muRefDataFrame
   .iniDf <- ui$iniDf
@@ -81,11 +105,12 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
     }
   })
   .isPred <- (length(rxode2::rxState(.ui)) == 0)
+  .muRefDef <- .muRefDefFix(.split$muRefDef, .ui)
   .pk <- paste0(ifelse(.isPred,"$PRED\n","$PK\n"),
                  .ret,"\n",
-                 paste(vapply(seq_along(.split$muRefDef),
+                 paste(vapply(seq_along(.muRefDef),
                               function(i) {
-                                x <-.rxToNonmem(.split$muRefDef[[i]], ui=.ui)
+                                x <-.rxToNonmem(.muRefDef[[i]], ui=.ui)
                                 x
                               }, character(1), USE.NAMES=FALSE),
                        collapse="\n"))
