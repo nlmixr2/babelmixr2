@@ -155,10 +155,21 @@
   .tmp  <- bblDatToMonolix(.ui, .data, table=env$table, env=.ret)
   .ret$monolixData <- .monolixFormatData(.tmp$monolix, .ui)
   .tmp <- .tmp$adm
-  .tmp$f <- NA_real_
-  .tmp$dur <- NA_real_
-  .tmp$lag <- NA_real_
-  .tmp$rate <- NA_real_
+  if (length(.tmp$adm) == 0) {
+    .tmp <- structure(list(adm = integer(0),
+                           cmt = integer(0),
+                           type = structure(integer(0), .Label = c("empty", "modelRate", "modelDur", "infusion", "bolus"), class = "factor"),
+                           f = double(0),
+                           dur=double(0),
+                           lag=double(0),
+                           rate=double(0)),
+                      class = "data.frame", row.names = integer(0))
+  } else {
+    .tmp$f <- NA_real_
+    .tmp$dur <- NA_real_
+    .tmp$lag <- NA_real_
+    .tmp$rate <- NA_real_
+  }
   rxode2::rxAssignControlValue(.ui, ".adm", .tmp)
 
   # Now make sure time varying covariates are not considered
