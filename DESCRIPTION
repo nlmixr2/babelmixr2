@@ -1,6 +1,6 @@
 Package: babelmixr2
 Type: Package
-Title: Use 'nlmixr2' to Interact with Other Open and Commercial Software
+Title: Use 'nlmixr2' to Interact with Other Open Source and Commercial Software
 Version: 0.1.0
 Authors@R: c(person("Matthew","Fidler", role = c("aut", "cre"), email = "matthew.fidler@gmail.com", comment=c(ORCID="0000-0001-8538-6691")),
            person("Bill", "Denney", email="wdenney@humanpredictions.com", role="aut", comment=c(ORCID="0000-0002-5759-428X")))
@@ -28,7 +28,7 @@ Suggests:
     units
 Depends:
     R (>= 3.5),
-    nlmixr2
+    nlmixr2 (>= 2.0.8)
 Imports:
     checkmate,
     cli,
