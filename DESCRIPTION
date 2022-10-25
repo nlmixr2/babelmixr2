@@ -14,7 +14,6 @@ Description: Run other estimation and simulation software via the 'nlmixr2' (Fid
 License: GPL (>= 3)
 NeedsCompilation: yes
 Encoding: UTF-8
-LazyData: true
 Suggests:
     testthat,
     nlmixr2data,
