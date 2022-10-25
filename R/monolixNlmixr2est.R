@@ -326,6 +326,7 @@
 
 nlmixr2Est.monolix <- function(env, ...) {
   .ui <- env$ui
+  rxode2::assertRxUiMuRefOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   .ui <- rxode2::rxUiDecompress(env$ui)
   nlmixr2est::nmObjUiSetCompressed(FALSE)
   on.exit({nlmixr2est::nmObjUiSetCompressed(TRUE)})
