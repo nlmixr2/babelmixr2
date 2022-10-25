@@ -5,7 +5,7 @@ Version: 0.1.0
 Authors@R: c(person("Matthew","Fidler", role = c("aut", "cre"), email = "matthew.fidler@gmail.com", comment=c(ORCID="0000-0001-8538-6691")),
            person("Bill", "Denney", email="wdenney@humanpredictions.com", role="aut", comment=c(ORCID="0000-0002-5759-428X")))
 Description: Run other estimation and simulation software via the 'nlmixr2' (Fidler et al (2019)
-  <doi:10.1002/psp4.12445>) interface including 'NONMEM' and 'Monolix'. While not required, you can
+  <doi:10.1002/psp4.12445>) interface including 'PKNCA', 'NONMEM' and 'Monolix'. While not required, you can
   get/install the 'lixoftConnectors' package in the 'Monolix' installation, as
   described at the following url
   <https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/>. When
