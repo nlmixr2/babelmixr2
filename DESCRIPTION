@@ -40,7 +40,6 @@ Imports:
     rex,
     rxode2
 RoxygenNote: 7.2.1
-Additional_repositories: https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/
 Config/testthat/edition: 3
 LinkingTo:
     Rcpp, rxode2, RcppArmadillo, RcppEigen, rxode2parse
