@@ -262,8 +262,7 @@ rxUiGet.nonmemCovarianceInfo <- function(x, ...) {
             paste0("PRED absolute difference compared to Nonmem PRED: atol=",
                    signif(.qap[3], .sigdig),
                    "; ", fit$nonmemControl$ci * 100,"% percentile: (",
-                   signif(.qap[2], .sigdig), ",
-", signif(.qp[4], .sigdig), ")"))
+                   signif(.qap[2], .sigdig), ",", signif(.qp[4], .sigdig), ")"))
   list(individualRel=.qi , popRel=.qp,
        individualAbs=.qai, popAbs=.qap,
        message=.msg)

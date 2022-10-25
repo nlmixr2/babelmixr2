@@ -502,8 +502,7 @@ rxUiGet.monolixPreds <- function(x, ...) {
             paste0("PRED absolute difference compared to Monolix PRED: atol=",
                    signif(.qap[3], digits=.sigdig),
                    "; ", fit$monolixControl$ci * 100,"% percentile: (",
-                   signif(.qap[2], digits=.sigdig), ",
-", signif(.qp[4], digits=.sigdig), ")"))
+                   signif(.qap[2], digits=.sigdig), ", ", signif(.qp[4], digits=.sigdig), ")"))
   list(individualRel=.qi , popRel=.qp,
        individualAbs=.qai, popAbs=.qap,
        message=.msg)

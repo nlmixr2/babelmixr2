@@ -254,7 +254,7 @@
     .minfo("done")
     .runLS <- FALSE
     .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
-    if (identical(.cmd, "")) {
+    if (!identical(.cmd, "")) {
       .monolixRunner(ui=.ui)
     } else {
       if (.hasLixoftConnectors()) {
@@ -276,9 +276,11 @@
         .minfo("run monolix manually or stop and setup monolix's run command")
       }
     }
+  } else {
+    .minfo(paste0("assuming monolix is running because '", .model, "' is present"))
   }
   if (!dir.exists(.exportPath)) {
-    .minfo("waiting for monolix output")
+    .minfo(paste0("waiting for monolix output (", .exportPath, ")"))
     .i <- 0
     while (!dir.exists(.exportPath)) {
       .i <- .i + 1
@@ -316,7 +318,7 @@
   if (cmd != "") {
     fullCmd <- paste(cmd, mlxtran)
     .minfo(paste0("run Monolix: ", fullCmd))
-    withr::with_dir(ui$monolixExportPath, system(fullCmd))
+    system(fullCmd)
   } else {
     stop("run Monolix manually and rerun nlmixr() or setup Monolix's run command")
   }
@@ -324,6 +326,7 @@
 
 nlmixr2Est.monolix <- function(env, ...) {
   .ui <- env$ui
+  rxode2::assertRxUiMuRefOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   .ui <- rxode2::rxUiDecompress(env$ui)
   nlmixr2est::nmObjUiSetCompressed(FALSE)
   on.exit({nlmixr2est::nmObjUiSetCompressed(TRUE)})
