@@ -288,4 +288,3 @@ nmObjGetControl.nonmem <- function(x, ...) {
     env$control <- .foceiControl
   .foceiControl
 }
-
