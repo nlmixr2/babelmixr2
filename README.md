@@ -15,11 +15,21 @@ used tools.
 
 ## Installation
 
-If we decide to submit to CRAN, you can install the released version of
+You can install the released version of
 babelmixr2 from [CRAN](https://CRAN.R-project.org) with:
 
 ``` r
 install.packages("babelmixr2")
+```
+
+You can install from r-universe by:
+
+``` r
+# Download and install babelmixr2 in R
+install.packages('babelmixr2',
+                 repos = c(
+                   nlmixr2 = 'https://nlmixr2.r-universe.dev',
+                   CRAN = 'https://cloud.r-project.org'))
 ```
 
 Otherwise you can always install from GitHub:
