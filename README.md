@@ -1,8 +1,13 @@
 # babelmixr2
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/nlmixr2/babelmixr2/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/nlmixr2/babelmixr2/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/nlmixr2/babelmixr2/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/nlmixr2/babelmixr2/actions/workflows/R-CMD-check.yaml) 
+[![CRAN version](http://www.r-pkg.org/badges/version/babelmixr2)](https://cran.r-project.org/package=babelmixr2)
+[![CRAN total downloads](https://cranlogs.r-pkg.org/badges/grand-total/babelmixr2)](https://cran.r-project.org/package=babelmixr2)
+[![CRAN total downloads](https://cranlogs.r-pkg.org/badges/babelmixr2)](https://cran.r-project.org/package=babelmixr2)
 [![Codecov test coverage](https://codecov.io/gh/nlmixr2/babelmixr2/branch/main/graph/badge.svg)](https://app.codecov.io/gh/nlmixr2/babelmixr2?branch=main)
+[![CodeFactor](https://www.codefactor.io/repository/github/nlmixr2/babelmixr2/badge)](https://www.codefactor.io/repository/github/nlmixr2/babelmixr2)
+![r-universe](https://nlmixr2.r-universe.dev/badges/babelmixr2)
 <!-- badges: end -->
 
 The goal of babelmixr2 is to convert nlmixr2 syntax to other commonly
