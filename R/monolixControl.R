@@ -57,7 +57,7 @@
 #'
 #' If \code{runCommand} is \code{NA}, \code{nlmixr()} will stop after writing
 #' the model files and without starting Monolix.
-#' 
+#'
 #' @export
 #' @importFrom nlmixr2 nlmixr2
 #' @importFrom methods is
@@ -215,20 +215,10 @@ monolixControl <- function(nbSSDoses=7,
   .foceiControl
 }
 
-#' @importFrom nlmixr2est nmObjGetFoceiControl
 #' @export
-nlmixr2est::nmObjGetFoceiControl
-
-#' @export
-#' @rdname nmObjGetFoceiControl
 nmObjGetFoceiControl.monolix <- function(x, ...) {
   .monolixControlToFoceiControl(x[[1]])
 }
-
-
-#' @importFrom nlmixr2est getValidNlmixrCtl
-#' @export
-nlmixr2est::getValidNlmixrCtl
 
 getValidNlmixrCtl.monolix <- function(control) {
   .ctl <- control[[1]]
@@ -244,18 +234,10 @@ getValidNlmixrCtl.monolix <- function(control) {
   .ctl
 }
 
-#' @importFrom nlmixr2est nmObjHandleControlObject
-#' @export
-nlmixr2est::nmObjHandleControlObject
-
 #' @export
 nmObjHandleControlObject.monolixControl <- function(control, env) {
   assign("monolixControl", control, envir=env)
 }
-
-#' @importFrom nlmixr2est nmObjGetControl
-#' @export
-nlmixr2est::nmObjGetControl
 
 #' @export
 nmObjGetControl.monolix <- function(x, ...) {
