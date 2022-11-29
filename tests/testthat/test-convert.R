@@ -222,3 +222,73 @@ test_that("getStandardColNames", {
     regexp = "Multiple data columns match cmt when converted to lower case"
   )
 })
+
+test_that("invalid nonmem conversion", {
+  
+  skip_if_not(file.exists("bad-nonmem-data-convert.qs"))
+  
+  d <- qs::qread("bad-nonmem-data-convert.qs")
+
+  f <-
+    function() {
+      ini({
+        
+        tpm1 <- c(log(0.0001),log(1))
+        tpm2 <- c(log(0.0001),log(5))
+        tpm3 <- c(log(0.0001),log(0.1))
+        tpm4 <- c(log(0.0001),log(5))
+        tpm5 <- c(log(0.0001), log(1), log(10))
+        tpm6 <- c(log(0.0001), log(0.1), log(1))
+        
+        eta.pm1 ~ 0.1
+        eta.pm2 ~ 0.1
+        eta.pm6 ~ 0.1
+        eta.pm3 ~ 0.1
+        eta.pm4 ~ 0.1
+        
+        eps.prop <- c(0,1)
+        
+        
+      })
+      
+      model({
+        ipm1 <- exp(tpm1 + eta.pm1)
+        pm2 <- exp(tpm2 + eta.pm2)
+        pm5 <- exp(tpm5)
+        pm6 <- exp(tpm6 + eta.pm6)
+        pm3 <- exp(tpm3 + eta.pm3)
+        pm4 <- exp(tpm4 + eta.pm4)
+        
+        tmevent <- tevent - 7
+        if(tmevent<0){tmevent = 0}
+        
+        if(time>tmevent){
+          pm5=pm5
+          pm6=pm6
+        } else{
+          pm5=1
+          pm6=1
+        }
+        
+        pm1 <- ipm1*pm5
+        pm8 <- pm1/pm2
+        pm9 <- pm3/pm2
+        pm99 <- pm3/pm4
+        
+        pm7 = pm6
+        cp = (cent/pm2)*pm7
+        
+        d/dt(cent) = -pm8*cp - pm9*cp + pm99*periph
+        d/dt(periph) = pm9*cp - pm99*periph
+        
+        IPRED = log(cp)
+        IPRED ~ prop(eps.prop) | abc
+        
+      })
+    }
+
+  d$tevent <- 0.5
+
+  expect_error(bblDatToNonmem(f, d), NA)
+  
+})
