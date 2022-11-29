@@ -335,6 +335,11 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), env=NU
     ifelse(rxode2::rxGetControl(.ui, ".hasLimit", FALSE), "LIMIT", ""),
     "nlmixrRowNums")
   .names <- .names[.names != ""]
+  .allCovs <- .ui$allCovs
+  names(.ret) <- vapply(names(.ret), function(n) {
+    if (any(n == .allCovs)) return(.nmGetVar(n, ui=.ui))
+    n
+  }, character(1), USE.NAMES=FALSE)
   .ret <- .ret[, .names]
   .ret
 }
