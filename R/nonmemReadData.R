@@ -91,7 +91,8 @@ rxUiGet.nonmemEtaObf <- function(x, ...) {
   .etaTable <- rxUiGet.nonmemEtaTableName(x, ...)
   if (!file.exists(file.path(.exportPath, .etaTable))) return(NULL)
   .ret <- withr::with_dir(.exportPath,
-                          pmxTools::read_nm_multi_table(.etaTable))
+                          nonmem2rx::nmtab(.etaTable))
+  .ret <- .ret[.ret$NMREP ==1, names(.ret) != "NMREP"]
   .n <- c("ID", .getEtaNames(.ui), "OBJI")
   names(.ret) <- .n
   .ret$ID <- as.integer(.ret$ID)
@@ -125,7 +126,7 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
   .covFile <- rxUiGet.nonmemCovFile(x, ...)
   if (!file.exists(file.path(.exportPath, .covFile))) return(NULL)
   .ret <- as.matrix(withr::with_dir(.exportPath,
-                                    pmxTools::read_nmcov(rxUiGet.nonmemModelName(x, ...), quiet=TRUE)))
+                                    nonmem2rx::nmcov(.covFile)))
   .d <- .getNonmemOrderNames(.ui)
   dimnames(.ret) <- list(.d, .d)
   .t <- .getThetaNames(.ui)
@@ -181,8 +182,10 @@ rxUiGet.nonmemPreds <- function(x, ...) {
   .exportPath <- rxUiGet.nonmemExportPath(x, ...)
   .sdTable <- rxUiGet.nonmemSdTableName(x, ...)
   if (!file.exists(file.path(.exportPath, .sdTable))) return(NULL)
-  setNames(withr::with_dir(.exportPath,
-                           pmxTools::read_nm_multi_table(.sdTable)),
+  .ret <- withr::with_dir(.exportPath,
+                          nonmem2rx::nmtab(.sdTable))
+  .ret <- .ret[.ret$NMREP ==1, names(.ret) != "NMREP"]
+  setNames(.ret,
            c("ID", "TIME", "nonmemIPRED", "nonmemPRED", "RXROW"))
 }
 
