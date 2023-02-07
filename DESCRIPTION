@@ -20,7 +20,6 @@ Suggests:
     withr,
     lixoftConnectors,
     PKNCA (>= 0.10.0),
-    pmxTools,
     knitr,
     rmarkdown,
     spelling,
@@ -34,11 +33,12 @@ Imports:
     digest,
     lotri,
     nlmixr2est,
+    nonmem2rx,
     methods,
     qs,
     rex,
     rxode2
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 Config/testthat/edition: 3
 LinkingTo:
     Rcpp, rxode2, RcppArmadillo, RcppEigen, rxode2parse

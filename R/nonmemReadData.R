@@ -1,24 +1,23 @@
 #' @export
-rxUiGet.nonmemOutputXml <- function(x, ...) {
+rxUiGet.nonmemOutputLst <- function(x, ...) {
   .ui <- x[[1]]
-  .info <- rxode2::rxGetControl(.ui, ".xml", NULL)
+  .info <- rxode2::rxGetControl(.ui, ".lstInfo", NULL)
   if (!is.null(.info)) return(.info)
   .exportPath <- rxUiGet.nonmemExportPath(x, ...)
-  .xml <- rxUiGet.nonmemXml(x, ...)
-  if (!file.exists(file.path(.exportPath, .xml))) return(NULL)
+  .lst <- rxUiGet.nonmemLst(x, ...)
+  if (!file.exists(file.path(.exportPath, .lst))) return(NULL)
   .info <- withr::with_dir(.exportPath, {
-    pmxTools::read_nm(.xml, quiet=TRUE)
+    nonmem2rx::nmlst(.lst)
   })
-  rxode2::rxAssignControlValue(.ui, ".xml", .info)
+  rxode2::rxAssignControlValue(.ui, ".lstInfo", .info)
   .info
 }
 
 #' @export
 rxUiGet.nonmemOutputVersion <- function(x, ...) {
-  .info <- rxUiGet.nonmemOutputXml(x, ...)
+  .info <- rxUiGet.nonmemOutputLst(x, ...)
   if (is.null(.info)) return(NULL)
-  .ver <- .info$nonmem$program_information[[1]]
-  gsub(".*VERSION +([^ ]*).*", "\\1", gsub("\n", " ", .ver))
+  .info$nonmem
 }
 
 #' @export
@@ -30,7 +29,7 @@ rxUiGet.nonmemOutputExt <- function(x, ...) {
   .ext <- rxUiGet.nonmemExt(x, ...)
   if (!file.exists(file.path(.exportPath, .ext)))  return(NULL)
   .ext <- withr::with_dir(.exportPath,
-                          pmxTools::read_nmext(.ext, quiet=TRUE))
+                          nonmem2rx::nmext(.ext))
   rxode2::rxAssignControlValue(.ui, ".ext", .ext)
   .ext
 }
@@ -44,7 +43,7 @@ rxUiGet.nonmemOutputExt <- function(x, ...) {
 rxUiGet.nonmemFullTheta <- function(x, ...) {
   .ui <- x[[1]]
   .ext <- rxUiGet.nonmemOutputExt(x, ...)
-  setNames(.ext$Thetas, .getThetaNames(.ui))
+  setNames(.ext$theta, .getThetaNames(.ui))
 }
 
 #' @export
@@ -72,16 +71,9 @@ rxUiGet.nonmemOutputOmega <- function(x, ...) {
   .ui <- x[[1]]
   .n <- .getEtaNames(.ui)
   .ext <- rxUiGet.nonmemOutputExt(x, ...)
-  .omegaLst <- .ext$Omega
-  .len <- length(.omegaLst)
-  .v <- NULL
-  for (.i in seq_along(.omegaLst)) {
-    .v <- c(.v, .omegaLst[[.i]])
-  }
-  eval(str2lang(paste("lotri::lotri(",
-                      paste(paste(.n, collapse="+"),
-                            "~", deparse1(.v)),
-                      ")")))
+  .omega <- .ext$omega
+  dimnames(.omega) <- list(.n, .n)
+  .omega
 }
 
 #' @export
@@ -143,7 +135,7 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
 #' @export
 rxUiGet.nonmemObjf <- function(x, ...) {
   .ret <- rxUiGet.nonmemOutputExt(x, ...)
-  .ret$OFV
+  .ret$objf
 }
 
 #' @export
@@ -152,7 +144,8 @@ rxUiGet.nonmemParHistory <- function(x, ...) {
   .exportPath <- rxUiGet.nonmemExportPath(x, ...)
   .ext <- rxUiGet.nonmemExt(x, ...)
   .ret <- withr::with_dir(.exportPath,
-                          pmxTools::read_nm_multi_table(.ext))
+                          nonmem2rx::nmtab(.ext))
+  .ret <- .ret[.ret$NMREP ==1, names(.ret) != "NMREP"]
   .d <- c("iter", .getNonmemOrderNames(.ui), "objf")
   names(.ret) <- .d
   .ret <- .ret[.ret$iter > 0, names(.ret) != "_sigma"]
@@ -178,11 +171,9 @@ rxUiGet.nonmemObjfType <- function(x, ...) {
 #' @export
 rxUiGet.nonmemRunTime <- function(x, ...) {
   .ui <- x[[1]]
-  .xml <- rxUiGet.nonmemOutputXml(x, ...)
-  if (is.null(.xml)) return(NULL)
-  .start <- as.POSIXct(.xml$start_datetime[[1]],format="%Y-%m-%dT%H:%M:%S",tz=Sys.timezone())
-  .stop <- as.POSIXct(.xml$stop_datetime[[1]],format="%Y-%m-%dT%H:%M:%S",tz=Sys.timezone())
-  as.numeric(difftime(.stop, .start, tz=Sys.timezone(), units = "secs"))
+  .info <- rxUiGet.nonmemOutputLst(x, ...)
+  if (is.null(.info)) return(NULL)
+  .info$time
 }
 
 #' @export
@@ -197,16 +188,16 @@ rxUiGet.nonmemPreds <- function(x, ...) {
 
 #' @export
 rxUiGet.nonmemTransMessage <- function(x, ...) {
-  .xml <- rxUiGet.nonmemOutputXml(x, ...)
-  if (is.null(.xml)) return(NULL)
-  .xml$nmtran[[1]]
+  .lst <- rxUiGet.nonmemOutputLst(x, ...)
+  if (is.null(.lst)) return(NULL)
+  .lst$nmtran
 }
 
 #' @export
 rxUiGet.nonmemTermMessage <- function(x, ...) {
-  .xml <- rxUiGet.nonmemOutputXml(x, ...)
-  if (is.null(.xml)) return(NULL)
-  .xml$nonmem$problem$estimation$termination_information[[1]]
+  .lst <- rxUiGet.nonmemOutputLst(x, ...)
+  if (is.null(.lst)) return(NULL)
+  .lst$termInfo
 }
 
 #' @export
@@ -219,13 +210,6 @@ rxUiGet.nonmemSuccessful <- function(x, ...) {
 rxUiGet.nonmemRoundingErrors <- function(x, ...) {
   .term <- rxUiGet.nonmemTermMessage(x, ...)
   (regexpr("DUE TO ROUNDING ERRORS", .term) != -1)
-}
-
-#' @export
-rxUiGet.nonmemCovarianceInfo <- function(x, ...) {
-  .xml <- rxUiGet.nonmemOutputXml(x, ...)
-  if (is.null(.xml)) return(NULL)
-  .xml$nonmem$problem$estimation$covariance_information[[1]]
 }
 
 .nonmemMergePredsAndCalcRelativeErr <- function(fit) {
