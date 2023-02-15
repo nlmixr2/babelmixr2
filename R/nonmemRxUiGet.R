@@ -93,6 +93,14 @@ rxUiGet.nonmemXml <- function(x, ...) {
   paste0(rxUiGet.nonmemModelName(x, ...), ".xml")
 }
 
+
+#' @export
+rxUiGet.nonmemLst <- function(x, ...) {
+  .ui <- x[[1]]
+  .lst <- rxode2::rxGetControl(.ui, "outputExtension", ".lst")
+  paste0(rxUiGet.nonmemModelName(x, ...), .lst)
+}
+
 #' @export
 rxUiGet.nonmemExt <- function(x, ...) {
   .ui <- x[[1]]

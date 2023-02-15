@@ -291,9 +291,6 @@
 
 #' @export
 nlmixr2Est.nonmem <- function(env, ...) {
-  if (!requireNamespace("pmxTools", quietly = TRUE)) {
-    stop("nonmem translation requires 'pmxTools'", call.=FALSE)
-  }
   .ui <- env$ui
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)

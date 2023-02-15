@@ -30,3 +30,7 @@ nlmixr2est::nmObjHandleControlObject
 #' @export
 nlmixr2est::nmObjGetControl
 
+#' @importFrom nonmem2rx nonmem2rx
+#' @export
+nonmem2rx::nonmem2rx
+
