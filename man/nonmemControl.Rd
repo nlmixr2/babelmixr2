@@ -10,6 +10,9 @@ nonmemControl(
   cov = c("r,s", "r", "s", ""),
   maxeval = 1e+05,
   tol = 6,
+  atol = 12,
+  sstol = 6,
+  ssatol = 12,
   sigl = 12,
   sigdig = 3,
   print = 1,
@@ -53,6 +56,12 @@ nonmemControl(
 \item{maxeval}{NONMEM's maxeval (for non posthoc methods)}
 
 \item{tol}{NONMEM tolerance for ODE solving advan}
+
+\item{atol}{NONMEM absolute tolerance for ODE solving}
+
+\item{sstol}{NONMEM tolerance for steady state ODE solving}
+
+\item{ssatol}{NONMEM absolute tolerance for steady state ODE solving}
 
 \item{sigl}{NONMEM sigl estimation option}
 
