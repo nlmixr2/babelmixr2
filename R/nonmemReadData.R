@@ -7,7 +7,7 @@ rxUiGet.nonmemOutputLst <- function(x, ...) {
   .lst <- rxUiGet.nonmemLst(x, ...)
   if (!file.exists(file.path(.exportPath, .lst))) return(NULL)
   .info <- withr::with_dir(.exportPath, {
-    nonmem2rx::nmlst(.lst)
+    nonmem2rx::nminfo(.lst)
   })
   rxode2::rxAssignControlValue(.ui, ".lstInfo", .info)
   .info
@@ -42,7 +42,7 @@ rxUiGet.nonmemOutputExt <- function(x, ...) {
 #' @export
 rxUiGet.nonmemFullTheta <- function(x, ...) {
   .ui <- x[[1]]
-  .ext <- rxUiGet.nonmemOutputExt(x, ...)
+  .ext <- rxUiGet.nonmemOutputLst(x, ...)
   setNames(.ext$theta, .getThetaNames(.ui))
 }
 
@@ -70,7 +70,7 @@ rxUiGet.nonmemThetaDf <- function(x, ...) {
 rxUiGet.nonmemOutputOmega <- function(x, ...) {
   .ui <- x[[1]]
   .n <- .getEtaNames(.ui)
-  .ext <- rxUiGet.nonmemOutputExt(x, ...)
+  .ext <- rxUiGet.nonmemOutputLst(x, ...)
   .omega <- .ext$omega
   dimnames(.omega) <- list(.n, .n)
   .omega
@@ -135,7 +135,7 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
 
 #' @export
 rxUiGet.nonmemObjf <- function(x, ...) {
-  .ret <- rxUiGet.nonmemOutputExt(x, ...)
+  .ret <- rxUiGet.nonmemOutputLst(x, ...)
   .ret$objf
 }
 
