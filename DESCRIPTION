@@ -12,6 +12,7 @@ Description: Run other estimation and simulation software via the 'nlmixr2' (Fid
   'lixoftConnectors' is available, 'Monolix' can be run directly instead of setting up
   command line usage.
 License: GPL (>= 3)
+URL: https://nlmixr2.github.io/babelmixr2/, https://github.com/nlmixr2/babelmixr2/
 NeedsCompilation: yes
 Encoding: UTF-8
 Suggests:
