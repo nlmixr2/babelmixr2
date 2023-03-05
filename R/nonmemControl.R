@@ -25,6 +25,9 @@
 #' @param cov The NONMEM covariance method
 #' @param maxeval NONMEM's maxeval (for non posthoc methods)
 #' @param tol NONMEM tolerance for ODE solving advan
+#' @param atol NONMEM absolute tolerance for ODE solving
+#' @param sstol NONMEM tolerance for steady state ODE solving
+#' @param ssatol NONMEM absolute tolerance for steady state ODE solving
 #' @param sigl NONMEM sigl estimation option
 #' @param sigdig the significant digits for NONMEM
 #' @param print The print number for NONMEM
@@ -76,6 +79,9 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           cov=c("r,s", "r", "s", ""),
                           maxeval=100000,
                           tol=6,
+                          atol=12,
+                          sstol=6,
+                          ssatol=12,
                           sigl=12,
                           sigdig=3,
                           print=1,
@@ -113,6 +119,9 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertIntegerish(print, lower=1, len=1, any.missing=FALSE)
   checkmate::assertLogical(noabort, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(tol, lower=1, len=1, any.missing=FALSE)
+  checkmate::assertIntegerish(atol, lower=1, len=1, any.missing=FALSE)
+  checkmate::assertIntegerish(sstol, lower=1, len=1, any.missing=FALSE)
+  checkmate::assertIntegerish(ssatol, lower=1, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(sigl, lower=1, upper=14, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(iniSigDig, lower=1, len=1, any.missing=FALSE)
   checkmate::assertLogical(protectZeros, len=1, any.missing=FALSE)
@@ -157,13 +166,20 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   } else {
     genRxControl <- FALSE
     if (is.null(rxControl)) {
-      #FIXME how to determine atol/rtol from NONMEM model
       rxControl <- rxode2::rxControl(
+        rtol=10^(-tol),
+        atol=10^(-atol),
+        ssRtol=10^(-sstol),
+        ssAtol=10^(-ssatol),
         covsInterpolation="nocb",
         method="liblsoda"
       )
       genRxControl <- TRUE
     } else if (is.list(rxControl)) {
+      rxControl$rtol <- 10^(-rtol)
+      rxControl$atol <- 10^(-atol)
+      rxControl$ssRtol <- 10^(-sstol)
+      rxControl$ssAtol <- 10^(-ssatol)
       rxControl$covsInterpolation <- "nocb"
       rxControl$method <- "liblsoda"
       rxControl <- do.call(rxode2::rxControl, rxControl)
@@ -187,6 +203,9 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                noabort=noabort,
                iniSigDig=iniSigDig,
                tol=tol,
+               atol=atol,
+               sstol=sstol,
+               ssatol=ssatol,
                sigl=sigl,
                muRef=muRef,
                sigdig=sigdig,
