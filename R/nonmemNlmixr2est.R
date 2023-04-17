@@ -114,6 +114,11 @@
     "Log-likelihood" = as.numeric(.llik), check.names = FALSE
   )
   .env$method <- "nonmem"
+  .time <- get("time", .env$env)
+  .time <- .time[,!(names(.time) %in% c("optimize", "covariance"))]
+  assign("time",
+         cbind(.time, data.frame(NONMEM=.ui$nonmemRunTime)),
+         .env)
   nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .env$ofvType)
   env
 }
