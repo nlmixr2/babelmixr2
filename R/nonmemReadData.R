@@ -35,15 +35,37 @@ rxUiGet.nonmemOutputExt <- function(x, ...) {
 }
 
 .getThetaNames <- function(ui) {
-  .iniDf <- ui$iniDf
-  .iniDf$name[!is.na(!.iniDf$ntheta)]
+  if (exists("file", envir=ui)) {
+    # here we are unsure of the theta name order since it could have
+    # been rearranged
+    .ext <- ui$nonmemOutputLst
+    .theta <- .ext$theta
+    .iniTheta <- ui$iniDf
+    .iniTheta <- .iniTheta[!is.na(.iniTheta$ntheta), ]
+    vapply(.theta, function(x) {
+      .w <- which(abs(.iniTheta$est-x) < 1e-6)
+      if (length(.w) == 1L) return(.iniTheta$name[.w])
+      stop("there is a mismatch between estimates for nonmem2rx conversion",
+           call.=FALSE)
+    }, character(1), USE.NAMES=FALSE)
+  } else {
+    # here we control the theta name order
+    .iniDf <- ui$iniDf
+    .iniDf$name[!is.na(.iniDf$ntheta)]
+  }
 }
 
 #' @export
 rxUiGet.nonmemFullTheta <- function(x, ...) {
   .ui <- x[[1]]
   .ext <- rxUiGet.nonmemOutputLst(x, ...)
-  setNames(.ext$theta, .getThetaNames(.ui))
+  .ret <- setNames(.ext$theta, .getThetaNames(.ui))
+  if (exists("file", envir=.ui)) {
+    .iniDf <- .ui$iniDf
+    # use same ordering of ui
+    .ret <- .ret[.iniDf$name[!is.na(.iniDf$ntheta)]]
+  }
+  .ret
 }
 
 #' @export
@@ -60,10 +82,25 @@ rxUiGet.nonmemThetaDf <- function(x, ...) {
 }
 
 .getEtaNames <- function(ui) {
-  .iniDf <- ui$iniDf
-  .iniDf <- .iniDf[is.na(.iniDf$ntheta), ]
-  .iniDf <- .iniDf[.iniDf$neta1 == .iniDf$neta2, ]
-  .iniDf$name
+  if (exists("file", ui)) {
+    # here we are unsure of the eta name order since it could have
+    # been rearranged
+    .ext <- ui$nonmemOutputLst
+    .omega <- .ext$omega
+    .iniEta <- ui$iniDf
+    .iniEta <- .iniEta[which(.iniEta$neta1 == .iniEta$neta2), ]
+    vapply(seq_along(diag(.omega)), function(x) {
+      .w <- which(abs(.iniEta$est- .omega[x, x]) < 1e-6)
+      if (length(.w) == 1L) return(.iniEta$name[.w])
+      stop("there is a mismatch between eta estimates for nonmem2rx conversion",
+           call.=FALSE)
+    }, character(1), USE.NAMES=FALSE)
+  } else {
+    .iniDf <- ui$iniDf
+    .iniDf <- .iniDf[is.na(.iniDf$ntheta), ]
+    .iniDf <- .iniDf[.iniDf$neta1 == .iniDf$neta2, ]
+    .iniDf$name
+  }
 }
 
 #' @export
@@ -73,6 +110,15 @@ rxUiGet.nonmemOutputOmega <- function(x, ...) {
   .ext <- rxUiGet.nonmemOutputLst(x, ...)
   .omega <- .ext$omega
   dimnames(.omega) <- list(.n, .n)
+  if (exists("file", envir=.ui)) {
+    # here we are unsure of the eta name order since it could have
+    # been rearranged;
+    # match ui
+    .iniDf <- .ui$iniDf
+    .iniDf <- .iniDf[is.na(.iniDf$ntheta), ]
+    .iniDf <- .iniDf[.iniDf$neta1 == .iniDf$neta2, ]
+    .omega <- .omega[.iniDf$name,.iniDf$name]
+  }
   .omega
 }
 
@@ -87,16 +133,28 @@ rxUiGet.nonmemIniDf <- function(x, ...) {
 #' @export
 rxUiGet.nonmemEtaObf <- function(x, ...) {
   .ui <- x[[1]]
-  .exportPath <- rxUiGet.nonmemExportPath(x, ...)
-  .etaTable <- rxUiGet.nonmemEtaTableName(x, ...)
-  if (!file.exists(file.path(.exportPath, .etaTable))) return(NULL)
-  .ret <- withr::with_dir(.exportPath,
-                          nonmem2rx::nmtab(.etaTable))
-  .ret <- .ret[.ret$NMREP ==1, names(.ret) != "NMREP"]
-  .n <- c("ID", .getEtaNames(.ui), "OBJI")
-  names(.ret) <- .n
-  .ret$ID <- as.integer(.ret$ID)
-  .ret
+  if (exists("etaData", envir=.ui)) {
+    .dat <- .ui$etaData
+    .iniDf <- .ui$iniDf
+    .iniDf <- .iniDf[is.na(.iniDf$ntheta), ]
+    .iniDf <- .iniDf[.iniDf$neta1 == .iniDf$neta2, ]
+
+    .dat <- .dat[,c("ID",.iniDf$name)]
+    .dat$OBJI <- NA # not captured, could look...
+    .dat$ID <- as.integer(.dat$ID)
+    return(.dat)
+  } else {
+    .exportPath <- rxUiGet.nonmemExportPath(x, ...)
+    .etaTable <- rxUiGet.nonmemEtaTableName(x, ...)
+    if (!file.exists(file.path(.exportPath, .etaTable))) return(NULL)
+    .ret <- withr::with_dir(.exportPath,
+                            nonmem2rx::nmtab(.etaTable))
+    .ret <- .ret[.ret$NMREP ==1, names(.ret) != "NMREP"]
+    .n <- c("ID", .getEtaNames(.ui), "OBJI")
+    names(.ret) <- .n
+    .ret$ID <- as.integer(.ret$ID)
+    .ret
+  }
 }
 
 .getNonmemOrderNames <- function(ui) {
@@ -122,15 +180,21 @@ rxUiGet.nonmemEtaObf <- function(x, ...) {
 #' @export
 rxUiGet.nonmemCovariance <- function(x, ...) {
   .ui <- x[[1]]
-  .exportPath <- rxUiGet.nonmemExportPath(x, ...)
-  .covFile <- rxUiGet.nonmemCovFile(x, ...)
-  if (!file.exists(file.path(.exportPath, .covFile))) return(NULL)
-  .ret <- as.matrix(withr::with_dir(.exportPath,
-                                    nonmem2rx::nmcov(.covFile)))
-  .d <- .getNonmemOrderNames(.ui)
-  dimnames(.ret) <- list(.d, .d)
-  .t <- .getThetaNames(.ui)
-  .ret[.t, .t]
+  if (exists("thetaMat", envir=.ui)) {
+    .iniDf <- .ui$iniDf
+    .n <- .iniDf$name[!is.na(.iniDf$ntheta)]
+    .ui$thetaMat[.n, .n]
+  } else {
+    .exportPath <- rxUiGet.nonmemExportPath(x, ...)
+    .covFile <- rxUiGet.nonmemCovFile(x, ...)
+    if (!file.exists(file.path(.exportPath, .covFile))) return(NULL)
+    .ret <- as.matrix(withr::with_dir(.exportPath,
+                                      nonmem2rx::nmcov(.covFile)))
+    .d <- .getNonmemOrderNames(.ui)
+    dimnames(.ret) <- list(.d, .d)
+    .t <- .getThetaNames(.ui)
+    .ret[.t, .t]
+  }
 }
 
 #' @export
@@ -157,6 +221,9 @@ rxUiGet.nonmemParHistory <- function(x, ...) {
 #' @export
 rxUiGet.nonmemObjfType <- function(x, ...) {
   .ui <- x[[1]]
+  if (exists("nonmemData", .ui)) {
+    return("nonmem2rx")
+  }
   .est <- rxode2::rxGetControl(.ui, "est", "focei")
   if (.est %in% c("focei", "posthoc")) {
     return("nonmem focei")
@@ -179,14 +246,28 @@ rxUiGet.nonmemRunTime <- function(x, ...) {
 
 #' @export
 rxUiGet.nonmemPreds <- function(x, ...) {
-  .exportPath <- rxUiGet.nonmemExportPath(x, ...)
-  .sdTable <- rxUiGet.nonmemSdTableName(x, ...)
-  if (!file.exists(file.path(.exportPath, .sdTable))) return(NULL)
-  .ret <- withr::with_dir(.exportPath,
-                          nonmem2rx::nmtab(.sdTable))
-  .ret <- .ret[.ret$NMREP ==1, names(.ret) != "NMREP"]
-  setNames(.ret,
-           c("ID", "TIME", "nonmemIPRED", "nonmemPRED", "RXROW"))
+  .ui <- x[[1]]
+  if (exists("nonmemData", envir=.ui)) {
+    .ipredData <- .ui$ipredData[,c("ID", "TIME", "IPRED")]
+    .predData <- .ui$predData[,c("PRED"), drop=FALSE]
+    if (length(.predData$PRED) == length(.ipredData$ID)) {
+      .ret <- cbind(.ipredData, .predData)
+      .ret$RXROW <- seq_along(.ipredData$ID)
+      names(.ret) <- c("ID", "TIME", "nonmemIPRED", "nonmemPRED", "RXROW")
+      return(.ret)
+    }
+    return(NULL)
+  } else {
+    .exportPath <- rxUiGet.nonmemExportPath(x, ...)
+    .sdTable <- rxUiGet.nonmemSdTableName(x, ...)
+    if (!file.exists(file.path(.exportPath, .sdTable))) return(NULL)
+    .ret <- withr::with_dir(.exportPath,
+                            nonmem2rx::nmtab(.sdTable))
+    .ret <- .ret[.ret$NMREP ==1, names(.ret) != "NMREP"]
+    setNames(.ret,
+             c("ID", "TIME", "nonmemIPRED", "nonmemPRED", "RXROW"))
+    
+  }
 }
 
 #' @export

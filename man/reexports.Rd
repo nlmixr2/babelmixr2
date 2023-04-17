@@ -12,6 +12,7 @@
 \alias{nmObjHandleControlObject}
 \alias{nmObjGetControl}
 \alias{nonmem2rx}
+\alias{as.nonmem2rx}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -21,7 +22,7 @@ below to see their documentation.
 \describe{
   \item{nlmixr2est}{\code{\link[nlmixr2est:getValidNlmixrControl]{getValidNlmixrCtl}}, \code{\link[nlmixr2est]{nlmixr2Est}}, \code{\link[nlmixr2est]{nmObjGetControl}}, \code{\link[nlmixr2est]{nmObjGetFoceiControl}}, \code{\link[nlmixr2est]{nmObjHandleControlObject}}}
 
-  \item{nonmem2rx}{\code{\link[nonmem2rx]{nonmem2rx}}}
+  \item{nonmem2rx}{\code{\link[nonmem2rx]{as.nonmem2rx}}, \code{\link[nonmem2rx]{nonmem2rx}}}
 
   \item{rxode2}{\code{\link[rxode2:dot-minfo]{.minfo}}, \code{\link[rxode2]{rxModelVars}}, \code{\link[rxode2]{rxUiGet}}}
 }}

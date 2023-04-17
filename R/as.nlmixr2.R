@@ -5,13 +5,63 @@
 #' @return nlmixr2 fit object
 #' @export 
 #' @author Matthew L. Fidler
-#' @examples 
+#' @examples
+#'
+#' # First read in the model (but without residuals)
+#' mod <- nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
+#'                  determineError=FALSE, lst=".res", save=FALSE)
+#'
+#' # define the model with residuals (and change the name of the
+#' # parameters) In this step you need to be careful to not change the
+#' # estimates and make sure the residual estimates are correct (could
+#' # have to change var to sd).
+#' 
+#'  mod2 <-function() {
+#'    ini({
+#'      lcl <- 1.37034036528946
+#'      lvc <- 4.19814911033061
+#'      lq <- 1.38003493562413
+#'      lvp <- 3.87657341967489
+#'      RSV <- c(0, 0.196446108190896, 1)
+#'      eta.cl ~ 0.101251418415006
+#'      eta.v ~ 0.0993872449483344
+#'      eta.q ~ 0.101302674763154
+#'      eta.v2 ~ 0.0730497519364148
+#'    })
+#'    model({
+#'      cmt(CENTRAL)
+#'      cmt(PERI)
+#'      cl <- exp(lcl + eta.cl)
+#'      v <- exp(lvc + eta.v)
+#'      q <- exp(lq + eta.q)
+#'      v2 <- exp(lvp + eta.v2)
+#'      v1 <- v
+#'      scale1 <- v
+#'      k21 <- q/v2
+#'      k12 <- q/v
+#'      d/dt(CENTRAL) <- k21 * PERI - k12 * CENTRAL - cl * CENTRAL/v1
+#'      d/dt(PERI) <- -k21 * PERI + k12 * CENTRAL
+#'      f <- CENTRAL/scale1
+#'      f ~ prop(RSV)
+#'    })
+#'  }
+#'
+#' # now we create another nonmem2rx object that validates the model above:
+#' 
+#' new <- as.nonmem2rx(mod2, mod)
+#'
+#' # once that is done, you can translate to a full nlmixr2 fit (if you wish)
+#'
+#' fit <- as.nlmixr2(new)
+#'
+#' print(fit)
 as.nlmixr2 <- function(x, ...) {
   UseMethod("as.nlmixr2")
 }
 #' @export
 as.nlmixr <- as.nlmixr2
 
+#' @export
 as.nlmixr2.default <- function(x, ...) {
   stop("cannot figure out how to create an nlmixr2 object from the input",
        call.=FALSE)

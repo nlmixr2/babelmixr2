@@ -1,6 +1,9 @@
 #' @export
 rxUiGet.nonmemModelName <- function(x, ...) {
   .ui <- x[[1]]
+  if (exists("file", envir=.ui)) {
+    return(sub("[.][^.]*$", "",basename(.ui$file)))
+  }
   .modelName <- rxode2::rxGetControl(.ui, "modelName", NULL)
   if (is.null(.modelName)) {
     .modelName <- .ui$modelName
@@ -16,6 +19,9 @@ rxUiGet.nonmemModelName <- function(x, ...) {
 #' @export
 rxUiGet.nonmemExportPath <- function(x, ...) {
   .ui <- x[[1]]
+  if (exists("file", envir=.ui)) {
+    return(dirname(.ui$file))
+  }
   .extra <- ""
   if (exists(".num", .ui)) {
     .num <- get(".num", .num, .ui)
@@ -68,7 +74,12 @@ rxUiGet.nonmemNmctl <- function(x, ...) {
 #' @export
 rxUiGet.nonmemNmlst <- function(x, ...) {
   .ui <- x[[1]]
-  paste0(rxUiGet.nonmemModelName(x, ...), rxode2::rxGetControl(.ui, "outputExtension", ".lst"))
+  if (exists("outputExtension", envir=.ui)) {
+    .lst <- .ui$outputExtension
+  } else {
+    .lst <- ".lst"
+  }
+  paste0(rxUiGet.nonmemModelName(x, ...), rxode2::rxGetControl(.ui, "outputExtension", .lst))
 }
 
 #' @export
@@ -86,7 +97,6 @@ rxUiGet.nonmemQs <- function(x, ...) {
          ".qs")
 }
 
-
 #' @export
 rxUiGet.nonmemXml <- function(x, ...) {
   .ui <- x[[1]]
@@ -97,7 +107,12 @@ rxUiGet.nonmemXml <- function(x, ...) {
 #' @export
 rxUiGet.nonmemLst <- function(x, ...) {
   .ui <- x[[1]]
-  .lst <- rxode2::rxGetControl(.ui, "outputExtension", ".lst")
+  if (exists("outputExtension", envir=.ui)) {
+    .lst <- .ui$outputExtension
+  } else {
+    .lst <- ".lst"
+  }
+  .lst <- rxode2::rxGetControl(.ui, "outputExtension", .lst)
   paste0(rxUiGet.nonmemModelName(x, ...), .lst)
 }
 
