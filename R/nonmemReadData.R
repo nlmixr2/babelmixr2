@@ -249,7 +249,7 @@ rxUiGet.nonmemPreds <- function(x, ...) {
   .ui <- x[[1]]
   if (exists("nonmemData", envir=.ui)) {
     .ipredData <- .ui$ipredData[,c("ID", "TIME", "IPRED")]
-    .predData <- .ui$predData[,c("PRED"), drop=FALSE]
+    .predData <- .ui$predData[,"PRED", drop=FALSE]
     if (length(.predData$PRED) == length(.ipredData$ID)) {
       .ret <- cbind(.ipredData, .predData)
       .ret$RXROW <- seq_along(.ipredData$ID)
