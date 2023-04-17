@@ -2,14 +2,19 @@
 % Please edit documentation in R/as.nlmixr2.R
 \name{as.nlmixr2}
 \alias{as.nlmixr2}
+\alias{as.nlmixr}
 \title{Convert an object to a nlmixr2 fit object}
 \usage{
-as.nlmixr2(x, ...)
+as.nlmixr2(x, ..., table = nlmixr2est::tableControl())
+
+as.nlmixr(x, ..., table = nlmixr2est::tableControl())
 }
 \arguments{
 \item{x}{Object to convert}
 
 \item{...}{Other arguments}
+
+\item{table}{is the `nlmixr2est::tableControl()` options}
 }
 \value{
 nlmixr2 fit object

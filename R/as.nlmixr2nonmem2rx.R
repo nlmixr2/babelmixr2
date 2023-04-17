@@ -31,7 +31,7 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
 }
 
 #' @export
-as.nlmixr2.nonmem2rx <- function(x, ..., table=tableControl()) {
+as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl()) {
   #need x$nonmemData
   # need x to have at least one endpoint
   # The environment needs:

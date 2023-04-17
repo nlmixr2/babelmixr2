@@ -2,6 +2,7 @@
 #'  
 #' @param x Object to convert
 #' @param ... Other arguments
+#' @param table is the `nlmixr2est::tableControl()` options
 #' @return nlmixr2 fit object
 #' @export 
 #' @author Matthew L. Fidler
@@ -55,14 +56,15 @@
 #' fit <- as.nlmixr2(new)
 #'
 #' print(fit)
-as.nlmixr2 <- function(x, ...) {
+as.nlmixr2 <- function(x, ..., table=nlmixr2est::tableControl()) {
   UseMethod("as.nlmixr2")
 }
+#' @rdname as.nlmixr2
 #' @export
 as.nlmixr <- as.nlmixr2
 
 #' @export
-as.nlmixr2.default <- function(x, ...) {
+as.nlmixr2.default <- function(x, ..., table=nlmixr2est::tableControl()) {
   stop("cannot figure out how to create an nlmixr2 object from the input",
        call.=FALSE)
 }

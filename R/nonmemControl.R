@@ -176,7 +176,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
       )
       genRxControl <- TRUE
     } else if (is.list(rxControl)) {
-      rxControl$rtol <- 10^(-rtol)
+      rxControl$rtol <- 10^(-tol)
       rxControl$atol <- 10^(-atol)
       rxControl$ssRtol <- 10^(-sstol)
       rxControl$ssAtol <- 10^(-ssatol)
