@@ -70,9 +70,12 @@ test_that("warfarin NONMEM reading", {
     f <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
                 nonmemControl(readRounding=TRUE, modelName="pk.turnover.emax3"))
 
+    expect_true(any(names(f$time) == "NONMEM"))
+
     expect_true(inherits(f, "nlmixr2FitData"))
 
-    # Note this shouldn't have a covariance step so you can add it (at least a nlmixr2 covariance step)
+    # Note this shouldn't have a covariance step so you can add it (at
+    # least a nlmixr2 covariance step)
     expect_error(getVarCov(f), NA)
 
     # nlmixr2 is more generous in what constitutes a covariance
