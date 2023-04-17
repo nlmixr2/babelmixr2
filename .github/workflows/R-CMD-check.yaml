@@ -1,4 +1,4 @@
-# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+## Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
         shell: bash
 
       - uses: actions/checkout@v3
-      - uses: r-lib/actions/setup-tinytex@v2
+
       - uses: r-lib/actions/setup-pandoc@v2
 
       - uses: r-lib/actions/setup-r@v2
@@ -50,9 +50,11 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          pak-version: devel
+          cache-version: 2
+          pak-version: stable
           extra-packages: |
             any::rcmdcheck
+            nlmixr2/dparser-R
             nlmixr2/lotri
             nlmixr2/rxode2ll
             nlmixr2/rxode2parse
@@ -66,10 +68,7 @@ jobs:
             nlmixr2/nonmem2rx
             lixoftConnectors=?ignore
           needs: check
-          
-      - run: tlmgr --version
-        
+
       - uses: r-lib/actions/check-r-package@v2
         with:
-          build_args: 'c("--no-manual", "--compact-vignettes=gs+qpdf")'
           upload-snapshots: true
