@@ -1,4 +1,4 @@
-# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+## Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
   push:
@@ -20,18 +20,24 @@ jobs:
         config:
           - {os: macos-latest,   r: 'release'}
           - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
-          - {os: ubuntu-latest,   r: 'release'}
-          #- {os: ubuntu-latest,   r: 'oldrel-1'}
+          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest,  r: 'release'}
 
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
       RSPM: ${{ matrix.config.rspm }}
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       _R_CHECK_FORCE_SUGGESTS_: false
-      R_KEEP_PKG_SOURCE: yes
 
     steps:
+      - name: Install deps on MacOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install --cask xquartz
+          brew install cairo
+          brew install udunits
+        shell: bash
+
       - uses: actions/checkout@v3
 
       - uses: r-lib/actions/setup-pandoc@v2
@@ -44,9 +50,11 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          pak-version: devel
+          cache-version: 2
+          pak-version: stable
           extra-packages: |
             any::rcmdcheck
+            nlmixr2/dparser-R
             nlmixr2/lotri
             nlmixr2/rxode2ll
             nlmixr2/rxode2parse
@@ -54,9 +62,11 @@ jobs:
             nlmixr2/rxode2et
             nlmixr2/rxode2
             nlmixr2/nlmixr2est
+            nlmixr2/nlmixr2extra
             nlmixr2/nlmixr2plot
             nlmixr2/nlmixr2
             nlmixr2/nonmem2rx
+            lixoftConnectors=?ignore
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2

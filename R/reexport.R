@@ -34,3 +34,7 @@ nlmixr2est::nmObjGetControl
 #' @export
 nonmem2rx::nonmem2rx
 
+#' @importFrom nonmem2rx as.nonmem2rx
+#' @export
+nonmem2rx::as.nonmem2rx
+
