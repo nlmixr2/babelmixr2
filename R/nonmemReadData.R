@@ -308,7 +308,12 @@ rxUiGet.nonmemRoundingErrors <- function(x, ...) {
   .tmp$RXROW <- fit$env$.rownum
   .by <- c("ID", "TIME", "RXROW")
   .ret <- merge(.np, .tmp, by=.by)
-  .ci <- (1 - fit$nonmemControl$ci) / 2
+-  if (!is.numeric(fit$nonmemControl$ci)) {
+    .ci0 <- 0.95
+  } else {
+    .ci0 <- fit$nonmemControl$ci
+  }
+  .ci <- (1 - .ci0) / 2
   .q <- c(0, .ci, 0.5, 1 - .ci, 1)
   .qi <- stats::quantile(with(.ret, 100*abs((IPRED-nonmemIPRED)/nonmemIPRED)), .q, na.rm=TRUE)
   .qp <- stats::quantile(with(.ret, 100*abs((PRED-nonmemPRED)/nonmemPRED)), .q, na.rm=TRUE)
@@ -316,20 +321,20 @@ rxUiGet.nonmemRoundingErrors <- function(x, ...) {
   .qap <- stats::quantile(with(.ret, abs((PRED-nonmemPRED)/nonmemPRED)), .q, na.rm=TRUE)
   .sigdig <- 3
   .msg <- c(paste0("IPRED relative difference compared to Nonmem IPRED: ", round(.qi[3], 2),
-                 "%; ", fit$nonmemControl$ci * 100,"% percentile: (",
+                 "%; ", .ci0 * 100,"% percentile: (",
                  round(.qi[2], 2), "%,", round(.qi[4], 2), "%); rtol=", signif(.qi[3] / 100,
                                                                                digits=.sigdig)),
             paste0("PRED relative difference compared to Nonmem PRED: ", round(.qp[3], 2),
-                   "%; ", fit$nonmemControl$ci * 100,"% percentile: (",
+                   "%; ", .ci0 * 100,"% percentile: (",
                    round(.qp[2], 2), "%,", round(.qp[4], 2), "%); rtol=", signif(.qp[3] / 100,
                                                                                  digits=.sigdig)),
             paste0("IPRED absolute difference compared to Nonmem IPRED: atol=",
                    signif(.qai[3], .sigdig),
-                 "; ", fit$nonmemControl$ci * 100,"% percentile: (",
+                 "; ", .ci0 * 100,"% percentile: (",
                  signif(.qai[2], .sigdig), ", ", signif(.qai[4], .sigdig), ")"),
             paste0("PRED absolute difference compared to Nonmem PRED: atol=",
                    signif(.qap[3], .sigdig),
-                   "; ", fit$nonmemControl$ci * 100,"% percentile: (",
+                   "; ", .ci0 * 100,"% percentile: (",
                    signif(.qap[2], .sigdig), ",", signif(.qp[4], .sigdig), ")"))
   list(individualRel=.qi , popRel=.qp,
        individualAbs=.qai, popAbs=.qap,
