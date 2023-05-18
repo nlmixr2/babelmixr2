@@ -47,5 +47,10 @@ test_that("nlmixr2 translation from nonmem2x", {
   expect_true(inherits(fit, "nlmixr2FitData"))
   expect_true(any(names(fit$time) == "NONMEM"))
 
+  rx <- nonmem2rx(system.file("mods/err/run006.lst", package="nonmem2rx"))
+  fit <- as.nlmixr(rx)
+  expect_true(inherits(fit, "nlmixr2FitData"))
+  expect_true(any(names(fit$time) == "NONMEM"))
+
 })
 
