@@ -59,6 +59,9 @@ rxUiGet.nonmemOutputExt <- function(x, ...) {
 rxUiGet.nonmemFullTheta <- function(x, ...) {
   .ui <- x[[1]]
   .ext <- rxUiGet.nonmemOutputLst(x, ...)
+  if (is.null(.ext$theta)) {
+    stop('cannot locate NONMEM output', call.=FALSE)
+  }
   .ret <- setNames(.ext$theta, .getThetaNames(.ui))
   if (exists("file", envir=.ui)) {
     .iniDf <- .ui$iniDf
@@ -248,8 +251,23 @@ rxUiGet.nonmemRunTime <- function(x, ...) {
 rxUiGet.nonmemPreds <- function(x, ...) {
   .ui <- x[[1]]
   if (exists("nonmemData", envir=.ui)) {
-    .ipredData <- .ui$ipredData[,c("ID", "TIME", "IPRED")]
+    .ipredData <- .ui$ipredData
+    .w <- which(tolower(names(.ipredData)) == "id")
+    if (length(.w) != 1L) return(NULL)
+    names(.ipredData)[.w] <- "ID"
+    .w <- which(tolower(names(.ipredData)) == "time")
+    if (length(.w) != 1L) return(NULL)
+    names(.ipredData)[.w] <- "TIME"
+    .w <- which(tolower(names(.ipredData)) == "ipred")
+    if (length(.w) != 1L) return(NULL)
+    names(.ipredData)[.w] <- "IPRED"
+    #[,c("ID", "TIME", "IPRED")]
+    .ipredData <- .ipredData[,c("ID", "TIME", "IPRED")]
     .predData <- .ui$predData[,"PRED", drop=FALSE]
+    .w <- which(tolower(names(.predData)) == "pred")
+    if (length(.w) != 1L) return(NULL)
+    names(.predData)[.w] <- "PRED"
+    .predData <- .predData[,"PRED", drop=FALSE]
     if (length(.predData$PRED) == length(.ipredData$ID)) {
       .ret <- cbind(.ipredData, .predData)
       .ret$RXROW <- seq_along(.ipredData$ID)
@@ -328,14 +346,12 @@ rxUiGet.nonmemRoundingErrors <- function(x, ...) {
                    "%; ", .ci0 * 100,"% percentile: (",
                    round(.qp[2], 2), "%,", round(.qp[4], 2), "%); rtol=", signif(.qp[3] / 100,
                                                                                  digits=.sigdig)),
-            paste0("IPRED absolute difference compared to Nonmem IPRED: atol=",
-                   signif(.qai[3], .sigdig),
-                 "; ", .ci0 * 100,"% percentile: (",
-                 signif(.qai[2], .sigdig), ", ", signif(.qai[4], .sigdig), ")"),
-            paste0("PRED absolute difference compared to Nonmem PRED: atol=",
-                   signif(.qap[3], .sigdig),
-                   "; ", .ci0 * 100,"% percentile: (",
-                   signif(.qap[2], .sigdig), ",", signif(.qp[4], .sigdig), ")"))
+            paste0("IPRED absolute difference compared to Nonmem IPRED: ", .ci0 * 100,"% percentile: (",
+                 signif(.qai[2], .sigdig), ", ", signif(.qai[4], .sigdig), "); atol=",
+                   signif(.qai[3], .sigdig)),
+            paste0("PRED absolute difference compared to Nonmem PRED: ", .ci0 * 100,"% percentile: (",
+                   signif(.qap[2], .sigdig), ",", signif(.qp[4], .sigdig), "); atol=",
+                   signif(.qap[3], .sigdig)))
   list(individualRel=.qi , popRel=.qp,
        individualAbs=.qai, popAbs=.qap,
        message=.msg)
