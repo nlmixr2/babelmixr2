@@ -1,0 +1,196 @@
+---
+title: "Running Monolix"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo=TRUE
+)
+```
+
+```{r setup, include=FALSE}
+if (!dir.exists("pk.turnover.emax3-monolix")) {
+  stop("not setup correctly")
+} else {
+  if (file.exists("pk.turnover.emax3-monolix/nlmixr.qs")) {
+    unlink("pk.turnover.emax3-monolix/nlmixr.qs")
+  }
+}
+library(rxode2)
+library(tidyverse)
+library(babelmixr2)
+```
+
+
+# Step 0: What do you need to do to have `nlmixr2` run `Monolix` from a nlmixr2 model
+
+To use `Monolix` with nlmixr2, you do not need to change your data or your
+`nlmixr2` dataset. `babelmixr2` will do the heavy lifting here.
+
+You do need to setup how to run `Monolix`.  If you have setup the
+`lixoftConnectors` package from Monolix, no further setup is needed.
+Instead if you run `Monolix` from the command line for grid processing
+(for example) you can figure out the command to run `Monlix` (it is
+often useful to use the full command path and set it in the options,
+ie `options("babelmixr2.monolix"="monolix")` or use
+`monolixControl(runCommand="monolix")`.  If needed, I prefer the
+`options()` method since you only need to set it once.  This could
+also be a function if you prefer (but I will not cover using the
+function here).
+
+# Step 1: Run a `nlmixr2` in Monolix
+
+Lets take the classic warfarin example. The model we use in the `nlmixr2` vignettes is:
+
+```{r defineModel}
+pk.turnover.emax3 <- function() {
+  ini({
+    tktr <- log(1)
+    tka <- log(1)
+    tcl <- log(0.1)
+    tv <- log(10)
+    ##
+    eta.ktr ~ 1
+    eta.ka ~ 1
+    eta.cl ~ 2
+    eta.v ~ 1
+    prop.err <- 0.1
+    pkadd.err <- 0.1
+    ##
+    temax <- logit(0.8)
+    tec50 <- log(0.5)
+    tkout <- log(0.05)
+    te0 <- log(100)
+    ##
+    eta.emax ~ .5
+    eta.ec50  ~ .5
+    eta.kout ~ .5
+    eta.e0 ~ .5
+    ##
+    pdadd.err <- 10
+  })
+  model({
+    ktr <- exp(tktr + eta.ktr)
+    ka <- exp(tka + eta.ka)
+    cl <- exp(tcl + eta.cl)
+    v <- exp(tv + eta.v)
+    emax = expit(temax+eta.emax)
+    ec50 =  exp(tec50 + eta.ec50)
+    kout = exp(tkout + eta.kout)
+    e0 = exp(te0 + eta.e0)
+    ##
+    DCP = center/v
+    PD=1-emax*DCP/(ec50+DCP)
+    ##
+    effect(0) = e0
+    kin = e0*kout
+    ##
+    d/dt(depot) = -ktr * depot
+    d/dt(gut) =  ktr * depot -ka * gut
+    d/dt(center) =  ka * gut - cl / v * center
+    d/dt(effect) = kin*PD -kout*effect
+    ##
+    cp = center / v
+    cp ~ prop(prop.err) + add(pkadd.err)
+    effect ~ add(pdadd.err) | pca
+  })
+}
+```
+Once monolix is run, you can run the `nlmixr2` model using `Monolix` as if it is new estimation method:
+
+```{r runModel}
+fit <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix",
+                              monolixControl(modelName="pk.turnover.emax3"))
+```
+
+This fit issues an informational tidbit -
+
+- monolix parameter history needs expoted charts, please export charts
+
+This will automatically be generated as well when `lixoftConnectors`
+package is generated and you have a recent version of Monolix.  If you
+don't have that information then the important parameter history plots will 
+not be imported and you cannot see those plots.
+
+Just like with the NONMEM translation, the `monolixControl()` has
+`modelName` which helps control the output directory of `Monolix` (if
+not specified `babelmixr2` tries to guess based on the model name
+based on the input).
+
+Printing this out this `nlmixr2` fit you see:
+
+```{r displayFit}
+fit
+```
+
+Of particular interest is the comparison between Monolix predictions
+and nlmixr predictions. In this case, I believe that these also imply
+the models are predicting the same thing.  Note that the model
+predictions are not as close as they were with [NONMEM](https://nlmixr2.github.io/babelmixr2/articles/running-nonmem.html) because Monolix
+does not use the `lsoda` ODE solver.  Hence this small deviation is
+expected, but still gives a validated Monolix model.
+
+# Optional Step 2: Add conditional weighted residuals/focei objf to Monolix
+
+As in the case of `NONMEM`, this gives some things that are not
+available to Monolix, like adding conditional weighted residuals:
+
+```{r addCwres}
+fit <- addCwres(fit)
+```
+
+
+Which will add nlmixr's CWRES as well as adding the nlmixr2 `FOCEi` objective function
+
+Because you now have an objective function compared based on the same
+assumptions, you could compare the performance of Monolix and NONMEM
+based on objective function.
+
+To be fair, objective function values must always be used with
+caution.  How the model performs and predicts the data is far more
+valuable.
+
+# Optional Step 3: Use nlmixr2 for vpc, reporting, etc.
+
+Also since it is a `nlmixr2` object it would be easy to perform a VPC
+too:
+
+```{r vpc}
+v1s <- vpcPlot(fit, show=list(obs_dv=TRUE), scales="free_y") +
+  ylab("Warfarin Cp [mg/L] or PCA") +
+  xlab("Time [h]")
+
+v2s <- vpcPlot(fit, show=list(obs_dv=TRUE), pred_corr = TRUE, scales="free_y") +
+  ylab("Prediction Corrected Warfarin Cp [mg/L] or PCA") +
+  xlab("Time [h]")
+
+v1s
+
+v2s
+```
+
+# Notes about Monlix data translation
+
+The input dataset expected to be compatible with `rxode2` or
+`nlmixr2`.  This dataset is then converted to Monolix format:
+
+- The combination of `CMT` and Dose type creates a unique `ADM` variable. 
+
+- The `ADM` definition is saved in the monolix model file 
+
+- `babelmixr2` creates a macro describing the compartment, ie `compartment(cmt=#, amount=stateName)`
+
+- `babelmixr2` also creates a macro for each type of dosing:
+
+   - Bolus/infusion uses `depot()` and adds modeled lag time (`Tlag`) or bioavailibilty (`p`) if specified
+   
+   - Modeled rate uses `depot()` with `Tk0=amtDose/rate`. `babelmixr2`
+     also adds modeled lag time (`Tlag`) or bioavailibilty (`p`) if
+     specified
+   
+   - Modeled duration uses `depot()` with `Tk0=dur`, also add adds
+     modeled lag time (`Tlag`) or bioavailibilty (`p`) if specified
+     Turning off a compartment uses empty macro
+   

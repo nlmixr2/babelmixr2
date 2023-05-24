@@ -1,0 +1,9 @@
+parameter,statistics,p-value,test
+ktr,0.959794,0.09216,Shapiro-Wilk
+ka,0.969216,0.791041,Shapiro-Wilk
+cl,0.958445,0.220777,Shapiro-Wilk
+v,0.97191,0.853347,Shapiro-Wilk
+emax,0.976614,0.999362,Shapiro-Wilk
+ec50,0.966708,0.603634,Shapiro-Wilk
+kout,0.96649,0.534859,Shapiro-Wilk
+e0,0.952033,0.135474,Shapiro-Wilk

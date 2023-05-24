@@ -1,0 +1,7 @@
+residuals,statistics,p-value,test
+IWRES_rx_prd_cp,0.97372,2.84986e-05,Shapiro-Wilk
+PWRES_rx_prd_cp,0.994554,0.508215,Shapiro-Wilk
+NPDE_rx_prd_cp,0.993011,0.287728,Shapiro-Wilk
+IWRES_rx_prd_effect,0.982097,2.45776e-05,Shapiro-Wilk
+PWRES_rx_prd_effect,0.95276,6.9312e-07,Shapiro-Wilk
+NPDE_rx_prd_effect,0.986373,0.0258761,Shapiro-Wilk

@@ -1,0 +1,7 @@
+residuals,statistics,p-value,test
+IWRES_rx_prd_cp,-0.500153,0.616967,Symmetry
+PWRES_rx_prd_cp,-0.390465,0.696193,Symmetry
+NPDE_rx_prd_cp,-1.87629,0.0606155,Symmetry
+IWRES_rx_prd_effect,2.33087,0.0197602,Symmetry
+PWRES_rx_prd_effect,1.70374,0.0884294,Symmetry
+NPDE_rx_prd_effect,0.249674,0.80284,Symmetry

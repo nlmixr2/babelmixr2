@@ -1,0 +1,28 @@
+DESCRIPTION:
+model translated from `babelmixr2` and `nlmixr2` function pk.turnover.emax3 to pk.turnover.emax3-monolix.txt
+
+[LONGITUDINAL]
+input={ktr,ka,cl,v,emax,ec50,kout,e0}
+
+PK:
+; Define compartments with administrations
+compartment(cmt=1, amount=depot)
+; Define PK macros
+depot(type=1, target=depot, Tlag=0, p=1)
+
+EQUATION:
+   DCP = center/v
+   PD = 1-emax*DCP/(ec50+DCP)
+   effect_0 = e0
+   kin = e0*kout
+   ddt_depot = - ktr*depot
+   ddt_gut = ktr*depot-ka*gut
+   ddt_center = ka*gut-cl/v*center
+   ddt_effect = kin*PD-kout*effect
+   cp = center/v
+   rx_pred_cp = cp
+   rx_pred_effect = effect
+
+OUTPUT:
+output={rx_pred_cp, rx_pred_effect}
+

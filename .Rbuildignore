@@ -10,3 +10,4 @@
 ^logo.svg$
 ^CRAN-SUBMISSION$
 ^Readme.Rmd$
+^vignettes/articles$

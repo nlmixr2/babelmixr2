@@ -1,0 +1,141 @@
+********************************************************************************
+*                          pk.turnover.emax3.mlxtran                           *
+*                          May 13, 2022 at 18:01:26                            *
+*                          Monolix version : 2021R1                            *
+********************************************************************************
+
+
+ESTIMATION OF THE POPULATION PARAMETERS ________________________________________
+
+Fixed Effects ----------------------------    se_lin    rse(%)
+ktr_pop    :                          1.24     0.222      17.9
+ka_pop     :                          1.01     0.117      11.6
+cl_pop     :                         0.135   0.00696      5.17
+v_pop      :                          7.73     0.338      4.38
+emax_pop   :                         0.989   0.00594       0.6
+ec50_pop   :                          1.08    0.0962       8.9
+kout_pop   :                         0.053   0.00138      2.61
+e0_pop     :                          96.7       1.1      1.14
+
+Standard Deviation of the Random Effects -
+omega_ktr  :                         0.731     0.138      18.9
+omega_ka   :                         0.461    0.0909      19.7
+omega_cl   :                         0.279    0.0379      13.6
+omega_v    :                         0.223    0.0335        15
+omega_emax :                          0.38     0.671       176
+omega_ec50 :                         0.454    0.0643      14.2
+omega_kout :                        0.0786    0.0293      37.3
+omega_e0   :                        0.0508    0.0101      19.8
+
+Error Model Parameters -------------------
+pkadd__err :                         0.533    0.0625      11.7
+prop__err  :                        0.0986    0.0115      11.7
+pdadd__err :                          3.79     0.251      6.62
+
+Elapsed time (seconds):  1.1e+02
+CPU time     (seconds):  1.8e+02
+Exploratory phase iterations:      250 (Fixed number of iterations)
+Smoothing phase iterations:        200 (Fixed number of iterations)
+
+ _______________________________________________________________________________
+
+
+
+ESTIMATION OF THE INDIVIDUAL PARAMETERS ________________________________________
+
+
+Estimation of the individual parameters by Conditional Distribution ------------
+             min        Q1    median        Q3       max
+ktr  :      0.35      1.09       1.3      1.45      2.95
+ka   :     0.415     0.993      1.04      1.15         2
+cl   :    0.0761     0.108      0.13     0.162     0.271
+v    :      5.04      6.58      8.04      8.91      11.7
+emax :     0.987     0.988     0.989     0.989      0.99
+ec50 :     0.484      0.77      1.07       1.5      2.27
+kout :     0.048     0.051    0.0529    0.0548    0.0586
+e0   :      88.7      92.8      98.4      99.6       104
+
+Elapsed time (seconds):       17
+CPU time     (seconds):       30
+Iterations:       78 (Autostop)
+
+ -------------------------------------------------------------------------------
+
+
+Estimation of the individual parameters by Conditional Mode --------------------
+             min        Q1    median        Q3       max
+ktr  :     0.347      1.11      1.28      1.39      2.61
+ka   :     0.414     0.992      1.03      1.11      1.76
+cl   :    0.0761     0.109     0.131     0.163     0.269
+v    :      5.04      6.64         8      8.78      11.7
+emax :     0.988     0.989     0.989     0.989     0.991
+ec50 :     0.482     0.767      1.09      1.52      2.29
+kout :    0.0477    0.0513    0.0525    0.0548    0.0584
+e0   :        89      93.4      98.6      99.5       104
+
+Elapsed time (seconds):      1.9
+CPU time     (seconds):        3
+
+ -------------------------------------------------------------------------------
+
+ _______________________________________________________________________________
+
+
+
+ESTIMATION OF THE FISHER INFORMATION MATRIX ____________________________________
+
+
+Estimation of the Fisher information matrix by Linearization -------------------
+
+Correlation Matrix :
+   ktr_pop         1
+    ka_pop -0.017111         1
+    cl_pop -0.021374 -0.018523         1
+     v_pop -0.004078 0.0085747  0.027848         1
+  emax_pop -0.021974-0.0023433  0.012362-0.0040268         1
+  ec50_pop-0.00071981  0.017056 -0.039021  0.026086    0.2286         1
+  kout_pop -0.0162830.00023904 -0.042372  0.098148  -0.36411  0.015809         1
+    e0_pop 0.0054806 0.0013802 -0.010307  0.013655 0.0070293 -0.051158   0.12062         1
+ omega_ktr         0         0         0         0         0         0         0         0         1
+  omega_ka         0         0         0         0         0         0         0         0   -0.1056         1
+  omega_cl         0         0         0         0         0         0         0         0-0.00052871-0.00048743         1
+   omega_v         0         0         0         0         0         0         0         0-0.00018606-0.00030019 -0.014649         1
+omega_emax         0         0         0         0         0         0         0         0-0.0010566-0.00077824-0.000154710.00031575         1
+omega_ec50         0         0         0         0         0         0         0         0-1.5312e-05    -0.003-0.0017371-1.761e-05 -0.025016         1
+omega_kout         0         0         0         0         0         0         0         0-0.00183390.00097013-0.0007714  -0.01078 -0.028371  -0.01163         1
+  omega_e0         0         0         0         0         0         0         0         0-0.00011650.000607250.000339140.00061328 0.0088021 -0.001583  0.025308         1
+pkadd__err         0         0         0         0         0         0         0         00.00031521 0.0007005 -0.017677 0.0011347 -0.004526  -0.01066 -0.010929 0.0029409         1
+ prop__err         0         0         0         0         0         0         0         0 -0.015776 -0.011064-0.00041291 -0.046332-0.0016968 0.0015233-0.0017311-0.0003393  -0.58124         1
+pdadd__err         0         0         0         0         0         0         0         0-0.0015024 -0.010139-0.0028964-0.0028696 -0.061604 -0.024529  -0.26296  -0.16946 -0.025186 0.0031987         1
+
+                               min       max   max/min
+Eigen values           :      0.42       1.6       3.8
+
+Elapsed time (seconds):     0.12
+CPU time     (seconds):        0
+
+ -------------------------------------------------------------------------------
+
+ _______________________________________________________________________________
+
+
+
+ESTIMATION OF THE LOG-LIKELIHOOD _______________________________________________
+
+                                                           (lin)
+-2 x log-likelihood                       (OFV) :        2410.40
+Akaike Information Criteria               (AIC) :        2448.40
+Corrected Bayesian Information Criteria  (BICc) :        2506.10
+Bayesian Information Criteria             (BIC) :        2476.25
+
+Elapsed time                          (seconds) :           0.00
+CPU time                              (seconds) :           0.00
+
+ _______________________________________________________________________________
+
+DATASET INFORMATION
+Number of individuals: 32
+Number of observations (obsid 1): 251
+Number of observations (obsid 2): 232
+Number of doses: 32
+
