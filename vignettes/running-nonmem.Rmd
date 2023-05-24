@@ -1,0 +1,219 @@
+---
+title: "Running NONMEM with nlmixr2"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Running NONMEM with nlmixr2}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+if (!dir.exists("pk.turnover.emax3-nonmem")) {
+  stop("not setup correctly")
+}
+if (file.exists("pk.turnover.emax3-nonmem/pk.turnover.emax3-rounding.qs")) {
+  unlink("pk.turnover.emax3-nonmem/pk.turnover.emax3-rounding.qs")
+}
+if (file.exists("pk.turnover.emax4-nonmem/pk.turnover.emax4.qs")) {
+  unlink("pk.turnover.emax4-nonmem/pk.turnover.emax4.qs")
+}
+```
+
+```{r setup}
+library(babelmixr2)
+```
+
+# Step 0: What do you need to do to have `nlmixr2` run `NONMEM` from a nlmixr2 model
+
+To use `NONMEM` in nlmixr, you do not need to change your data or your
+`nlmixr2` dataset. `babelmixr2` will do the heavy lifting here.
+
+You do need to setup how to run `NONMEM`.  For many cases this is
+easy; You simply have to figure out the command to run `NONMEM` (it is
+often useful to use the full command path).  You can set it in
+`options("babelmixr2.nonmem"="nmfe743")` or use
+`nonmemControl(runCommand="nmfe743")`.  I prefer the `options()`
+method since you only need to set it once.  This could also be a
+function if you prefer (but I will not cover using the function here).
+
+# Step 1: Run a `nlmixr2` in NONMEM
+
+Lets take the classic warfarin example to start the comparison.
+
+The model we use in the `nlmixr2` vignettes is:
+
+```{r modelDef}
+library(babelmixr2)
+pk.turnover.emax3 <- function() {
+  ini({
+    tktr <- log(1)
+    tka <- log(1)
+    tcl <- log(0.1)
+    tv <- log(10)
+    ##
+    eta.ktr ~ 1
+    eta.ka ~ 1
+    eta.cl ~ 2
+    eta.v ~ 1
+    prop.err <- 0.1
+    pkadd.err <- 0.1
+    ##
+    temax <- logit(0.8)
+    tec50 <- log(0.5)
+    tkout <- log(0.05)
+    te0 <- log(100)
+    ##
+    eta.emax ~ .5
+    eta.ec50  ~ .5
+    eta.kout ~ .5
+    eta.e0 ~ .5
+    ##
+    pdadd.err <- 10
+  })
+  model({
+    ktr <- exp(tktr + eta.ktr)
+    ka <- exp(tka + eta.ka)
+    cl <- exp(tcl + eta.cl)
+    v <- exp(tv + eta.v)
+    emax = expit(temax+eta.emax)
+    ec50 =  exp(tec50 + eta.ec50)
+    kout = exp(tkout + eta.kout)
+    e0 = exp(te0 + eta.e0)
+    ##
+    DCP = center/v
+    PD=1-emax*DCP/(ec50+DCP)
+    ##
+    effect(0) = e0
+    kin = e0*kout
+    ##
+    d/dt(depot) = -ktr * depot
+    d/dt(gut) =  ktr * depot -ka * gut
+    d/dt(center) =  ka * gut - cl / v * center
+    d/dt(effect) = kin*PD -kout*effect
+    ##
+    cp = center / v
+    cp ~ prop(prop.err) + add(pkadd.err)
+    effect ~ add(pdadd.err) | pca
+  })
+}
+```
+
+Now you can run the `nlmixr2` model using `NONMEM` you simply can run it directly:
+
+```{r runRounding}
+try(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
+                              nonmemControl(readRounding=FALSE, modelName="pk.turnover.emax3")))
+```
+
+That this is the same way you would run an ordinary `nlmixr2`
+model, but it is simply a new estimation method `"nonmem"` with a new controller (`nonmemControl()`)
+to setup options for estimation.
+
+A few options in the `nonmemControl()` here is `modelName` which helps
+control the output directory of `NONMEM` (if not specified
+`babelmixr2` tries to guess based on the model name based on the
+input).
+
+If you try this yourself, you see that `NONMEM` fails with rounding
+errors. You could do the standard approach of changing `sigdig`,
+`sigl`, `tol` etc, to get a successful `NONMEM` model convergence, of
+course that is supported. But with `babelmixr2` you can *do more*.
+
+# Optional Step 2: Recover a failed NONMEM run
+
+One of the other approaches is to **ignore** the rounding errors that
+have occurred and read into `nlmixr2` anyway:
+
+```{r readRounding}
+# Can still load the model to get information (possibly pipe) and create a new model
+f <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
+            nonmemControl(readRounding=TRUE, modelName="pk.turnover.emax3"))
+```
+
+You may see more work happening than you expected to need for an already
+completed model.  When reading in a NONMEM model, `babelmixr2` grabs:
+
+- `NONMEM`'s objective function value
+- `NONMEM`'s covariance (if available)
+- `NONMEM`'s optimization history
+- `NONMEM`'s final parameter estimates (including the ETAs)
+- `NONMEM`'s `PRED` and `IPRED` values (for validation purposes)
+
+These are used to solve the ODEs *as if they came from an nlmixr2*
+optimization procedure.
+
+This means that you can compare the `IPRED` and `PRED` values of
+`nlmixr2`/`rxode2` and *know immediately* if your model validates.
+
+This is similar to the procedure Kyle Baron advocates for validating a
+NONMEM model against a `mrgsolve` model (see
+https://mrgsolve.org/blog/posts/2022-05-validate-translation/ and https://mrgsolve.org/blog/posts/2023-update-validation.html), 
+
+The advantage of this method is that you need to simply write one model to
+get a validated `roxde2`/`nlmixr2` model.
+
+In this case you can see the validation when you print the fit object:
+
+```{r printFit}
+print(f)
+```
+
+Which shows the `preds` and `ipreds` match between `NONMEM` and
+`nlmixr2` quite well.
+
+# Optional Step 3: Use `nlmixr2` to help understand why `NONMEM` failed
+
+Since it *is* a `nlmixr2` fit, you can do interesting things with this
+fit that you couldn't do in `NONMEM` or even in another translator.
+For example, if you wanted to add a covariance step you can with
+`getVarCov()`:
+
+```{r addCov}
+getVarCov(f)
+```
+
+`nlmixr2` is more generous in what constitutes a covariance step.  The
+`r,s` covariance matrix is the "most" successful covariance step for
+`focei`, but the system will fall back to other methods if necessary.
+
+While this covariance matrix is not `r,s`, and should be regarded with
+caution, it can still give us some clues on why this things are not working in
+`NONMEM`.
+
+When examining the fit, you can see the shrinkage is high for `temax`,
+`tktr` and `tka`, so they could be dropped, making things more likely
+to converge in `NONMEM`.
+
+# Optional Step 4: Use model piping to get a successful NONMEM run
+
+If we use model piping to remove the parameters, the new run will
+start at the last model's best estimates (saving a bunch of model development
+time).
+
+In this case, I specify the output directory `pk.turnover.emax4` with
+the control and get the following:
+
+```{r pipeToNewModel}
+f2 <- f %>% model(ktr <- exp(tktr)) %>%
+  model(ka <- exp(tka)) %>%
+  model(emax = expit(temax)) %>%
+  nlmixr(data=nlmixr2data::warfarin, est="nonmem",
+         control=nonmemControl(readRounding=FALSE,
+                               modelName="pk.turnover.emax4"))
+```
+
+You can see the `NONMEM` run is now successful and validates against
+the `rxode2` model below:
+
+```{r newModel}
+f2
+```
+
+One thing to emphasize: unlike other translators, you will know immediately
+if the translation is off because the model will not validate.  Hence
+you can start this process with confidence - you will know
+immediately if something is wrong.

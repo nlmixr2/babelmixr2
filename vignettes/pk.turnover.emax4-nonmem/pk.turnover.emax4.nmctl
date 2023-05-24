@@ -1,0 +1,111 @@
+$PROBLEM  translated from babelmixr2
+; comments show mu referenced model in ui$getSplitMuModel
+
+$DATA pk.turnover.emax4.csv IGNORE=@
+
+$INPUT ID TIME EVID AMT DV CMT DVID RXROW
+
+$SUBROUTINES ADVAN13 TOL=6
+
+$MODEL NCOMPARTMENTS=4
+     COMP(DEPOT, DEFDOSE) ; depot
+     COMP(GUT) ; gut
+     COMP(CENTER) ; center
+     COMP(EFFECT) ; effect
+
+$PK
+  MU_1=THETA(3)
+  MU_2=THETA(4)
+  MU_3=THETA(8)
+  MU_4=THETA(9)
+  MU_5=THETA(10)
+  KTR=DEXP(THETA(1)) ; ktr <- exp(tktr)
+  KA=DEXP(THETA(2)) ; ka <- exp(tka)
+  CL=DEXP(MU_1+ETA(1)) ; cl <- exp(tcl)
+  V=DEXP(MU_2+ETA(2)) ; v <- exp(tv)
+  EMAX=1/(1+DEXP(-(THETA(7)))) ; emax <- expit(temax)
+  EC50=DEXP(MU_3+ETA(3)) ; ec50 <- exp(tec50)
+  KOUT=DEXP(MU_4+ETA(4)) ; kout <- exp(tkout)
+  E0=DEXP(MU_5+ETA(5)) ; e0 <- exp(te0)
+  A_0(4)=E0 ; effect(0) = e0
+
+$DES
+  DCP=A(3)/V ; DCP = center/v
+  RXDZ001=(EC50+DCP)
+  IF (RXDZ001 .GE. 0.0 .AND. RXDZ001 .LE. 0.000001) THEN
+    RXDZ001=0.000001
+  END IF
+  IF (RXDZ001 .GE. -0.000001 .AND. RXDZ001 .LT. 0.) THEN
+    RXDZ001= -0.000001
+  END IF
+  PD=1-EMAX*DCP/RXDZ001 ; PD = 1 - emax * DCP/(ec50 + DCP)
+    ;effect(0) defined in $PK block
+  KIN=E0*KOUT ; kin = e0 * kout
+  DADT(1) = - KTR*A(1) ; d/dt(depot) = -ktr * depot
+  DADT(2) = KTR*A(1)-KA*A(2) ; d/dt(gut) = ktr * depot - ka * gut
+  DADT(3) = KA*A(2)-CL/V*A(3) ; d/dt(center) = ka * gut - cl/v * center
+  DADT(4) = KIN*PD-KOUT*A(4) ; d/dt(effect) = kin * PD - kout * effect
+  CP=A(3)/V ; cp = center/v
+
+$ERROR
+  ;Redefine LHS in $DES by prefixing with on RXE_ for $ERROR
+  RXE_DCP=A(3)/V ; DCP = center/v
+  RXDZE001=(EC50+RXE_DCP)
+  IF (RXDZE001 .GE. 0.0 .AND. RXDZE001 .LE. 0.000001) THEN
+    RXDZE001=0.000001
+  END IF
+  IF (RXDZE001 .GE. -0.000001 .AND. RXDZE001 .LT. 0.) THEN
+    RXDZE001= -0.000001
+  END IF
+  RXE_PD=1-EMAX*RXE_DCP/RXDZE001 ; PD = 1 - emax * DCP/(ec50 + DCP)
+  RXE_KIN=E0*KOUT ; kin = e0 * kout
+  RXE_CP=A(3)/V ; cp = center/v
+  RX_PF1=RXE_CP ; rx_pf1 ~ cp
+  RX_PF2=A(4) ; rx_pf2 ~ effect
+  ; Write out expressions for ipred and w
+  RX_IP1 = RX_PF1
+  RX_P1 = RX_IP1
+  W1=DSQRT((THETA(6))**2+(RX_PF1)**2*(THETA(5))**2) ; W1 ~ sqrt((pkadd.err)^2 + (rx_pred_f_)^2 * (prop.err)^2)
+  IF (W1 .EQ. 0.0) W1 = 1
+  RX_IP2 = RX_PF2
+  RX_P2 = RX_IP2
+  W2=DSQRT((THETA(11))**2) ; W2 ~ sqrt((pdadd.err)^2)
+  IF (W2 .EQ. 0.0) W2 = 1
+  IPRED = RX_IP1
+  W     = W1
+  IF (DVID .EQ. 2) THEN
+    IPRED = RX_IP2
+    W     = W2
+  END IF
+  Y     = IPRED + W*EPS(1)
+
+$THETA (6.2405e-07        ) ;  1 - tktr     
+       (-3.0064e-06       ) ;  2 - tka      
+       (-2.004            ) ;  3 - tcl      
+       (2.0519            ) ;  4 - tv       
+       (0,         0.09858) ;  5 - prop.err 
+       (0,         0.51162) ;  6 - pkadd.err
+       (6.4185            ) ;  7 - temax    
+       (0.14076           ) ;  8 - tec50    
+       (-2.9535           ) ;  9 - tkout    
+       (4.5704            ) ; 10 - te0      
+       (0,         3.7171 ) ; 11 - pdadd.err
+
+$OMEGA 0.078585 ; eta.cl
+$OMEGA 0.050823 ; eta.v
+$OMEGA 0.18427 ; eta.ec50
+$OMEGA 0.0083632 ; eta.kout
+$OMEGA 0.0027456 ; eta.e0
+
+$SIGMA 1 FIX
+
+$ESTIMATION METHOD=1 INTER MAXEVALS=100000 SIGDIG=3 SIGL=12 PRINT=1 NOABORT
+
+$COVARIANCE
+
+$TABLE ID ETAS(1:LAST) OBJI FIRSTONLY ONEHEADER NOPRINT
+    NOAPPEND FILE=pk.turnover.emax4.eta
+
+$TABLE ID TIME IPRED PRED RXROW ONEHEADER NOPRINT
+    NOAPPEND FILE=pk.turnover.emax4.pred
+
