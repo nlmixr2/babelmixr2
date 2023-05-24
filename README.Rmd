@@ -54,7 +54,7 @@ Otherwise you can always install from GitHub:
 Babelmixr2 can help you by:
 
  - Running your nlmixr2 model in a commercial nonlinear mixed effects
-   modeling tool like `NONMEM` or `Monolix`
+   modeling tool like [`NONMEM`](https://nlmixr2.github.io/babelmixr2/articles/running-nonmem.html) or `Monolix`
  
  - Convert your [`NONMEM` model to a nlmixr2
    model](https://nlmixr2.github.io/nonmem2rx/articles/convert-nlmixr2.html)
