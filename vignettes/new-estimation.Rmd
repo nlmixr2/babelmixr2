@@ -22,8 +22,10 @@ To create a new estimation method, the following steps are required.
 
 ## Create a `nlmixr2Est()` method
 
-This method will have an input of the environment of the nlmixr2est UI object (see `?nlmixr2Est`).  It will output the fit object.
+This method will have an input of the environment of the nlmixr2est UI
+object (see `?nlmixr2Est`).  It will output the fit object.
 
 ## Create a control method
 
-The control method gives access to any controls that are required for estimation.
+The control method gives access to any controls that are required for
+estimation.

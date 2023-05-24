@@ -8,3 +8,4 @@ babelmixr2.Rproj
 /src/Makevars
 inst/doc
 *.Rout
+/docs/

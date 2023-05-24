@@ -4,4 +4,7 @@
 ^dev-setup.R$
 ^cran-comments\.md$
 ^codecov\.yml$
+^docs$
+^_pkgdown.yaml$
+^logo.svg$
 ^CRAN-SUBMISSION$
