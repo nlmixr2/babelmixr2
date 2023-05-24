@@ -117,7 +117,7 @@
       return(invisible(FALSE))
     }
 
-    .x <- try(lixoftConnectors::initializeLixoftConnectors(software = "monolix"), silent=TRUE)
+    .x <- try(lixoftConnectors::initializeLixoftConnectors(software = "monolix", force=TRUE), silent=TRUE)
     if (inherits(.x, "try-error")) {
       assignInMyNamespace(".lixoftStarted", FALSE)
     } else {
