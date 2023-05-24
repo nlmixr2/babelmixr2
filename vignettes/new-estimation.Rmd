@@ -18,6 +18,10 @@ knitr::opts_chunk$set(
 library(babelmixr2)
 ```
 
+This currently talks about the bare minimum needed to create an
+estimation method. It will be updated with how to create an estimation
+method that returns a nlmixr2 fit object later.
+
 To create a new estimation method, the following steps are required.
 
 ## Create a `nlmixr2Est()` method

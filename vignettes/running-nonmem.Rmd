@@ -102,11 +102,13 @@ pk.turnover.emax3 <- function() {
 }
 ```
 
-Now you can run the `nlmixr2` model using `NONMEM` you simply can run it directly:
+Now you can run the `nlmixr2` model using `NONMEM` you simply can run
+it directly:
 
 ```{r runRounding}
 try(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
-                              nonmemControl(readRounding=FALSE, modelName="pk.turnover.emax3")))
+           nonmemControl(readRounding=FALSE, modelName="pk.turnover.emax3")),
+    silent=TRUE)
 ```
 
 That this is the same way you would run an ordinary `nlmixr2`
@@ -217,3 +219,5 @@ One thing to emphasize: unlike other translators, you will know immediately
 if the translation is off because the model will not validate.  Hence
 you can start this process with confidence - you will know
 immediately if something is wrong.
+
+This is related to [converting NONMEM to a nlmixr2 fit](https://nlmixr2.github.io/nonmem2rx/articles/convert-nlmixr2.html).

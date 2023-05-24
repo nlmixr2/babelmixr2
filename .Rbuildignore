@@ -6,5 +6,7 @@
 ^codecov\.yml$
 ^docs$
 ^_pkgdown.yaml$
+^pkgdown$
 ^logo.svg$
 ^CRAN-SUBMISSION$
+^Readme.Rmd$
