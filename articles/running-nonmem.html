@@ -48,8 +48,8 @@
 <li class="active nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
-    <a class="dropdown-item" href="../articles/new-estimation.html">Creating a New Estimation Method</a>
     <a class="dropdown-item" href="../articles/running-nonmem.html">Running NONMEM with nlmixr2</a>
+    <a class="dropdown-item" href="../articles/new-estimation.html">Creating a New Estimation Method</a>
   </div>
 </li>
 <li class="nav-item">
@@ -82,7 +82,7 @@
       <img src="../logo.svg" class="logo" alt=""><h1>Running NONMEM with nlmixr2</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/nlmixr2/babelmixr2/blob/HEAD/vignettes/running-nonmem.Rmd" class="external-link"><code>vignettes/running-nonmem.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/nlmixr2/babelmixr2/blob/HEAD/vignettes/articles/running-nonmem.Rmd" class="external-link"><code>vignettes/articles/running-nonmem.Rmd</code></a></small>
       <div class="d-none name"><code>running-nonmem.Rmd</code></div>
     </div>
 
@@ -272,7 +272,7 @@ object:</p>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Time (sec </span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;            setup table compress NONMEM</span></span>
-<span><span class="co">#&gt; elapsed 0.030773 0.053    0.016 320.27</span></span>
+<span><span class="co">#&gt; elapsed 0.033341 0.064     0.02 320.27</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Population Parameters (</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
@@ -374,7 +374,7 @@ wanted to add a covariance step you can with
 <span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; calculating covariance matrix</span></span>
-<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:09</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:11</span></span>
 <span><span class="co">#&gt; Warning in foceiFitCpp_(.ret): using R matrix to calculate covariance, can</span></span>
 <span><span class="co">#&gt; check sandwich or S matrix with $covRS and $covS</span></span>
 <span><span class="co">#&gt; Warning in foceiFitCpp_(.ret): gradient problems with covariance; see</span></span>
@@ -459,8 +459,8 @@ validates against the <code>rxode2</code> model below:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Time (sec </span><span style="color: #BBBB00; font-weight: bold;">f2</span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;            setup table compress NONMEM</span></span>
-<span><span class="co">#&gt; elapsed 0.004554 0.059    0.016 505.59</span></span>
+<span><span class="co">#&gt;           setup table compress NONMEM</span></span>
+<span><span class="co">#&gt; elapsed 0.00504 0.067    0.023 505.59</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Population Parameters (</span><span style="color: #BBBB00; font-weight: bold;">f2</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #BBBB00; font-weight: bold;">f2</span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
