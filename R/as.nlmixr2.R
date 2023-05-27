@@ -8,6 +8,7 @@
 #' @author Matthew L. Fidler
 #' @examples
 #'
+#' \donttest{
 #' # First read in the model (but without residuals)
 #' mod <- nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
 #'                  determineError=FALSE, lst=".res", save=FALSE)
@@ -56,6 +57,7 @@
 #' fit <- as.nlmixr2(new)
 #'
 #' print(fit)
+#' }
 as.nlmixr2 <- function(x, ..., table=nlmixr2est::tableControl()) {
   UseMethod("as.nlmixr2")
 }
