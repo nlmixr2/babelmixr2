@@ -88,6 +88,7 @@ monolixControl <- function(nbSSDoses=7,
                            sigdigTable=NULL,
                            absolutePath=FALSE,
                            modelName=NULL,
+                           muRefCovAlg=TRUE,
                            ...) {
   checkmate::assertLogical(stiff, max.len=1, any.missing=FALSE)
   checkmate::assertLogical(exploratoryAutoStop, max.len=1, any.missing=FALSE)
@@ -192,7 +193,8 @@ monolixControl <- function(nbSSDoses=7,
                sigdigTable=sigdigTable,
                genRxControl=genRxControl,
                useLinearization=useLinearization,
-               modelName=modelName)
+               modelName=modelName,
+               muRefCovAlg=muRefCovAlg)
   class(.ret) <- "monolixControl"
   .ret
 }

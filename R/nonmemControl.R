@@ -68,6 +68,8 @@
 #' @return babelmixr2 control option for generating NONMEM control stream and
 #'   reading it back into `babelmixr2`/`nlmixr2`
 #'
+#' @inheritParams nlmixr2est::saemControl
+#'
 #' @author Matthew L. Fidler
 #'
 #' @export
@@ -112,6 +114,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           mapinter=0,
                           noabort=TRUE,
                           modelName=NULL,
+                          muRefCovAlg=TRUE,
                           ...) {
   # nonmem manual slides suggest tol=6, sigl=6 sigdig=2
   checkmate::assertIntegerish(maxeval, lower=100, len=1, any.missing=FALSE)
@@ -136,6 +139,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertNumeric(df, lower=0, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(seed, lower=1, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(mapiter, len=1, any.missing=FALSE)
+  checkmate::assertLogical(muRefCovAlg, any.missing=FALSE, len=1)
   if (!is.null(modelName)) {
     checkmate::assertCharacter(modelName, len=1, any.missing=FALSE)
   }
@@ -231,7 +235,8 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                df=df,
                seed=seed,
                mapiter=mapiter,
-               modelName=modelName
+               modelName=modelName,
+               muRefCovAlg=muRefCovAlg
                )
   class(.ret) <- "nonmemControl"
   .ret
