@@ -232,18 +232,18 @@
     .read <- TRUE
   }
   if (!.read) {
-     .msg <- c(.ui$nonmemTransMessage,
-               .ui$nonmemTermMessage)
-     .msg <- c(.msg,
+    .msg <- c(.ui$nonmemTransMessage,
+              .ui$nonmemTermMessage)
+    .msg <- c(.msg,
               paste0("nonmem model: '", .nmctlFile, "'"))
-     message(paste(.msg, collapse="\n"))
-     if (.roundingErrors) {
-       rxode2::.malert("terminated with rounding errors, can force nlmixr2/rxode2 to read with nonmemControl(readRounding=TRUE)")
-     } else {
-       rxode2::.malert("terminated with bad optimization, can force nlmixr2/rxode2 to read with nonmemControl(readBadOpt=TRUE)")
-     }
-     stop("nonmem minimization not successful",
-          call.=FALSE)
+    message(paste(.msg, collapse="\n"))
+    if (.roundingErrors) {
+      rxode2::.malert("terminated with rounding errors, can force nlmixr2/rxode2 to read with nonmemControl(readRounding=TRUE)")
+    } else {
+      rxode2::.malert("terminated with bad optimization, can force nlmixr2/rxode2 to read with nonmemControl(readBadOpt=TRUE)")
+    }
+    stop("nonmem minimization not successful",
+         call.=FALSE)
   }
   .ret <- .nonmemFinalizeEnv(.ret, .ui)
   if (inherits(.ret, "nlmixr2FitData")) {
@@ -252,12 +252,12 @@
     .msg$message <- c(.ui$nonmemTransMessage,
                       .ui$nonmemTermMessage,
                       .msg$message)
-     if (file.exists(.prderrPath)) {
-       .prderr <- paste(readLines(.prderrPath), collapse="\n")
-       .msg$message <- c(.msg$message,
-                 "there are solving errors during optimization (see '$prderr')")
-       assign("prderr", .prderr, envir=.ret$env)
-     }
+    if (file.exists(.prderrPath)) {
+      .prderr <- paste(readLines(.prderrPath), collapse="\n")
+      .msg$message <- c(.msg$message,
+                        "there are solving errors during optimization (see '$prderr')")
+      assign("prderr", .prderr, envir=.ret$env)
+    }
     .msg$message <- c(.msg$message, paste0("nonmem model: '", .nmctlFile, "'"))
     assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
     qs::qsave(.ret, .qs)
@@ -296,6 +296,7 @@
 
 #' @export
 nlmixr2Est.nonmem <- function(env, ...) {
+  .model <- nlmixr2est::.uiApplyMu2(env)
   .ui <- env$ui
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
@@ -306,5 +307,5 @@ nlmixr2Est.nonmem <- function(env, ...) {
       rm("control", envir=.ui)
     }
   }, add=TRUE)
-  .nonmemFamilyFit(env, ...)
+  nlmixr2est::.uiFinalizeMu2(.nonmemFamilyFit(env, ...), .model)
 }

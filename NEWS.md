@@ -1,3 +1,7 @@
+# babelmixr2 (development version)
+
+* Handle algebraic `mu` expressions
+
 # babelmixr2 0.1.1
 
 * Add new method `as.nlmixr2` to convert `nonmem2rx` methods to `nlmixr` fits

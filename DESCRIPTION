@@ -34,7 +34,7 @@ Imports:
     cli,
     digest,
     lotri,
-    nlmixr2est,
+    nlmixr2est (>= 2.1.6),
     nonmem2rx,
     methods,
     qs,
