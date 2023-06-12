@@ -30,6 +30,7 @@ monolixControl(
   sigdigTable = NULL,
   absolutePath = FALSE,
   modelName = NULL,
+  muRefCovAlg = TRUE,
   ...
 )
 }
@@ -132,6 +133,24 @@ be used for the monolix runs}
 \item{modelName}{Model name used to generate the NONMEM output.  If
 `NULL` try to infer from the model name (could be `x` if not
 clear).  Otherwise use this character for outputs.}
+
+\item{muRefCovAlg}{This controls if algebraic expressions that can
+  be mu-referenced are treated as mu-referenced covariates by:
+
+  1. Creating a internal data-variable `nlmixrMuDerCov#` for each
+     algebraic mu-referenced expression
+
+  2. Change the algebraic expression to `nlmixrMuDerCov# * mu_cov_theta`
+
+  3. Use the internal mu-referenced covariate for saem
+
+  4. After optimization is completed, replace `model({})` with old
+  `model({})` expression
+
+  5. Remove `nlmixrMuDerCov#` from nlmix2 output
+
+In general, these covariates should be more accurate since it
+changes the system to a linear compartment model.  Therefore, by default this is `TRUE`.}
 
 \item{...}{Ignored parameters}
 }

@@ -36,9 +36,10 @@ as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl()) {
   # need x to have at least one endpoint
   # The environment needs:
   env <- new.env(parent=emptyenv())
+  x <- rxode2::rxUiDecompress(x)
   nlmixr2est::nlmixrWithTiming("as.nlmixr2", {
     .ui <- new.env(parent=emptyenv())
-    .oldUi <- rxode2::rxUiDecompress(x)
+    .oldUi <- x
     for (n in ls(envir=.oldUi, all.names=TRUE)) {
       assign(n, get(n, envir=.oldUi), envir=.ui)
     }

@@ -19,8 +19,9 @@ rxUiGet.nonmemModelName <- function(x, ...) {
 #' @export
 rxUiGet.nonmemExportPath <- function(x, ...) {
   .ui <- x[[1]]
-  if (exists("file", envir=.ui)) {
-    return(dirname(.ui$file))
+  .f <- .ui$file
+  if (!is.null(.f)) {
+    return(dirname(.f))
   }
   .extra <- ""
   if (exists(".num", .ui)) {
