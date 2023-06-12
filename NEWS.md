@@ -2,6 +2,10 @@
 
 * Handle algebraic `mu` expressions
 
+* When `nonmem2rx` has a different `lst` file, as long as
+  `nonmem2rx::nminfo(file)` works, then a successful conversion to a
+  `nlmixr2` fit object will occur.
+
 # babelmixr2 0.1.1
 
 * Add new method `as.nlmixr2` to convert `nonmem2rx` methods to `nlmixr` fits
