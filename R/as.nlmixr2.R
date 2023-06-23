@@ -1,14 +1,15 @@
 #' Convert an object to a nlmixr2 fit object
-#'  
+#'
 #' @param x Object to convert
 #' @param ... Other arguments
 #' @param table is the `nlmixr2est::tableControl()` options
 #' @return nlmixr2 fit object
-#' @export 
+#' @export
 #' @author Matthew L. Fidler
 #' @examples
 #'
 #' \donttest{
+#'
 #' # First read in the model (but without residuals)
 #' mod <- nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
 #'                  determineError=FALSE, lst=".res", save=FALSE)
@@ -17,7 +18,7 @@
 #' # parameters) In this step you need to be careful to not change the
 #' # estimates and make sure the residual estimates are correct (could
 #' # have to change var to sd).
-#' 
+#'
 #'  mod2 <-function() {
 #'    ini({
 #'      lcl <- 1.37034036528946
@@ -49,7 +50,7 @@
 #'  }
 #'
 #' # now we create another nonmem2rx object that validates the model above:
-#' 
+#'
 #' new <- as.nonmem2rx(mod2, mod)
 #'
 #' # once that is done, you can translate to a full nlmixr2 fit (if you wish)
@@ -57,6 +58,7 @@
 #' fit <- as.nlmixr2(new)
 #'
 #' print(fit)
+#'
 #' }
 as.nlmixr2 <- function(x, ..., table=nlmixr2est::tableControl()) {
   UseMethod("as.nlmixr2")

@@ -19,7 +19,8 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
                                   rtol=model$rtol,
                                   ssRtol=model$ssRtol,
                                   ssAtol=model$ssAtol,
-                                  method="lsoda")
+                                  method="lsoda",
+                                  safeZero=FALSE)
   .foceiControl <- nlmixr2est::foceiControl(rxControl=.rxControl,
                                             maxOuterIterations = 0L, maxInnerIterations = 0L,
                                             etaMat = env$etaMat,
