@@ -1,6 +1,5 @@
-#define ARMA_DONT_PRINT_ERRORS
+#define ARMA_WARN_LEVEL 1
 #define STRICT_R_HEADER
-#define ARMA_DONT_PRINT_ERRORS
 #define ARMA_DONT_USE_OPENMP // Known to cause speed problems
 // #ifdef _OPENMP
 // #include <omp.h>
