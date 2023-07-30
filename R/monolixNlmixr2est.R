@@ -26,7 +26,7 @@
     .ret <- .ret[, !(names(.ret) %in% c("SS", "II"))]
   }
   if (length(ui$predDf$cond) == 1L) {
-    .ret <- .ret[, !(names(.ret) %in% c("YTYPE"))]
+    .ret <- .ret[, !(names(.ret) %in% "YTYPE")]
   }
   .n <- names(.ret)
   rxode2::rxAssignControlValue(ui, ".hasRate",
