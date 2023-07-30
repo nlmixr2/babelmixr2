@@ -1,7 +1,13 @@
+.nonmem2rx <- function(...) suppressWarnings(suppressMessages(nonmem2rx::nonmem2rx(...)))
+
+.as.nonmem2rx <- function(...) suppressWarnings(suppressMessages(nonmem2rx::as.nonmem2rx(...)))
+
+.as.nlmixr2 <- .as.nlmixr <- function(...) suppressWarnings(suppressMessages(as.nlmixr(...)))
+
 test_that("nlmixr2 translation from nonmem2x", {
   skip_on_cran()
   
-  mod <- nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
+  mod <- .nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
                    determineError=FALSE, lst=".res", save=FALSE)
 
   mod2 <-function() {
@@ -34,21 +40,21 @@ test_that("nlmixr2 translation from nonmem2x", {
     })
   }
 
-  new <- as.nonmem2rx(mod2, mod)
+  new <- .as.nonmem2rx(mod2, mod)
 
-  expect_true(inherits(as.nlmixr(new), "nlmixr2FitData"))
+  expect_true(inherits(.as.nlmixr(new), "nlmixr2FitData"))
 
-  mod <- nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
+  mod <- .nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
                    determineError=TRUE, lst=".res", save=FALSE)
 
-  new <- as.nonmem2rx(mod2, mod)
+  new <- .as.nonmem2rx(mod2, mod)
 
-  fit <- as.nlmixr(new)
+  fit <- .as.nlmixr(new)
   expect_true(inherits(fit, "nlmixr2FitData"))
   expect_true(any(names(fit$time) == "NONMEM"))
 
-  rx <- nonmem2rx(system.file("mods/err/run006.lst", package="nonmem2rx"))
-  fit <- as.nlmixr(rx)
+  rx <- .nonmem2rx(system.file("mods/err/run006.lst", package="nonmem2rx"))
+  fit <- .as.nlmixr(rx)
   expect_true(inherits(fit, "nlmixr2FitData"))
   expect_true(any(names(fit$time) == "NONMEM"))
 
