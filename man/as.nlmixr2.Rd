@@ -25,6 +25,7 @@ Convert an object to a nlmixr2 fit object
 \examples{
 
 \donttest{
+
 # First read in the model (but without residuals)
 mod <- nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
                  determineError=FALSE, lst=".res", save=FALSE)
@@ -73,6 +74,7 @@ new <- as.nonmem2rx(mod2, mod)
 fit <- as.nlmixr2(new)
 
 print(fit)
+
 }
 }
 \author{

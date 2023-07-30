@@ -169,7 +169,9 @@ If \code{runCommand} is \code{NA}, \code{nlmixr()} will stop after writing
 the model files and without starting NONMEM.
 }
 \examples{
+
 nonmemControl()
+
 }
 \author{
 Matthew L. Fidler
