@@ -93,7 +93,7 @@ as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl()) {
     #env$ofvType
     env$ofvType <- .ui$nonmemObjfType
     # Add parameter history
-    env$parHist <- .ui$nonmemParHistory
+    env$parHistData <- .ui$nonmemParHistory
     env$nobs <- x$dfObs
     env$nobs2<- x$dfObs
     # Run before converting to nonmemControl

@@ -234,7 +234,7 @@
   if (file.exists(.qs)) {
     .minfo("load saved nlmixr2 object")
     .ret <- qs::qread(.qs)
-    if (!exists("parHist", .ret$env)) {
+    if (!exists("parHistData", .ret$env)) {
       .tmp <- .ret$ui$monolixParHistory
       if (is.null(.tmp)) {
         .minfo("monolix parameter history needs expoted charts, please export charts")
