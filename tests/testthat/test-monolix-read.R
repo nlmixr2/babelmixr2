@@ -53,8 +53,8 @@ pk.turnover.emax3 <- function() {
 
 test_that("test monolix reading for 2019, 2020, and 2021", {
   
-  if (file.exists("pk.turnover.emax3-2019.zip")) {
-    .path <- normalizePath("pk.turnover.emax3-2019.zip")
+  if (file.exists(test_path("pk.turnover.emax3-2019.zip"))) {
+    .path <- normalizePath(test_path("pk.turnover.emax3-2019.zip"))
     withr::with_tempdir({
       unzip(.path)
       f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix",
@@ -64,7 +64,7 @@ test_that("test monolix reading for 2019, 2020, and 2021", {
   }
 
   if (file.exists("pk.turnover.emax3-2020.zip")) {
-    .path <- normalizePath("pk.turnover.emax3-2020.zip")
+    .path <- normalizePath(test_path("pk.turnover.emax3-2020.zip"))
     withr::with_tempdir({
       unzip(.path)
       f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix",
@@ -74,7 +74,7 @@ test_that("test monolix reading for 2019, 2020, and 2021", {
   }
 
   if (file.exists("pk.turnover.emax3-2021.zip")) {
-    .path <- normalizePath("pk.turnover.emax3-2021.zip")
+    .path <- normalizePath(test_path("pk.turnover.emax3-2021.zip"))
     withr::with_tempdir({
       unzip(.path)
       f <- nlmixr2::nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix",
@@ -142,8 +142,8 @@ test_that("test more nlmixr2/monolix features", {
   }
 
 
-  skip_if_not(file.exists("pk.turnover.emax4-2021.zip"))
-  .path <- normalizePath("pk.turnover.emax4-2021.zip")
+  skip_if_not(file.exists(test_path("pk.turnover.emax4-2021.zip")))
+  .path <- normalizePath(test_path("pk.turnover.emax4-2021.zip"))
   withr::with_tempdir({
     unzip(.path)
     f <- nlmixr2::nlmixr(pk.turnover.emax4, nlmixr2data::warfarin, "monolix",
@@ -175,8 +175,8 @@ test_that("test Monolix pheno", {
     })
   }
 
-  skip_if_not(file.exists("pheno-2021.zip"))
-  .path <- normalizePath("pheno-2021.zip")
+  skip_if_not(file.exists(test_path("pheno-2021.zip")))
+  .path <- normalizePath(test_path("pheno-2021.zip"))
   withr::with_tempdir({
     unzip(.path)
     f <- nlmixr2::nlmixr(pheno, nlmixr2data::pheno_sd, "monolix",
@@ -289,8 +289,8 @@ test_that("pbpk mavoglurant", {
 
   expect_error(bblDatToMonolix(pbpk, nlmixr2data::mavoglurant), NA)
 
-  skip_if_not(file.exists("pbpk-2021.zip"))
-  .path <- normalizePath("pbpk-2021.zip")
+  skip_if_not(file.exists(test_path("pbpk-2021.zip")))
+  .path <- normalizePath(test_path("pbpk-2021.zip"))
   withr::with_tempdir({
     unzip(.path)
     f <- nlmixr2::nlmixr(pbpk, nlmixr2data::mavoglurant, "monolix",
@@ -353,8 +353,8 @@ test_that("nimo test", {
 
   tmp$DV <-exp(tmp$DV)
 
-  skip_if_not(file.exists("nimo-2021.zip"))
-  .path <- normalizePath("nimo-2021.zip")
+  skip_if_not(file.exists(test_path("nimo-2021.zip")))
+  .path <- normalizePath(test_path("nimo-2021.zip"))
   withr::with_tempdir({
     unzip(.path)
     f <- suppressWarnings(nlmixr2::nlmixr2(nimo, tmp, "monolix",
@@ -422,10 +422,10 @@ wbc <- function() {
 }
 
 test_that("Monolix wbc", {
-  skip_if_not(file.exists("wbc-2021.zip"))
-  skip_if_not(file.exists("wbc-charts-2021.zip"))
-  .path <- normalizePath("wbc-2021.zip")
-  .pathCharts <- normalizePath("wbc-charts-2021.zip")
+  skip_if_not(file.exists(test_path("wbc-2021.zip")))
+  skip_if_not(file.exists(test_path("wbc-charts-2021.zip")))
+  .path <- normalizePath(test_path("wbc-2021.zip"))
+  .pathCharts <- normalizePath(test_path("wbc-charts-2021.zip"))
   withr::with_tempdir({
     unzip(.path)
     
@@ -459,8 +459,8 @@ test_that("Monolix wbc", {
 })
 
 test_that("Monolix wbc test 2", {
-  skip_if_not(file.exists("x-2021.zip"))
-  .path <- normalizePath("x-2021.zip")
+  skip_if_not(test_path(file.exists("x-2021.zip")))
+  .path <- normalizePath(test_path("x-2021.zip"))
   withr::with_tempdir({
     unzip(.path)
     # with piping, the original model name is scrubbed, and is changed to x
