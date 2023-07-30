@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">babelmixr2</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1.9000</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,7 @@
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/running-monlix.html">Running Monolix</a>
     <a class="dropdown-item" href="../articles/running-nonmem.html">Running NONMEM with nlmixr2</a>
     <a class="dropdown-item" href="../articles/new-estimation.html">Creating a New Estimation Method</a>
   </div>
@@ -52,11 +53,24 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="babelmixr2-development-version">babelmixr2 (development version)<a class="anchor" aria-label="anchor" href="#babelmixr2-development-version"></a></h2>
+<ul><li><p>Handle algebraic <code>mu</code> expressions</p></li>
+<li><p>This revision will load the pruned ui model to query the compartment properties (i.e. bioavailability, lag time, etc) when writing out the NONMEM model. It should fix issues where the PK block does not define some of the variables and will have a larger calculated variable that can be used in the model instead.</p></li>
+<li><p>When <code>nonmem2rx</code> has a different <code>lst</code> file, as long as <code>nonmem2rx::nminfo(file)</code> works, then a successful conversion to a <code>nlmixr2</code> fit object will occur.</p></li>
+<li><p>Fix to save parameter history into <code>$parHistData</code> to accommodate changes in <code>focei</code>’s output (<code>$parHist</code> is now derived).</p></li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.1" id="babelmixr2-011">babelmixr2 0.1.1<a class="anchor" aria-label="anchor" href="#babelmixr2-011"></a></h2><p class="text-muted">CRAN release: 2023-05-27</p>
+<ul><li><p>Add new method <code>as.nlmixr2</code> to convert <code>nonmem2rx</code> methods to <code>nlmixr</code> fits</p></li>
+<li><p>Dropped <code>pmxTools</code> in favor of <code>nonmem2rx</code> to conserve some of the methods</p></li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="babelmixr2-010">babelmixr2 0.1.0<a class="anchor" aria-label="anchor" href="#babelmixr2-010"></a></h2><p class="text-muted">CRAN release: 2022-10-28</p>
 <ul><li><p>Babelmixr has support for “monolix”, “nonmem”, and “pknca” methods on release.</p></li>
 <li><p>Added a <code>NEWS.md</code> file to track changes to the package.</p></li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

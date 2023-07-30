@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">babelmixr2</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1.9000</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,7 @@
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/running-monlix.html">Running Monolix</a>
     <a class="dropdown-item" href="../articles/running-nonmem.html">Running NONMEM with nlmixr2</a>
     <a class="dropdown-item" href="../articles/new-estimation.html">Creating a New Estimation Method</a>
   </div>
@@ -84,6 +85,7 @@
 <span>  sigdigTable <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  absolutePath <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  modelName <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  muRefCovAlg <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -227,6 +229,20 @@ be used for the monolix runs</p></dd>
 <dd><p>Model name used to generate the NONMEM output.  If
 `NULL` try to infer from the model name (could be `x` if not
 clear).  Otherwise use this character for outputs.</p></dd>
+
+
+<dt>muRefCovAlg</dt>
+<dd><p>This controls if algebraic expressions that can
+  be mu-referenced are treated as mu-referenced covariates by:</p>
+<p>1. Creating a internal data-variable `nlmixrMuDerCov#` for each
+     algebraic mu-referenced expression</p>
+<p>2. Change the algebraic expression to `nlmixrMuDerCov# * mu_cov_theta`</p>
+<p>3. Use the internal mu-referenced covariate for saem</p>
+<p>4. After optimization is completed, replace `model()` with old
+  `model()` expression</p>
+<p>5. Remove `nlmixrMuDerCov#` from nlmix2 output</p>
+<p>In general, these covariates should be more accurate since it
+changes the system to a linear compartment model.  Therefore, by default this is `TRUE`.</p></dd>
 
 
 <dt>...</dt>

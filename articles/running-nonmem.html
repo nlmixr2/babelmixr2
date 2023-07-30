@@ -33,7 +33,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">babelmixr2</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1.9000</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,6 +48,7 @@
 <li class="active nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/running-monlix.html">Running Monolix</a>
     <a class="dropdown-item" href="../articles/running-nonmem.html">Running NONMEM with nlmixr2</a>
     <a class="dropdown-item" href="../articles/new-estimation.html">Creating a New Estimation Method</a>
   </div>
@@ -173,6 +174,9 @@ function here).</p>
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/try.html" class="external-link">try</a></span><span class="op">(</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/nlmixr2.html" class="external-link">nlmixr</a></span><span class="op">(</span><span class="va">pk.turnover.emax3</span>, <span class="fu">nlmixr2data</span><span class="fu">::</span><span class="va"><a href="https://nlmixr2.github.io/nlmixr2data/reference/warfarin.html" class="external-link">warfarin</a></span>, <span class="st">"nonmem"</span>,</span>
 <span>           <span class="fu"><a href="../reference/nonmemControl.html">nonmemControl</a></span><span class="op">(</span>readRounding<span class="op">=</span><span class="cn">FALSE</span>, modelName<span class="op">=</span><span class="st">"pk.turnover.emax3"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    silent<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; → loading into <span style="color: #0000BB;">symengine</span> environment...</span></span>
+<span><span class="co">#&gt; → pruning branches (`if`/`else`) of full model...</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  WARNINGS AND ERRORS (IF ANY) FOR PROBLEM    1</span></span>
@@ -217,19 +221,22 @@ anyway:</p>
 <span><span class="co">#&gt; → loading into <span style="color: #0000BB;">symengine</span> environment...</span></span>
 <span><span class="co">#&gt; → pruning branches (`if`/`else`) of full model...</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
+<span><span class="co">#&gt; → loading into <span style="color: #0000BB;">symengine</span> environment...</span></span>
+<span><span class="co">#&gt; → pruning branches (`if`/`else`) of full model...</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → finding duplicate expressions in EBE model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → optimizing duplicate expressions in EBE model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → compiling EBE model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0’</span></span>
+<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.3.0-1ubuntu1~22.04.1) 11.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; rxode2 2.0.13.9000 using 1 threads (see ?getRxThreads)</span></span>
 <span><span class="co">#&gt;   no cache: create with `rxCreateCache()`</span></span>
 <span><span class="co">#&gt; → Calculating residuals/tables</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → compress origData in nlmixr2 object, save 27560</span></span>
-<span><span class="co">#&gt; → compress parHist in nlmixr2 object, save 4928</span></span></code></pre></div>
+<span><span class="co">#&gt; → compress parHistData in nlmixr2 object, save 5536</span></span></code></pre></div>
 <p>You may see more work happening than you expected to need for an
 already completed model. When reading in a NONMEM model,
 <code>babelmixr2</code> grabs:</p>
@@ -272,7 +279,7 @@ object:</p>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Time (sec </span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;            setup table compress NONMEM</span></span>
-<span><span class="co">#&gt; elapsed 0.027842 0.047    0.015 320.27</span></span>
+<span><span class="co">#&gt; elapsed 0.024744 0.046    0.013 320.27</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Population Parameters (</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
@@ -283,7 +290,7 @@ object:</p>
 <span><span class="co">#&gt; <span style="font-weight: bold;">tv</span>             2.05             7.78           22.8      6.44% </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">prop.err</span>     0.0986           0.0986                           </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">pkadd.err</span>     0.512            0.512                           </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">temax</span>          6.42            0.998           3.00      <span style="color: #BB0000; font-weight: bold;">100.%</span> </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">temax</span>          6.42            0.998        0.00707      <span style="color: #BB0000; font-weight: bold;">100.%</span> </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">tec50</span>         0.141             1.15           45.0      6.06% </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">tkout</span>         -2.95           0.0522           9.16      <span style="color: #BB0000; font-weight: bold;">32.4%</span> </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">te0</span>            4.57             96.6           5.24      18.1% </span></span>
@@ -361,20 +368,20 @@ wanted to add a covariance step you can with
 <span><span class="co">#&gt; → optimizing duplicate expressions in EBE model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → compiling inner model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0’</span></span>
+<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.3.0-1ubuntu1~22.04.1) 11.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → finding duplicate expressions in FD model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → optimizing duplicate expressions in FD model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → compiling EBE model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0’</span></span>
+<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.3.0-1ubuntu1~22.04.1) 11.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → compiling events FD model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0’</span></span>
+<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.3.0-1ubuntu1~22.04.1) 11.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; calculating covariance matrix</span></span>
-<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:08</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:07</span></span>
 <span><span class="co">#&gt; Warning in foceiFitCpp_(.ret): using R matrix to calculate covariance, can</span></span>
 <span><span class="co">#&gt; check sandwich or S matrix with $covRS and $covS</span></span>
 <span><span class="co">#&gt; Warning in foceiFitCpp_(.ret): gradient problems with covariance; see</span></span>
@@ -434,18 +441,21 @@ following:</p>
 <span><span class="co">#&gt; → loading into <span style="color: #0000BB;">symengine</span> environment...</span></span>
 <span><span class="co">#&gt; → pruning branches (`if`/`else`) of full model...</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
+<span><span class="co">#&gt; → loading into <span style="color: #0000BB;">symengine</span> environment...</span></span>
+<span><span class="co">#&gt; → pruning branches (`if`/`else`) of full model...</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → finding duplicate expressions in EBE model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====</span></span>
 <span><span class="co">#&gt; ====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → optimizing duplicate expressions in EBE model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → compiling EBE model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0’</span></span>
+<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.3.0-1ubuntu1~22.04.1) 11.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → Calculating residuals/tables</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → compress origData in nlmixr2 object, save 27560</span></span>
-<span><span class="co">#&gt; → compress parHist in nlmixr2 object, save 7776</span></span></code></pre></div>
+<span><span class="co">#&gt; → compress parHistData in nlmixr2 object, save 8800</span></span></code></pre></div>
 <p>You can see the <code>NONMEM</code> run is now successful and
 validates against the <code>rxode2</code> model below:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
@@ -460,7 +470,7 @@ validates against the <code>rxode2</code> model below:</p>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Time (sec </span><span style="color: #BBBB00; font-weight: bold;">f2</span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;            setup table compress NONMEM</span></span>
-<span><span class="co">#&gt; elapsed 0.004084 0.053    0.013 505.59</span></span>
+<span><span class="co">#&gt; elapsed 0.014591 0.046    0.014 505.59</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Population Parameters (</span><span style="color: #BBBB00; font-weight: bold;">f2</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #BBBB00; font-weight: bold;">f2</span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
@@ -533,6 +543,27 @@ validate. Hence you can start this process with confidence - you will
 know immediately if something is wrong.</p>
 <p>This is related to <a href="https://nlmixr2.github.io/nonmem2rx/articles/convert-nlmixr2.html" class="external-link">converting
 NONMEM to a nlmixr2 fit</a>.</p>
+<p>Since it is a <code>nlmixr2</code> object it would be easy to perform
+a VPC too (the same is true for NONMEM models):</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">v1s</span> <span class="op">&lt;-</span> <span class="fu">vpcPlot</span><span class="op">(</span><span class="va">f2</span>, show<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>obs_dv<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>, scales<span class="op">=</span><span class="st">"free_y"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ylab</span><span class="op">(</span><span class="st">"Warfarin Cp [mg/L] or PCA"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">xlab</span><span class="op">(</span><span class="st">"Time [h]"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.3.0-1ubuntu1~22.04.1) 11.3.0’</span></span>
+<span></span>
+<span><span class="va">v2s</span> <span class="op">&lt;-</span> <span class="fu">vpcPlot</span><span class="op">(</span><span class="va">f2</span>, show<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>obs_dv<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>, pred_corr <span class="op">=</span> <span class="cn">TRUE</span>, scales<span class="op">=</span><span class="st">"free_y"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ylab</span><span class="op">(</span><span class="st">"Prediction Corrected Warfarin Cp [mg/L] or PCA"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">xlab</span><span class="op">(</span><span class="st">"Time [h]"</span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">v1s</span></span></code></pre></div>
+<p><img src="running-nonmem_files/figure-html/unnamed-chunk-2-1.png" width="700"></p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="va">v2s</span></span></code></pre></div>
+<p><img src="running-nonmem_files/figure-html/unnamed-chunk-2-2.png" width="700"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside>
