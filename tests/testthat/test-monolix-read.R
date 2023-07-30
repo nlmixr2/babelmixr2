@@ -432,19 +432,19 @@ test_that("Monolix wbc", {
     f <- suppressWarnings(nlmixr2::nlmixr2(wbc, nlmixr2data::wbcSim, "monolix",
                                            control=monolixControl(modelName="wbc")))
     expect_true(inherits(f, "nlmixr2FitData"))
-    expect_equal(f$env$parHist, NULL)
+    expect_equal(f$env$parHistData, NULL)
     
     unzip(.pathCharts)
     
     f <- suppressWarnings(nlmixr2::nlmixr2(wbc, nlmixr2data::wbcSim, "monolix",
                                            control=monolixControl(modelName="wbc")))
     expect_true(inherits(f, "nlmixr2FitData"))
-    expect_true(inherits(f$env$parHist, "data.frame"))
+    expect_true(inherits(f$env$parHistData, "data.frame"))
     
     f <- suppressWarnings(nlmixr2::nlmixr2(wbc, nlmixr2data::wbcSim, "monolix", 
                                            control=monolixControl(modelName="wbc")))
     expect_true(inherits(f, "nlmixr2FitData"))
-    expect_true(inherits(f$env$parHist, "data.frame"))
+    expect_true(inherits(f$env$parHistData, "data.frame"))
     
   })
   
@@ -454,7 +454,7 @@ test_that("Monolix wbc", {
     f <- suppressWarnings(nlmixr2::nlmixr2(wbc, nlmixr2data::wbcSim, "monolix",
                                            control=monolixControl(modelName="wbc")))
     expect_true(inherits(f, "nlmixr2FitData"))
-    expect_true(inherits(f$env$parHist, "data.frame"))
+    expect_true(inherits(f$env$parHistData, "data.frame"))
   })
 })
 

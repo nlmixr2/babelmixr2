@@ -239,7 +239,8 @@
       if (is.null(.tmp)) {
         .minfo("monolix parameter history needs expoted charts, please export charts")
       } else {
-        assign("parHist", .tmp, .ret$env)
+        .tmp$type <- "Unscaled"
+        assign("parHistData", .tmp, .ret$env)
         .minfo("monolix parameter history integrated into fit object")
         qs::qsave(.ret, .qs)
       }
@@ -304,7 +305,8 @@
     if (is.null(.tmp)) {
       .minfo("monolix parameter history needs expoted charts, please export charts")
     } else {
-      assign("parHist", .tmp, .ret$env)
+      .tmp$type <- "Unscaled"
+      assign("parHistData", .tmp, .ret$env)
       .minfo("monolix parameter history integrated into fit object")
       qs::qsave(.ret, .qs)
     }
