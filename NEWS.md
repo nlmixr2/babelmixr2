@@ -12,6 +12,9 @@
   `nonmem2rx::nminfo(file)` works, then a successful conversion to a
   `nlmixr2` fit object will occur.
 
+* Fix to save parameter history into `$parHistData` to accmommodate
+  changes in `focei`'s output (`$parHist` is now derived).
+
 # babelmixr2 0.1.1
 
 * Add new method `as.nlmixr2` to convert `nonmem2rx` methods to `nlmixr` fits
