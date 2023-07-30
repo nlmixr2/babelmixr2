@@ -683,11 +683,30 @@ rex::register_shortcuts("babelmixr2")
     stop("unknown rxode2 assignment type:\n", deparse1(x),
          .call.=FALSE)
   }
+  .tmp <- paste0(.prefix, "(", .state, ")")
+  .tmp <- rxode2::rxToSE(.tmp)
+  .tmp <- get(.tmp, envir=rxUiGetNonememModelEnv$rxS)
+  .tmp <- rxode2::rxFromSE(.tmp)
+  .iniDf <- ui$iniDf
+  .theta <- .iniDf[!is.na(.iniDf$ntheta),]
+  for (.n in seq_along(.theta$ntheta)) {
+    .t <- .theta$ntheta[.n]
+    .v <- .theta$name[.n]
+    .tmp <- gsub(paste0("\\bTHETA\\[", .t, "\\]"), .v, .tmp, perl=TRUE)
+  }
+  .eta <- .iniDf[is.na(.iniDf$ntheta),]
+  .eta <- .eta[.eta$neta1 == .eta$neta2,]
+  for (.n in seq_along(.theta$neta1)) {
+    .e <- .theta$neta1[.n]
+    .v <- .theta$name[.n]
+    .tmp <- gsub(paste0("\\bETA\\[", .t, "\\]"), .v, .tmp, perl=TRUE)
+  }
+  .tmp <- str2lang(.tmp)
   if (length(x[[3]]) != 1L) {
     stop("the complex initial condition is not supported in the nonmem conversion\n",
          deparse1(x), call.=FALSE)
   }
-  .extra <- paste0(.rxToNonmem(x[[3]], ui=ui),
+  .extra <- paste0(.rxToNonmem(.tmp, ui=ui),
                    .babelmixr2Deparse(x))
   .nonmemSetCmtProperty(ui, .state, .extra, type=.prefix)
   paste0("; ", .prefix, "(", .state, ") defined in $PK block")

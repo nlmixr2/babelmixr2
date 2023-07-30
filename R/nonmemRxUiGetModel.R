@@ -30,9 +30,13 @@ rxUiGet.nonmemMod <- function(x, ...) {
   rxode2::rxAssignControlValue(ui, ".nmVarExtra", extra)
 }
 
+rxUiGetNonememModelEnv <- new.env(parent=emptyenv())
+rxUiGetNonememModelEnv$rxS <- NULL
+
 #' @export
 rxUiGet.nonmemModel <- function(x, ...) {
   .ui <- x[[1]]
+  rxUiGetNonememModelEnv$rxS <- .ui$loadPrune
   .nonmemResetUi(.ui)
   .ret <- paste0(
     "$PROBLEM ", .ui$nonmemNodelName, " translated from babelmixr2\n; comments show mu referenced model in ui$getSplitMuModel\n\n",
