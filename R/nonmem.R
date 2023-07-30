@@ -655,11 +655,26 @@ rex::register_shortcuts("babelmixr2")
   # Cannot use ifelse in the block
   rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
   on.exit(rxode2::rxAssignControlValue(ui, ".ifelse", FALSE))
-  if (length(x[[3]]) != 1L) {
-    stop("the complex initial condition is not supported in the nonmem conversion\n",
-         deparse1(x), call.=FALSE)
+  .tmp <- paste0(.state, "(0)")
+  .tmp <- rxode2::rxToSE(.tmp)
+  .tmp <- get(.tmp, envir=rxUiGetNonememModelEnv$rxS)
+  .tmp <- rxode2::rxFromSE(.tmp)
+  .iniDf <- ui$iniDf
+  .theta <- .iniDf[!is.na(.iniDf$ntheta),]
+  for (.n in seq_along(.theta$ntheta)) {
+    .t <- .theta$ntheta[.n]
+    .v <- .theta$name[.n]
+    .tmp <- gsub(paste0("\\bTHETA\\[", .t, "\\]"), .v, .tmp, perl=TRUE)
   }
-  .extra <- paste0(.rxToNonmem(x[[3]], ui=ui),
+  .eta <- .iniDf[is.na(.iniDf$ntheta),]
+  .eta <- .eta[.eta$neta1 == .eta$neta2,]
+  for (.n in seq_along(.theta$neta1)) {
+    .e <- .theta$neta1[.n]
+    .v <- .theta$name[.n]
+    .tmp <- gsub(paste0("\\bETA\\[", .t, "\\]"), .v, .tmp, perl=TRUE)
+  }
+  .tmp <- str2lang(.tmp)
+  .extra <- paste0(.rxToNonmem(.tmp, ui=ui),
                    .babelmixr2Deparse(x))
   .nonmemSetCmtProperty(ui, .state, .extra, type="init")
   return(paste0(.rxToNonmemGetIndent(ui),
@@ -702,10 +717,6 @@ rex::register_shortcuts("babelmixr2")
     .tmp <- gsub(paste0("\\bETA\\[", .t, "\\]"), .v, .tmp, perl=TRUE)
   }
   .tmp <- str2lang(.tmp)
-  if (length(x[[3]]) != 1L) {
-    stop("the complex initial condition is not supported in the nonmem conversion\n",
-         deparse1(x), call.=FALSE)
-  }
   .extra <- paste0(.rxToNonmem(.tmp, ui=ui),
                    .babelmixr2Deparse(x))
   .nonmemSetCmtProperty(ui, .state, .extra, type=.prefix)
