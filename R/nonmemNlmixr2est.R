@@ -89,7 +89,7 @@
   #env$ofvType
   env$ofvType <- .ui$nonmemObjfType
   # Add parameter history
-  env$parHist <- .ui$nonmemParHistory
+  env$parHistData <- .ui$nonmemParHistory
   env$nobs <- .lastNobs
   env$nobs2<- .lastNobs
   # Run before converting to nonmemControl

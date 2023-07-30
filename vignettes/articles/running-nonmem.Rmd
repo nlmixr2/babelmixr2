@@ -222,96 +222,22 @@ immediately if something is wrong.
 
 This is related to [converting NONMEM to a nlmixr2 fit](https://nlmixr2.github.io/nonmem2rx/articles/convert-nlmixr2.html).
 
-This fit issues an informational tidbit -
-
-- monolix parameter history needs expoted charts, please export charts
-
-This will automatically be generated as well when `lixoftConnectors`
-package is generated and you have a recent version of Monolix.  If you
-don't have that information then the important parameter history plots will 
-not be imported and you cannot see those plots.
-
-The `monolixControl()` has `modelName` which helps control the output
-directory of `Monolix` (if not specified `babelmixr2` tries to guess
-based on the model name based on the input).
-
-Printing this out this `nlmixr2` fit you see:
-
-```r
-fit
-```
-
-
-Of particular interest is the comparison between Monolix predictions and nlmixr predictions, which shows the models are quite close.
-
-In this case, I believe that these also imply the models are
-predicting the same thing. 
-
-Note that the model predictions are not as
-close as they were with NONMEM because Monolix does not use the
-`lsoda` ODE solver.  Hence this small deviation is expected, but still
-gives a validated Monolix model.
-
-
-As in the case of `NONMEM`, this gives some things that are not
-available to Monolix, like adding conditional weighted residuals:
-
-```{r}
-fit <- addCwres(fit)
-```
-
-
-Which will add nlmixr's CWRES as well as adding the nlmixr2 `FOCEi` objective function
-
-```
-             OBJF      AIC      BIC Log-likelihood Condition Number
-FOCEi    1335.312 2261.007 2340.427      -1111.503         2203.836
-monolix  1522.704 2448.398 2527.819      -1205.199         2203.836
-```
-
-Because you now have an objective function compared based on the same
-assumptions, you could compare the performance of Monolix and NONMEM
-based on objective function.
-
-To be fair, objective function values must always be used with
-caution.  How the model performs and predicts the data is far more
-valuable.
-
-
-Also since it is a `nlmixr2` object it would be easy to perform a VPC
+Since it is a `nlmixr2` object it would be easy to perform a VPC
 too (the same is true for NONMEM models):
 
 ```{r}
-v1s <- vpcPlot(fit, show=list(obs_dv=TRUE), scales="free_y") +
+v1s <- vpcPlot(f2, show=list(obs_dv=TRUE), scales="free_y") +
   ylab("Warfarin Cp [mg/L] or PCA") +
   xlab("Time [h]")
 
-v2s <- vpcPlot(fit, show=list(obs_dv=TRUE), pred_corr = TRUE, scales="free_y") +
+v2s <- vpcPlot(f2, show=list(obs_dv=TRUE), pred_corr = TRUE, scales="free_y") +
   ylab("Prediction Corrected Warfarin Cp [mg/L] or PCA") +
   xlab("Time [h]")
+
+
+library()
 
 v1s
 
 v2s
 ```
-
-
-## Note about data
-
-The input dataset expected to be compatible with `rxode2` or
-`nlmixr2`.  This dataset is then converted to Monolix format:
-
-- The combination of `CMT` and Dose type creates a unique `ADM` variable. 
-
-- The `ADM` definition is saved in the monolix model file 
-
-- `babelmixr2` creates a macro describing the compartment, ie `compartment(cmt=#, amount=stateName)`
-
-- `babelmixr2` also creates a macro for each type of dosing:
-
-   - Bolus/infusion uses `depot()` and adds modeled lag time (`Tlag`) or bioavailibilty (`p`) if specified
-   
-   - Modeled rate uses `depot()` with `Tk0=amtDose/rate`. `babelmixr2` also adds modeled lag time (`Tlag`) or bioavailibilty (`p`) if specified
-   
-   - Modeled duration uses `depot()` with `Tk0=dur`, also add adds modeled lag time (`Tlag`) or bioavailibilty (`p`) if specified Turning off a compartment uses empty macro
-   

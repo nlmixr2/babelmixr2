@@ -26,7 +26,7 @@
     .ret <- .ret[, !(names(.ret) %in% c("SS", "II"))]
   }
   if (length(ui$predDf$cond) == 1L) {
-    .ret <- .ret[, !(names(.ret) %in% c("YTYPE"))]
+    .ret <- .ret[, !(names(.ret) %in% "YTYPE")]
   }
   .n <- names(.ret)
   rxode2::rxAssignControlValue(ui, ".hasRate",
@@ -234,12 +234,13 @@
   if (file.exists(.qs)) {
     .minfo("load saved nlmixr2 object")
     .ret <- qs::qread(.qs)
-    if (!exists("parHist", .ret$env)) {
+    if (!exists("parHistData", .ret$env)) {
       .tmp <- .ret$ui$monolixParHistory
       if (is.null(.tmp)) {
         .minfo("monolix parameter history needs expoted charts, please export charts")
       } else {
-        assign("parHist", .tmp, .ret$env)
+        .tmp$type <- "Unscaled"
+        assign("parHistData", .tmp, .ret$env)
         .minfo("monolix parameter history integrated into fit object")
         qs::qsave(.ret, .qs)
       }
@@ -304,7 +305,8 @@
     if (is.null(.tmp)) {
       .minfo("monolix parameter history needs expoted charts, please export charts")
     } else {
-      assign("parHist", .tmp, .ret$env)
+      .tmp$type <- "Unscaled"
+      assign("parHistData", .tmp, .ret$env)
       .minfo("monolix parameter history integrated into fit object")
       qs::qsave(.ret, .qs)
     }

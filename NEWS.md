@@ -2,9 +2,18 @@
 
 * Handle algebraic `mu` expressions
 
+* This revision will load the pruned ui model to query the compartment
+  properties (i.e. bioavailability, lag time, etc) when writing out the
+  NONMEM model.  It should fix issues where the PK block does not
+  define some of the variables and will have a larger calculated
+  variable that can be used in the model instead.
+
 * When `nonmem2rx` has a different `lst` file, as long as
   `nonmem2rx::nminfo(file)` works, then a successful conversion to a
   `nlmixr2` fit object will occur.
+
+* Fix to save parameter history into `$parHistData` to accommodate
+  changes in `focei`'s output (`$parHist` is now derived).
 
 # babelmixr2 0.1.1
 

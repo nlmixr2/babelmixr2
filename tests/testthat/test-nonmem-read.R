@@ -1,3 +1,5 @@
+.nlmixr <- .nlmixr2 <- function(...) suppressWarnings(suppressMessages(nlmixr2::nlmixr(...)))
+
 test_that("warfarin NONMEM reading", {
 
   pk.turnover.emax3 <- function() {
@@ -62,12 +64,12 @@ test_that("warfarin NONMEM reading", {
     unzip(.path4)
 
     # This has rounding errors
-    expect_error(nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
+    expect_error(.nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
                         nonmemControl(readRounding=FALSE, modelName="pk.turnover.emax3")))
 
 
     # Can still load the model to get information (possibly pipe) and create a new model
-    f <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
+    f <- .nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
                 nonmemControl(readRounding=TRUE, modelName="pk.turnover.emax3"))
 
     expect_true(any(names(f$time) == "NONMEM"))
@@ -93,7 +95,7 @@ test_that("warfarin NONMEM reading", {
     f2 <- f %>% model(ktr <- exp(tktr)) %>%
       model(ka <- exp(tka)) %>%
       model(emax = expit(temax)) %>%
-      nlmixr(data=nlmixr2data::warfarin, est="nonmem",
+      .nlmixr(data=nlmixr2data::warfarin, est="nonmem",
              control=nonmemControl(readRounding=FALSE,
                                    modelName="pk.turnover.emax4")) ->
       f2
@@ -129,7 +131,7 @@ test_that("pheno NONMEM reading", {
   .path <- normalizePath("pheno-nonmem.zip")
   withr::with_tempdir({
     unzip(.path)
-    f <- nlmixr2::nlmixr(pheno, nlmixr2data::pheno_sd, "nonmem",
+    f <- .nlmixr(pheno, nlmixr2data::pheno_sd, "nonmem",
                          control=nonmemControl(modelName="pheno"))
     expect_true(inherits(f, "nlmixr2FitData"))
   })
@@ -203,7 +205,7 @@ test_that("wbc NONMEM reading", {
 
     # Note this can even be done with bad or unfinished optimizations
     # in NONMEM:
-    f <- nlmixr2(wbc, nlmixr2data::wbcSim, "nonmem",
+    f <- .nlmixr2(wbc, nlmixr2data::wbcSim, "nonmem",
                  nonmemControl(readBadOpt=TRUE, modelName="wbc"))
 
     expect_true(inherits(f, "nlmixr2FitData"))
@@ -212,10 +214,11 @@ test_that("wbc NONMEM reading", {
     f2 <-f %>%
       model(SLOPU =  exp(log_SLOPU)) %>%
       model(MTT =  exp(log_MTT)) %>%
-      nlmixr2(., nlmixr2data::wbcSim, "nonmem",
+      .nlmixr2(., nlmixr2data::wbcSim, "nonmem",
               control=nonmemControl(modelName="wbc2"))
 
     expect_true(inherits(f, "nlmixr2FitData"))
+    expect_true(length(f$parHistData[,1]) > 0)
     # Of course you could also use nlmixr2 and then re-estimate with NONMEM too.
     })
 })

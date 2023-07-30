@@ -106,7 +106,7 @@ rex::register_shortcuts("babelmixr2")
 
 #' Help show where code came from (but stop at 500 characters of deparsing and
 #' stop on the first line)
-#' 
+#'
 #' @param x rxode2 expression line
 #' @inheritParams deparse
 #' @return R expression as NONMEM comement
@@ -266,7 +266,7 @@ rex::register_shortcuts("babelmixr2")
 
 #' Handle d/dt() line and add rxode code as a comment
 #'
-#' @param x expression 
+#' @param x expression
 #' @param ui rxode2 ui object
 #' @return d/dt() nonmem line
 #' @author Matthew L. Fidler with influence from Bill Denney
@@ -486,7 +486,7 @@ rex::register_shortcuts("babelmixr2")
   rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
   on.exit(rxode2::rxAssignControlValue(ui, ".ifelse", FALSE))
   .ret <- paste0(.ret, .rxToNonmem(x[[3]], ui=ui))
-  x <- x[-c(1:3)]
+  x <- x[-(1:3)]
   if (length(x) == 1) x <- x[[1]]
   while(identical(x[[1]], quote(`if`))) {
     stop("babelmixr2 will not allow `else if` or `else` statements in NONMEM models",
@@ -642,10 +642,58 @@ rex::register_shortcuts("babelmixr2")
     .babelmixr2Deparse(x)
   )
 }
+#' Replace the THETA/ETA with names and return an expression
+#'
+#' @param txt text to replace
+#' @param ui parsed ui object
+#' @return expression
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmemReplaceThetaEtaWithNames <- function(txt, ui) {
+  .tmp <- txt
+  .iniDf <- ui$iniDf
+  .theta <- .iniDf[!is.na(.iniDf$ntheta),]
+  for (.n in seq_along(.theta$ntheta)) {
+    .t <- .theta$ntheta[.n]
+    .v <- .theta$name[.n]
+    .tmp <- gsub(paste0("\\bTHETA\\[", .t, "\\]"), .v, .tmp, perl=TRUE)
+  }
+  .eta <- .iniDf[is.na(.iniDf$ntheta),]
+  .eta <- .eta[.eta$neta1 == .eta$neta2,]
+  for (.n in seq_along(.eta$neta1)) {
+    .e <- .eta$neta1[.n]
+    .v <- .eta$name[.n]
+    .tmp <- gsub(paste0("\\bETA\\[", .e, "\\]"), .v, .tmp, perl=TRUE)
+  }
+  .tmp <- str2lang(.tmp)
+  .tmp
+}
+#' This replaces the NONMEM THETA(#) with MU_# when appropriate
+#'
+#' @param txt input text
+#' @param ui parsed ui
+#' @return model with mu expression
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmemReplaceNonmemThetaWithMu <- function(txt, ui) {
+  if (!rxode2::rxGetControl(ui, "muRef", TRUE)) return(txt)
+  .tmp <- txt
+  .iniDf <- ui$iniDf
+  .theta <- .iniDf[!is.na(.iniDf$ntheta),]
+  for (.n in seq_along(.theta$ntheta)) {
+    .t <- .theta$ntheta[.n]
+    .v <- .theta$name[.n]
+    .mu <- .nonmemGetMuNum(.v, ui)
+    if (!is.na(.mu)) {
+      .tmp <- gsub(paste0("\\bTHETA\\(", .t, "\\)"), .mu, .tmp, perl=TRUE)
+    }
+  }
+  .tmp
+}
 
 #' Handle compartment number initial conditions
 #'
-#' @param x rxode2 expression line 
+#' @param x rxode2 expression line
 #' @param ui User interface
 #' @return String for NONMEM style initial condition
 #' @author Matt Fidler and Bill Denney
@@ -655,11 +703,12 @@ rex::register_shortcuts("babelmixr2")
   # Cannot use ifelse in the block
   rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
   on.exit(rxode2::rxAssignControlValue(ui, ".ifelse", FALSE))
-  if (length(x[[3]]) != 1L) {
-    stop("the complex initial condition is not supported in the nonmem conversion\n",
-         deparse1(x), call.=FALSE)
-  }
-  .extra <- paste0(.rxToNonmem(x[[3]], ui=ui),
+  .tmp <- paste0(.state, "(0)")
+  .tmp <- rxode2::rxToSE(.tmp)
+  .tmp <- get(.tmp, envir=rxUiGetNonememModelEnv$rxS)
+  .tmp <- rxode2::rxFromSE(.tmp)
+  .tmp <- .nonmemReplaceThetaEtaWithNames(.tmp, ui)
+  .extra <- paste0(.nonmemReplaceNonmemThetaWithMu(.rxToNonmem(.tmp, ui=ui), ui),
                    .babelmixr2Deparse(x))
   .nonmemSetCmtProperty(ui, .state, .extra, type="init")
   return(paste0(.rxToNonmemGetIndent(ui),
@@ -683,11 +732,12 @@ rex::register_shortcuts("babelmixr2")
     stop("unknown rxode2 assignment type:\n", deparse1(x),
          .call.=FALSE)
   }
-  if (length(x[[3]]) != 1L) {
-    stop("the complex initial condition is not supported in the nonmem conversion\n",
-         deparse1(x), call.=FALSE)
-  }
-  .extra <- paste0(.rxToNonmem(x[[3]], ui=ui),
+  .tmp <- paste0(.prefix, "(", .state, ")")
+  .tmp <- rxode2::rxToSE(.tmp)
+  .tmp <- get(.tmp, envir=rxUiGetNonememModelEnv$rxS)
+  .tmp <- rxode2::rxFromSE(.tmp)
+  .tmp <- .nonmemReplaceThetaEtaWithNames(.tmp, ui)
+  .extra <- paste0(.nonmemReplaceNonmemThetaWithMu(.rxToNonmem(.tmp, ui=ui), ui=ui),
                    .babelmixr2Deparse(x))
   .nonmemSetCmtProperty(ui, .state, .extra, type=.prefix)
   paste0("; ", .prefix, "(", .state, ") defined in $PK block")
