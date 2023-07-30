@@ -75,7 +75,9 @@
 #' @export
 #'
 #' @examples
+#'
 #' nonmemControl()
+#'
 nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           advanOde=c("advan13", "advan8", "advan6"),
                           cov=c("r,s", "r", "s", ""),
@@ -176,6 +178,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
         ssRtol=10^(-sstol),
         ssAtol=10^(-ssatol),
         covsInterpolation="nocb",
+        safeZero=FALSE,
         method="liblsoda"
       )
       genRxControl <- TRUE
@@ -186,6 +189,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
       rxControl$ssAtol <- 10^(-ssatol)
       rxControl$covsInterpolation <- "nocb"
       rxControl$method <- "liblsoda"
+      rxControl$safeZero <- FALSE
       rxControl <- do.call(rxode2::rxControl, rxControl)
     }
     if (!inherits(rxControl, "rxControl")) {
