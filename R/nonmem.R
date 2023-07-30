@@ -676,6 +676,7 @@ rex::register_shortcuts("babelmixr2")
 #' @noRd
 #' @author Matthew L. Fidler
 .nonmemReplaceNonmemThetaWithMu <- function(txt, ui) {
+  if (!rxode2::rxGetControl(ui, "muRef", TRUE)) return(txt)
   .tmp <- txt
   .iniDf <- ui$iniDf
   .theta <- .iniDf[!is.na(.iniDf$ntheta),]
