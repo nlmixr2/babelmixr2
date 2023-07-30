@@ -486,7 +486,7 @@ rex::register_shortcuts("babelmixr2")
   rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
   on.exit(rxode2::rxAssignControlValue(ui, ".ifelse", FALSE))
   .ret <- paste0(.ret, .rxToNonmem(x[[3]], ui=ui))
-  x <- x[-c(1:3)]
+  x <- x[-(1:3)]
   if (length(x) == 1) x <- x[[1]]
   while(identical(x[[1]], quote(`if`))) {
     stop("babelmixr2 will not allow `else if` or `else` statements in NONMEM models",
@@ -642,6 +642,32 @@ rex::register_shortcuts("babelmixr2")
     .babelmixr2Deparse(x)
   )
 }
+#' Replace the THETA/ETA with names and return an expression
+#'
+#' @param txt text to replace
+#' @param ui parsed ui object
+#' @return expression
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmemReplaceThetaEtaWithNames <- function(txt, ui) {
+  .tmp <- txt
+  .iniDf <- ui$iniDf
+  .theta <- .iniDf[!is.na(.iniDf$ntheta),]
+  for (.n in seq_along(.theta$ntheta)) {
+    .t <- .theta$ntheta[.n]
+    .v <- .theta$name[.n]
+    .tmp <- gsub(paste0("\\bTHETA\\[", .t, "\\]"), .v, .tmp, perl=TRUE)
+  }
+  .eta <- .iniDf[is.na(.iniDf$ntheta),]
+  .eta <- .eta[.eta$neta1 == .eta$neta2,]
+  for (.n in seq_along(.eta$neta1)) {
+    .e <- .eta$neta1[.n]
+    .v <- .eta$name[.n]
+    .tmp <- gsub(paste0("\\bETA\\[", .e, "\\]"), .v, .tmp, perl=TRUE)
+  }
+  .tmp <- str2lang(.tmp)
+  .tmp
+}
 
 #' Handle compartment number initial conditions
 #'
@@ -659,21 +685,7 @@ rex::register_shortcuts("babelmixr2")
   .tmp <- rxode2::rxToSE(.tmp)
   .tmp <- get(.tmp, envir=rxUiGetNonememModelEnv$rxS)
   .tmp <- rxode2::rxFromSE(.tmp)
-  .iniDf <- ui$iniDf
-  .theta <- .iniDf[!is.na(.iniDf$ntheta),]
-  for (.n in seq_along(.theta$ntheta)) {
-    .t <- .theta$ntheta[.n]
-    .v <- .theta$name[.n]
-    .tmp <- gsub(paste0("\\bTHETA\\[", .t, "\\]"), .v, .tmp, perl=TRUE)
-  }
-  .eta <- .iniDf[is.na(.iniDf$ntheta),]
-  .eta <- .eta[.eta$neta1 == .eta$neta2,]
-  for (.n in seq_along(.theta$neta1)) {
-    .e <- .theta$neta1[.n]
-    .v <- .theta$name[.n]
-    .tmp <- gsub(paste0("\\bETA\\[", .t, "\\]"), .v, .tmp, perl=TRUE)
-  }
-  .tmp <- str2lang(.tmp)
+  .tmp <- .nonmemReplaceThetaEtaWithNames(.tmp, ui)
   .extra <- paste0(.rxToNonmem(.tmp, ui=ui),
                    .babelmixr2Deparse(x))
   .nonmemSetCmtProperty(ui, .state, .extra, type="init")
@@ -702,21 +714,7 @@ rex::register_shortcuts("babelmixr2")
   .tmp <- rxode2::rxToSE(.tmp)
   .tmp <- get(.tmp, envir=rxUiGetNonememModelEnv$rxS)
   .tmp <- rxode2::rxFromSE(.tmp)
-  .iniDf <- ui$iniDf
-  .theta <- .iniDf[!is.na(.iniDf$ntheta),]
-  for (.n in seq_along(.theta$ntheta)) {
-    .t <- .theta$ntheta[.n]
-    .v <- .theta$name[.n]
-    .tmp <- gsub(paste0("\\bTHETA\\[", .t, "\\]"), .v, .tmp, perl=TRUE)
-  }
-  .eta <- .iniDf[is.na(.iniDf$ntheta),]
-  .eta <- .eta[.eta$neta1 == .eta$neta2,]
-  for (.n in seq_along(.theta$neta1)) {
-    .e <- .theta$neta1[.n]
-    .v <- .theta$name[.n]
-    .tmp <- gsub(paste0("\\bETA\\[", .t, "\\]"), .v, .tmp, perl=TRUE)
-  }
-  .tmp <- str2lang(.tmp)
+  .tmp <- .nonmemReplaceThetaEtaWithNames(.tmp, ui)
   .extra <- paste0(.rxToNonmem(.tmp, ui=ui),
                    .babelmixr2Deparse(x))
   .nonmemSetCmtProperty(ui, .state, .extra, type=.prefix)
