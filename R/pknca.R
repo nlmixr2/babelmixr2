@@ -225,7 +225,7 @@ calcPknca <- function(env, pkncaUnits) {
     # as.data.frame() due to https://github.com/nlmixr2/nlmixr2est/pull/262
     rawData <- as.data.frame(control$ncaData)
   }
-  cleanData <- bblDatToPknca(model = env$ui, data = rawData)
+  cleanData <- bblDatToPknca(model = env$ui, data = rawData, rxControl=env$control$rxControl)
   cleanColNames <- getStandardColNames(cleanData$obs)
   oConcFormula <-
     stats::as.formula(sprintf(
@@ -403,7 +403,8 @@ pkncaControl <- function(concu = NA_character_, doseu = NA_character_, timeu = N
                          groups = character(),
                          sparse = FALSE,
                          ncaData = NULL,
-                         ncaResults = NULL) {
+                         ncaResults = NULL,
+                         rxControl=rxode2::rxControl()) {
   getValidNlmixrCtl.pknca(
     list(
       concu = concu,
@@ -418,7 +419,8 @@ pkncaControl <- function(concu = NA_character_, doseu = NA_character_, timeu = N
       groups = groups,
       sparse = sparse,
       ncaData = ncaData,
-      ncaResults = ncaResults
+      ncaResults = ncaResults,
+      rxControl=rxControl
     )
   )
 }

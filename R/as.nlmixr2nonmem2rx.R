@@ -48,7 +48,7 @@ as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl()) {
     # - $table for table options -- already present
     env$table <- table
     env$origData <- x$nonmemData
-    nlmixr2est::.foceiPreProcessData(env$origData, env, .ui)
+    nlmixr2est::.foceiPreProcessData(env$origData, env, .ui, env$control$rxControl)
     # - $origData -- Original Data -- already present
     # - $dataSav -- Processed data from .foceiPreProcessData --already present
     # - $idLvl -- Level information for ID factor added -- already present

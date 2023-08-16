@@ -152,7 +152,7 @@
   .ret <- new.env(parent=emptyenv())
   .ret$table <- env$table
   .ret$monolixControl <- .control
-  .tmp  <- bblDatToMonolix(.ui, .data, table=env$table, env=.ret)
+  .tmp  <- bblDatToMonolix(.ui, .data, table=env$table, rxControl=.control$rxControl, env=.ret)
   .ret$monolixData <- .monolixFormatData(.tmp$monolix, .ui)
   .tmp <- .tmp$adm
   if (length(.tmp$adm) == 0) {
