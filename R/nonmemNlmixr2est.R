@@ -130,7 +130,7 @@
   .ret <- new.env(parent=emptyenv())
   .ret$table <- env$table
   .ret$nonmemControl <- .control
-  .tmp  <- bblDatToNonmem(.ui, .data, table=env$table, control=.control$rxControl, env=.ret)
+  .tmp  <- bblDatToNonmem(.ui, .data, table=env$table, rxControl=.control$rxControl, env=.ret)
   .ret$nonmemData <- .nonmemFormatData(.tmp, .ui)
   rxode2::rxAssignControlValue(.ui, ".cmtCnt", env$nmNcmt)
 
