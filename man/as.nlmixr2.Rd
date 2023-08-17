@@ -5,9 +5,19 @@
 \alias{as.nlmixr}
 \title{Convert an object to a nlmixr2 fit object}
 \usage{
-as.nlmixr2(x, ..., table = nlmixr2est::tableControl())
+as.nlmixr2(
+  x,
+  ...,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl()
+)
 
-as.nlmixr(x, ..., table = nlmixr2est::tableControl())
+as.nlmixr(
+  x,
+  ...,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl()
+)
 }
 \arguments{
 \item{x}{Object to convert}
@@ -15,6 +25,10 @@ as.nlmixr(x, ..., table = nlmixr2est::tableControl())
 \item{...}{Other arguments}
 
 \item{table}{is the `nlmixr2est::tableControl()` options}
+
+\item{rxControl}{is the `rxode2::rxControl()` options, which is
+generally needed for how `addl` doses are handled in the
+translation}
 }
 \value{
 nlmixr2 fit object

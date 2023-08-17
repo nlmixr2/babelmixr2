@@ -12,7 +12,6 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
   stop("cannot find nonmem2rx related control object", call.=FALSE)
 }
 
-
 .nonmem2rxToFoceiControl <- function(env, model, assign=FALSE) {
   .rxControl <- rxode2::rxControl(covsInterpolation="nocb",
                                   atol=model$atol,
@@ -32,7 +31,7 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
 }
 
 #' @export
-as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl()) {
+as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl()) {
   #need x$nonmemData
   # need x to have at least one endpoint
   # The environment needs:
@@ -48,7 +47,7 @@ as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl()) {
     # - $table for table options -- already present
     env$table <- table
     env$origData <- x$nonmemData
-    nlmixr2est::.foceiPreProcessData(env$origData, env, .ui, env$control$rxControl)
+    nlmixr2est::.foceiPreProcessData(env$origData, env, .ui, rxControl)
     # - $origData -- Original Data -- already present
     # - $dataSav -- Processed data from .foceiPreProcessData --already present
     # - $idLvl -- Level information for ID factor added -- already present
