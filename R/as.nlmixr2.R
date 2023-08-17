@@ -1,4 +1,4 @@
-#' Convert an oburject to a nlmixr2 fit object
+#' Convert an object to a nlmixr2 fit object
 #'
 #' @param x Object to convert
 #' @param ... Other arguments
