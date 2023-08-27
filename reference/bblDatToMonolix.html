@@ -59,15 +59,45 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">bblDatToMonolix</span><span class="op">(</span><span class="va">model</span>, <span class="va">data</span>, table <span class="op">=</span> <span class="fu">nlmixr2est</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/tableControl.html" class="external-link">tableControl</a></span><span class="op">(</span><span class="op">)</span>, env <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">bblDatToMonolix</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  table <span class="op">=</span> <span class="fu">nlmixr2est</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/tableControl.html" class="external-link">tableControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  rxControl <span class="op">=</span> <span class="fu">rxode2</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/rxSolve.html" class="external-link">rxControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  env <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">bblDatToNonmem</span><span class="op">(</span><span class="va">model</span>, <span class="va">data</span>, table <span class="op">=</span> <span class="fu">nlmixr2est</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/tableControl.html" class="external-link">tableControl</a></span><span class="op">(</span><span class="op">)</span>, env <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="fu">bblDatToNonmem</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  table <span class="op">=</span> <span class="fu">nlmixr2est</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/tableControl.html" class="external-link">tableControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  rxControl <span class="op">=</span> <span class="fu">rxode2</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/rxSolve.html" class="external-link">rxControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  env <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">bblDatToRxode</span><span class="op">(</span><span class="va">model</span>, <span class="va">data</span>, table <span class="op">=</span> <span class="fu">nlmixr2est</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/tableControl.html" class="external-link">tableControl</a></span><span class="op">(</span><span class="op">)</span>, env <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="fu">bblDatToRxode</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  table <span class="op">=</span> <span class="fu">nlmixr2est</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/tableControl.html" class="external-link">tableControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  rxControl <span class="op">=</span> <span class="fu">rxode2</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/rxSolve.html" class="external-link">rxControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  env <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">bblDatToMrgsolve</span><span class="op">(</span><span class="va">model</span>, <span class="va">data</span>, table <span class="op">=</span> <span class="fu">nlmixr2est</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/tableControl.html" class="external-link">tableControl</a></span><span class="op">(</span><span class="op">)</span>, env <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="fu">bblDatToMrgsolve</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  table <span class="op">=</span> <span class="fu">nlmixr2est</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/tableControl.html" class="external-link">tableControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  rxControl <span class="op">=</span> <span class="fu">rxode2</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/rxSolve.html" class="external-link">rxControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  env <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">bblDatToPknca</span><span class="op">(</span><span class="va">model</span>, <span class="va">data</span>, table <span class="op">=</span> <span class="fu">nlmixr2est</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/tableControl.html" class="external-link">tableControl</a></span><span class="op">(</span><span class="op">)</span>, env <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">bblDatToPknca</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  table <span class="op">=</span> <span class="fu">nlmixr2est</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/tableControl.html" class="external-link">tableControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  rxControl <span class="op">=</span> <span class="fu">rxode2</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/rxSolve.html" class="external-link">rxControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  env <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -85,10 +115,15 @@
 there are additional columns to keep.</p></dd>
 
 
+<dt>rxControl</dt>
+<dd><p>is the rxode2 control options; This is to figure
+out how to handle the addl dosing information.</p></dd>
+
+
 <dt>env</dt>
 <dd><p>When `NULL` (default) nothing is done.  When an
 environment, the function `nlmixr2est::.foceiPreProcessData(data,
-env, model)` is called on the provided environment.</p></dd>
+env, model, rxControl)` is called on the provided environment.</p></dd>
 
 </dl></div>
     <div class="section level2">

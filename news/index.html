@@ -55,9 +55,11 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="babelmixr2-development-version">babelmixr2 (development version)<a class="anchor" aria-label="anchor" href="#babelmixr2-development-version"></a></h2>
 <ul><li><p>Handle algebraic <code>mu</code> expressions</p></li>
+<li><p>PKNCA controller now contains <code>rxControl</code> since it is used for some translation options</p></li>
 <li><p>This revision will load the pruned ui model to query the compartment properties (i.e. bioavailability, lag time, etc) when writing out the NONMEM model. It should fix issues where the PK block does not define some of the variables and will have a larger calculated variable that can be used in the model instead.</p></li>
 <li><p>When <code>nonmem2rx</code> has a different <code>lst</code> file, as long as <code>nonmem2rx::nminfo(file)</code> works, then a successful conversion to a <code>nlmixr2</code> fit object will occur.</p></li>
 <li><p>Fix to save parameter history into <code>$parHistData</code> to accommodate changes in <code>focei</code>’s output (<code>$parHist</code> is now derived).</p></li>
+<li><p>Changed the solving options to match the new steady state options in <code>rxode2</code> and how NONMEM implements them. Also changed the itwres model to account for the <code>rxerr.</code> instead of the <code>err.</code> which was updated in <code>rxode2</code> as well.</p></li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.1" id="babelmixr2-011">babelmixr2 0.1.1<a class="anchor" aria-label="anchor" href="#babelmixr2-011"></a></h2><p class="text-muted">CRAN release: 2023-05-27</p>
