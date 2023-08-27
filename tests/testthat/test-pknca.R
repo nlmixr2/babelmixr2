@@ -66,7 +66,8 @@ test_that("pkncaControl", {
       groups = "foo",
       sparse = FALSE,
       ncaData = NULL,
-      ncaResults = NULL
+      ncaResults = NULL,
+      rxControl= rxode2::rxControl()
     )
   )
 

@@ -9,9 +9,12 @@
 #' @param table is the table control; this is mostly to figure out if
 #'   there are additional columns to keep.
 #'
+#' @param rxControl is the rxode2 control options; This is to figure
+#'   out how to handle the addl dosing information.
+#'
 #' @param env When `NULL` (default) nothing is done.  When an
 #'   environment, the function `nlmixr2est::.foceiPreProcessData(data,
-#'   env, model)` is called on the provided environment.
+#'   env, model, rxControl)` is called on the provided environment.
 #'
 #' @return
 #'
@@ -96,7 +99,8 @@
 #' bblDatToRxode(pk.turnover.emax3, nlmixr2data::warfarin)
 #'
 #' @useDynLib babelmixr2, .registration=TRUE
-bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=NULL) {
+bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl(),
+                            env=NULL) {
   # https://dataset.lixoft.com/faq/translating-your-dataset-from-nonmem-format-to-the-monolix-suite-format/
   nlmixr2est::nmObjUiSetCompressed(FALSE)
   on.exit({nlmixr2est::nmObjUiSetCompressed(TRUE)})
@@ -109,7 +113,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
     .env <- new.env(parent=emptyenv())
   }
   .env$table <- table
-  nlmixr2est::.foceiPreProcessData(data, .env, model)
+  nlmixr2est::.foceiPreProcessData(data, .env, model, rxControl)
   .mv <- rxode2::rxModelVars(model)
   .flag <- .mv$flags
   .conv0 <- .Call(`_babelmixr2_convertDataBack`, .env$dataSav$ID, .env$dataSav$TIME, .env$dataSav$AMT,
@@ -214,7 +218,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
         .predDf$trLow, .predDf$trHi)
 }
 
-.bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
+.bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl(),
                                 fun="bblDatToNonmem", replaceEvid=5L,
                             replaceOK=FALSE, software="NONMEM", env=NULL) {
   nlmixr2est::nmObjUiSetCompressed(FALSE)
@@ -229,7 +233,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
     .env <- new.env(parent=emptyenv())
   }
   .env$table <- table
-  nlmixr2est::.foceiPreProcessData(data, .env, model)
+  nlmixr2est::.foceiPreProcessData(data, .env, model, rxControl)
   .mv <- rxode2::rxModelVars(model)
   .flag <- .mv$flags
   .conv0 <- .Call(`_babelmixr2_convertDataBack`, .env$dataSav$ID, .env$dataSav$TIME, .env$dataSav$AMT,
@@ -292,13 +296,14 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), env=N
 
 #' @rdname bblDatToMonolix
 #' @export
-bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), env=NULL) {
+bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
+                           rxControl=rxode2::rxControl(), env=NULL) {
   nlmixr2est::nmObjUiSetCompressed(FALSE)
   on.exit({nlmixr2est::nmObjUiSetCompressed(TRUE)})
   .xtra <- paste0(" to convert the data with 'bblDatToNonmem'")
   model <- rxode2::assertRxUi(model, extra=.xtra)
   model <- rxode2::rxUiDecompress(model)
-  .ret <- .bblDatToNonmem (model, data, table,
+  .ret <- .bblDatToNonmem (model, data, table, rxControl, 
                            fun="bblDatToNonmem", replaceEvid=5L,
                            replaceOK=FALSE, software="NONMEM", env=env)
   nlmixr2est::nmObjUiSetCompressed(FALSE)
@@ -346,8 +351,9 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), env=NU
 
 #' @rdname bblDatToMonolix
 #' @export
-bblDatToRxode <- function(model, data, table=nlmixr2est::tableControl(), env=NULL) {
-  .bblDatToNonmem(model, data, table,
+bblDatToRxode <- function(model, data, table=nlmixr2est::tableControl(),
+                          rxControl=rxode2::rxControl(), env=NULL) {
+  .bblDatToNonmem(model, data, table, rxControl,
                   fun="bblDatToRxode", replaceEvid=5L,
                   replaceOK=NA, software="rxode2", env=env)
 }
@@ -355,18 +361,20 @@ bblDatToRxode <- function(model, data, table=nlmixr2est::tableControl(), env=NUL
 
 #' @rdname bblDatToMonolix
 #' @export
-bblDatToMrgsolve <- function(model, data, table=nlmixr2est::tableControl(), env=NULL) {
-  .bblDatToNonmem(model, data, table,
+bblDatToMrgsolve <- function(model, data, table=nlmixr2est::tableControl(),
+                             rxControl=rxode2::rxControl(), env=NULL) {
+  .bblDatToNonmem(model, data, table, rxControl,
                   fun="bblDatToMrgsolve", replaceEvid=8L,
                   replaceOK=TRUE, software="mrgsolve", env=env)
 }
 
 #' @rdname bblDatToMonolix
 #' @export
-bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(), env=NULL) {
+bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
+                          rxControl=rxode2::rxControl(), env=NULL) {
   newData <-
     .bblDatToNonmem(
-      model, data, table,
+      model, data, table, rxControl, 
       fun="bblDatToPknca", replaceEvid=5L,
       replaceOK=TRUE, software="pknca", env=env
     )

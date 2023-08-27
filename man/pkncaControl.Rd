@@ -17,7 +17,8 @@ pkncaControl(
   groups = character(),
   sparse = FALSE,
   ncaData = NULL,
-  ncaResults = NULL
+  ncaResults = NULL,
+  rxControl = rxode2::rxControl()
 )
 }
 \arguments{

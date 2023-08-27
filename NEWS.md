@@ -2,6 +2,9 @@
 
 * Handle algebraic `mu` expressions
 
+* PKNCA controller now contains `rxControl` since it is used for some
+  translation options
+
 * This revision will load the pruned ui model to query the compartment
   properties (i.e. bioavailability, lag time, etc) when writing out the
   NONMEM model.  It should fix issues where the PK block does not
@@ -14,6 +17,12 @@
 
 * Fix to save parameter history into `$parHistData` to accommodate
   changes in `focei`'s output (`$parHist` is now derived).
+
+* Changed the solving options to match the new steady state options in
+  `rxode2` and how NONMEM implements them.  Also changed the itwres
+  model to account for the `rxerr.` instead of the `err.` which was
+  updated in `rxode2` as well.
+
 
 # babelmixr2 0.1.1
 

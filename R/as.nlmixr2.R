@@ -3,6 +3,9 @@
 #' @param x Object to convert
 #' @param ... Other arguments
 #' @param table is the `nlmixr2est::tableControl()` options
+#' @param rxControl is the `rxode2::rxControl()` options, which is
+#'   generally needed for how `addl` doses are handled in the
+#'   translation
 #' @return nlmixr2 fit object
 #' @export
 #' @author Matthew L. Fidler
@@ -60,7 +63,7 @@
 #' print(fit)
 #'
 #' }
-as.nlmixr2 <- function(x, ..., table=nlmixr2est::tableControl()) {
+as.nlmixr2 <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl()) {
   UseMethod("as.nlmixr2")
 }
 #' @rdname as.nlmixr2
@@ -68,7 +71,7 @@ as.nlmixr2 <- function(x, ..., table=nlmixr2est::tableControl()) {
 as.nlmixr <- as.nlmixr2
 
 #' @export
-as.nlmixr2.default <- function(x, ..., table=nlmixr2est::tableControl()) {
+as.nlmixr2.default <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl()) {
   stop("cannot figure out how to create an nlmixr2 object from the input",
        call.=FALSE)
 }

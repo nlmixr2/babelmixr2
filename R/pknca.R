@@ -219,13 +219,15 @@ getDvLines <- function(modelfun, inModel = FALSE, dvAssign = NULL) {
 #' @noRd
 calcPknca <- function(env, pkncaUnits) {
   # Normalize column names
+  rxControl <- env$control[[1]]$rxControl
   control <- env$control[[1]]
   rawData <- env$data
+
   if (!is.null(control$ncaData)) {
     # as.data.frame() due to https://github.com/nlmixr2/nlmixr2est/pull/262
     rawData <- as.data.frame(control$ncaData)
   }
-  cleanData <- bblDatToPknca(model = env$ui, data = rawData)
+  cleanData <- bblDatToPknca(model = env$ui, data = rawData, rxControl=rxControl)
   cleanColNames <- getStandardColNames(cleanData$obs)
   oConcFormula <-
     stats::as.formula(sprintf(
@@ -403,7 +405,8 @@ pkncaControl <- function(concu = NA_character_, doseu = NA_character_, timeu = N
                          groups = character(),
                          sparse = FALSE,
                          ncaData = NULL,
-                         ncaResults = NULL) {
+                         ncaResults = NULL,
+                         rxControl=rxode2::rxControl()) {
   getValidNlmixrCtl.pknca(
     list(
       concu = concu,
@@ -418,7 +421,8 @@ pkncaControl <- function(concu = NA_character_, doseu = NA_character_, timeu = N
       groups = groups,
       sparse = sparse,
       ncaData = ncaData,
-      ncaResults = ncaResults
+      ncaResults = ncaResults,
+      rxControl=rxControl
     )
   )
 }
