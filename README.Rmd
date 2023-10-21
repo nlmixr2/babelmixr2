@@ -74,7 +74,17 @@ command line.
 
 ## Example
 
-After installed, if you use the standard interface, you can convert to Monolix with
+After installed, if you use the standard interface, you can obtain new initial estimates with PKNCA:
+
+```r
+mod <-
+  nlmixr2(
+    nlmixrFun, nlmmixrData, est = "pknca",
+    control = pkncaControl(concu = "ng/mL", doseu = "mg", timeu = "hr", volumeu = "L")
+  )
+```
+
+or, you can convert to Monolix with
 
 ```r
 mod <- nlmixr(nlmixrFun, nlmmixrData, est="monolix")
