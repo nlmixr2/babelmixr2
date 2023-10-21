@@ -395,6 +395,7 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
 #' @param ncaResults Already computed NCA results (a PKNCAresults object) to
 #'   bypass automatic calculations.  At least the following parameters must be
 #'   calculated in the NCA: tmax, cmax.dn, cl.last
+#' @param rxControl Control options sent to `rxode2::rxControl()`
 #' @return A list of parameters
 #' @export
 pkncaControl <- function(concu = NA_character_, doseu = NA_character_, timeu = NA_character_,
