@@ -1,0 +1,162 @@
+---
+title: "Obtain initial estimates and unit conversions with PKNCA"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Obtain initial estimates and unit conversions with PKNCA}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+Initial estimates for a compartmental population PK model can be obtained using
+`babelmixr2` with the `"pknca"` estimation method.  Also, the central
+compartment scaling factor can be auto-generated based on units for dosing,
+concentration measurement, desired volume of distribution units, and time.
+
+You do not need to perform NCA analysis by hand; the `"pknca"` estimation method
+will perform NCA analysis using the [PKNCA](https://billdenney.github.io/pknca/)
+package automatically.
+
+The methods used for converting NCA calculations to parameter estimates are
+described in the help for `nlmixr2Est.pknca()`.
+
+## Initial example
+
+Initial model setup is the same as for any other `nlmixr2` model.  You must load
+the `babelmixr2` library so that the `nlmixr()` function recognizes
+`est = "pknca"`.
+
+```{r setup}
+library(babelmixr2)
+one.compartment <- function() {
+  ini({
+    tka <- log(1.57); label("Ka (1/hr)")
+    tcl <- log(2.72); label("Cl (L/hr)")
+    tv <- log(31.5); label("V (L)")
+    eta.ka ~ 0.6
+    eta.cl ~ 0.3
+    eta.v ~ 0.1
+    add.sd <- 0.7; label("additive residual error (mg/L)")
+  })
+  # and a model block with the error specification and model specification
+  model({
+    ka <- exp(tka + eta.ka)
+    cl <- exp(tcl + eta.cl)
+    vc <- exp(tv + eta.v)
+    d/dt(depot) <- -ka * depot
+    d/dt(center) <- ka * depot - cl / vc * center
+    cp <- center / vc
+    cp ~ add(add.sd)
+  })
+}
+```
+
+To use PKNCA to get initial estimates, use `est = "pknca"` instead of one of the
+other `nlmixr2` estimation methods.
+
+For unit conversions, provide the units to the `control = pkncaControl()`
+argument.  Unit conversions are only supported when the units can be
+automatically converted; mass/volume can be converted to any other mass/volume
+ratio, but mass to molar or molar to mass cannot because there is not a single
+mass-to-molar conversion factor.
+
+```{r model-update}
+prepared <-
+  nlmixr2(
+    one.compartment,
+    data = theo_sd,
+    est = "pknca",
+    control = pkncaControl(concu = "ng/mL", doseu = "mg", timeu = "hr", volumeu = "L")
+  )
+```
+
+Now, you have the prepared model with updated initial estimates and the NCA
+results embedded.  You can see the new model and the PKNCA estimates by looking
+at the `prepared$ui` (the model as interpreted by rxode2) and `prepared$nca`
+(the PKNCAresults object).
+
+Note that in the new model, the fixed effect initial estimates are changed from
+their original values.  The residual error and between-subject variability are
+unchanged.
+
+```{r examine-update}
+prepared$ui
+
+knitr::knit_print(
+  summary(prepared$nca)
+)
+```
+
+From the updated model, you can perform estimation on the new model object, as
+with any other model that has been created for `nlmixr2`:
+
+```{r fit}
+fit <- nlmixr(prepared, data = theo_sd, est = "focei", control = list(print = 0))
+
+fit
+```
+
+## Give PKNCA a different dataset or a completed NCA analysis
+
+To get the initial estimate, `babelmixr2` automatically converts your modeling
+dataset to the format the is needed for PKNCA, and the NCA is automatically
+performed using all the data.
+
+In some cases (e.g. studies with sparse data), NCA may not be feasible.  In
+those cases, you can provide a different dataset to PKNCA compared to the full
+modeling dataset.  Usually, the simplest method is to provide single-dose,
+dense-sampling, dose-ranging data (i.e. the single-ascending dose portion of the
+first-in-human study) to be estimated.
+
+To do this, give your data to PKNCA using the `ncaData` argument to
+`pkncaControl()` as follows:
+
+```{r model-ncaData}
+# Choose a subset of the full dataset for NCA
+dNCA <- theo_sd[theo_sd$ID <= 6, ]
+
+preparedNcaData <-
+  nlmixr2(
+    one.compartment,
+    data = theo_sd,
+    est = "pknca",
+    control = pkncaControl(concu = "ng/mL", doseu = "mg", timeu = "hr", volumeu = "L", ncaData = dNCA)
+  )
+
+preparedNcaData$ui
+```
+
+The initial estimates are now based on NCA calculated from the `dNCA` dataset
+rather than the full `theo_sd` dataset.
+
+If you already have NCA results calculated by PKNCA with the required parameters
+("tmax", "cmax.dn", and "cllast"), you can provide those instead using the
+`pkncaControl(ncaResults)` argument.
+
+## Model requirements
+
+To update the initial estimates, the model must have parameters in the `model()`
+block with the names that are expected by `est = "pknca"`.  The expected names
+are:
+
+* `ka`
+* `vc`
+* `cl`
+* `vp`
+* `vp2`
+* `q`
+* `q2`
+
+Any of those parameter names that are found in the `model()` block will be
+automatically traced back to the initial conditions (`ini()` block), and the
+parameter values will be updated.  If the parameter is estimated on the log
+scale, the updated parameter value will automatically be converted to the log
+scale.
