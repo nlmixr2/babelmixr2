@@ -126,7 +126,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), rxCon
          call.=FALSE)
   }
   if (.conv0$hasTinf) {
-    warning("monolix changes infusion times for `tinf` with bioavailability differently than `nlmixr2`, make sure there is no bioavailibilty changes for this infusion in the model",
+    warning("monolix changes infusion times for `tinf` with bioavailability differently than `nlmixr2`, make sure there is no bioavailability changes for this infusion in the model",
             call.=FALSE)
   }
   if (.conv0$hasPhantom) {
@@ -303,7 +303,7 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
   .xtra <- paste0(" to convert the data with 'bblDatToNonmem'")
   model <- rxode2::assertRxUi(model, extra=.xtra)
   model <- rxode2::rxUiDecompress(model)
-  .ret <- .bblDatToNonmem (model, data, table, rxControl, 
+  .ret <- .bblDatToNonmem (model, data, table, rxControl,
                            fun="bblDatToNonmem", replaceEvid=5L,
                            replaceOK=FALSE, software="NONMEM", env=env)
   nlmixr2est::nmObjUiSetCompressed(FALSE)
@@ -374,7 +374,7 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
                           rxControl=rxode2::rxControl(), env=NULL) {
   newData <-
     .bblDatToNonmem(
-      model, data, table, rxControl, 
+      model, data, table, rxControl,
       fun="bblDatToPknca", replaceEvid=5L,
       replaceOK=TRUE, software="pknca", env=env
     )

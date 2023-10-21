@@ -237,7 +237,7 @@
     if (!exists("parHistData", .ret$env)) {
       .tmp <- .ret$ui$monolixParHistory
       if (is.null(.tmp)) {
-        .minfo("monolix parameter history needs expoted charts, please export charts")
+        .minfo("monolix parameter history needs exported charts, please export charts")
       } else {
         .tmp$type <- "Unscaled"
         assign("parHistData", .tmp, .ret$env)
@@ -303,7 +303,7 @@
     .tmp <- .ret$ui$monolixParHistory
     assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
     if (is.null(.tmp)) {
-      .minfo("monolix parameter history needs expoted charts, please export charts")
+      .minfo("monolix parameter history needs exported charts, please export charts")
     } else {
       .tmp$type <- "Unscaled"
       assign("parHistData", .tmp, .ret$env)
