@@ -100,7 +100,7 @@ will do the heavy lifting here.</p>
 setup the <code>lixoftConnectors</code> package from Monolix, no further
 setup is needed. Instead if you run <code>Monolix</code> from the
 command line for grid processing (for example) you can figure out the
-command to run <code>Monlix</code> (it is often useful to use the full
+command to run <code>Monolix</code> (it is often useful to use the full
 command path and set it in the options, ie
 <code>options("babelmixr2.monolix"="monolix")</code> or use
 <code>monolixControl(runCommand="monolix")</code>. If needed, I prefer
@@ -185,10 +185,10 @@ the function here).</p>
 <span><span class="co">#&gt; → Calculating residuals/tables</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → compress origData in nlmixr2 object, save 27560</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> monolix parameter history needs expoted charts, please export charts</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> monolix parameter history needs exported charts, please export charts</span></span></code></pre></div>
 <p>This fit issues an informational tidbit -</p>
 <ul>
-<li>monolix parameter history needs expoted charts, please export
+<li>monolix parameter history needs exported charts, please export
 charts</li>
 </ul>
 <p>This will automatically be generated as well when
@@ -213,8 +213,8 @@ the input).</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Time (sec </span><span style="color: #BBBB00; font-weight: bold;">fit</span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;            setup table compress    other</span></span>
-<span><span class="co">#&gt; elapsed 0.003452 0.084     0.01 5.166548</span></span>
+<span><span class="co">#&gt;           setup table compress   other</span></span>
+<span><span class="co">#&gt; elapsed 0.00353 0.093    0.009 5.08647</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Population Parameters (</span><span style="color: #BBBB00; font-weight: bold;">fit</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #BBBB00; font-weight: bold;">fit</span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
@@ -291,7 +291,7 @@ residuals:</p>
 <span><span class="co">#&gt; → calculate jacobian</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → calculate sensitivities</span></span>
-<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:01</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → calculate ∂(f)/∂(η)</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → calculate ∂(R²)/∂(η)</span></span>
@@ -351,7 +351,7 @@ perform a VPC too:</p>
 <p><img src="running-monlix_files/figure-html/vpc-2.png" width="700"></p>
 </div>
 <div class="section level2">
-<h2 id="notes-about-monlix-data-translation">Notes about Monlix data translation<a class="anchor" aria-label="anchor" href="#notes-about-monlix-data-translation"></a>
+<h2 id="notes-about-monolix-data-translation">Notes about Monolix data translation<a class="anchor" aria-label="anchor" href="#notes-about-monolix-data-translation"></a>
 </h2>
 <p>The input dataset expected to be compatible with <code>rxode2</code>
 or <code>nlmixr2</code>. This dataset is then converted to Monolix
@@ -369,15 +369,15 @@ compartment, ie
 dosing:</p>
 <ul>
 <li><p>Bolus/infusion uses <code>depot()</code> and adds modeled lag
-time (<code>Tlag</code>) or bioavailibilty (<code>p</code>) if
+time (<code>Tlag</code>) or bioavailability (<code>p</code>) if
 specified</p></li>
 <li><p>Modeled rate uses <code>depot()</code> with
 <code>Tk0=amtDose/rate</code>. <code>babelmixr2</code> also adds modeled
-lag time (<code>Tlag</code>) or bioavailibilty (<code>p</code>) if
+lag time (<code>Tlag</code>) or bioavailability (<code>p</code>) if
 specified</p></li>
 <li><p>Modeled duration uses <code>depot()</code> with
 <code>Tk0=dur</code>, also add adds modeled lag time (<code>Tlag</code>)
-or bioavailibilty (<code>p</code>) if specified Turning off a
+or bioavailability (<code>p</code>) if specified Turning off a
 compartment uses empty macro</p></li>
 </ul>
 </li>
