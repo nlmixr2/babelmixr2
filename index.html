@@ -63,6 +63,7 @@
     <a class="dropdown-item" href="articles/running-monlix.html">Running Monolix</a>
     <a class="dropdown-item" href="articles/running-nonmem.html">Running NONMEM with nlmixr2</a>
     <a class="dropdown-item" href="articles/new-estimation.html">Creating a New Estimation Method</a>
+    <a class="dropdown-item" href="articles/running-pknca.html">Obtain initial estimates and unit conversions with PKNCA</a>
   </div>
 </li>
 <li class="nav-item">
@@ -129,11 +130,18 @@
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
-<p>After installed, if you use the standard interface, you can convert to Monolix with</p>
+<p>After installed, if you use the standard interface, you can obtain new initial estimates with PKNCA:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">mod</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fu">nlmixr2</span><span class="op">(</span></span>
+<span>    <span class="va">nlmixrFun</span>, <span class="va">nlmmixrData</span>, est <span class="op">=</span> <span class="st">"pknca"</span>,</span>
+<span>    control <span class="op">=</span> <span class="fu"><a href="reference/pkncaControl.html">pkncaControl</a></span><span class="op">(</span>concu <span class="op">=</span> <span class="st">"ng/mL"</span>, doseu <span class="op">=</span> <span class="st">"mg"</span>, timeu <span class="op">=</span> <span class="st">"hr"</span>, volumeu <span class="op">=</span> <span class="st">"L"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p>or, you can convert to Monolix with</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu">nlmixr</span><span class="op">(</span><span class="va">nlmixrFun</span>, <span class="va">nlmmixrData</span>, est<span class="op">=</span><span class="st">"monolix"</span><span class="op">)</span></span></code></pre></div>
 <p>or, you can convert to NONMEM with</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu">nlmixr</span><span class="op">(</span><span class="va">nlmixrFun</span>, <span class="va">nlmmixrData</span>, est<span class="op">=</span><span class="st">"nonmem"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
