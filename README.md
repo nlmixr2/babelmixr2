@@ -46,17 +46,17 @@ Otherwise you can always install from GitHub:
 
 Babelmixr2 can help you by:
 
-  - Running your nlmixr2 model in a commercial nonlinear mixed effects
-    modeling tool like
-    [`NONMEM`](https://nlmixr2.github.io/babelmixr2/articles/running-nonmem.html)
-    or `Monolix`
+- Running your nlmixr2 model in a commercial nonlinear mixed effects
+  modeling tool like
+  [`NONMEM`](https://nlmixr2.github.io/babelmixr2/articles/running-nonmem.html)
+  or `Monolix`
 
-  - Convert your [`NONMEM` model to a nlmixr2
-    model](https://nlmixr2.github.io/nonmem2rx/articles/convert-nlmixr2.html)
-    (in conjunction with `nonmem2rx`)
+- Convert your [`NONMEM` model to a nlmixr2
+  model](https://nlmixr2.github.io/nonmem2rx/articles/convert-nlmixr2.html)
+  (in conjunction with `nonmem2rx`)
 
-  - Calculate scaling factors and automatically add initial conditions
-    based on non-compartmental analysis (using `PKNCA`)
+- Calculate scaling factors and automatically add initial conditions
+  based on non-compartmental analysis (using `PKNCA`)
 
 ## Monolix Setup
 
@@ -68,8 +68,18 @@ instead of using a command line.
 
 ## Example
 
-After installed, if you use the standard interface, you can convert to
-Monolix with
+After installed, if you use the standard interface, you can obtain new
+initial estimates with PKNCA:
+
+``` r
+mod <-
+  nlmixr2(
+    nlmixrFun, nlmmixrData, est = "pknca",
+    control = pkncaControl(concu = "ng/mL", doseu = "mg", timeu = "hr", volumeu = "L")
+  )
+```
+
+or, you can convert to Monolix with
 
 ``` r
 mod <- nlmixr(nlmixrFun, nlmmixrData, est="monolix")
