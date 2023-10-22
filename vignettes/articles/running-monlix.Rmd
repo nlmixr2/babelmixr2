@@ -32,7 +32,7 @@ To use `Monolix` with nlmixr2, you do not need to change your data or your
 You do need to setup how to run `Monolix`.  If you have setup the
 `lixoftConnectors` package from Monolix, no further setup is needed.
 Instead if you run `Monolix` from the command line for grid processing
-(for example) you can figure out the command to run `Monlix` (it is
+(for example) you can figure out the command to run `Monolix` (it is
 often useful to use the full command path and set it in the options,
 ie `options("babelmixr2.monolix"="monolix")` or use
 `monolixControl(runCommand="monolix")`.  If needed, I prefer the
@@ -107,7 +107,7 @@ fit <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix",
 
 This fit issues an informational tidbit -
 
-- monolix parameter history needs expoted charts, please export charts
+- monolix parameter history needs exported charts, please export charts
 
 This will automatically be generated as well when `lixoftConnectors`
 package is generated and you have a recent version of Monolix.  If you
@@ -171,7 +171,7 @@ v1s
 v2s
 ```
 
-# Notes about Monlix data translation
+# Notes about Monolix data translation
 
 The input dataset expected to be compatible with `rxode2` or
 `nlmixr2`.  This dataset is then converted to Monolix format:
@@ -184,13 +184,13 @@ The input dataset expected to be compatible with `rxode2` or
 
 - `babelmixr2` also creates a macro for each type of dosing:
 
-   - Bolus/infusion uses `depot()` and adds modeled lag time (`Tlag`) or bioavailibilty (`p`) if specified
+   - Bolus/infusion uses `depot()` and adds modeled lag time (`Tlag`) or bioavailability (`p`) if specified
    
    - Modeled rate uses `depot()` with `Tk0=amtDose/rate`. `babelmixr2`
-     also adds modeled lag time (`Tlag`) or bioavailibilty (`p`) if
+     also adds modeled lag time (`Tlag`) or bioavailability (`p`) if
      specified
    
    - Modeled duration uses `depot()` with `Tk0=dur`, also add adds
-     modeled lag time (`Tlag`) or bioavailibilty (`p`) if specified
+     modeled lag time (`Tlag`) or bioavailability (`p`) if specified
      Turning off a compartment uses empty macro
    
