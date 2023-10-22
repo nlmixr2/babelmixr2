@@ -19,7 +19,7 @@
   changes in `focei`'s output (`$parHist` is now derived).
 
 * Changed the solving options to match the new steady state options in
-  `rxode2` and how NONMEM implements them.  Also changed the itwres
+  `rxode2` and how NONMEM implements them.  Also changed the iwres
   model to account for the `rxerr.` instead of the `err.` which was
   updated in `rxode2` as well.
 
