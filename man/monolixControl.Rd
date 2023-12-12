@@ -48,11 +48,11 @@ fim.}
 
 The combined1 error type can be described by the following equation:
 
-  y = f + (a + b*f^c)*err
+  \deqn{y = f + (a + b\times f^c) \times \varepsilon}{y = f + (a + b*f^c)*err}
 
 The combined2 error model can be described by the following equation:
 
- y = f + sqrt(a^2 + b^2*(f^c)^2)*err
+ \deqn{y = f + \sqrt{a^2 + b^2\times f^{2\times c}} \times \varepsilon}{y = f + sqrt(a^2 + b^2*(f^c)^2)*err}
 
  Where:
 
@@ -70,7 +70,7 @@ The combined2 error model can be described by the following equation:
 phase auto-stop of SAEM (default 250)}
 
 \item{smoothingAutoStop}{Boolean indicating if the smoothing should
-automatically stop (default `FALSE`)}
+automatically stop (default \code{FALSE})}
 
 \item{burnInIterations}{Number of burn in iterations}
 
@@ -86,7 +86,7 @@ iterations}
 exploratory phase (default 200)}
 
 \item{exploratoryAlpha}{Convergence memory in the exploratory phase
-(only used when `exploratoryAutoStop` is `TRUE`)}
+(only used when \code{exploratoryAutoStop} is \code{TRUE})}
 
 \item{omegaTau}{Proportional rate on variance for simulated
 annealing}
@@ -131,7 +131,7 @@ If not specified, then it matches the significant digits in the
 be used for the monolix runs}
 
 \item{modelName}{Model name used to generate the NONMEM output.  If
-`NULL` try to infer from the model name (could be `x` if not
+\code{NULL} try to infer from the model name (could be \code{x} if not
 clear).  Otherwise use this character for outputs.}
 
 \item{muRefCovAlg}{This controls if algebraic expressions that can

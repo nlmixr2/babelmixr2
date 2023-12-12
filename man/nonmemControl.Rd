@@ -115,10 +115,10 @@ due to an apparent failed optimization}
 
 \item{mapinter}{is the MAPINTER parameter for the IMP method}
 
-\item{noabort}{Add the `NOABORT` option for `$EST`}
+\item{noabort}{Add the \code{NOABORT} option for \verb{$EST}}
 
 \item{modelName}{Model name used to generate the NONMEM output.  If
-`NULL` try to infer from the model name (could be `x` if not
+\code{NULL} try to infer from the model name (could be \code{x} if not
 clear).  Otherwise use this character for outputs.}
 
 \item{muRefCovAlg}{This controls if algebraic expressions that can
@@ -144,7 +144,7 @@ automatic \code{rxControl} generation.}
 }
 \value{
 babelmixr2 control option for generating NONMEM control stream and
-  reading it back into `babelmixr2`/`nlmixr2`
+reading it back into \code{babelmixr2}/\code{nlmixr2}
 }
 \description{
 NONMEM estimation control

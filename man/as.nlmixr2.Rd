@@ -24,10 +24,10 @@ as.nlmixr(
 
 \item{...}{Other arguments}
 
-\item{table}{is the `nlmixr2est::tableControl()` options}
+\item{table}{is the \code{nlmixr2est::tableControl()} options}
 
-\item{rxControl}{is the `rxode2::rxControl()` options, which is
-generally needed for how `addl` doses are handled in the
+\item{rxControl}{is the \code{rxode2::rxControl()} options, which is
+generally needed for how \code{addl} doses are handled in the
 translation}
 }
 \value{

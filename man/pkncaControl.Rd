@@ -49,7 +49,7 @@ when a subset of the original data are informative for NCA.}
 bypass automatic calculations.  At least the following parameters must be
 calculated in the NCA: tmax, cmax.dn, cl.last}
 
-\item{rxControl}{Control options sent to `rxode2::rxControl()`}
+\item{rxControl}{Control options sent to \code{rxode2::rxControl()}}
 }
 \value{
 A list of parameters

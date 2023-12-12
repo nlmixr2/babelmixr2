@@ -18,9 +18,9 @@ modelUnitConversion(
 }
 \value{
 A list with names for the units associated with each parameter
-  ("amtu", "clearanceu", "volumeu", "timeu", "dvu") and the numeric value to
-  multiply the modeled estimate (for example, \code{cp}) so that the model is
-  consistent with the data units.
+("amtu", "clearanceu", "volumeu", "timeu", "dvu") and the numeric value to
+multiply the modeled estimate (for example, \code{cp}) so that the model is
+consistent with the data units.
 }
 \description{
 Unit conversion for pharmacokinetic models

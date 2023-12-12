@@ -2,17 +2,20 @@
 #'
 #' @details Parameters are estimated as follows:
 #'
-#' \itemize{
-#' \item{ka}{4 half-lives to Tmax but not higher than 3:  \code{log(2)/(tmax/4)}}
-#' \item{vc}{Inverse of dose-normalized Cmax}
-#' \item{cl}{Estimated as the median clearance}
-#' \item{vp,vp2}{2- and 4-fold the \code{vc}, respectively by default,
+#'
+#' - \code{ka} 4 half-lives to Tmax but not higher than 3:  \code{log(2)/(tmax/4)}
+#'
+#' - \code{vc} Inverse of dose-normalized Cmax
+#'
+#' - \code{cl} Estimated as the median clearance
+#'
+#' - \code{vp,vp2}2- and 4-fold the \code{vc}, respectively by default,
 #'   controlled by the \code{vpMult} and \code{vp2Mult} arguments to
-#'   \code{pkncaControl}}
-#' \item{q,q2}{0.5- and 0.25-fold the \code{cl}, respectively by default,
+#'   \code{pkncaControl}
+#'
+#' - \code{q,q2} 0.5- and 0.25-fold the \code{cl}, respectively by default,
 #'   controlled by the \code{qMult} and \code{q2Mult} arguments to
-#'   \code{pkncaControl}}
-#' }
+#'   \code{pkncaControl}
 #'
 #' The bounds for the parameter estimates are set to 10% of the first percentile
 #' and 10 times the 99th percentile.  (For ka, the lower bound is set to the

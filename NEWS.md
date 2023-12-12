@@ -1,4 +1,4 @@
-# babelmixr2 (development version)
+# babelmixr2 0.1.2
 
 * Handle algebraic `mu` expressions
 

@@ -14,14 +14,14 @@ is the whole unit specification)}
 }
 \value{
 The units specified with units that are in both the numerator and
-  denominator cancelled.
+denominator cancelled.
 }
 \description{
 Simplify units by removing repeated units from the numerator and denominator
 }
 \details{
 \code{NA} or \code{""} for \code{numerator} and \code{denominator}
-  are considered unitless.
+are considered unitless.
 }
 \examples{
 simplifyUnit("kg", "kg/mL")

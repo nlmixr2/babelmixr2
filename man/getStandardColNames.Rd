@@ -11,8 +11,8 @@ getStandardColNames(data)
 }
 \value{
 A named character vector where the names are the standardized names
-  and the values are either the name of the column from the data or \code{NA}
-  if the column is not present in the data.
+and the values are either the name of the column from the data or \code{NA}
+if the column is not present in the data.
 }
 \description{
 Determine standardized rxode2 column names from data
