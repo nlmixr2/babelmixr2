@@ -58,6 +58,9 @@
 #' If \code{runCommand} is \code{NA}, \code{nlmixr()} will stop after writing
 #' the model files and without starting Monolix.
 #'
+#' Note that you can get the translated monolix components from a
+#' parsed/compiled rxode2 ui object with `ui$monolixModel` and `ui$mlxtran`
+#'
 #' @export
 #' @importFrom nlmixr2 nlmixr2
 #' @importFrom methods is
