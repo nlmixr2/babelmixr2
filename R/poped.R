@@ -45,6 +45,7 @@ rxUiGet.popedFgFun <- function(x, ...) {
   # bocc = occasion variables
   .ui <- x[[1]]
   .split <- .ui$getSplitMuModel
+
   .mu <- rxUiGet.popedBpopRep(x, ...)
   .ret <- vapply(seq_along(.mu$mu), function(i) {
     if (is.na(.mu$mu[i])) return(NA_character_)
@@ -59,9 +60,10 @@ rxUiGet.popedFgFun <- function(x, ...) {
   .covDef <- .ui$allCovs
   .covDefLst <- lapply(seq_along(.covDef),
                        function(i) {
-                         str2lang(paste0(.covDef[i], "<- a[", i, "]"))
+                         str2lang(paste0(.covDef[i], "<- a[", i + 1, "]"))
                        })
   .v <- c(.split$pureMuRef, .split$taintMuRef, .covDef)
+  .allCovs <- .ui$allCovs
   .body1 <- c(list(quote(`{`)),
               lapply(c(.ret, .mu2),
                      function(x) {
@@ -69,8 +71,8 @@ rxUiGet.popedFgFun <- function(x, ...) {
                      }),
               .covDefLst,
               .split$muRefDef,
-              list(str2lang(paste("c(", paste(paste0(.v, "=", .v), collapse=","), ")"))))
-  #
+              list(str2lang(paste("c(ID=a[1],", paste(paste0(.v, "=", .v), collapse=","),
+                                  ")"))))
   .body1 <- as.call(.body1)
   .f <- function(x, a, bpop, b, bocc) {}
   body(.f) <- .body1
@@ -218,7 +220,7 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
   checkmate::testIntegerish(maxNumTime, lower=1, len=1)
   .base <- rxUiGet.popedRxmodelBase(list(ui))
   .base2 <- eval(as.call(c(list(quote(`rxModelVars`)),
-                      as.call(c(list(quote(`{`)), .base)))))
+                           as.call(c(list(quote(`{`)), .base)))))
   if (.base2$nMtime > 0L) {
     .minfo("mtime() detected in model, slower solving used")
     .ret <- as.call(c(list(quote(`rxode2`)),
@@ -227,13 +229,16 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
     attr(.ret, "maxNumTime") <- 0L
     return(.ret)
   }
+  .split <- ui$getSplitMuModel
+  .covDef <- ui$allCovs
+  .param <- str2lang(paste0("params(", paste(c(.split$pureMuRef, .split$taintMuRef, .covDef), collapse=","), ")"))
   .ret <- as.call(c(list(quote(`rxode2`)),
-    as.call(c(list(quote(`{`)),
-              .base,
-              lapply(seq_len(maxNumTime),
-                     function(i) {
-                       str2lang(sprintf("mtime(rxXt_%d_v) ~ rxXt_%d", i, i))
-                     })))))
+                    as.call(c(list(quote(`{`), .param),
+                              .base,
+                              lapply(seq_len(maxNumTime),
+                                     function(i) {
+                                       str2lang(sprintf("mtime(rxXt_%d_v) ~ rxXt_%d", i, i))
+                                     })))))
   attr(.ret, "mtime") <- TRUE
   attr(.ret, "maxNumTime") <- maxNumTime
   .ret
@@ -323,6 +328,168 @@ rxUiGet.popedNotfixedSigma <- function(x, ...) {
 }
 attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
 
+#' Create a babelmixr2/nlmixr2 design space based on a data frame
+#'
+#' From the dataset construct `xt`, `minxt`, `maxxt` and `a`
+#'
+#' This does not work with time-varying covariates
+#'
+#' @param ui rxode2 ui object
+#' @param data babelmixr2 design data, very similar to a rxode2 modeling dataset
+#' @param time string that represents the time in the dataset (ie xt)
+#' @param timeLow string that represents the lower design time (ie minxt)
+#' @param timeHi string that represents the upper design time (ie maxmt)
+#' @param id The id variable
+#' @inheritParams PopED::create_design
+#' @inheritParams PopED::create_design_space
+#' @return PopED design space
+#' @export
+#' @author Matthew L. Fidler
+popedDataToDesignSpace <- function(ui, data, groupsize, time="time", timeLow="low", timeHi="high",
+                                   id="id", m = NULL, x = NULL, ni = NULL,
+                                   model_switch = NULL,
+                                   maxni = NULL,
+                                   minni = NULL,
+                                   maxtotni = NULL,
+                                   mintotni = NULL,
+                                   maxgroupsize = NULL,
+                                   mingroupsize = NULL,
+                                   maxtotgroupsize = NULL,
+                                   mintotgroupsize = NULL,
+                                   xt_space = NULL,
+                                   maxa = NULL,
+                                   mina = NULL,
+                                   a_space = NULL,
+                                   x_space = NULL,
+                                   use_grouped_xt = FALSE,
+                                   grouped_xt = NULL,
+                                   use_grouped_a = FALSE,
+                                   grouped_a = NULL,
+                                   use_grouped_x = FALSE,
+                                   grouped_x = NULL,
+                                   our_zero = NULL) {
+  rxode2::rxReq("PopED")
+  ui <- rxode2::assertRxUi(ui)
+  .et <- rxode2::etTrans(data, ui)
+  .tmp <- attr(class(.et),".rxode2.lst")
+  class(.tmp) <- NULL
+  .a <- as.matrix(.tmp$cov1)
+  .a <- .a[, c("ID", ui$allCovs)]
+  .nd <- tolower(names(data))
+  .data <- data
+  .wevid <- which(.nd == "evid")
+  if (length(.wevid) == 0L) {
+    .minfo("could not find evid, assuming all are design points")
+    .data$evid <- 0
+  }
+  .wtime <- which(.nd == time)
+  if (length(.wtime) != 1L) {
+    stop(paste0("could not find the required data item: ", time),
+         call.=FALSE)
+  }
+  .wid <- which(.nd == id)
+  if (length(.wid) != 1L) {
+    stop(paste0("could not find the required data item: ", id),
+         call.=FALSE)
+  }
+  .env <- new.env(parent=emptyenv())
+  .env$mt <- -Inf
+  .design <- PopED::create_design(xt=lapply(unique(.data[[.wid]]),
+                                            function(id) {
+                                              .data <- .data[.data[[.wid]] == id &
+                                                               .data[[.wevid]] == 0, ]
+                                              .ret <- .data[[.wtime]]
+                                              .env$mt <- max(c(.ret, .env$mt))
+                                              .ret
+                                            }),
+                                  groupsize=groupsize,
+                                  m = m, x = x, a = .a, ni = ni,
+                                  model_switch = model_switch)
+  .wlow <- which(.nd == timeLow)
+  .minxt <- NULL
+  if (length(.wlow) == 1L) {
+    .minxt <- lapply(unique(.data[[.wid]]),
+                     function(id) {
+                       .data <- .data[.data[[.wid]] == id &
+                                        .data[[.wevid]] == 0, ]
+                       .ret <- .data[[.wlow]]
+                       .env$mt <- max(c(.ret, .env$mt))
+                       .ret
+                     })
+  }
+  .whi <- which(.nd == timeHi)
+  .maxxt <- NULL
+  if (length(.whi) == 1L) {
+    .maxxt <- lapply(unique(.data[[.wid]]),
+                     function(id) {
+                       .data <- .data[.data[[.wid]] == id &
+                                        .data[[.wevid]] == 0, ]
+                       .ret <- .data[[.whi]]
+                       .env$mt <- max(c(.ret, .env$mt))
+                       .ret
+                     })
+  }
+  .designSpace <-
+    PopED::create_design_space(.design,
+                               maxni = maxni,
+                               minni = minni,
+                               maxtotni = maxtotni,
+                               mintotni = mintotni,
+                               maxgroupsize = maxgroupsize,
+                               mingroupsize = mingroupsize,
+                               maxtotgroupsize = maxtotgroupsize,
+                               mintotgroupsize = mintotgroupsize,
+                               maxxt=.maxxt,
+                               minxt=.minxt,
+                               xt_space = xt_space,
+                               mina = mina,
+                               maxa = maxa,
+                               a_space = a_space,
+                               x_space = x_space,
+                               use_grouped_xt = use_grouped_xt,
+                               grouped_xt = grouped_xt,
+                               use_grouped_a = use_grouped_a,
+                               grouped_a = grouped_a,
+                               use_grouped_x = use_grouped_x,
+                               grouped_x = grouped_x,
+                               our_zero = our_zero)
+  .rx <- .popedRxModel(ui, maxNumTime=max(.designSpace$design$ni))
+  if (!attr(.rx, "mtime")) {
+    stop("mtime models are not supported yet",
+         call.=FALSE)
+  }
+  .rx <- eval(.rx)
+  .popEd$model <- .rx
+  .wamt <- which(.nd == "amt")
+  .wrate <- which(.nd == "rate")
+  .wdur <- which(.nd == "dur")
+  .wss <- which(.nd == "ss")
+  .wii <- which(.nd == "ii")
+  .waddl <- which(.nd == "addl")
+  # Create a dataset without these design points with one observation
+  # 0.5 units after
+  .dat <- do.call(rbind,
+                  lapply(unique(.data[[.wid]]),
+                         function(id) {
+                           .data <- .data[.data[[.wid]] == id &
+                                            .data[[.wevid]] != 0, ]
+                           .len <- length(.data[[.wid]])
+                           .data2 <- .data[.len, ]
+                           .data2[[.wtime]] <- .env$mt + 0.5
+                           .data2[[.wevid]] <- 0
+                           if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
+                           if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
+                           if (length(.wdur) == 1L) .data2[[.wdur]] <- NA
+                           if (length(.wss) == 1L) .data2[[.wss]] <- NA
+                           if (length(.wii) == 1L) .data2[[.wii]] <- NA
+                           if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
+                           rbind(.data, .data2)
+                         }))
+  .popEd$data <- .dat
+  #nlmixr2est::.popedSetup(.popEd)
+  .designSpace
+}
+
 # modelswitch --perhaps for defining endpoint in nlmixr2 model
 # If so, defined by the CMT and could be inferred from the model
 
@@ -364,7 +531,14 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
 ## - x  -- A matrix defining the initial discrete values for the model Each row is a group/individual.
 ## - nx -- number of discrete values for each row/column
 ## - a -- continuous covariate values; not sure if taken care of elsewhere...?
-
+#' Control for a PopED design task
+#'
+#' @inheritParams nlmixr2est::foceiControl
+#' @param ... other parameters for PopED design task
+#' @return popedControl object
+#' @export
+#' @author Matthew L. Fidler
+#' @examples
 popedControl <- function(stickyRecalcN=4,
                          maxOdeRecalc=5,
                          odeRecalcFactor=10^(0.5),
@@ -404,7 +578,6 @@ popedControl <- function(stickyRecalcN=4,
   if (!is.null(sigdig)) {
     checkmate::assertNumeric(sigdig, lower=1, finite=TRUE, any.missing=TRUE, len=1)
   }
-
   .ret <- list(rxControl=rxControl,
                stickyRecalcN=as.integer(stickyRecalcN),
                maxOdeRecalc=as.integer(maxOdeRecalc),
