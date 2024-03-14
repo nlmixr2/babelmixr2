@@ -231,7 +231,11 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
   }
   .split <- ui$getSplitMuModel
   .covDef <- ui$allCovs
-  .param <- str2lang(paste0("params(", paste(c(.split$pureMuRef, .split$taintMuRef, .covDef), collapse=","), ")"))
+  .param <- str2lang(paste0("params(", paste(c(.split$pureMuRef, .split$taintMuRef, .covDef,
+                                               paste0("rxXt_", seq_len(maxNumTime))),
+                                             collapse=","), ")"))
+  .poped$param <- c(.split$pureMuRef, .split$taintMuRef, .covDef)
+  .poped$param <- setNames(rep(1, length(.poped$param)), .poped$param)
   .ret <- as.call(c(list(quote(`rxode2`)),
                     as.call(c(list(quote(`{`), .param),
                               .base,
@@ -268,7 +272,7 @@ rxUiGet.popedNotfixedBpop <- function(x, ...) {
   .bpop <- .iniDf[!is.na(.ui$iniDf$ntheta), ]
   1 - .bpop$fix * 1
 }
-attr(rxUiGet.popedBpop, "desc") <- "Get PopED's $notfixed_bpop"
+attr(rxUiGet.popedNotfixedBpop, "desc") <- "Get PopED's $notfixed_bpop"
 
 ## Omega matrix specification
 #' @export
@@ -281,11 +285,12 @@ rxUiGet.popedD <- function(x, ...) {
 attr(rxUiGet.popedD, "desc") <- "Get PopED's $d parameter"
 
 #' @export
-rxUiGet.popedCovd <- function(x, ...){
+rxUiGet.popedCovd <- function(x, ...) {
   .ui <- x[[1]]
   .omega <- .ui$omega
   .ret <- .omega[lower.tri(.omega)]
   names(.ret) <- NULL
+  if (all(.ret == 0)) return(NULL)
   .ret
 }
 attr(rxUiGet.popedCovd, "desc") <- "Get PopED's $covd parameter"
@@ -343,9 +348,9 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
 #' @inheritParams PopED::create_design
 #' @inheritParams PopED::create_design_space
 #' @return PopED design space
-#' @export
+#' @noRd
 #' @author Matthew L. Fidler
-popedDataToDesignSpace <- function(ui, data, groupsize, time="time", timeLow="low", timeHi="high",
+.popedDataToDesignSpace <- function(ui, data, groupsize, time="time", timeLow="low", timeHi="high",
                                    id="id", m = NULL, x = NULL, ni = NULL,
                                    model_switch = NULL,
                                    maxni = NULL,
@@ -459,7 +464,7 @@ popedDataToDesignSpace <- function(ui, data, groupsize, time="time", timeLow="lo
          call.=FALSE)
   }
   .rx <- eval(.rx)
-  .popEd$model <- .rx
+  .poped$model <- .rx
   .wamt <- which(.nd == "amt")
   .wrate <- which(.nd == "rate")
   .wdur <- which(.nd == "dur")
@@ -485,7 +490,7 @@ popedDataToDesignSpace <- function(ui, data, groupsize, time="time", timeLow="lo
                            if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
                            rbind(.data, .data2)
                          }))
-  .popEd$data <- .dat
+  .poped$data <- .dat
   #nlmixr2est::.popedSetup(.popEd)
   .designSpace
 }
@@ -519,10 +524,6 @@ popedDataToDesignSpace <- function(ui, data, groupsize, time="time", timeLow="lo
 ## - maxtotni -- maximum number of samples in the experiment
 ## - mintotni -- minimum number of samples in the experiment
 
-
-
-
-
 ## Things that can come from data (like NONMEM's $DESIGN or from pop ed control:
 ## - xt -- Matrix defining the initial sampling schedule
 ## - minxt -- Matrix defining the minimum sampling time
@@ -531,6 +532,72 @@ popedDataToDesignSpace <- function(ui, data, groupsize, time="time", timeLow="lo
 ## - x  -- A matrix defining the initial discrete values for the model Each row is a group/individual.
 ## - nx -- number of discrete values for each row/column
 ## - a -- continuous covariate values; not sure if taken care of elsewhere...?
+
+################################################################################
+# $parameter
+
+# nbpop -- number of typical values (probably should be calculated)
+# NumRanEff -- number of random effects (probably should be calculated)
+# NumDocc
+# NumOcc
+
+
+#' @export
+rxUiGet.popedParameters <- function(x, ...) {
+  list(parameters=list(
+    bpop=rxUiGet.popedBpop(x, ...),
+    notfixed_bpop=rxUiGet.popedNotfixedBpop(x, ...),
+
+    d=rxUiGet.popedD(x, ...),
+    notfixed_d=rxUiGet.popedNotfixedD(x, ...),
+
+    covd=rxUiGet.popedCovd(x, ...),
+    notfixed_covd=rxUiGet.popedNotfixedCovd(x, ...),
+
+    sigma=rxUiGet.popedSigma(x, ...),
+    notfixed_sigma=rxUiGet.popedNotfixedSigma(x, ...)
+    # no diagonals from nlmixr2 here:
+    ## covsigma=rxUiGet.poped(x, ...),
+    ## notfixed_covsigma=rxUiGet.popedNotfixedSigma(x, ...),
+  ))
+}
+attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
+#' Update poped$parameters with ds_index
+#'
+#' @param ui rxode2 ui (to change importance of standard deviation parameters/lambda etc)
+#' @param lst Curent popedInput listes
+#' @param important character vector of important parameters or NULL for default
+#' @param unimportant character vector of unimportant parameters or NULL for default
+#' @return updated $parameters with ds_index added
+#' @noRd
+#' @author Matthew L. Fidler
+.popedImportant <- function(ui, lst, important=NULL, unimportant=NULL) {
+  .par <- lst$parameters
+  .err <- ui$iniDf$name[!is.na(ui$iniDf$err)]
+  .interstingFixed <- names(.par$bpop[which(.par$notfixed_bpop==1)])
+  .uninterstingRandom <- names(.par$d[which(.par$notfixed_d==1)])
+  # defaults
+  #  1 if a parameter is uninteresting, otherwise 0
+  .ds <- setNames(c(rep(0, length(.interstingFixed)),
+                    rep(1, length(.uninterstingRandom))),
+                  c(.interstingFixed, .uninterstingRandom))
+  # should make sd uninteresting
+  .ds[.err] <- 1
+  important <- important[important %in% names(.ds)]
+  unimportant <- unimportant[unimportant %in% names(.ds)]
+  if (!is.null(important)) {
+    .ds[important] <- 0
+  }
+  if (!is.null(unimportant)) {
+    .ds[unimportant] <- 1
+  }
+  .minfo(paste0("Ds-optimality important parameters: ", paste(names(.ds)[which(.ds == 0)], collapse=", ")))
+  .minfo(paste0("Ds-optimality unimportant parameters: ", paste(names(.ds)[which(.ds == 1)], collapse=", ")))
+  .ret <- lst
+  .ret$parameters$ds_index <- .ds
+  .ret
+}
+
 #' Control for a PopED design task
 #'
 #' @inheritParams nlmixr2est::foceiControl
