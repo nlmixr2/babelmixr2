@@ -103,6 +103,35 @@ popedControl(
   bParallelSG = FALSE,
   bParallelMFEA = FALSE,
   bParallelLS = FALSE,
+  groupsize = NULL,
+  time = "time",
+  timeLow = "low",
+  timeHi = "high",
+  id = "id",
+  m = NULL,
+  x = NULL,
+  ni = NULL,
+  model_switch = NULL,
+  maxni = NULL,
+  minni = NULL,
+  maxtotni = NULL,
+  mintotni = NULL,
+  maxgroupsize = NULL,
+  mingroupsize = NULL,
+  maxtotgroupsize = NULL,
+  mintotgroupsize = NULL,
+  xt_space = NULL,
+  maxa = NULL,
+  mina = NULL,
+  a_space = NULL,
+  x_space = NULL,
+  use_grouped_xt = FALSE,
+  grouped_xt = NULL,
+  use_grouped_a = FALSE,
+  grouped_a = NULL,
+  use_grouped_x = FALSE,
+  grouped_x = NULL,
+  our_zero = NULL,
   ...
 )
 }
@@ -412,7 +441,79 @@ PopED (in conjunction with \code{iCompileOption})}
 
 \item{bParallelLS}{If the line search is going to be executed in parallel}
 
-\item{...}{other parameters for PopED design task}
+\item{groupsize}{Vector defining the size of the different groups (num individuals in each group).
+If only one number then the number will be the same in every group.}
+
+\item{time}{string that represents the time in the dataset (ie xt)}
+
+\item{timeLow}{string that represents the lower design time (ie minxt)}
+
+\item{timeHi}{string that represents the upper design time (ie maxmt)}
+
+\item{id}{The id variable}
+
+\item{m}{Number of groups in the study.  Each individual in a group will have the same design.}
+
+\item{x}{A matrix defining the initial discrete values for the model 
+Each row is a group/individual.}
+
+\item{ni}{Vector defining the number of samples for each group.}
+
+\item{model_switch}{Matrix defining which response a certain sampling time belongs to.}
+
+\item{maxni}{\itemize{
+\item \bold{******START OF DESIGN SPACE OPTIONS**********}}
+Max number of samples per group/individual}
+
+\item{minni}{Min number of samples per group/individual}
+
+\item{maxtotni}{Number defining the maximum number of samples allowed in the experiment.}
+
+\item{mintotni}{Number defining the minimum number of samples allowed in the experiment.}
+
+\item{maxgroupsize}{Vector defining the max size of the different groups (max number of individuals in each group)}
+
+\item{mingroupsize}{Vector defining the min size of the different groups (min num individuals in each group) --}
+
+\item{maxtotgroupsize}{The total maximal groupsize over all groups}
+
+\item{mintotgroupsize}{The total minimal groupsize over all groups}
+
+\item{xt_space}{Cell array \code{\link[PopED]{cell}} defining the discrete variables allowed for each xt value.
+ Can also be a vector of values \code{c(1:10)} (same values allowed for all xt), or a list of lists 
+\code{list(1:10, 2:23, 4:6)} (one for each value in xt in row major order or just for one row in xt, 
+and all other rows will be duplicated).}
+
+\item{maxa}{Vector defining the max value for each covariate. If a single value is supplied then
+all a values are given the same max value}
+
+\item{mina}{Vector defining the min value for each covariate. If a single value is supplied then
+all a values are given the same max value}
+
+\item{a_space}{Cell array \code{\link[PopED]{cell}} defining the discrete variables allowed for each a value.
+ Can also be a list of values \code{list(1:10)} (same values allowed for all a), or a list of lists 
+\code{list(1:10, 2:23, 4:6)} (one for each value in a).}
+
+\item{x_space}{Cell array \code{\link[PopED]{cell}} defining the discrete variables for each x value.}
+
+\item{use_grouped_xt}{Group sampling times between groups so that each group has the same values (\code{TRUE} or \code{FALSE}).}
+
+\item{grouped_xt}{Matrix defining the grouping of sample points. Matching integers mean that the points are matched.
+Allows for finer control than \code{use_grouped_xt}}
+
+\item{use_grouped_a}{Group continuous design variables between groups so that each group has the same values (\code{TRUE} or \code{FALSE}).}
+
+\item{grouped_a}{Matrix defining the grouping of continuous design variables. Matching integers mean that the values are matched.
+Allows for finer control than \code{use_grouped_a}.}
+
+\item{use_grouped_x}{Group discrete design variables between groups so that each group has the same values (\code{TRUE} or \code{FALSE}).}
+
+\item{grouped_x}{Matrix defining the grouping of discrete design variables. Matching integers mean that the values are matched.
+Allows for finer control than \code{use_grouped_x}.}
+
+\item{our_zero}{Value to interpret as zero in design.}
+
+\item{...}{other parameters for PopED control}
 }
 \value{
 popedControl object
@@ -421,5 +522,5 @@ popedControl object
 Control for a PopED design task
 }
 \author{
-Matthew L. Fidler
+Matthew L. Fidlerzzff
 }

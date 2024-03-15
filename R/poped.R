@@ -872,9 +872,15 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #'
 #' - 1/"mpi" = MPI
 #'
+#' @param time string that represents the time in the dataset (ie xt)
+#' @param timeLow string that represents the lower design time (ie minxt)
+#' @param timeHi string that represents the upper design time (ie maxmt)
+#' @param id The id variable
 #' @inheritParams nlmixr2est::foceiControl
 #' @inheritParams PopED::create.poped.database
-#' @param ... other parameters for PopED design task
+#' @inheritParams PopED::create_design_space
+#' @inheritParams PopED::create_design
+#' @param ... other parameters for PopED control
 #' @return popedControl object
 #' @export
 #' @author Matthew L. Fidler
@@ -978,6 +984,30 @@ popedControl <- function(stickyRecalcN=4,
                          bParallelSG = FALSE,
                          bParallelMFEA = FALSE,
                          bParallelLS = FALSE,
+                         # design options
+                         groupsize=NULL, time="time", timeLow="low", timeHi="high",
+                         id="id", m = NULL, x = NULL, ni = NULL,
+                         model_switch = NULL,
+                         maxni = NULL,
+                         minni = NULL,
+                         maxtotni = NULL,
+                         mintotni = NULL,
+                         maxgroupsize = NULL,
+                         mingroupsize = NULL,
+                         maxtotgroupsize = NULL,
+                         mintotgroupsize = NULL,
+                         xt_space = NULL,
+                         maxa = NULL,
+                         mina = NULL,
+                         a_space = NULL,
+                         x_space = NULL,
+                         use_grouped_xt = FALSE,
+                         grouped_xt = NULL,
+                         use_grouped_a = FALSE,
+                         grouped_a = NULL,
+                         use_grouped_x = FALSE,
+                         grouped_x = NULL,
+                         our_zero = NULL,
                          ...) {
   rxode2::rxReq("PopED")
   .xtra <- list(...)
@@ -1251,8 +1281,29 @@ popedControl <- function(stickyRecalcN=4,
                bParallelRS=bParallelRS,
                bParallelSG=bParallelSG,
                bParallelMFEA=bParallelMFEA,
-               bParallelLS=bParallelLS
-               )
+               bParallelLS=bParallelLS,
+               m=m,
+               model_switch=model_switch,
+               maxni=maxni,
+               minni=minni,
+               maxtotni=maxtotni,
+               mintotni=mintotni,
+               maxgroupsize=maxgroupsize,
+               mingroupsize=mingroupsize,
+               maxtotgroupsize=maxtotgroupsize,
+               mintotgroupsize=mintotgroupsize,
+               xt_space=xt_space,
+               maxa=maxa,
+               mina=mina,
+               a_space=a_space,
+               x_space=x_space,
+               use_grouped_xt=use_grouped_xt,
+               grouped_xt=grouped_xt,
+               use_grouped_a=use_grouped_a,
+               grouped_a=grouped_a,
+               use_grouped_x=use_grouped_x,
+               grouped_x=grouped_x,
+               our_zero=our_zero)
   class(.ret) <- "popedControl"
   .ret
 }
