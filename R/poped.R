@@ -660,7 +660,8 @@ rxUiGet.popedSettings <- function(x, ...) {
 
 #' @export
 rxUiGet.popedParameters <- function(x, ...) {
-  list(parameters=list(
+  ui <- x[[1]]
+  .ret <- list(parameters=list(
     bpop=rxUiGet.popedBpop(x, ...),
     notfixed_bpop=rxUiGet.popedNotfixedBpop(x, ...),
 
@@ -676,12 +677,16 @@ rxUiGet.popedParameters <- function(x, ...) {
     ## covsigma=rxUiGet.poped(x, ...),
     ## notfixed_covsigma=rxUiGet.popedNotfixedSigma(x, ...),
   ))
+  if (rxode2::rxGetControl(ui, "ofv_calc_type", 4) == 6) {
+    .ret <- .popedImportant(ui, .ret)
+  }
+  .ret
 }
 attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #' Update poped$parameters with ds_index
 #'
 #' @param ui rxode2 ui (to change importance of standard deviation parameters/lambda etc)
-#' @param lst Curent popedInput listes
+#' @param lst Curent popedInput list
 #' @param important character vector of important parameters or NULL for default
 #' @param unimportant character vector of unimportant parameters or NULL for default
 #' @return updated $parameters with ds_index added
