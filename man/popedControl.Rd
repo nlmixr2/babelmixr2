@@ -10,6 +10,99 @@ popedControl(
   odeRecalcFactor = 10^(0.5),
   rxControl = NULL,
   sigdig = 4,
+  important = NULL,
+  unimportant = NULL,
+  iFIMCalculationType = c("reduced", "full", "weighted", "loc", "reducedPFIM", "fullABC",
+    "largeMat", "reducedFIMABC"),
+  iApproximationMethod = c("fo", "foce", "focei", "foi"),
+  optSample = FALSE,
+  optDiscreteDesignVar = FALSE,
+  optContDesignVar = FALSE,
+  optIdPerGroup = FALSE,
+  iFOCENumInd = 1000,
+  prior_fim = matrix(0, 0, 1),
+  d_switch = c("d", "ed"),
+  ofv_calc_type = c("lnD", "d", "a", "Ds", "inverse"),
+  strEDPenaltyFile = "",
+  ofv_fun = NULL,
+  iEDCalculationType = c("mc", "laplace", "bfgs-laplace"),
+  ED_samp_size = 45,
+  bLHS = c("hypercube", "random"),
+  bUseRandomSearch = TRUE,
+  bUseStochasticGradient = TRUE,
+  bUseLineSearch = TRUE,
+  bUseExchangeAlgorithm = FALSE,
+  bUseBFGSMinimizer = FALSE,
+  EACriteria = c("modified", "fedorov"),
+  strRunFile = "",
+  poped_version = NULL,
+  modtit = "PopED babelmixr2 model",
+  output_file = "PopED_output_summary",
+  output_function_file = "PopED_output_",
+  strIterationFileName = "PopED_current.R",
+  user_data = NULL,
+  ourzero = 1e-05,
+  dSeed = NULL,
+  line_opta = NULL,
+  line_optx = NULL,
+  bShowGraphs = FALSE,
+  use_logfile = FALSE,
+  m1_switch = c("central", "complex", "analytic", "ad"),
+  m2_switch = c("central", "complex", "analytic", "ad"),
+  hle_switch = c("central", "complex", "ad"),
+  gradff_switch = c("central", "complex", "analytic", "ad"),
+  gradfg_switch = c("central", "complex", "analytic", "ad"),
+  grad_all_switch = c("central", "complex"),
+  rsit_output = 5,
+  sgit_output = 1,
+  hm1 = 1e-05,
+  hlf = 1e-05,
+  hlg = 1e-05,
+  hm2 = 1e-05,
+  hgd = 1e-05,
+  hle = 1e-05,
+  AbsTol = 1e-06,
+  RelTol = 1e-06,
+  iDiffSolverMethod = NULL,
+  bUseMemorySolver = FALSE,
+  rsit = 300,
+  sgit = 150,
+  intrsit = 250,
+  intsgit = 50,
+  maxrsnullit = 50,
+  convergence_eps = 1e-08,
+  rslxt = 10,
+  rsla = 10,
+  cfaxt = 0.001,
+  cfaa = 0.001,
+  bGreedyGroupOpt = FALSE,
+  EAStepSize = 0.01,
+  EANumPoints = FALSE,
+  EAConvergenceCriteria = 1e-20,
+  bEANoReplicates = FALSE,
+  BFGSProjectedGradientTol = 1e-04,
+  BFGSTolerancef = 0.001,
+  BFGSToleranceg = 0.9,
+  BFGSTolerancex = 0.1,
+  ED_diff_it = 30,
+  ED_diff_percent = 10,
+  line_search_it = 50,
+  Doptim_iter = 1,
+  iCompileOption = c("none", "full", "mcc", "mpi"),
+  compileOnly = FALSE,
+  iUseParallelMethod = c("mpi", "matlab"),
+  MCC_Dep = NULL,
+  strExecuteName = "calc_fim.exe",
+  iNumProcesses = 2,
+  iNumChunkDesignEvals = -2,
+  Mat_Out_Pre = "parallel_output",
+  strExtraRunOptions = "",
+  dPollResultTime = 0.1,
+  strFunctionInputName = "function_input",
+  bParallelRS = FALSE,
+  bParallelSG = FALSE,
+  bParallelMFEA = FALSE,
+  bParallelLS = FALSE,
   ...
 )
 }
@@ -40,6 +133,284 @@ solving goes bad, this is the factor the rtol/atol is reduced}
  \item The tolerance of the boundary check is \code{5 * 10 ^ (-sigdig + 1)}
 
 }}
+
+\item{important}{character vector of important parameters or NULL
+for default.  This is used with Ds-optimality}
+
+\item{unimportant}{character vector of unimportant parameters or
+NULL for default.  This is used with Ds-optimality}
+
+\item{iFIMCalculationType}{can be either an integer or a named
+value of the Fisher Information Matrix type:
+\itemize{
+\item 0/"full" = Full FIM
+\item 1/"reduced" = Reduced FIM
+\item 2/"weighted" = weighted models
+\item 3/"loc" = Loc models
+\item 4/"reducedPFIM" = reduced FIM with derivative of SD of sigma as in PFIM
+\item 5/"fullABC" = FULL FIM parameterized with A,B,C matrices & derivative of variance
+\item 6/"largeMat" = Calculate one model switch at a time, good for large matrices
+\item 7/"reducedFIMABC" = =Reduced FIM parameterized with A,B,C matrices & derivative of variance
+}}
+
+\item{iApproximationMethod}{Approximation method for model, 0=FO, 1=FOCE, 2=FOCEI, 3=FOI}
+
+\item{optSample}{logical; Optimize Samples per subject as well as FIM with current design}
+
+\item{optDiscreteDesignVar}{logical; optimize discrete design variable}
+
+\item{optContDesignVar}{logical; optimize continuous design variable}
+
+\item{optIdPerGroup}{logical; optimize individual per group}
+
+\item{iFOCENumInd}{integer; number of individuals in focei solve}
+
+\item{prior_fim}{matrix; prior FIM}
+
+\item{d_switch}{integer or character option:
+\itemize{
+\item 0/"ed" = ED design
+\item 1/"d" = D design
+}}
+
+\item{ofv_calc_type}{objective calculation type:
+\itemize{
+\item 1/"d" = D-optimality". Determinant of the FIM: det(FIM)
+\item 2/"a" =  "A-optimality". Inverse of the sum of the expected parameter variances: 1/trace_matrix(inv(FIM))
+\item 4/"lnD" = "lnD-optimality". Natural logarithm of the determinant of the FIM: log(det(FIM))
+\item 6/"Ds" = "Ds-optimality". Ratio of the Determinant of the FIM and the Determinant of the uninteresting rows and columns of the FIM: det(FIM)/det(FIM_u)
+\item 7/"inverse" = Inverse of the sum of the expected parameter RSE: 1/sum(get_rse(FIM,poped.db,use_percent=FALSE))
+}}
+
+\item{strEDPenaltyFile}{Penalty function name or path and filename, empty string means no penalty.
+User defined criterion can be defined this way.}
+
+\item{ofv_fun}{User defined function used to compute the objective function. The function must have a poped database object as its first
+argument and have "..." in its argument list.  Can be referenced as a function or as a file name where the function defined in the file has the same name as the file.
+e.g. "cost.txt" has a function named "cost" in it.}
+
+\item{iEDCalculationType}{ED Integral Calculation type:
+\itemize{
+\item 0/"mc" = Monte-Carlo-Integration
+\item 1/"laplace" = Laplace Approximation
+\item 2/"bfgs-laplace" = BFGS Laplace Approximation
+}}
+
+\item{ED_samp_size}{Sample size for E-family sampling}
+
+\item{bLHS}{How to sample from distributions in E-family calculations. 0=Random Sampling, 1=LatinHyperCube --}
+
+\item{bUseRandomSearch}{\itemize{
+\item \bold{******START OF Optimization algorithm  SPECIFICATION OPTIONS**********}}
+Use random search (1=TRUE, 0=FALSE)}
+
+\item{bUseStochasticGradient}{Use Stochastic Gradient search (1=TRUE, 0=FALSE)}
+
+\item{bUseLineSearch}{Use Line search (1=TRUE, 0=FALSE)}
+
+\item{bUseExchangeAlgorithm}{Use Exchange algorithm (1=TRUE, 0=FALSE)}
+
+\item{bUseBFGSMinimizer}{Use BFGS Minimizer (1=TRUE, 0=FALSE)}
+
+\item{EACriteria}{Exchange Algorithm Criteria:
+\itemize{
+\item 1/"modified" = Modified
+\item 2/"fedorov"  = Fedorov
+}}
+
+\item{strRunFile}{Filename and path, or function name, for a run file that is used instead of the regular PopED call.}
+
+\item{poped_version}{\itemize{
+\item \bold{******START OF Labeling and file names  SPECIFICATION OPTIONS**********}}
+The current PopED version}
+
+\item{modtit}{The model title}
+
+\item{output_file}{Filename and path of the output file during search}
+
+\item{output_function_file}{Filename suffix of the result function file}
+
+\item{strIterationFileName}{Filename and path for storage of current optimal design}
+
+\item{user_data}{\itemize{
+\item \bold{******START OF Miscellaneous SPECIFICATION OPTIONS**********}}
+User defined data structure that, for example could be used to send in data to the model}
+
+\item{ourzero}{Value to interpret as zero in design}
+
+\item{dSeed}{The seed number used for optimization and sampling -- integer or -1 which creates a random seed \code{as.integer(Sys.time())} or NULL.}
+
+\item{line_opta}{Vector for line search on continuous design variables (1=TRUE,0=FALSE)}
+
+\item{line_optx}{Vector for line search on discrete design variables (1=TRUE,0=FALSE)}
+
+\item{bShowGraphs}{Use graph output during search}
+
+\item{use_logfile}{If a log file should be used (0=FALSE, 1=TRUE)}
+
+\item{m1_switch}{Method used to calculate M1:
+\itemize{
+\item 1/"central" = Central difference
+\item 0/"complex" = Complex difference
+\item 20/"analytic" = Analytic derivative
+\item 30/"ad" = Automatic differentiation
+}}
+
+\item{m2_switch}{Method used to calculate M2:
+\itemize{
+\item 1/"central" = Central difference
+\item 0/"complex" = Complex difference
+\item 20/"analytic" = Analytic derivative
+\item 30/"ad" = Automatic differentiation
+}}
+
+\item{hle_switch}{Method used to calculate linearization of residual error:
+\itemize{
+\item 1/"central" = Central difference
+\item 0/"complex" = Complex difference
+\item 30/"ad" = Automatic differentiation
+}}
+
+\item{gradff_switch}{Method used to calculate the gradient of the model:
+\itemize{
+\item 1/"central" = Central difference
+\item 0/"complex" = Complex difference
+\item 20/"analytic" = Analytic derivative
+\item 30/"ad" = Automatic differentiation
+}}
+
+\item{gradfg_switch}{Method used to calculate the gradient of the
+parameter vector g:
+\itemize{
+\item 1/"central" = Central difference
+\item 0/"complex" = Complex difference
+\item 20/"analytic" = Analytic derivative
+\item 30/"ad" = Automatic differentiation
+}}
+
+\item{grad_all_switch}{Method used to calculate all the gradients:
+\itemize{
+\item 1/"central" = Central difference
+\item 0/"complex" = Complex difference
+}}
+
+\item{rsit_output}{Number of iterations in random search between screen output}
+
+\item{sgit_output}{Number of iterations in stochastic gradient search between screen output}
+
+\item{hm1}{Step length of derivative of linearized model w.r.t. typical values}
+
+\item{hlf}{Step length of derivative of model w.r.t. g}
+
+\item{hlg}{Step length of derivative of g w.r.t. b}
+
+\item{hm2}{Step length of derivative of variance w.r.t. typical values}
+
+\item{hgd}{Step length of derivative of OFV w.r.t. time}
+
+\item{hle}{Step length of derivative of model w.r.t. sigma}
+
+\item{AbsTol}{The absolute tolerance for the diff equation solver}
+
+\item{RelTol}{The relative tolerance for the diff equation solver}
+
+\item{iDiffSolverMethod}{The diff equation solver method, NULL as default.}
+
+\item{bUseMemorySolver}{If the differential equation results should be stored in memory (1) or not (0)}
+
+\item{rsit}{Number of Random search iterations}
+
+\item{sgit}{Number of stochastic gradient iterations}
+
+\item{intrsit}{Number of Random search iterations with discrete optimization.}
+
+\item{intsgit}{Number of Stochastic Gradient search iterations with discrete optimization}
+
+\item{maxrsnullit}{Iterations until adaptive narrowing in random search}
+
+\item{convergence_eps}{Stochastic Gradient convergence value,
+(difference in OFV for D-optimal, difference in gradient for ED-optimal)}
+
+\item{rslxt}{Random search locality factor for sample times}
+
+\item{rsla}{Random search locality factor for covariates}
+
+\item{cfaxt}{Stochastic Gradient search first step factor for sample times}
+
+\item{cfaa}{Stochastic Gradient search first step factor for covariates}
+
+\item{bGreedyGroupOpt}{Use greedy algorithm for group assignment optimization}
+
+\item{EAStepSize}{Exchange Algorithm StepSize}
+
+\item{EANumPoints}{Exchange Algorithm NumPoints}
+
+\item{EAConvergenceCriteria}{Exchange Algorithm Convergence Limit/Criteria}
+
+\item{bEANoReplicates}{Avoid replicate samples when using Exchange Algorithm}
+
+\item{BFGSProjectedGradientTol}{BFGS Minimizer Convergence Criteria Normalized Projected Gradient Tolerance}
+
+\item{BFGSTolerancef}{BFGS Minimizer Line Search Tolerance f}
+
+\item{BFGSToleranceg}{BFGS Minimizer Line Search Tolerance g}
+
+\item{BFGSTolerancex}{BFGS Minimizer Line Search Tolerance x}
+
+\item{ED_diff_it}{Number of iterations in ED-optimal design to calculate convergence criteria}
+
+\item{ED_diff_percent}{ED-optimal design convergence criteria in percent}
+
+\item{line_search_it}{Number of grid points in the line search}
+
+\item{Doptim_iter}{Number of iterations of full Random search and full Stochastic Gradient if line search is not used}
+
+\item{iCompileOption}{Compile options for PopED
+\itemize{
+\item "none"/-1 = No compilation
+\item "full/0 or 3 = Full compilation
+\item "mcc"/1 or 4 = Only using MCC (shared lib)
+\item "mpi"/2 or 5 = Only MPI,
+}
+
+When using numbers, option 0,1,2 runs PopED and option 3,4,5 stops
+after compilation.
+
+When using characters, the option \code{compileOnly} determines if the
+model is only compiled (and PopED is not run).}
+
+\item{compileOnly}{logical; only compile the model, do not run
+PopED (in conjunction with \code{iCompileOption})}
+
+\item{iUseParallelMethod}{Parallel method to use
+\itemize{
+\item 0/"matlab"= Matlab PCT
+\item 1/"mpi" = MPI
+}}
+
+\item{MCC_Dep}{Additional dependencies used in MCC compilation (mat-files), if several space separated}
+
+\item{strExecuteName}{Compilation output executable name}
+
+\item{iNumProcesses}{Number of processes to use when running in parallel (e.g. 3 = 2 workers, 1 job manager)}
+
+\item{iNumChunkDesignEvals}{Number of design evaluations that should be evaluated in each process before getting new work from job manager}
+
+\item{Mat_Out_Pre}{The prefix of the output mat file to communicate with the executable}
+
+\item{strExtraRunOptions}{Extra options send to e$g. the MPI executable or a batch script, see execute_parallel$m for more information and options}
+
+\item{dPollResultTime}{Polling time to check if the parallel execution is finished}
+
+\item{strFunctionInputName}{The file containing the popedInput structure that should be used to evaluate the designs}
+
+\item{bParallelRS}{If the random search is going to be executed in parallel}
+
+\item{bParallelSG}{If the stochastic gradient search is going to be executed in parallel}
+
+\item{bParallelMFEA}{If the modified exchange algorithm is going to be executed in parallel}
+
+\item{bParallelLS}{If the line search is going to be executed in parallel}
 
 \item{...}{other parameters for PopED design task}
 }
