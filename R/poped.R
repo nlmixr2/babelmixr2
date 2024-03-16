@@ -61,7 +61,15 @@ rxUiGet.popedFgFun <- function(x, ...) {
                        function(i) {
                          str2lang(paste0(.covDef[i], "<- a[", i + 1, "]"))
                        })
-  .v <- c(.split$pureMuRef, .split$taintMuRef, .covDef)
+  .iniDf <- .ui$iniDf
+  .w <- which(!is.na(.iniDf$ntheta) & !is.na(.iniDf$err))
+  .errTerm <- .iniDf$name[.w]
+  .errTermLst <- lapply(.w,
+                        function(i) {
+                          str2lang(paste0(.iniDf$name[i], " <- bpop[", .iniDf$ntheta[i], "]"))
+                        })
+
+  .v <- c(.split$pureMuRef, .split$taintMuRef, .errTerm, .covDef)
   .allCovs <- .ui$allCovs
   .body1 <- c(list(quote(`{`)),
               lapply(c(.ret, .mu2),
@@ -70,6 +78,7 @@ rxUiGet.popedFgFun <- function(x, ...) {
                      }),
               .covDefLst,
               .split$muRefDef,
+              .errTermLst,
               list(str2lang(paste("c(ID=a[1],", paste(paste0(.v, "=", .v), collapse=","),
                                   ")"))))
   .body1 <- as.call(.body1)
@@ -81,7 +90,41 @@ attr(rxUiGet.popedFgFun, "desc") <- "PopED parameter model (fg_fun)"
 
 .poped <- new.env(parent=emptyenv())
 .poped$s <- NULL
-.poped$minVal <- NULL
+
+#' @export
+rxUiGet.popedFfFun <- function(x, ...) {
+  .body <- bquote({
+    .xt <- drop(xt)
+    print(p)
+    .p <- p
+    .id <- .p[1]
+    .p <- .p[-1]
+    .totn <- length(.xt)
+    # unlike standard rxode2, parameters need not be named, but must be in the right order
+    if (.totn <  .(.poped$maxn)) {
+      .p <- c(.p, .xt, rep(.(.poped$mt), .(.poped$maxn) - .totn))
+    } else {
+      .p <- c(.p, .xt)
+    }
+    .popedRxRunSetup()
+    .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
+    return(list(f=matrix(.ret$rx_pred_, ncol=1),
+                poped.db=poped.db))
+  })
+  .f <- function(model_switch, xt, p, poped.db){}
+  body(.f) <- .body
+  .f
+}
+attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
+#' @export
+## rxUiGet.popedModel <- function(x, ...) {
+##   ui <- x[[1]]
+##   ## list(model=list(ff_pointer=rxUiGet.popedFfFun(x, ...),
+##   ##                 fg_pointer=rxUiGet.popedFgFun(x, ...),
+##   ##                 ferror_pointer=rxUiGet.popedFErrorFun(x, ...),
+##   ##                 auto_pointer=rxode2::rxGetControl(ui, "auto_pointer", ""),
+##   ##                 user_distribution_pointer=rxode2::rxGetControl(ui, "user_distribution_pointer", "")))
+##}
 
 #' Assign the rxode2 solved value to .poped$s for calling in the error function
 #'
@@ -104,7 +147,7 @@ attr(rxUiGet.popedFgFun, "desc") <- "PopED parameter model (fg_fun)"
 #' @author Matthew L. Fidler
 #' @keywords internal
 .popedW <- function() {
-  sqrt(.poped$s[["rx_r_"]])
+  sqrt(.poped$s[["w"]])
 }
 #' Get the function value from the rxode2 solve
 #'
@@ -117,13 +160,29 @@ attr(rxUiGet.popedFgFun, "desc") <- "PopED parameter model (fg_fun)"
 .popedF <- function() {
   .poped$s[["rx_pred_"]]
 }
+#' Setup poped if needed
+#'
+#' Should not be called by user
+#'
+#' @return nothing, called for side effects
+#' @export
+#' @author Matthew L. Fidler
+#' @keywords internal
+.popedRxRunSetup <- function() {
+  if (!.poped$setup) {
+    nlmixr2est::.popedSetup(.poped)
+    .poped$setup <- TRUE
+  }
+  invisible()
+}
+
 
 #'@export
 rxUiGet.popedFErrorFun  <- function(x, ...) {
   function(model_switch, xt, parameters, epsi, poped.db) {
     # Will assign in babelmixr2 namespace
     do.call(poped.db$model$ff_pointer,list(model_switch,xt,parameters,poped.db))
-    y <- .popedF() + .popedW() * eps[, 1]
+    y <- .popedF() + .popedW() * epsi[, 1]
     return(list(y=y,poped.db=poped.db))
   }
 }
@@ -230,10 +289,13 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
   }
   .split <- ui$getSplitMuModel
   .covDef <- ui$allCovs
-  .param <- str2lang(paste0("params(", paste(c(.split$pureMuRef, .split$taintMuRef, .covDef,
-                                               paste0("rxXt_", seq_len(maxNumTime))),
-                                             collapse=","), ")"))
-  .poped$param <- c(.split$pureMuRef, .split$taintMuRef, .covDef)
+  .iniDf <- ui$iniDf
+  .w <- which(!is.na(.iniDf$ntheta) & !is.na(.iniDf$err))
+  .errTerm <- .iniDf$name[.w]
+  .poped$param <- c(.split$pureMuRef, .split$taintMuRef, .errTerm,
+                    .covDef, paste0("rxXt_", seq_len(maxNumTime)))
+  .param <- str2lang(paste0("params(", paste(.poped$param, collapse=","), ")"))
+
   .poped$param <- setNames(rep(1, length(.poped$param)), .poped$param)
   .ret <- as.call(c(list(quote(`rxode2`)),
                     as.call(c(list(quote(`{`), .param),
@@ -245,14 +307,6 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
   attr(.ret, "mtime") <- TRUE
   attr(.ret, "maxNumTime") <- maxNumTime
   .ret
-}
-
-
-
-#' @export
-rxUiGet.popedFfFun <- function(x, ...) {
-  .ui <- x[[1]]
-
 }
 
 #' @export
@@ -336,7 +390,10 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
 #'
 #' From the dataset construct `xt`, `minxt`, `maxxt` and `a`
 #'
-#' This does not work with time-varying covariates
+#' This does not work with time-varying covariates. (FIXME check)
+#'
+#' This needs to be calculated before getting the design functions so
+#' that different size designs can be padded
 #'
 #' @param ui rxode2 ui object
 #' @param data babelmixr2 design data, very similar to a rxode2 modeling dataset
@@ -381,7 +438,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   }
 
   # Get from assigned control inside of ui object
-  for (opt in c("m", "x"," ni", "model_switch", "maxni","minni", "maxtotni",
+  for (opt in c("m", "x","ni", "model_switch", "maxni","minni", "maxtotni",
                 "mintotni", "maxgroupsize","mingroupsize","maxtotgroupsize",  "mintotgroupsize",
                 "xt_space", "maxa", "mina", "a_space", "x_space", "grouped_xt", "use_grouped_a",
                 "grouped_a", "grouped_x", "our_zero", "use_grouped_xt",
@@ -472,11 +529,13 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                use_grouped_x = use_grouped_x,
                                grouped_x = grouped_x,
                                our_zero = our_zero)
-  .rx <- .popedRxModel(ui, maxNumTime=max(.designSpace$design$ni))
+  .poped$maxn <- max(.designSpace$design$ni)
+  .rx <- .popedRxModel(ui, maxNumTime=.poped$maxn)
   if (!attr(.rx, "mtime")) {
     stop("mtime models are not supported yet",
          call.=FALSE)
   }
+  .poped$mt <- .env$mt + 0.5
   .rx <- eval(.rx)
   .poped$model <- .rx
   .wamt <- which(.nd == "amt")
@@ -494,7 +553,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                             .data[[.wevid]] != 0, ]
                            .len <- length(.data[[.wid]])
                            .data2 <- .data[.len, ]
-                           .data2[[.wtime]] <- .env$mt + 0.5
+                           .data2[[.wtime]] <- .poped$mt
                            .data2[[.wevid]] <- 0
                            if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
                            if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
@@ -504,8 +563,10 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                            if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
                            rbind(.data, .data2)
                          }))
-  .poped$data <- .dat
-  #nlmixr2est::.popedSetup(.popEd)
+  .id <- as.integer(factor(paste(.dat[[.wid]])))
+  .dat <- .dat[, -.wid]
+  .dat$id <- .id
+  .poped$data <- rxode2::etTrans(.dat, .poped$model)
   .designSpace
 }
 
@@ -519,7 +580,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
 #' @export
 rxUiGet.popedSettings <- function(x, ...) {
   ui <- x[[1]]
-  rxReq("PopED")
+  rxode2::rxReq("PopED")
   .line_opta <- rxode2::rxGetControl(ui, "line_opta", NULL)
   if (checkmate::testLogical(.line_opta, any.missing = FALSE, len=1)) {
     .line_opta <- .line_opta * 1
@@ -568,7 +629,7 @@ rxUiGet.popedSettings <- function(x, ...) {
     gradff_switch=rxode2::rxGetControl(ui, "gradff_switch", 1),
     gradfg_switch=rxode2::rxGetControl(ui, "gradfg_switch", 1),
     grad_all_switch=rxode2::rxGetControl(ui, "grad_all_switch", 1),
-    rsit_output=rxode2:rxGetControl(ui, "rsit_output", 5),
+    rsit_output=rxode2::rxGetControl(ui, "rsit_output", 5),
     sgit_output=rxode2::rxGetControl(ui, "sgit_output", 1),
     hm1=rxode2::rxGetControl(ui, "hm1", 1e-5),
     hlf=rxode2::rxGetControl(ui, "hlf", 1e-5),
@@ -576,7 +637,7 @@ rxUiGet.popedSettings <- function(x, ...) {
     hm2=rxode2::rxGetControl(ui, "hm2", 1e-5),
     hgd=rxode2::rxGetControl(ui, "hgd", 1e-5),
     hle=rxode2::rxGetControl(ui, "hle", 1e-5),
-    AbsTol=Rxode2::RxGetControl(Ui, "AbsTol", 1e-5),
+    AbsTol=rxode2::rxGetControl(ui, "AbsTol", 1e-5),
     RelTol=rxode2::rxGetControl(ui, "RelTol", 1e-5),
     iDiffSolverMethod=rxode2::rxGetControl(ui, "iDiffSolverMethod", NULL),
     bUseMemorySolver=rxode2::rxGetControl(ui, "bUseMemorySolver", FALSE),
@@ -621,68 +682,46 @@ rxUiGet.popedSettings <- function(x, ...) {
   ))
 }
 
+#' Setup the poped database
+#'
+#' @param ui rxode2 ui function
+#' @param data babelmixr2 design data
+#' @param control PopED control
+#' @return PopED database
+#' @author Matthew L. Fidler
+.setupPopEDdatabase <- function(ui, data, control) {
+  # PopED environment needs:
+  # - control - popedControl
+  .poped$control <- control
+  # - rxControl
+  .poped$rxControl <- control$rxControl
+  # - model -- rxode2 model (setup with .popedDataToDesignSpace)
+  # - data -- rxode2 data (setup with .popedDataToDesignSpace)
+  .ui <- rxode2::rxUiDecompress(rxode2::assertRxUi(ui))
+  # Set control options to be used within functions
+  .ctl <- control
+  class(.ctl) <- NULL
+  rxode2::rxSetControl(.ui, .ctl)
+  .design <- .popedDataToDesignSpace(.ui, data,
+                                     time=rxode2::rxGetControl(.ui, "time", "time"),
+                                     timeLow=rxode2::rxGetControl(.ui, "low", "low"),
+                                     timeHi=rxode2::rxGetControl(.ui, "high", "high"),
+                                     id=rxode2::rxGetControl(.ui, "id", "id"))
+  .poped$setup <- FALSE
+  .input <- c(.design,
+              .ui$popedSettings,
+              .ui$popedParameters,
+              list(MCC_Dep=rxode2::rxGetControl(.ui, "MCC_Dep", NULL)))
+  PopED::create.poped.database(.input,
+                               ff_fun=.ui$popedFfFun,
+                               fg_fun=.ui$popedFgFun,
+                               fError_fun=.ui$popedFErrorFun)
+}
 
-# iFIMCalculationType
-# iApproximationMethod
-# prior_fimr
-# d_switch
-# ofv_calc_type
-# ds_index
-
-
-## - groupsize -- size of the different groups
-## - maxgroupsize -- maximum size of the different groups
-## - mingroupsize -- minimum group size of the different groups
-## - maxtotgroupsize -- maximum total group size
-## - mintotgroupsize -- minimum total group size
-
-## Should we have something line:
-## ni = list(c(min, sample, max),
-##           )
-##
-## - ni -- vector defining number of samples in each group
-## - maxni
-## - minni
-## - maxtotni -- maximum number of samples in the experiment
-## - mintotni -- minimum number of samples in the experiment
-
-## Things that can come from data (like NONMEM's $DESIGN or from pop ed control:
-## - xt -- Matrix defining the initial sampling schedule
-## - minxt -- Matrix defining the minimum sampling time
-## - maxxt -- Matrix defining the maximum sampling time
-## - m  -- number of groups in the study
-## - x  -- A matrix defining the initial discrete values for the model Each row is a group/individual.
-## - nx -- number of discrete values for each row/column
-## - a -- continuous covariate values; not sure if taken care of elsewhere...?
 
 ################################################################################
 # $parameter
 
-#' @export
-rxUiGet.popedParameters <- function(x, ...) {
-  ui <- x[[1]]
-  .ret <- list(parameters=list(
-    bpop=rxUiGet.popedBpop(x, ...),
-    notfixed_bpop=rxUiGet.popedNotfixedBpop(x, ...),
-
-    d=rxUiGet.popedD(x, ...),
-    notfixed_d=rxUiGet.popedNotfixedD(x, ...),
-
-    covd=rxUiGet.popedCovd(x, ...),
-    notfixed_covd=rxUiGet.popedNotfixedCovd(x, ...),
-
-    sigma=rxUiGet.popedSigma(x, ...),
-    notfixed_sigma=rxUiGet.popedNotfixedSigma(x, ...)
-    # no diagonals from nlmixr2 here:
-    ## covsigma=rxUiGet.poped(x, ...),
-    ## notfixed_covsigma=rxUiGet.popedNotfixedSigma(x, ...),
-  ))
-  if (rxode2::rxGetControl(ui, "ofv_calc_type", 4) == 6) {
-    .ret <- .popedImportant(ui, .ret)
-  }
-  .ret
-}
-attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #' Update poped$parameters with ds_index
 #'
 #' @param ui rxode2 ui (to change importance of standard deviation parameters/lambda etc)
@@ -720,6 +759,32 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
   .ret$parameters$ds_index <- .ds
   .ret
 }
+
+#' @export
+rxUiGet.popedParameters <- function(x, ...) {
+  ui <- x[[1]]
+  .ret <- list(parameters=list(
+    bpop=rxUiGet.popedBpop(x, ...),
+    notfixed_bpop=rxUiGet.popedNotfixedBpop(x, ...),
+
+    d=rxUiGet.popedD(x, ...),
+    notfixed_d=rxUiGet.popedNotfixedD(x, ...),
+
+    covd=rxUiGet.popedCovd(x, ...),
+    notfixed_covd=rxUiGet.popedNotfixedCovd(x, ...),
+
+    sigma=rxUiGet.popedSigma(x, ...),
+    notfixed_sigma=rxUiGet.popedNotfixedSigma(x, ...)
+    # no diagonals from nlmixr2 here:
+    ## covsigma=rxUiGet.poped(x, ...),
+    ## notfixed_covsigma=rxUiGet.popedNotfixedSigma(x, ...),
+  ))
+  if (rxode2::rxGetControl(ui, "ofv_calc_type", 4) == 6) {
+    .ret <- .popedImportant(ui, .ret)
+  }
+  .ret
+}
+attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 
 #' Control for a PopED design task
 #'
@@ -873,9 +938,15 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #' - 1/"mpi" = MPI
 #'
 #' @param time string that represents the time in the dataset (ie xt)
-#' @param timeLow string that represents the lower design time (ie minxt)
-#' @param timeHi string that represents the upper design time (ie maxmt)
+#' @param timeLow string that represents the lower design time (ie
+#'   minxt)
+#' @param timeHi string that represents the upper design time (ie
+#'   maxmt)
 #' @param id The id variable
+#' @param user_distribution_pointer Filename and path, or function
+#'   name, for user defined distributions for E-family designs
+#' @param auto_pointer Filename and path, or function name, for the
+#'   Autocorrelation function, empty string means no autocorrelation.
 #' @inheritParams nlmixr2est::foceiControl
 #' @inheritParams PopED::create.poped.database
 #' @inheritParams PopED::create_design_space
@@ -1008,6 +1079,9 @@ popedControl <- function(stickyRecalcN=4,
                          use_grouped_x = FALSE,
                          grouped_x = NULL,
                          our_zero = NULL,
+                         # model extras
+                         auto_pointer="",
+                         user_distribution_pointer="",
                          ...) {
   rxode2::rxReq("PopED")
   .xtra <- list(...)
@@ -1303,7 +1377,10 @@ popedControl <- function(stickyRecalcN=4,
                grouped_a=grouped_a,
                use_grouped_x=use_grouped_x,
                grouped_x=grouped_x,
-               our_zero=our_zero)
+               our_zero=our_zero,
+               user_distribution_pointer=user_distribution_pointer,
+               auto_pointer=auto_pointer
+               )
   class(.ret) <- "popedControl"
   .ret
 }
