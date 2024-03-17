@@ -95,7 +95,6 @@ attr(rxUiGet.popedFgFun, "desc") <- "PopED parameter model (fg_fun)"
 rxUiGet.popedFfFun <- function(x, ...) {
   .body <- bquote({
     .xt <- drop(xt)
-    print(p)
     .p <- p
     .id <- .p[1]
     .p <- .p[-1]
@@ -323,6 +322,8 @@ rxUiGet.popedNotfixedBpop <- function(x, ...) {
   .ui <- x[[1]]
   .iniDf <- .ui$iniDf
   .bpop <- .iniDf[!is.na(.ui$iniDf$ntheta), ]
+  # Residual errors are "fixed" parameters
+  .bpop$fix[!is.na(.bpop$err)] <- TRUE
   1 - .bpop$fix * 1
 }
 attr(rxUiGet.popedNotfixedBpop, "desc") <- "Get PopED's $notfixed_bpop"
@@ -590,10 +591,6 @@ rxUiGet.popedSettings <- function(x, ...) {
     .line_optx <- .line_optx * 1
   }
   list(settings=list(
-    optsw=c(rxode2::rxGetControl(ui, "optSample", FALSE) * 1,
-            rxode2::rxGetControl(ui, "optDiscreteDesignVar", FALSE) * 1,
-            rxode2::rxGetControl(ui, "optContDesignVar", FALSE) * 1,
-            rxode2::rxGetControl(ui, "optIdPerGroup", FALSE) * 1),
     iFIMCalculationType=rxode2::rxGetControl(ui, "iFIMCalculationType", 1),
     iApproximationMethod=rxode2::rxGetControl(ui, "iApproximationMethod", 0),
     iFOCENumInd=rxode2::rxGetControl(ui, "iFOCENumInd", 1000),
@@ -813,14 +810,6 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #'
 #' - 7/"reducedFIMABC" = =Reduced FIM parameterized with A,B,C matrices & derivative of variance
 #'
-#' @param optSample logical; Optimize Samples per subject as well as FIM with current design
-#'
-#' @param optDiscreteDesignVar logical; optimize discrete design variable
-#'
-#' @param optContDesignVar logical; optimize continuous design variable
-#'
-#' @param optIdPerGroup logical; optimize individual per group
-#'
 #' @param iFOCENumInd integer; number of individuals in focei solve
 #'
 #' @param prior_fim matrix; prior FIM
@@ -967,10 +956,6 @@ popedControl <- function(stickyRecalcN=4,
                                                "loc", "reducedPFIM",
                                                "fullABC", "largeMat", "reducedFIMABC"),
                          iApproximationMethod=c("fo", "foce", "focei", "foi"),
-                         optSample=FALSE,
-                         optDiscreteDesignVar=FALSE,
-                         optContDesignVar=FALSE,
-                         optIdPerGroup=FALSE,
                          iFOCENumInd=1000,
                          prior_fim=matrix(0, 0, 1),
                          d_switch=c("d", "ed"),
@@ -1268,10 +1253,6 @@ popedControl <- function(stickyRecalcN=4,
                odeRecalcFactor=odeRecalcFactor,
                sigdig=sigdig,
                genRxControl=.genRxControl,
-               optSample=optSample,
-               optDiscreteDesignVar=optDiscreteDesignVar,
-               optContDesignVar=optContDesignVar,
-               optIdPerGroup=optIdPerGroup,
                iFIMCalculationType=iFIMCalculationType,
                iApproximationMethod=iApproximationMethod,
                iFOCENumInd=iFOCENumInd,
