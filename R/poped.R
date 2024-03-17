@@ -102,15 +102,16 @@ rxUiGet.popedFfFun <- function(x, ...) {
     # unlike standard rxode2, parameters need not be named, but must be in the right order
     if (.totn <  .(.poped$maxn)) {
       .p <- c(.p, .xt, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .totn))
+      .popedRxRunSetup()
+      .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
     } else if (.totn > .(.poped$maxn)) {
-      message("requested many more time points")
-      print(.xt)
-      stop()
+      .popedRxRunFullSetup(.xt)
+      .ret <- nlmixr2est::.popedSolveIdN2(.p, .xt, .id - 1L, .totn)
     } else {
       .p <- c(.p, .xt)
+      .popedRxRunSetup()
+      .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
     }
-    .popedRxRunSetup()
-    .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
     return(list(f=matrix(.ret$rx_pred_, ncol=1),
                 poped.db=poped.db))
   })
@@ -172,11 +173,60 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #' @author Matthew L. Fidler
 #' @keywords internal
 .popedRxRunSetup <- function() {
-  if (!.poped$setup) {
+  if (.poped$setup != 1L) {
+    rxode2::rxSolveFree()
+    .poped$model <- .poped$modelMT
+    .poped$data <- .poped$dataMT
+    .poped$param <- .poped$paramMT
     nlmixr2est::.popedSetup(.poped)
-    .poped$setup <- TRUE
+    .poped$setup <- 1L
+    .poped$fullXt <- NULL
   }
   invisible()
+}
+
+.popedRxRunFullSetup <- function(xt) {
+  # For PopED simply assume same number of xt = same problem
+  # reasonable assumption?
+  if (.poped$setup == 2L) {
+    if (!identical(.poped$fullXt, length(xt))) {
+      .poped$setup <- 0L
+    }
+  }
+  if (.poped$setup != 2L) {
+    rxode2::rxSolveFree()
+    .dat <- with(.poped$dataF0lst,
+                 do.call(rbind,
+                         lapply(unique(.poped$dataF0[[.wid]]),
+                                function(id) {
+                                  .data <- .poped$dataF0[.poped$dataF0[[.wid]] == id &
+                                                           .poped$dataF0[[.wevid]] != 0, ]
+                                  .len <- length(.data[[.wid]])
+                                  .data2 <- .data[.len, ]
+                                  .data2[[.wevid]] <- 0
+                                  if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
+                                  if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
+                                  if (length(.wdur) == 1L) .data2[[.wdur]] <- NA
+                                  if (length(.wss) == 1L) .data2[[.wss]] <- NA
+                                  if (length(.wii) == 1L) .data2[[.wii]] <- NA
+                                  if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
+                                  .data3 <- do.call(rbind,
+                                                    lapply(xt,
+                                                           function(t) {
+                                                             .d <- .data2
+                                                             .d[[.wtime]] <- t
+                                                             .d
+                                                           }))
+                                  rbind(.data, .data3)
+                                })))
+    .et <- rxode2::etTrans(.dat, .poped$modelF)
+    .poped$model <- .poped$modelF
+    .poped$data <- .et
+    .poped$param <- .poped$paramF
+    nlmixr2est::.popedSetup(.poped)
+    .poped$fullXt <- length(xt)
+    .poped$setup <- 2L
+  }
 }
 
 
@@ -295,11 +345,18 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
   .iniDf <- ui$iniDf
   .w <- which(!is.na(.iniDf$ntheta) & !is.na(.iniDf$err))
   .errTerm <- .iniDf$name[.w]
-  .poped$param <- c(.split$pureMuRef, .split$taintMuRef, .errTerm,
-                    .covDef, paste0("rxXt_", seq_len(maxNumTime)))
-  .param <- str2lang(paste0("params(", paste(.poped$param, collapse=","), ")"))
+  .poped$paramF <- c(.split$pureMuRef, .split$taintMuRef, .errTerm,
+                    .covDef)
+  .poped$paramMT <- c(.poped$paramF, paste0("rxXt_", seq_len(maxNumTime)))
+  .param0 <- str2lang(paste0("params(", paste(.poped$paramF, collapse=","), ")"))
+  .param <- str2lang(paste0("params(", paste(.poped$paramMT, collapse=","), ")"))
 
-  .poped$param <- setNames(rep(1, length(.poped$param)), .poped$param)
+  .poped$paramF <- setNames(rep(1, length(.poped$paramF)), .poped$paramF)
+  .poped$paramMT <- setNames(rep(1, length(.poped$paramMT)), .poped$paramMT)
+  .ret0 <- as.call(c(list(quote(`rxode2`)),
+                     as.call(c(list(quote(`{`), .param0),
+                               .base))))
+  .poped$modelF <- eval(.ret0) # Full model
   .ret <- as.call(c(list(quote(`rxode2`)),
                     as.call(c(list(quote(`{`), .param),
                               .base,
@@ -548,13 +605,29 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   }
   .poped$mt <- .env$mt + 0.1
   .rx <- eval(.rx)
-  .poped$model <- .rx
+  .poped$modelMT <- .rx
   .wamt <- which(.nd == "amt")
   .wrate <- which(.nd == "rate")
   .wdur <- which(.nd == "dur")
   .wss <- which(.nd == "ss")
   .wii <- which(.nd == "ii")
   .waddl <- which(.nd == "addl")
+  # Create an empty database for solving > number of MT defined
+  .poped$dataF0 <- do.call(rbind,
+                           lapply(unique(.data[[.wid]]),
+                                  function(id) {
+                                    .data <- .data[.data[[.wid]] == id &
+                                                     .data[[.wevid]] != 0, ]
+                                  }))
+  .poped$dataF0lst <- list(.wamt=.wamt,
+                           .wrate=.wrate,
+                           .wdur=.wdur,
+                           .wss=.wss,
+                           .wii=.wii,
+                           .waddl=.waddl,
+                           .wevid=.wevid,
+                           .wid=.wid,
+                           .wtime=.wtime)
   # Create a dataset without these design points with one observation
   # 0.5 units after
   .dat <- do.call(rbind,
@@ -577,7 +650,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .id <- as.integer(factor(paste(.dat[[.wid]])))
   .dat <- .dat[, -.wid]
   .dat$id <- .id
-  .poped$data <- rxode2::etTrans(.dat, .poped$model)
+  .poped$dataMT <- rxode2::etTrans(.dat, .poped$modelMT)
   .designSpace
 }
 
@@ -714,7 +787,7 @@ rxUiGet.popedSettings <- function(x, ...) {
                                      timeLow=rxode2::rxGetControl(.ui, "low", "low"),
                                      timeHi=rxode2::rxGetControl(.ui, "high", "high"),
                                      id=rxode2::rxGetControl(.ui, "id", "id"))
-  .poped$setup <- FALSE
+  .poped$setup <- 0L
   .input <- c(.design,
               .ui$popedSettings,
               .ui$popedParameters,
