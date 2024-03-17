@@ -101,7 +101,11 @@ rxUiGet.popedFfFun <- function(x, ...) {
     .totn <- length(.xt)
     # unlike standard rxode2, parameters need not be named, but must be in the right order
     if (.totn <  .(.poped$maxn)) {
-      .p <- c(.p, .xt, rep(.(.poped$mt), .(.poped$maxn) - .totn))
+      .p <- c(.p, .xt, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .totn))
+    } else if (.totn > .(.poped$maxn)) {
+      message("requested many more time points")
+      print(.xt)
+      stop()
     } else {
       .p <- c(.p, .xt)
     }
@@ -429,7 +433,8 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                     grouped_a = NULL,
                                     use_grouped_x = FALSE,
                                     grouped_x = NULL,
-                                    our_zero = NULL) {
+                                    our_zero = NULL,
+                                    maxn=NULL) {
   rxode2::rxReq("PopED")
   ui <- rxode2::assertRxUi(ui)
   groupsize <- rxode2::rxGetControl(ui, "groupsize", groupsize)
@@ -443,7 +448,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                 "mintotni", "maxgroupsize","mingroupsize","maxtotgroupsize",  "mintotgroupsize",
                 "xt_space", "maxa", "mina", "a_space", "x_space", "grouped_xt", "use_grouped_a",
                 "grouped_a", "grouped_x", "our_zero", "use_grouped_xt",
-                "use_grouped_a", "use_grouped_x")) {
+                "use_grouped_a", "use_grouped_x", "maxn")) {
     assign(opt, rxode2::rxGetControl(ui, opt, get(opt)))
   }
   .et <- rxode2::etTrans(data, ui)
@@ -530,13 +535,18 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                use_grouped_x = use_grouped_x,
                                grouped_x = grouped_x,
                                our_zero = our_zero)
-  .poped$maxn <- max(.designSpace$design$ni)
+  if (checkmate::testIntegerish(maxn, lower=1, any.missing=FALSE, len=1)) {
+    .poped$maxn <- maxn
+  } else {
+    .poped$maxn <- max(.designSpace$design$ni)
+  }
+
   .rx <- .popedRxModel(ui, maxNumTime=.poped$maxn)
   if (!attr(.rx, "mtime")) {
     stop("mtime models are not supported yet",
          call.=FALSE)
   }
-  .poped$mt <- .env$mt + 0.5
+  .poped$mt <- .env$mt + 0.1
   .rx <- eval(.rx)
   .poped$model <- .rx
   .wamt <- which(.nd == "amt")
@@ -791,6 +801,10 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #' @param unimportant character vector of unimportant parameters or
 #'   NULL for default.  This is used with Ds-optimality
 #'
+#' @param maxn Maximum number of design points for optimization; By
+#'   default this is declared by the maximum number of design points
+#'   in the babelmixr2 dataset (when `NULL`)
+#'
 #' @param iFIMCalculationType can be either an integer or a named
 #'   value of the Fisher Information Matrix type:
 #'
@@ -948,6 +962,7 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 popedControl <- function(stickyRecalcN=4,
                          maxOdeRecalc=5,
                          odeRecalcFactor=10^(0.5),
+                         maxn=NULL,
                          rxControl=NULL,
                          sigdig=4,
                          important=NULL,
@@ -1078,6 +1093,7 @@ popedControl <- function(stickyRecalcN=4,
     call.=FALSE)
   }
 
+  checkmate::assertIntegerish(maxn, lower=1, upper=89, any.missing=FALSE, len=1, null.ok = TRUE)
   if (!checkmate::testIntegerish(iFIMCalculationType, len=1, lower=0, upper=7,
                                  any.missing=FALSE)) {
     iFIMCalculationType <- match.arg(iFIMCalculationType)
@@ -1360,7 +1376,8 @@ popedControl <- function(stickyRecalcN=4,
                grouped_x=grouped_x,
                our_zero=our_zero,
                user_distribution_pointer=user_distribution_pointer,
-               auto_pointer=auto_pointer
+               auto_pointer=auto_pointer,
+               maxn=maxn
                )
   class(.ret) <- "popedControl"
   .ret
