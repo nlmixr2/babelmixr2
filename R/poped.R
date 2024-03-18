@@ -469,7 +469,11 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
 #' @noRd
 #' @author Matthew L. Fidler
 .popedDataToDesignSpace <- function(ui, data, groupsize=NULL, time="time", timeLow="low", timeHi="high",
-                                    id="id", m = NULL, x = NULL, ni = NULL,
+                                    id="id",
+                                    a=NULL,
+                                    maxa=NULL,
+                                    mina=NULL,
+                                    m = NULL, x = NULL, ni = NULL,
                                     model_switch = NULL,
                                     maxni = NULL,
                                     minni = NULL,
@@ -480,8 +484,6 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                     maxtotgroupsize = NULL,
                                     mintotgroupsize = NULL,
                                     xt_space = NULL,
-                                    maxa = NULL,
-                                    mina = NULL,
                                     a_space = NULL,
                                     x_space = NULL,
                                     use_grouped_xt = FALSE,
@@ -503,7 +505,8 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   # Get from assigned control inside of ui object
   for (opt in c("m", "x","ni", "model_switch", "maxni","minni", "maxtotni",
                 "mintotni", "maxgroupsize","mingroupsize","maxtotgroupsize",  "mintotgroupsize",
-                "xt_space", "maxa", "mina", "a_space", "x_space", "grouped_xt", "use_grouped_a",
+                "xt_space", "a", "maxa", "mina",
+                "a_space", "x_space", "grouped_xt", "use_grouped_a",
                 "grouped_a", "grouped_x", "our_zero", "use_grouped_xt",
                 "use_grouped_a", "use_grouped_x", "maxn")) {
     assign(opt, rxode2::rxGetControl(ui, opt, get(opt)))
@@ -513,7 +516,44 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .tmp <- attr(class(.et),".rxode2.lst")
   class(.tmp) <- NULL
   .a <- as.matrix(.tmp$cov1)
-  .a <- .a[, c("ID", ui$allCovs)]
+  .allCovs <- ui$allCovs
+  .need <- setdiff(.allCovs, c("ID", colnames(.a)))
+  if (length(.need) > 0) {
+    if (is.list(a)) {
+      if (length(.a[, "ID"]) != 1) {
+        stop("when optimizing design elements, only one ID in the input data can be used",
+             call.=FALSE)
+      }
+      .a <- setNames(as.vector(.a),colnames(.a))
+      .a <- lapply(seq_along(a),
+                   function(i) {
+                     c(.a, a[[i]])
+                   })
+      .need <- setdiff(.allCovs, names(.a[[1]]))
+      if (length(.need) > 0) {
+        stop("covariates in model but not defined: ", paste(.need, collapse=", "),
+             call=FALSE)
+      }
+      if (is.null(use_grouped_xt)) {
+        .minfo("assuming same times for each group (use_grouped_xt=TRUE)")
+        use_grouped_xt <- TRUE
+      }
+      if (is.null(m)) {
+        m <- length(.a)
+        .minfo(paste0("assuming group size m=", m))
+      }
+      if (!is.null(maxa)) {
+        maxa <- c(ID=1, maxa)
+      }
+      if (!is.null(mina)) {
+        mina <- c(ID=1, mina)
+      }
+    } else {
+      stop()
+    }
+  } else {
+    .a <- .a[, c("ID", .allCovs)]
+  }
   .nd <- tolower(names(data))
   .data <- data
   .wevid <- which(.nd == "evid")
@@ -533,14 +573,20 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   }
   .env <- new.env(parent=emptyenv())
   .env$mt <- -Inf
-  .design <- PopED::create_design(xt=lapply(unique(.data[[.wid]]),
-                                            function(id) {
-                                              .data <- .data[.data[[.wid]] == id &
-                                                               .data[[.wevid]] == 0, ]
-                                              .ret <- .data[[.wtime]]
-                                              .env$mt <- max(c(.ret, .env$mt))
-                                              .ret
-                                            }),
+  .xt <- lapply(unique(.data[[.wid]]),
+                function(id) {
+                  .data <- .data[.data[[.wid]] == id &
+                                   .data[[.wevid]] == 0, ]
+                  .ret <- .data[[.wtime]]
+                  .env$mt <- max(c(.ret, .env$mt))
+                  .ret
+                })
+  .single <- FALSE
+  if (length(.xt) == 1L) {
+    .xt <- .xt[[1]]
+    .single <- TRUE
+  }
+  .design <- PopED::create_design(xt=.xt,
                                   groupsize=groupsize,
                                   m = m, x = x, a = .a, ni = ni,
                                   model_switch = model_switch)
@@ -555,6 +601,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                        .env$mt <- max(c(.ret, .env$mt))
                        .ret
                      })
+    if (.single) .minxt <- .minxt[[1]]
   }
   .whi <- which(.nd == timeHi)
   .maxxt <- NULL
@@ -567,7 +614,9 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                        .env$mt <- max(c(.ret, .env$mt))
                        .ret
                      })
+    if (.single) .maxxt <- .maxxt[[1]]
   }
+
   .designSpace <-
     PopED::create_design_space(.design,
                                maxni = maxni,
@@ -1141,6 +1190,7 @@ popedControl <- function(stickyRecalcN=4,
                          maxtotgroupsize = NULL,
                          mintotgroupsize = NULL,
                          xt_space = NULL,
+                         a=NULL,
                          maxa = NULL,
                          mina = NULL,
                          a_space = NULL,
@@ -1166,6 +1216,7 @@ popedControl <- function(stickyRecalcN=4,
     call.=FALSE)
   }
 
+  checkmate::assertIntegerish(m, lower=1, any.missing=FALSE, len=1, null.ok=TRUE)
   checkmate::assertIntegerish(maxn, lower=1, upper=89, any.missing=FALSE, len=1, null.ok = TRUE)
   if (!checkmate::testIntegerish(iFIMCalculationType, len=1, lower=0, upper=7,
                                  any.missing=FALSE)) {
@@ -1437,6 +1488,7 @@ popedControl <- function(stickyRecalcN=4,
                maxtotgroupsize=maxtotgroupsize,
                mintotgroupsize=mintotgroupsize,
                xt_space=xt_space,
+               a=a,
                maxa=maxa,
                mina=mina,
                a_space=a_space,
