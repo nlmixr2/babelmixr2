@@ -415,7 +415,9 @@ rxUiGet.popedNotfixedD <- function(x, ...) {
   .ui <- x[[1]]
   .iniDf <- .ui$iniDf
   .iniDf <- .iniDf[which(is.na(.iniDf$ntheta) & .iniDf$neta1 == .iniDf$neta2), ]
-  1 - .iniDf$fix * 1
+  .ret <- 1 - .iniDf$fix * 1
+  if (all(.ret == 1)) return(NULL)
+  .ret
 }
 attr(rxUiGet.popedNotfixedD, "desc") <- "Get PopED's $notfixed_d"
 
@@ -426,11 +428,11 @@ rxUiGet.popedNotfixedCovd <- function(x, ...) {
   .lotri <- lotri::as.lotri(.iniDf)
   .lotriFix <- attr(.lotri,"lotriFix")
   if (is.null(.lotriFix)) {
-    .ret <- .lotri[lower.tri(.lotri)]
-    return(rep(1, length(.ret)))
+    return(NULL)
   }
   .ret <- .lotriFix[lower.tri(.lotriFix)]
   names(.ret) <- NULL
+  if (all(.ret == 0)) return(NULL)
   1 - .ret * 1
 }
 attr(rxUiGet.popedNotfixedCovd, "desc") <- "Get PopED's $notfixed_covd"
@@ -495,6 +497,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                     our_zero = NULL,
                                     maxn=NULL) {
   rxode2::rxReq("PopED")
+  data <- as.data.frame(data)
   ui <- rxode2::assertRxUi(ui)
   groupsize <- rxode2::rxGetControl(ui, "groupsize", groupsize)
   if (is.null(groupsize)) {
@@ -567,8 +570,12 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
          call.=FALSE)
   }
   .wid <- which(.nd == id)
-  if (length(.wid) != 1L) {
-    stop(paste0("could not find the required data item: ", id),
+  if (length(.wid) == 0L) {
+    .data$id <- 1L
+    .nd <- names(.data)
+    .wid <- which(.nd == id)
+  } else if (length(.wid) != 1L) {
+    stop("duplicate ids found",
          call.=FALSE)
   }
   .env <- new.env(parent=emptyenv())
@@ -866,7 +873,12 @@ rxUiGet.popedSettings <- function(x, ...) {
   .par <- lst$parameters
   .err <- ui$iniDf$name[!is.na(ui$iniDf$err)]
   .interstingFixed <- names(.par$bpop[which(.par$notfixed_bpop==1)])
-  .uninterstingRandom <- names(.par$d[which(.par$notfixed_d==1)])
+  if (is.null(.par$notfixed_d)) {
+    .uninterestingRaomd <- names(.par$d)
+  } else {
+    .uninterstingRandom <- names(.par$d[which(.par$notfixed_d==1)])
+  }
+
   # defaults
   #  1 if a parameter is uninteresting, otherwise 0
   .ds <- setNames(c(rep(0, length(.interstingFixed)),
