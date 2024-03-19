@@ -29,6 +29,18 @@ rxUiGet.popedBpopRep <- function(x, ...) {
                                 ui=.ui, covRefDf=.covRefDf, USE.NAMES=FALSE))
   .ret$b <- ifelse(is.na(.ret$mu), NA_character_,
                    paste0("b[",substr(.ret$mu,4, 10),"]"))
+  .iniDf <- .ui$iniDf
+  .w <- which(is.na(.iniDf$ntheta) &.iniDf$neta1 == .iniDf$neta2)
+  if (length(.w) > 0) {
+    .iniDf <- .iniDf[.w, ]
+    .var <- setNames(paste0("b[",.iniDf$neta1,"]"),.iniDf$name)
+    .ret$bpop <- vapply(seq_along(.ret$bpop), function(i) {
+      .v <- .ret$theta[i]
+      .b <- .var[.v]
+      if (!is.na(.b)) return(setNames(.b, NULL))
+      .ret$bpop[i]
+    }, character(1), USE.NAMES = FALSE)
+  }
   .ret
 }
 attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in $popedFgFun"
@@ -222,6 +234,8 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .et <- rxode2::etTrans(.dat, .poped$modelF)
     .poped$model <- .poped$modelF
     .poped$data <- .et
+    message("fullXt")
+    print(head(.poped$data[.poped$data$EVID != 0, ]))
     .poped$param <- .poped$paramF
     nlmixr2est::.popedSetup(.poped)
     .poped$fullXt <- length(xt)
@@ -707,6 +721,8 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .dat <- .dat[, -.wid]
   .dat$id <- .id
   .poped$dataMT <- rxode2::etTrans(.dat, .poped$modelMT)
+  message("dataMT")
+  print(head(.poped$dataMT[.poped$dataMT$EVID != 0, ]))
   .designSpace
 }
 
@@ -904,21 +920,29 @@ rxUiGet.popedSettings <- function(x, ...) {
 #' @export
 rxUiGet.popedParameters <- function(x, ...) {
   ui <- x[[1]]
+  .d <- rxUiGet.popedD(x, ...)
+  .NumRanEff <- length(.d)
+  .bpop <- rxUiGet.popedBpop(x, ...)
+  .nbpop <- length(.bpop)
   .ret <- list(parameters=list(
-    bpop=rxUiGet.popedBpop(x, ...),
+    bpop=.bpop,
+    nbpop=.nbpop,
     notfixed_bpop=rxUiGet.popedNotfixedBpop(x, ...),
 
-    d=rxUiGet.popedD(x, ...),
+    d=.d,
     notfixed_d=rxUiGet.popedNotfixedD(x, ...),
+    NumRanEff=.NumRanEff,
 
     covd=rxUiGet.popedCovd(x, ...),
     notfixed_covd=rxUiGet.popedNotfixedCovd(x, ...),
 
     sigma=rxUiGet.popedSigma(x, ...),
-    notfixed_sigma=rxUiGet.popedNotfixedSigma(x, ...)
+    notfixed_sigma=rxUiGet.popedNotfixedSigma(x, ...),
     # no diagonals from nlmixr2 here:
     ## covsigma=rxUiGet.poped(x, ...),
     ## notfixed_covsigma=rxUiGet.popedNotfixedSigma(x, ...),
+    NumDocc=0,
+    NumOcc=0
   ))
   if (rxode2::rxGetControl(ui, "ofv_calc_type", 4) == 6) {
     .ret <- .popedImportant(ui, .ret)
