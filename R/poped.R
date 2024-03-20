@@ -132,7 +132,7 @@ rxUiGet.popedFfFun <- function(x, ...) {
   .f
 }
 attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
-#' @export
+## @export
 ## rxUiGet.popedModel <- function(x, ...) {
 ##   ui <- x[[1]]
 ##   ## list(model=list(ff_pointer=rxUiGet.popedFfFun(x, ...),
@@ -142,18 +142,6 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 ##   ##                 user_distribution_pointer=rxode2::rxGetControl(ui, "user_distribution_pointer", "")))
 ##}
 
-#' Assign the rxode2 solved value to .poped$s for calling in the error function
-#'
-#' This should not be called directly
-#'
-#' @param s rxode2 solved dataset
-#' @return nothing, called for side effects
-#' @export
-#' @keywords internal
-#' @author Matthew L. Fidler
-.popedA <- function(s) {
-  .poped$s <- s
-}
 #' Get the weight from the rxode2 solve
 #'
 #' This shouldn't be called directly
@@ -185,6 +173,9 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #' @author Matthew L. Fidler
 #' @keywords internal
 .popedRxRunSetup <- function() {
+  if (!rxode2::rxSolveSetup()) {
+    .poped$setup <- 0L
+  }
   if (.poped$setup != 1L) {
     rxode2::rxSolveFree()
     .poped$model <- .poped$modelMT
@@ -200,6 +191,9 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 .popedRxRunFullSetup <- function(xt) {
   # For PopED simply assume same number of xt = same problem
   # reasonable assumption?
+  if (!rxode2::rxSolveSetup()) {
+    .poped$setup <- 0L
+  }
   if (.poped$setup == 2L) {
     if (!identical(.poped$fullXt, length(xt))) {
       .poped$setup <- 0L
@@ -234,23 +228,156 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .et <- rxode2::etTrans(.dat, .poped$modelF)
     .poped$model <- .poped$modelF
     .poped$data <- .et
-    message("fullXt")
-    print(head(.poped$data[.poped$data$EVID != 0, ]))
     .poped$param <- .poped$paramF
     nlmixr2est::.popedSetup(.poped)
     .poped$fullXt <- length(xt)
     .poped$setup <- 2L
   }
 }
+#' This gets the epsi associated with the nlmixr2/rxode2 model specification
+#'
+#' @param ui rxode2 ui model
+#' @param cnd condition to explore (ie, cp, eff, etc, defined in the
+#'   predDf ui data frame)
+#' @param type Type of parameter to query (add, prop, pow etc).
+#' @return the eps[,#] as a string, though there are side effects of
+#'   incrementing the epsi number as well as adding the variance
+#'   estimates to $sigmaEst.
+#' @noRd
+#' @author Matthew L. Fidler
+.getVarCnd <- function(ui, cnd, type) {
+  .iniDf <- ui$iniDf
+  .w <- which(.iniDf$condition == cnd & .iniDf$err == type)
+  if (length(.w) != 1L) stop("could not determine cnd: ", cnd, " type: ", type, " for error model")
+  .iniDf <- .iniDf[.w, ]
+  .eta <- .poped$eta + 1
+  .n <- .iniDf$name
+  .est <- c(.poped$etaEst, setNames(c(.iniDf$est^2), .n))
+  .poped$etaNotfixed <- c(.poped$etaNotfixed,
+                          setNames(1L - .iniDf$fix * 1L, .n))
+  .poped$etaEst <- .est
+  .poped$eta <- .eta
+  return(paste0("epsi[,", .eta, "]"))
+}
+#' Get additive error
+#'
+#' @param ui rxode2 ui model
+#' @param pred1 one row of the $predDf data frame
+#' @return The parsed line of a model function
+#' @noRd
+#' @author Matthew L. Fidler
+.popedGetErrorModelAdd <- function(ui, pred1) {
+  str2lang(paste0("rxErr", pred1$dvid, " <- rxF + ", .getVarCnd(ui, pred1$cond, "add")))
+}
+#' Get proportional error
+#'
+#' @param ui rxode2 ui model
+#' @param pred1 one row of the $predDf data frame
+#' @return The parsed line of a model function
+#' @noRd
+#' @author Matthew L. Fidler
+.popedGetErrorModelProp <- function(ui, pred1) {
+  .poped$needF <- TRUE
+  str2lang(paste0("rxErr", pred1$dvid, " <- rxF * (1 + ", .getVarCnd(ui, pred1$cond, "prop"), ")"))
+}
+#' Get power error
+#'
+#' @param ui rxode2 ui model
+#' @param pred1 one row of the $predDf data frame
+#' @return The parsed line of a model function
+#' @noRd
+#' @author Matthew L. Fidler
+.popedGetErrorModelPow <- function(ui, pred1) {
+  # Could be in the F anyway, need to check
+  stop("pow() not implemented yet")
+}
+#' Get add+prop (type 2 error)
+#'
+#' @param ui rxode2 ui model
+#' @param pred1 one row of the $predDf data frame
+#' @return The parsed line of a model function
+#' @noRd
+#' @author Matthew L. Fidler
+.popedGetErrorModelAddProp <- function(ui, pred1) {
+  str2lang(paste0("rxErr", pred1$dvid, " <- rxF*(1+", .getVarCnd(ui, pred1$cond, "prop"),
+                  ") + ", .getVarCnd(ui, pred1$cond, "add")))
+}
+#' Get add+pow (type 2 error)
+#'
+#' @param ui rxode2 ui model
+#' @param pred1 one row of the $predDf data frame
+#' @return The parsed line of a model function
+#' @noRd
+#' @author Matthew L. Fidler
+.popedGetErrorModelAddPow <- function(ui, pred1) {
+  # Could be in the F anyway, need to check
+  stop("pow() not implemented yet")
+}
+#' When the error isn't specified (probably a log-likelihood)
+.popedGetErrorModelNone <- function(ui, pred1) {
+  stop("error model could not be interpreted as a PopED model")
+}
+
+.popedGetErrorModel <- function(ui, pred1) {
+  switch(as.character(pred1$errType),
+         "add"=.popedGetErrorModelAdd(ui, pred1), # 1
+         "prop"=.popedGetErrorModelProp(ui, pred1), # 2
+         "pow"=.popedGetErrorModelPow(ui, pred1), # 3
+         "add + prop"=.popedGetErrorModelAddProp(ui, pred1),# 4
+         "add + pow"=.popedGetErrorModelAddPow(ui, pred1), # 5
+         "none"=.popedGetErrorModelNone(ui, pred1))
+}
 
 
 #'@export
 rxUiGet.popedFErrorFun  <- function(x, ...) {
-  function(model_switch, xt, parameters, epsi, poped.db) {
-    # Will assign in babelmixr2 namespace
-    do.call(poped.db$model$ff_pointer,list(model_switch,xt,parameters,poped.db))
-    y <- .popedF() + .popedW() * epsi[, 1]
-    return(list(y=y,poped.db=poped.db))
+  .ui <- x[[1]]
+  if (rxode2::rxGetControl(.ui, "fixRes", FALSE)) {
+    f <- function(model_switch, xt, parameters, epsi, poped.db) {
+      # Will assign in babelmixr2 namespace
+      do.call(poped.db$model$ff_pointer,list(model_switch,xt,parameters,poped.db))
+      y <- .popedF() + .popedW() * epsi[, 1]
+      return(list(y=y,poped.db=poped.db))
+    }
+    return(f)
+  } else {
+    .poped$eta <- 0
+    .poped$etaEst <- NULL
+    .poped$etaNotfixed <- NULL
+    .predDf <- .ui$predDf
+    .poped$needF <- FALSE
+    .ret <- lapply(seq_along(.predDf$cond),
+                   function(c) {
+                     .popedGetErrorModel(.ui, .predDf[c, ])
+                   })
+    .lret <- length(.ret)
+    .ret <- c(list(
+      quote(`{`),
+      str2lang("rxReturnArgs <- do.call(poped.db$model$ff_pointer,list(model_switch,xt,parameters,poped.db)) "),
+      str2lang("rxF <- rxReturnArgs[[1]]")),
+      str2lang("rxPoped.db <- rxReturnArgs[[2]]"),
+      .ret)
+    .f <- function(model_switch, xt, parameters, epsi, poped.db) {}
+    if (.lret == 1) {
+      # single endpoint model
+      .ret <- c(.ret,
+                list(str2lang("return(list(y=rxErr1,poped.db=rxPoped.db))")))
+    } else {
+      # multiple endpoint model, use model_switch
+      .ret <- c(.ret,
+                lapply(seq_len(.lret),
+                       function(i) {
+                         paste0("rxW", i, " <- which(model_switch == 1)")
+                       }),
+                lapply(seq_len(.lret),
+                       function(i) {
+                         paste0("rxY[rxW", i, "] <- rxErr", i, "[rxW", i, "]")
+                       }),
+                list(str2lang("return(list(y=rxY, poped.db=rxPoped.db))")))
+    }
+    .ret <- as.call(.ret)
+    body(.f) <- .ret
+    return(.f)
   }
 }
 attr(rxUiGet.popedFErrorFun, "desc") <- "PopED error function(fError_fun)"
@@ -451,16 +578,27 @@ rxUiGet.popedNotfixedCovd <- function(x, ...) {
 }
 attr(rxUiGet.popedNotfixedCovd, "desc") <- "Get PopED's $notfixed_covd"
 
-## Currently nlmixr2 only has sigma fixed to 1.
 #' @export
 rxUiGet.popedSigma <- function(x, ...) {
-  return(1.0)
+  .ui <- x[[1]]
+  if (rxode2::rxGetControl(.ui, "fixRes", FALSE)) {
+    return(1.0)
+  } else {
+    rxUiGet.popedFErrorFun(x, ...) # called for side effect
+    return(.poped$etaEst)
+  }
 }
 attr(rxUiGet.popedSigma, "desc") <- "PopED database $sigma"
 
 #' @export
 rxUiGet.popedNotfixedSigma <- function(x, ...) {
-  return(0L)
+  .ui <- x[[1]]
+  if (rxode2::rxGetControl(.ui, "fixRes", FALSE)) {
+    return(0L)
+  } else {
+    rxUiGet.popedFErrorFun(x, ...) # called for side effect
+    return(.poped$etaNotfixed)
+  }
 }
 attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
 
@@ -479,6 +617,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
 #' @param timeLow string that represents the lower design time (ie minxt)
 #' @param timeHi string that represents the upper design time (ie maxmt)
 #' @param id The id variable
+#' @param fixRes boolean; Fix the residuals to what is specified by the model
 #' @inheritParams PopED::create_design
 #' @inheritParams PopED::create_design_space
 #' @return PopED design space
@@ -510,6 +649,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                     grouped_x = NULL,
                                     our_zero = NULL,
                                     maxn=NULL) {
+  rxode2::rxSolveFree()
   rxode2::rxReq("PopED")
   data <- as.data.frame(data)
   ui <- rxode2::assertRxUi(ui)
@@ -721,7 +861,6 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .dat <- .dat[, -.wid]
   .dat$id <- .id
   .poped$dataMT <- rxode2::etTrans(.dat, .poped$modelMT)
-  message("dataMT")
   print(head(.poped$dataMT[.poped$dataMT$EVID != 0, ]))
   .designSpace
 }
@@ -854,6 +993,9 @@ rxUiGet.popedSettings <- function(x, ...) {
   .ctl <- control
   class(.ctl) <- NULL
   rxode2::rxSetControl(.ui, .ctl)
+  # To get the sigma estimates, this needs to be called before any of
+  # the other setup items
+  .err <- .ui$popedFErrorFun
   .design <- .popedDataToDesignSpace(.ui, data,
                                      time=rxode2::rxGetControl(.ui, "time", "time"),
                                      timeLow=rxode2::rxGetControl(.ui, "low", "low"),
@@ -867,7 +1009,7 @@ rxUiGet.popedSettings <- function(x, ...) {
   PopED::create.poped.database(.input,
                                ff_fun=.ui$popedFfFun,
                                fg_fun=.ui$popedFgFun,
-                               fError_fun=.ui$popedFErrorFun)
+                               fError_fun=.err)
 }
 
 
@@ -1116,7 +1258,6 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #' @return popedControl object
 #' @export
 #' @author Matthew L. Fidler
-#' @examples
 popedControl <- function(stickyRecalcN=4,
                          maxOdeRecalc=5,
                          odeRecalcFactor=10^(0.5),
@@ -1241,6 +1382,7 @@ popedControl <- function(stickyRecalcN=4,
                          # model extras
                          auto_pointer="",
                          user_distribution_pointer="",
+                         fixRes=FALSE,
                          ...) {
   rxode2::rxReq("PopED")
   .xtra <- list(...)
@@ -1333,6 +1475,7 @@ popedControl <- function(stickyRecalcN=4,
   checkmate::assertLogical(bUseLineSearch, len=1, any.missing=FALSE)
   checkmate::assertLogical(bUseExchangeAlgorithm, len=1, any.missing=FALSE)
   checkmate::assertLogical(bUseBFGSMinimizer, len=1, any.missing=FALSE)
+  checkmate::assertLogical(fixRes, len=1, any.missing=FALSE)
   if (is.null(poped_version)) {
     poped_version <- packageVersion("PopED")
   }
@@ -1366,6 +1509,8 @@ popedControl <- function(stickyRecalcN=4,
   } else {
     stop("solving options 'rxControl' needs to be generated from 'rxode2::rxControl'", call=FALSE)
   }
+  # Always single threaded
+  rxControl$cores <- 1L
   if (!is.null(sigdig)) {
     checkmate::assertNumeric(sigdig, lower=1, finite=TRUE, any.missing=TRUE, len=1)
   }
@@ -1538,7 +1683,8 @@ popedControl <- function(stickyRecalcN=4,
                our_zero=our_zero,
                user_distribution_pointer=user_distribution_pointer,
                auto_pointer=auto_pointer,
-               maxn=maxn
+               maxn=maxn,
+               fixRes=fixRes
                )
   class(.ret) <- "popedControl"
   .ret

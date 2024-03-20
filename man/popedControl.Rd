@@ -8,6 +8,7 @@ popedControl(
   stickyRecalcN = 4,
   maxOdeRecalc = 5,
   odeRecalcFactor = 10^(0.5),
+  maxn = NULL,
   rxControl = NULL,
   sigdig = 4,
   important = NULL,
@@ -15,10 +16,6 @@ popedControl(
   iFIMCalculationType = c("reduced", "full", "weighted", "loc", "reducedPFIM", "fullABC",
     "largeMat", "reducedFIMABC"),
   iApproximationMethod = c("fo", "foce", "focei", "foi"),
-  optSample = FALSE,
-  optDiscreteDesignVar = FALSE,
-  optContDesignVar = FALSE,
-  optIdPerGroup = FALSE,
   iFOCENumInd = 1000,
   prior_fim = matrix(0, 0, 1),
   d_switch = c("d", "ed"),
@@ -121,6 +118,7 @@ popedControl(
   maxtotgroupsize = NULL,
   mintotgroupsize = NULL,
   xt_space = NULL,
+  a = NULL,
   maxa = NULL,
   mina = NULL,
   a_space = NULL,
@@ -132,6 +130,9 @@ popedControl(
   use_grouped_x = FALSE,
   grouped_x = NULL,
   our_zero = NULL,
+  auto_pointer = "",
+  user_distribution_pointer = "",
+  fixRes = FALSE,
   ...
 )
 }
@@ -145,6 +146,10 @@ ODE solve.}
 
 \item{odeRecalcFactor}{The ODE recalculation factor when ODE
 solving goes bad, this is the factor the rtol/atol is reduced}
+
+\item{maxn}{Maximum number of design points for optimization; By
+default this is declared by the maximum number of design points
+in the babelmixr2 dataset (when \code{NULL})}
 
 \item{rxControl}{`rxode2` ODE solving options during fitting, created with `rxControl()`}
 
@@ -183,14 +188,6 @@ value of the Fisher Information Matrix type:
 }}
 
 \item{iApproximationMethod}{Approximation method for model, 0=FO, 1=FOCE, 2=FOCEI, 3=FOI}
-
-\item{optSample}{logical; Optimize Samples per subject as well as FIM with current design}
-
-\item{optDiscreteDesignVar}{logical; optimize discrete design variable}
-
-\item{optContDesignVar}{logical; optimize continuous design variable}
-
-\item{optIdPerGroup}{logical; optimize individual per group}
 
 \item{iFOCENumInd}{integer; number of individuals in focei solve}
 
@@ -446,9 +443,11 @@ If only one number then the number will be the same in every group.}
 
 \item{time}{string that represents the time in the dataset (ie xt)}
 
-\item{timeLow}{string that represents the lower design time (ie minxt)}
+\item{timeLow}{string that represents the lower design time (ie
+minxt)}
 
-\item{timeHi}{string that represents the upper design time (ie maxmt)}
+\item{timeHi}{string that represents the upper design time (ie
+maxmt)}
 
 \item{id}{The id variable}
 
@@ -484,6 +483,11 @@ Max number of samples per group/individual}
 \code{list(1:10, 2:23, 4:6)} (one for each value in xt in row major order or just for one row in xt, 
 and all other rows will be duplicated).}
 
+\item{a}{Matrix defining the initial continuous covariate values. 
+n_rows=number of groups, n_cols=number of covariates.
+If the number of rows is one and the number of groups > 1 then all groups are assigned the 
+same values.}
+
 \item{maxa}{Vector defining the max value for each covariate. If a single value is supplied then
 all a values are given the same max value}
 
@@ -513,6 +517,12 @@ Allows for finer control than \code{use_grouped_x}.}
 
 \item{our_zero}{Value to interpret as zero in design.}
 
+\item{auto_pointer}{Filename and path, or function name, for the
+Autocorrelation function, empty string means no autocorrelation.}
+
+\item{user_distribution_pointer}{Filename and path, or function
+name, for user defined distributions for E-family designs}
+
 \item{...}{other parameters for PopED control}
 }
 \value{
@@ -522,5 +532,5 @@ popedControl object
 Control for a PopED design task
 }
 \author{
-Matthew L. Fidlerzzff
+Matthew L. Fidler
 }
