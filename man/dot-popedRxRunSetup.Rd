@@ -4,7 +4,7 @@
 \alias{.popedRxRunSetup}
 \title{Setup poped if needed}
 \usage{
-.popedRxRunSetup()
+.popedRxRunSetup(popedDb)
 }
 \value{
 nothing, called for side effects

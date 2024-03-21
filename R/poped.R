@@ -1717,3 +1717,36 @@ popedControl <- function(stickyRecalcN=4,
   class(.ret) <- "popedControl"
   .ret
 }
+
+
+.popedFamilyControl <- function(env, ...) {
+  .ui <- env$ui
+  .control <- env$control
+  if (is.null(.control)) {
+    .control <- popedControl()
+  }
+  if (!inherits(.control, "popedControl")){
+    .control <- do.call(babelmixr2::popedControl, .control)
+  }
+  assign("control", .control, envir=.ui)
+}
+
+
+#' @export
+nlmixr2Est.poped <- function(env, ...) {
+  rxode2::rxReq("PopED")
+  .ui <- env$ui
+  rxode2::assertRxUiTransformNormal(.ui, " for the optimal design routine 'poped'", .var.name=.ui$modelName)
+  rxode2::assertRxUiRandomOnIdOnly(.ui, " for the optimal design routine 'poped'", .var.name=.ui$modelName)
+  rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'poped'", .var.name=.ui$modelName)
+  .popedFamilyControl(env, ...)
+
+  .ui <- env$ui
+  # Get the units from the basic units (before unit conversion)
+  on.exit({
+    if (exists("control", envir=.ui)) {
+      rm("control", envir=.ui)
+    }
+  }, add=TRUE)
+  .setupPopEDdatabase(.ui, env$data, .ui$control)
+}

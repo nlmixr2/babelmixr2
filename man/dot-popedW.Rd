@@ -4,7 +4,10 @@
 \alias{.popedW}
 \title{Get the weight from the rxode2 solve}
 \usage{
-.popedW()
+.popedW(popedDb)
+}
+\arguments{
+\item{popedDb}{poped DB with babelmixr2 issue}
 }
 \value{
 rxode2 weights for the poped error function
