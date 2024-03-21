@@ -102,6 +102,8 @@ attr(rxUiGet.popedFgFun, "desc") <- "PopED parameter model (fg_fun)"
 
 .poped <- new.env(parent=emptyenv())
 .poped$s <- NULL
+.poped$modelNumber <- 1L
+.poped$curNumber <- -1L
 
 #' @export
 rxUiGet.popedFfFun <- function(x, ...) {
@@ -180,10 +182,14 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   if (!rxode2::rxSolveSetup()) {
     .poped$setup <- 0L
   }
+  if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
+    .poped$setup <- 0L
+  }
   if (.poped$setup != 1L) {
     rxode2::rxSolveFree()
     nlmixr2est::.popedSetup(popedDb$babelmixr2, FALSE)
     .poped$setup <- 1L
+    .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$fullXt <- NULL
   }
   invisible()
@@ -193,6 +199,9 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   # For PopED simply assume same number of xt = same problem
   # reasonable assumption?
   if (!rxode2::rxSolveSetup()) {
+    .poped$setup <- 0L
+  }
+  if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
     .poped$setup <- 0L
   }
   if (.poped$setup == 2L) {
@@ -231,6 +240,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .e$dataF <- .et
     nlmixr2est::.popedSetup(.e, TRUE)
     .poped$fullXt <- length(xt)
+    .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$setup <- 2L
   }
 }
