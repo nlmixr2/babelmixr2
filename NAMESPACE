@@ -2,8 +2,11 @@
 
 S3method(as.nlmixr2,default)
 S3method(as.nlmixr2,nonmem2rx)
+S3method(getValidNlmixrCtl,monolix)
 S3method(getValidNlmixrCtl,nonmem)
 S3method(getValidNlmixrCtl,pknca)
+S3method(getValidNlmixrCtl,poped)
+S3method(nlmixr2Est,monolix)
 S3method(nlmixr2Est,nonmem)
 S3method(nlmixr2Est,pknca)
 S3method(nlmixr2Est,poped)

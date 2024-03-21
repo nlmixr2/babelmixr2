@@ -1731,6 +1731,22 @@ popedControl <- function(stickyRecalcN=4,
   assign("control", .control, envir=.ui)
 }
 
+#' @export
+getValidNlmixrCtl.poped <- function(control) {
+  .ctl <- control[[1]]
+  .cls <- class(control)[1]
+  if (is.null(.ctl)) .ctl <- popedControl()
+  if (is.null(attr(.ctl, "class")) && is(.ctl, "list")) .ctl <- do.call("popedControl", .ctl)
+  if (!inherits(.ctl, "popedControl")) {
+    .minfo(paste0("invalid control for `est=\"", .cls, "\"`, using default"))
+    .ctl <- popedControl()
+  } else {
+    .ctl <- do.call(popedControl, .ctl)
+  }
+  .ctl
+}
+
+
 
 #' @export
 nlmixr2Est.poped <- function(env, ...) {
