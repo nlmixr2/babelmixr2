@@ -114,14 +114,14 @@ rxUiGet.popedFfFun <- function(x, ...) {
     # unlike standard rxode2, parameters need not be named, but must be in the right order
     if (.totn <  .(.poped$maxn)) {
       .p <- c(.p, .xt, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .totn))
-      .popedRxRunSetup()
+      .popedRxRunSetup(poped.db)
       .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
     } else if (.totn > .(.poped$maxn)) {
-      .popedRxRunFullSetup(.xt)
+      .popedRxRunFullSetup(poped.db, .xt)
       .ret <- nlmixr2est::.popedSolveIdN2(.p, .xt, .id - 1L, .totn)
     } else {
       .p <- c(.p, .xt)
-      .popedRxRunSetup()
+      .popedRxRunSetup(poped.db)
       .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
     }
     return(list(f=matrix(.ret$rx_pred_, ncol=1),
@@ -146,23 +146,27 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #'
 #' This shouldn't be called directly
 #'
+#' @param popedDb poped DB with babelmixr2 issue
+#'
 #' @return rxode2 weights for the poped error function
 #' @export
 #' @author Matthew L. Fidler
 #' @keywords internal
-.popedW <- function() {
-  sqrt(.poped$s[["w"]])
+.popedW <- function(popedDb) {
+  sqrt(popedDb$babelmixr2$s[["w"]])
 }
 #' Get the function value from the rxode2 solve
 #'
 #' This shouldn't be called directly
 #'
+#' @inheritParams .popedW
+#'
 #' @return rxode2 weights for the poped error function
 #' @export
 #' @author Matthew L. Fidler
 #' @keywords internal
-.popedF <- function() {
-  .poped$s[["rx_pred_"]]
+.popedF <- function(popedDb) {
+  popedDb$babelmixr2$s[["rx_pred_"]]
 }
 #' Setup poped if needed
 #'
@@ -172,23 +176,20 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #' @export
 #' @author Matthew L. Fidler
 #' @keywords internal
-.popedRxRunSetup <- function() {
+.popedRxRunSetup <- function(popedDb) {
   if (!rxode2::rxSolveSetup()) {
     .poped$setup <- 0L
   }
   if (.poped$setup != 1L) {
     rxode2::rxSolveFree()
-    .poped$model <- .poped$modelMT
-    .poped$data <- .poped$dataMT
-    .poped$param <- .poped$paramMT
-    nlmixr2est::.popedSetup(.poped)
+    nlmixr2est::.popedSetup(popedDb$babelmixr2, FALSE)
     .poped$setup <- 1L
     .poped$fullXt <- NULL
   }
   invisible()
 }
 
-.popedRxRunFullSetup <- function(xt) {
+.popedRxRunFullSetup <- function(popedDb, xt) {
   # For PopED simply assume same number of xt = same problem
   # reasonable assumption?
   if (!rxode2::rxSolveSetup()) {
@@ -201,12 +202,13 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   }
   if (.poped$setup != 2L) {
     rxode2::rxSolveFree()
-    .dat <- with(.poped$dataF0lst,
+    .e <- popedDb$babelmixr2
+    .dat <- with(.e$dataF0lst,
                  do.call(rbind,
-                         lapply(unique(.poped$dataF0[[.wid]]),
+                         lapply(unique(.e$dataF0[[.wid]]),
                                 function(id) {
-                                  .data <- .poped$dataF0[.poped$dataF0[[.wid]] == id &
-                                                           .poped$dataF0[[.wevid]] != 0, ]
+                                  .data <- .e$dataF0[.e$dataF0[[.wid]] == id &
+                                                       .e$dataF0[[.wevid]] != 0, ]
                                   .len <- length(.data[[.wid]])
                                   .data2 <- .data[.len, ]
                                   .data2[[.wevid]] <- 0
@@ -225,11 +227,9 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                                            }))
                                   rbind(.data, .data3)
                                 })))
-    .et <- rxode2::etTrans(.dat, .poped$modelF)
-    .poped$model <- .poped$modelF
-    .poped$data <- .et
-    .poped$param <- .poped$paramF
-    nlmixr2est::.popedSetup(.poped)
+    .et <- rxode2::etTrans(.dat, .e$modelF)
+    .e$dataF <- .et
+    nlmixr2est::.popedSetup(.e, TRUE)
     .poped$fullXt <- length(xt)
     .poped$setup <- 2L
   }
@@ -277,7 +277,6 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #' @noRd
 #' @author Matthew L. Fidler
 .popedGetErrorModelProp <- function(ui, pred1) {
-  .poped$needF <- TRUE
   str2lang(paste0("rxErr", pred1$dvid, " <- rxF * (1 + ", .getVarCnd(ui, pred1$cond, "prop"), ")"))
 }
 #' Get power error
@@ -336,7 +335,7 @@ rxUiGet.popedFErrorFun  <- function(x, ...) {
     f <- function(model_switch, xt, parameters, epsi, poped.db) {
       # Will assign in babelmixr2 namespace
       do.call(poped.db$model$ff_pointer,list(model_switch,xt,parameters,poped.db))
-      y <- .popedF() + .popedW() * epsi[, 1]
+      y <- .popedF(poped.db) + .popedW(poped.db) * epsi[, 1]
       return(list(y=y,poped.db=poped.db))
     }
     return(f)
@@ -345,7 +344,6 @@ rxUiGet.popedFErrorFun  <- function(x, ...) {
     .poped$etaEst <- NULL
     .poped$etaNotfixed <- NULL
     .predDf <- .ui$predDf
-    .poped$needF <- FALSE
     .ret <- lapply(seq_along(.predDf$cond),
                    function(c) {
                      .popedGetErrorModel(.ui, .predDf[c, ])
@@ -861,7 +859,6 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .dat <- .dat[, -.wid]
   .dat$id <- .id
   .poped$dataMT <- rxode2::etTrans(.dat, .poped$modelMT)
-  print(head(.poped$dataMT[.poped$dataMT$EVID != 0, ]))
   .designSpace
 }
 
@@ -1006,10 +1003,31 @@ rxUiGet.popedSettings <- function(x, ...) {
               .ui$popedSettings,
               .ui$popedParameters,
               list(MCC_Dep=rxode2::rxGetControl(.ui, "MCC_Dep", NULL)))
-  PopED::create.poped.database(.input,
+  .ret <- PopED::create.poped.database(.input,
                                ff_fun=.ui$popedFfFun,
                                fg_fun=.ui$popedFgFun,
                                fError_fun=.err)
+  .env <- new.env(parent=emptyenv())
+  .env$modelMT <- .poped$modelMT
+  .env$dataMT <- .poped$dataMT
+  .env$paramMT <- .poped$paramMT
+
+  .env$modelF <- .poped$modelF
+
+  .env$maxn <- .poped$maxn
+  .env$mt <- .poped$mt
+  .env$dataF0lst <- .poped$dataF0lst
+  .env$dataF0 <- .poped$dataF0
+  .env$paramF <- .poped$paramF
+  # PopED environment needs:
+  # - control - popedControl
+  .env$control <- .ctl
+  .env$modelNumber <- .poped$modelNumber
+  .poped$modelNumber <- .poped$modelNumber + 1
+  # - rxControl
+  .env$rxControl <- .ctl$rxControl
+  .ret$babelmixr2 <- .env
+  .ret
 }
 
 
