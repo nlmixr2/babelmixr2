@@ -408,11 +408,8 @@ rxUiGet.popedFErrorFun  <- function(x, ...) {
       .ret <- c(.ret,
                 lapply(seq_len(.lret),
                        function(i) {
-                         paste0("rxW", i, " <- which(model_switch == 1)")
-                       }),
-                lapply(seq_len(.lret),
-                       function(i) {
-                         paste0("rxY[rxW", i, "] <- rxErr", i, "[rxW", i, "]")
+                         str2lang(paste0("rxY[rxPoped.db$babelmixr2$we[[", i,
+                                         "]]] <- rxErr", i, "[rxPoped.db$babelmixr2$we[[", i, "]]]"))
                        }),
                 list(str2lang("return(list(y=rxY, poped.db=rxPoped.db))")))
     }
