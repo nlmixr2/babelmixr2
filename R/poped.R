@@ -415,7 +415,18 @@ rxUiGet.popedRxmodelBase <- function(x, ...) {
                .model2)
   suppressMessages(suppressWarnings(model(.ui2) <- .model2))
   .ui2 <- rxode2::rxUiDecompress(.ui2)
-  .mod <- rxode2::rxCombineErrorLines(.ui2, errLines=nlmixr2est::rxGetDistributionFoceiLines(.ui2),
+  .errLines <- nlmixr2est::rxGetDistributionFoceiLines(.ui2)
+  .multi <- FALSE
+  if (length(.errLines) > 1L) {
+    .multi <- TRUE
+    .errLines <- lapply(seq_along(.errLines),
+                        function(i) {
+                          c(.errLines[[i]],
+                            list(str2lang(paste0("rx_pred_", i, " <- rx_pred_")),
+                                 str2lang(paste0("rx_r_", i, " <- rx_r_"))))
+                        })
+  }
+  .mod <- rxode2::rxCombineErrorLines(.ui2, errLines=.errLines,
                                       cmtLines=FALSE, dvidLine=FALSE, useIf = FALSE)
   ## .mod <- rxode2::rxCombineErrorLines(.ui2, errLines=popedErr(.ui2),
   ##                                     cmtLines=FALSE, dvidLine=FALSE, useIf = FALSE)
@@ -441,9 +452,12 @@ rxUiGet.popedRxmodelBase <- function(x, ...) {
                    .cur <- .mod[[i]]
                    if (identical(.cur[[1]], quote(`<-`)) ||
                          identical(.cur[[1]], quote(`=`))) {
-                     .cur[[1]] <- quote(`~`)
+                     .v <- deparse1(.cur[[2]])
+                     if (!grepl("^rx_(pred|r)_[0-9]+$", .v)) {
+                       .cur[[1]] <- quote(`~`)
+                     }
                    }
-                   if (identical(.cur[[1]], quote(`~`))) {
+                   if (!.multi && identical(.cur[[1]], quote(`~`))) {
                      if (identical(.cur[[2]], quote(`rx_pred_`)) ||
                            identical(.cur[[2]], quote(`rx_r_`)))
                        .cur[[1]] <- quote(`<-`)
@@ -1751,7 +1765,7 @@ getValidNlmixrCtl.poped <- function(control) {
 #' @export
 nlmixr2Est.poped <- function(env, ...) {
   rxode2::rxReq("PopED")
-  .ui <- env$ui
+  .ui <- rxode2::rxUiDecompress(env$ui)
   rxode2::assertRxUiTransformNormal(.ui, " for the optimal design routine 'poped'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the optimal design routine 'poped'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'poped'", .var.name=.ui$modelName)
@@ -1764,5 +1778,5 @@ nlmixr2Est.poped <- function(env, ...) {
       rm("control", envir=.ui)
     }
   }, add=TRUE)
-  .setupPopEDdatabase(.ui, env$data, .ui$control)
+  .setupPopEDdatabase(.ui, env$data, env$control)
 }
