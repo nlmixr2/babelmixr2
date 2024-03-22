@@ -107,31 +107,64 @@ attr(rxUiGet.popedFgFun, "desc") <- "PopED parameter model (fg_fun)"
 
 #' @export
 rxUiGet.popedFfFun <- function(x, ...) {
-  .body <- bquote({
-    .xt <- drop(xt)
-    .p <- p
-    .id <- .p[1]
-    .p <- .p[-1]
-    .totn <- length(.xt)
-    # unlike standard rxode2, parameters need not be named, but must be in the right order
-    if (.totn <  .(.poped$maxn)) {
-      .p <- c(.p, .xt, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .totn))
-      .popedRxRunSetup(poped.db)
-      .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
-    } else if (.totn > .(.poped$maxn)) {
-      .popedRxRunFullSetup(poped.db, .xt)
-      .ret <- nlmixr2est::.popedSolveIdN2(.p, .xt, .id - 1L, .totn)
-    } else {
-      .p <- c(.p, .xt)
-      .popedRxRunSetup(poped.db)
-      .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
-    }
-    return(list(f=matrix(.ret$rx_pred_, ncol=1),
-                poped.db=poped.db))
-  })
-  .f <- function(model_switch, xt, p, poped.db){}
-  body(.f) <- .body
-  .f
+  .ui <- x[[1]]
+  .predDf <- .ui$predDf
+  if (length(.predDf$cond) == 1L) {
+    .body <- bquote({
+      .xt <- drop(xt)
+      .p <- p
+      .id <- .p[1]
+      .p <- .p[-1]
+      .totn <- length(.xt)
+      # unlike standard rxode2, parameters need not be named, but must be in the right order
+      if (.totn <  .(.poped$maxn)) {
+        .p <- c(.p, .xt, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .totn))
+        .popedRxRunSetup(poped.db)
+        .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
+      } else if (.totn > .(.poped$maxn)) {
+        .popedRxRunFullSetup(poped.db, .xt)
+        .ret <- nlmixr2est::.popedSolveIdN2(.p, .xt, .id - 1L, .totn)
+      } else {
+        .p <- c(.p, .xt)
+        .popedRxRunSetup(poped.db)
+        .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
+      }
+      return(list(f=matrix(.ret$rx_pred_, ncol=1),
+                  poped.db=poped.db))
+    })
+    .f <- function(model_switch, xt, p, poped.db){}
+    body(.f) <- .body
+    .f
+  } else {
+    .body <- bquote({
+      .xt <- drop(xt)
+      .p <- p
+      .id <- .p[1]
+      .p <- .p[-1]
+      .u <- unique(.xt)
+      .lu <- length(.u)
+      .totn <- length(.xt)
+      # unlike standard rxode2, parameters need not be named, but must be in the right order
+      if (.lu <  .(.poped$maxn)) {
+        .p <- c(.p, .u, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .lu))
+        .popedRxRunSetup(poped.db)
+        .ret <- nlmixr2est::.popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                                            .id - 1L, .totn)
+      } else if (.lu > .(.poped$maxn)) {
+        stop("not yet")
+      } else {
+        .p <- c(.p, .u)
+        .popedRxRunSetup(poped.db)
+        .ret <- nlmixr2est::.popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                                            .id - 1L, .totn)
+      }
+      return(list(f=matrix(.ret$rx_pred_, ncol=1),
+                  poped.db=poped.db))
+    })
+    .f <- function(model_switch, xt, p, poped.db){}
+    body(.f) <- .body
+    .f
+  }
 }
 attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 ## @export
