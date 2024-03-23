@@ -681,7 +681,6 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                     maxa=NULL,
                                     mina=NULL,
                                     m = NULL, x = NULL, ni = NULL,
-                                    model_switch = NULL,
                                     maxni = NULL,
                                     minni = NULL,
                                     maxtotni = NULL,
@@ -712,7 +711,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   }
 
   # Get from assigned control inside of ui object
-  for (opt in c("m", "x","ni", "model_switch", "maxni","minni", "maxtotni",
+  for (opt in c("m", "x","ni", "maxni","minni", "maxtotni",
                 "mintotni", "maxgroupsize","mingroupsize","maxtotgroupsize",  "mintotgroupsize",
                 "xt_space", "a", "maxa", "mina",
                 "a_space", "x_space", "grouped_xt", "use_grouped_a",
@@ -741,7 +740,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
       .need <- setdiff(.allCovs, names(.a[[1]]))
       if (length(.need) > 0) {
         stop("covariates in model but not defined: ", paste(.need, collapse=", "),
-             call=FALSE)
+             call.=FALSE)
       }
       if (is.null(use_grouped_xt)) {
         .minfo("assuming same times for each group (use_grouped_xt=TRUE)")
@@ -786,23 +785,73 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   }
   .env <- new.env(parent=emptyenv())
   .env$mt <- -Inf
-  .xt <- lapply(unique(.data[[.wid]]),
-                function(id) {
-                  .data <- .data[.data[[.wid]] == id &
-                                   .data[[.wevid]] == 0, ]
-                  .ret <- .data[[.wtime]]
-                  .env$mt <- max(c(.ret, .env$mt))
-                  .ret
-                })
+  .wcmt <- which(.nd == "cmt")
+  .wdvid <- which(.nd == "dvid")
+  .multipleEndpoint <- FALSE
+  if (length(ui$predDf$cond) > 1L) {
+    .multipleEndpoint <- TRUE
+    .xt <- lapply(unique(.data[[.wid]]),
+                  function(id) {
+                    do.call(rbind, lapply(seq_along(ui$predDf$cond),
+                           function(i) {
+                             .data <- .data[.data[[.wid]] == id &
+                                              .data[[.wevid]] == 0, ]
+                             .time <- .data[[.wtime]]
+                             .env$mt <- max(c(.time, .env$mt))
+                             if (length(.wdvid) == 1L) {
+                               .wd <- which(.data[[.wdvid]] == i)
+                               if (length(.wd) == 0) .wd <- which(.data[[.wdvid]] == ui$predDf$cond[i])
+                               if (length(.wd) > 0) {
+                                 .time <- .time[.wd]
+                                 return(data.frame(time=.time, dvid=i))
+                               }
+                             }
+                             # could not find dvid spec, try cmt spec
+                             if (length(.wcmt) == 1L) {
+                               .wd <- which(.data[[.wcmt]] == ui$predDf$cmt[i])
+                               if (length(.wd) == 0) .wd <- which(.data[[.wcmt]] == ui$predDf$cond[i])
+                               if (length(.wd) > 0) {
+                                 .time <- .time[.wd]
+                                 return(data.frame(time=.time, dvid=i))
+                               }
+                             }
+                             NULL
+                           }))
+                  })
+  } else {
+    .xt <- lapply(unique(.data[[.wid]]),
+                  function(id) {
+                    .data <- .data[.data[[.wid]] == id &
+                                     .data[[.wevid]] == 0, ]
+                    .ret <- .data[[.wtime]]
+                    .env$mt <- max(c(.ret, .env$mt))
+                    .ret
+                  })
+  }
   .single <- FALSE
+  .modelSwitch <- NULL
   if (length(.xt) == 1L) {
-    .xt <- .xt[[1]]
+    if (.multipleEndpoint) {
+      browser()
+      .xt <- .xt[[1]]
+      .modelSwitch <- .xt$dvid
+      .xt <- .xt$time
+    } else {
+      .xt <- .xt[[1]]
+    }
     .single <- TRUE
   }
-  .design <- PopED::create_design(xt=.xt,
-                                  groupsize=groupsize,
-                                  m = m, x = x, a = .a, ni = ni,
-                                  model_switch = model_switch)
+  if (length(ui$predDf$cond) > 1L) {
+    .design <- PopED::create_design(xt=.xt,
+                                    groupsize=groupsize,
+                                    m = m, x = x, a = .a, ni = ni,
+                                    model_switch = .modelSwitch)
+  } else {
+    .design <- PopED::create_design(xt=.xt,
+                                    groupsize=groupsize,
+                                    m = m, x = x, a = .a, ni = ni,
+                                    model_switch = NULL)
+  }
   .wlow <- which(.nd == timeLow)
   .minxt <- NULL
   if (length(.wlow) == 1L) {
@@ -1429,7 +1478,6 @@ popedControl <- function(stickyRecalcN=4,
                          # design options
                          groupsize=NULL, time="time", timeLow="low", timeHi="high",
                          id="id", m = NULL, x = NULL, ni = NULL,
-                         model_switch = NULL,
                          maxni = NULL,
                          minni = NULL,
                          maxtotni = NULL,
@@ -1731,7 +1779,6 @@ popedControl <- function(stickyRecalcN=4,
                bParallelMFEA=bParallelMFEA,
                bParallelLS=bParallelLS,
                m=m,
-               model_switch=model_switch,
                maxni=maxni,
                minni=minni,
                maxtotni=maxtotni,
