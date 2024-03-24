@@ -226,7 +226,74 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   }
   invisible()
 }
-
+#' Setup a full solve for a multiple-endpoint model
+#'
+#' @param popedDb poped database
+#' @param xt design times
+#' @param ms model switch indicator
+#' @return nothing, called for side effects
+#' @noRd
+#' @author Matthew L. Fidler
+#' @examples
+.popedRxRunFullSetupMe <- function(popedDb, xt, ms) {
+  if (!rxode2::rxSolveSetup()) {
+    .poped$setup <- 0L
+  }
+  if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
+    .poped$setup <- 0L
+  }
+  if (.poped$setup == 2L) {
+    if (!identical(.poped$fullXt, length(xt))) {
+      .poped$setup <- 0L
+    }
+  }
+  if (.poped$setup != 2L) {
+    rxode2::rxSolveFree()
+    .e <- popedDb$babelmixr2
+    .dat <- with(.e$dataF0lst,
+                 do.call(rbind,
+                         lapply(.e$uid,
+                                function(id) {
+                                  .data <- .e$dataF0[.e$dataF0[[.wid]] == id &
+                                                       .e$dataF0[[.wevid]] != 0,, drop = FALSE]
+                                  .len <- length(.data[[.wid]])
+                                  if (.len == 0) {
+                                    .data2 <- .e$dataF00
+                                  } else {
+                                    .data2 <- .data[.len, ]
+                                  }
+                                  .data2[[.wevid]] <- 0
+                                  if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
+                                  if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
+                                  if (length(.wdur) == 1L) .data2[[.wdur]] <- NA
+                                  if (length(.wss) == 1L) .data2[[.wss]] <- NA
+                                  if (length(.wii) == 1L) .data2[[.wii]] <- NA
+                                  if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
+                                  .data3 <- do.call(rbind,
+                                                    lapply(xt,
+                                                           function(t) {
+                                                             .d <- .data2
+                                                             .d[[.wtime]] <- t
+                                                             .d
+                                                           }))
+                                  rbind(.data, .data3)
+                                })))
+    .et <- rxode2::etTrans(.dat, .e$modelF)
+    .e$dataF <- .et
+    nlmixr2est::.popedSetup(.e, TRUE)
+    .poped$fullXt <- length(xt)
+    .poped$curNumber <- popedDb$babelmixr2$modelNumber
+    .poped$setup <- 2L
+  }
+}
+#' Setup for a full solve with a single endpoint model
+#'
+#'
+#' @param popedDb Poped database
+#' @param xt design times
+#' @return nothing, called for side effects
+#' @noRd
+#' @author Matthew L. Fidler
 .popedRxRunFullSetup <- function(popedDb, xt) {
   # For PopED simply assume same number of xt = same problem
   # reasonable assumption?
@@ -246,7 +313,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .e <- popedDb$babelmixr2
     .dat <- with(.e$dataF0lst,
                  do.call(rbind,
-                         lapply(unique(.e$dataF0[[.wid]]),
+                         lapply(.e$uid,
                                 function(id) {
                                   .data <- .e$dataF0[.e$dataF0[[.wid]] == id &
                                                        .e$dataF0[[.wevid]] != 0, ]
@@ -789,9 +856,10 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .wcmt <- which(.nd == "cmt")
   .wdvid <- which(.nd == "dvid")
   .multipleEndpoint <- FALSE
+  .poped$uid <- unique(.data[[.wid]])
   if (length(ui$predDf$cond) > 1L) {
     .multipleEndpoint <- TRUE
-    .xt <- lapply(unique(.data[[.wid]]),
+    .xt <- lapply(.poped$uid,
                   function(id) {
                     do.call(rbind, lapply(seq_along(ui$predDf$cond),
                            function(i) {
@@ -820,7 +888,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                            }))
                   })
   } else {
-    .xt <- lapply(unique(.data[[.wid]]),
+    .xt <- lapply(.poped$uid,
                   function(id) {
                     .data <- .data[.data[[.wid]] == id &
                                      .data[[.wevid]] == 0, ]
@@ -855,7 +923,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .wlow <- which(.nd == timeLow)
   .minxt <- NULL
   if (length(.wlow) == 1L) {
-    .minxt <- lapply(unique(.data[[.wid]]),
+    .minxt <- lapply(.poped$uid,
                      function(id) {
                        .data <- .data[.data[[.wid]] == id &
                                         .data[[.wevid]] == 0, ]
@@ -868,7 +936,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .whi <- which(.nd == timeHi)
   .maxxt <- NULL
   if (length(.whi) == 1L) {
-    .maxxt <- lapply(unique(.data[[.wid]]),
+    .maxxt <- lapply(.poped$uid,
                      function(id) {
                        .data <- .data[.data[[.wid]] == id &
                                         .data[[.wevid]] == 0, ]
@@ -924,11 +992,12 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .wii <- which(.nd == "ii")
   .waddl <- which(.nd == "addl")
   # Create an empty database for solving > number of MT defined
+  .poped$dataF00 <- .data[1, ]
   .poped$dataF0 <- do.call(rbind,
-                           lapply(unique(.data[[.wid]]),
+                           lapply(.poped$uid,
                                   function(id) {
                                     .data <- .data[.data[[.wid]] == id &
-                                                     .data[[.wevid]] != 0, ]
+                                                     .data[[.wevid]] != 0,, drop = FALSE]
                                   }))
   .poped$dataF0lst <- list(.wamt=.wamt,
                            .wrate=.wrate,
@@ -938,39 +1007,32 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                            .waddl=.waddl,
                            .wevid=.wevid,
                            .wid=.wid,
-                           .wtime=.wtime)
+                           .wtime=.wtime,
+                           .wcmt=.wcmt,
+                           .wdvid=.wdvid)
   # Create a dataset without these design points with one observation
   # 0.5 units after
   .dat <- do.call(rbind,
-                  lapply(unique(.data[[.wid]]),
+                  lapply(.poped$uid,
                          function(id) {
                            .data0 <- .data
                            .data <- .data[.data[[.wid]] == id &
                                             .data[[.wevid]] != 0,, drop = FALSE]
                            .len <- length(.data[[.wid]])
                            if (.len == 0L) {
-                             .data <- .data0[1, ]
-                             .data[[.wtime]] <- .poped$mt
-                             .data[[.wevid]] <- 0
-                             if (length(.wamt) == 1L) .data[[.wamt]] <- NA
-                             if (length(.wrate) == 1L) .data[[.wrate]] <- NA
-                             if (length(.wdur) == 1L) .data[[.wdur]] <- NA
-                             if (length(.wss) == 1L) .data[[.wss]] <- NA
-                             if (length(.wii) == 1L) .data[[.wii]] <- NA
-                             if (length(.waddl) == 1L) .data[[.waddl]] <- NA
-                             .data
+                             .data2 <- .data0[1, ]
                            } else {
                              .data2 <- .data[.len, ]
-                             .data2[[.wtime]] <- .poped$mt
-                             .data2[[.wevid]] <- 0
-                             if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
-                             if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
-                             if (length(.wdur) == 1L) .data2[[.wdur]] <- NA
-                             if (length(.wss) == 1L) .data2[[.wss]] <- NA
-                             if (length(.wii) == 1L) .data2[[.wii]] <- NA
-                             if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
-                             rbind(.data, .data2)
                            }
+                           .data2[[.wtime]] <- .poped$mt
+                           .data2[[.wevid]] <- 0
+                           if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
+                           if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
+                           if (length(.wdur) == 1L) .data2[[.wdur]] <- NA
+                           if (length(.wss) == 1L) .data2[[.wss]] <- NA
+                           if (length(.wii) == 1L) .data2[[.wii]] <- NA
+                           if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
+                           rbind(.data, .data2)
                          }))
   .id <- as.integer(factor(paste(.dat[[.wid]])))
   .dat <- .dat[, -.wid]
@@ -1125,6 +1187,7 @@ rxUiGet.popedSettings <- function(x, ...) {
                                fg_fun=.ui$popedFgFun,
                                fError_fun=.err)
   .env <- new.env(parent=emptyenv())
+  .env$uid <- .poped$uid
   .env$modelMT <- .poped$modelMT
   .env$dataMT <- .poped$dataMT
   .env$paramMT <- .poped$paramMT
@@ -1134,6 +1197,7 @@ rxUiGet.popedSettings <- function(x, ...) {
   .env$maxn <- .poped$maxn
   .env$mt <- .poped$mt
   .env$dataF0lst <- .poped$dataF0lst
+  .env$dataF00 <- .poped$dataF00
   .env$dataF0 <- .poped$dataF0
   .env$paramF <- .poped$paramF
   # PopED environment needs:
