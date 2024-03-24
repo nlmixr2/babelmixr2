@@ -138,10 +138,9 @@ rxUiGet.popedFfFun <- function(x, ...) {
   } else {
     .body <- bquote({
       .xt <- drop(xt)
-      .p <- p
-      .id <- .p[1]
-      .p <- .p[-1]
-      .u <- unique(.xt)
+      .id <- p[1]
+      .p <- p[-1]
+      .u <- .xt
       .lu <- length(.u)
       .totn <- length(.xt)
       # unlike standard rxode2, parameters need not be named, but must be in the right order
@@ -149,7 +148,7 @@ rxUiGet.popedFfFun <- function(x, ...) {
         .p <- c(.p, .u, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .lu))
         .popedRxRunSetup(poped.db)
         .ret <- nlmixr2est::.popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                            .id - 1L, .totn)
+                                            .id - 1, .totn)
       } else if (.lu > .(.poped$maxn)) {
         stop("not yet")
       } else {
@@ -408,10 +407,10 @@ rxUiGet.popedFErrorFun  <- function(x, ...) {
       .ret <- c(.ret,
                 lapply(seq_len(.lret),
                        function(i) {
-                         str2lang(paste0("rxY[rxPoped.db$babelmixr2$we[[", i,
+                         str2lang(paste0("rxF[rxPoped.db$babelmixr2$we[[", i,
                                          "]]] <- rxErr", i, "[rxPoped.db$babelmixr2$we[[", i, "]]]"))
                        }),
-                list(str2lang("return(list(y=rxY, poped.db=rxPoped.db))")))
+                list(str2lang("return(list(y=rxF, poped.db=rxPoped.db))")))
     }
     .ret <- as.call(.ret)
     body(.f) <- .ret
@@ -832,7 +831,6 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .modelSwitch <- NULL
   if (length(.xt) == 1L) {
     if (.multipleEndpoint) {
-      browser()
       .xt <- .xt[[1]]
       .modelSwitch <- .xt$dvid
       .xt <- .xt$time
@@ -906,7 +904,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   if (checkmate::testIntegerish(maxn, lower=1, any.missing=FALSE, len=1)) {
     .poped$maxn <- maxn
   } else {
-    .poped$maxn <- max(.designSpace$design$ni)
+    .poped$maxn <- max(.designSpace$design$ni)*length(ui$predDf$cond)
   }
 
   .rx <- .popedRxModel(ui, maxNumTime=.poped$maxn)
@@ -944,19 +942,33 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .dat <- do.call(rbind,
                   lapply(unique(.data[[.wid]]),
                          function(id) {
+                           .data0 <- .data
                            .data <- .data[.data[[.wid]] == id &
-                                            .data[[.wevid]] != 0, ]
+                                            .data[[.wevid]] != 0,, drop = FALSE]
                            .len <- length(.data[[.wid]])
-                           .data2 <- .data[.len, ]
-                           .data2[[.wtime]] <- .poped$mt
-                           .data2[[.wevid]] <- 0
-                           if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
-                           if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
-                           if (length(.wdur) == 1L) .data2[[.wdur]] <- NA
-                           if (length(.wss) == 1L) .data2[[.wss]] <- NA
-                           if (length(.wii) == 1L) .data2[[.wii]] <- NA
-                           if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
-                           rbind(.data, .data2)
+                           if (.len == 0L) {
+                             .data <- .data0[1, ]
+                             .data[[.wtime]] <- .poped$mt
+                             .data[[.wevid]] <- 0
+                             if (length(.wamt) == 1L) .data[[.wamt]] <- NA
+                             if (length(.wrate) == 1L) .data[[.wrate]] <- NA
+                             if (length(.wdur) == 1L) .data[[.wdur]] <- NA
+                             if (length(.wss) == 1L) .data[[.wss]] <- NA
+                             if (length(.wii) == 1L) .data[[.wii]] <- NA
+                             if (length(.waddl) == 1L) .data[[.waddl]] <- NA
+                             .data
+                           } else {
+                             .data2 <- .data[.len, ]
+                             .data2[[.wtime]] <- .poped$mt
+                             .data2[[.wevid]] <- 0
+                             if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
+                             if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
+                             if (length(.wdur) == 1L) .data2[[.wdur]] <- NA
+                             if (length(.wss) == 1L) .data2[[.wss]] <- NA
+                             if (length(.wii) == 1L) .data2[[.wii]] <- NA
+                             if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
+                             rbind(.data, .data2)
+                           }
                          }))
   .id <- as.integer(factor(paste(.dat[[.wid]])))
   .dat <- .dat[, -.wid]
