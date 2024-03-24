@@ -482,7 +482,8 @@ rxUiGet.popedRxmodelBase <- function(x, ...) {
                    if (identical(.cur[[1]], quote(`<-`)) ||
                          identical(.cur[[1]], quote(`=`))) {
                      .v <- deparse1(.cur[[2]])
-                     if (!grepl("^rx_(pred|r)_[0-9]+$", .v)) {
+                     if (length(.cur[[2]]) == 1L &&
+                           !grepl("^rx_(pred|r)_[0-9]+$", .v)) {
                        .cur[[1]] <- quote(`~`)
                      }
                    }
