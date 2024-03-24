@@ -727,7 +727,8 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .allCovs <- ui$allCovs
   .need <- setdiff(.allCovs, c("ID", colnames(.a)))
   if (length(.need) > 0) {
-    if (is.list(a)) {
+    if (is.null(a)) {
+    } else if (is.list(a)) {
       if (length(.a[, "ID"]) != 1) {
         stop("when optimizing design elements, only one ID in the input data can be used",
              call.=FALSE)
