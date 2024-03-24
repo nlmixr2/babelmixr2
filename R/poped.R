@@ -1691,6 +1691,8 @@ popedControl <- function(stickyRecalcN=4,
   checkmate::assertIntegerish(Doptim_iter, any.missing=FALSE, len=1, lower=1)
   checkmate::assertIntegerish(iNumProcesses, any.missing=FALSE, len=1, lower=1)
 
+  checkmate::assertIntegerish(groupsize, any.missing=FALSE, len=1, lower=1, null.ok = TRUE)
+
   checkmate::assertLogical(bUseMemorySolver, any.missing=FALSE, len=1)
   checkmate::assertLogical(bGreedyGroupOpt, any.missing=FALSE, len=1)
   checkmate::assertLogical(EANumPoints, any.missing=FALSE, len=1)
@@ -1795,6 +1797,7 @@ popedControl <- function(stickyRecalcN=4,
                minni=minni,
                maxtotni=maxtotni,
                mintotni=mintotni,
+               groupsize=groupsize,
                maxgroupsize=maxgroupsize,
                mingroupsize=mingroupsize,
                maxtotgroupsize=maxtotgroupsize,
