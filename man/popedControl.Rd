@@ -108,7 +108,6 @@ popedControl(
   m = NULL,
   x = NULL,
   ni = NULL,
-  model_switch = NULL,
   maxni = NULL,
   minni = NULL,
   maxtotni = NULL,
@@ -457,8 +456,6 @@ maxmt)}
 Each row is a group/individual.}
 
 \item{ni}{Vector defining the number of samples for each group.}
-
-\item{model_switch}{Matrix defining which response a certain sampling time belongs to.}
 
 \item{maxni}{\itemize{
 \item \bold{******START OF DESIGN SPACE OPTIONS**********}}

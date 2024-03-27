@@ -150,7 +150,9 @@ rxUiGet.popedFfFun <- function(x, ...) {
         .ret <- nlmixr2est::.popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
                                             .id - 1, .totn)
       } else if (.lu > .(.poped$maxn)) {
-        stop("not yet")
+        .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
+        .ret <- nlmixr2est::.popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                                             .id - 1, .totn)
       } else {
         .p <- c(.p, .u)
         .popedRxRunSetup(poped.db)
@@ -1226,21 +1228,21 @@ rxUiGet.popedSettings <- function(x, ...) {
 #' @author Matthew L. Fidler
 .popedImportant <- function(ui, lst, important=NULL, unimportant=NULL) {
   important <- rxode2::rxGetControl(ui, "important", important)
-  important <- rxode2::rxGetControl(ui, "unimportant", unimportant)
+  unimportant <- rxode2::rxGetControl(ui, "unimportant", unimportant)
   .par <- lst$parameters
   .err <- ui$iniDf$name[!is.na(ui$iniDf$err)]
-  .interstingFixed <- names(.par$bpop[which(.par$notfixed_bpop==1)])
+  .importantFixed <- names(.par$bpop[which(.par$notfixed_bpop==1)])
   if (is.null(.par$notfixed_d)) {
-    .uninterestingRaomd <- names(.par$d)
+    .unimportantRandom <- names(.par$d)
   } else {
-    .uninterstingRandom <- names(.par$d[which(.par$notfixed_d==1)])
+    .unimportantRandom <- names(.par$d[which(.par$notfixed_d==1)])
   }
 
   # defaults
   #  1 if a parameter is uninteresting, otherwise 0
-  .ds <- setNames(c(rep(0, length(.interstingFixed)),
-                    rep(1, length(.uninterstingRandom))),
-                  c(.interstingFixed, .uninterstingRandom))
+  .ds <- setNames(c(rep(0, length(.importantFixed)),
+                    rep(1, length(.unimportantRandom))),
+                  c(.importantFixed, .unimportantRandom))
   # should make sd uninteresting
   .ds[.err] <- 1
   important <- important[important %in% names(.ds)]
