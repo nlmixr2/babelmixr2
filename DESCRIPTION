@@ -25,6 +25,7 @@ Suggests:
     knitr,
     rmarkdown,
     spelling,
+    PopED,
     units
 Depends:
     R (>= 3.5),
