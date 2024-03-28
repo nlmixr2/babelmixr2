@@ -106,15 +106,15 @@ poped_db_ode_mrg <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_mrg)
 pk1cmtoral <- PKPDsim::new_ode_model("pk_1cmt_oral") # take from library
 ff_ode_pkpdsim <- function(model_switch, xt, p, poped.db){
     #Set up time points for the ODE
-    times_xt <- drop(xt)  
+    times_xt <- drop(xt)
     dose_times <- seq(from=0,to=max(times_xt),by=p[["TAU"]])
     times <- sort(unique(c(0,times_xt,dose_times)))
-
+  #
     N = length(dose_times)
     regimen = PKPDsim::new_regimen(amt=p[["DOSE"]],n=N,interval=p[["TAU"]])
     design <- PKPDsim::sim(
-      ode = pk1cmtoral, 
-      parameters = c(CL=p[["CL"]],V=p[["V"]],KA=p[["KA"]]), 
+      ode = pk1cmtoral,
+      parameters = c(CL=p[["CL"]],V=p[["V"]],KA=p[["KA"]]),
       regimen = regimen,
       only_obs = TRUE,
       t_obs = times,
@@ -124,10 +124,10 @@ ff_ode_pkpdsim <- function(model_switch, xt, p, poped.db){
     f <- tmp$y
     m_tmp <- match(round(times_xt,digits = 6),tmp[,"t"])
     if(any(is.na(m_tmp))){
-      stop("can't find time points in solution\n", 
+      stop("can't find time points in solution\n",
            "try changing the digits argument in the match function")
-    } 
-    
+    }
+   #
     f <- f[m_tmp]
     return(list(f = f, poped.db = poped.db))
 }
@@ -142,14 +142,14 @@ ff_ode_rx <- function(model_switch, xt, p, poped.db){
   times_xt <- drop(xt)
   et(0,amt=p[["DOSE"]], ii=p[["TAU"]], until=max(times_xt)) %>%
     et(times_xt) -> data
-  
+
   out <- rxode2::rxSolve(modrx, p, data, atol=1e-8, rtol=1e-8,maxsteps=5000,
                  returnType="data.frame")
-  
+
   f <-  out$CP[match(times_xt,out$time)]
-  
+
   return(list(f=matrix(f,ncol=1),poped.db=poped.db))
-  
+
 }
 
 poped_db_ode_rx <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_rx)
@@ -167,9 +167,10 @@ solvers](https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html
 (and their speeds), this section will:
 
 -   take the model described and adapt it in two different `rxode2`
-    model functions, the solved and ode cases
--   compare these examples to the fastest solvers in the PopED vignette
-    (`mrgsolve` and `analytic`)
+    model functions, the solved and ode cases (this is done by the
+    `nlmixr()` call which creates a `PopED` database)
+-   compare these examples to the pharmacometric solvers  in the PopED vignette
+    (`mrgsolve` and `PKPDsim`)
 
 ## babelmixr2 Ode solution
 
@@ -251,22 +252,20 @@ compare <- microbenchmark(
   evaluate_design(poped_db_analytic),
   evaluate_design(poped_db_analytic_babelmixr2),
   evaluate_design(poped_db_ode_babelmixr2),
-  evaluate_design(poped_db_ode_rx),
   evaluate_design(poped_db_ode_mrg),
   evaluate_design(poped_db_ode_pkpdsim),
   times = 100L)
 
-autoplot(compare)
+autoplot(compare) + theme_bw()
 
 ```
-
 Note that the `babelmixr2` ode solver is the fastest ode solver in this
 comparison. Among other things, this is because the model is loaded into
 memory and does not need to be setup each time. (As benchmarks, the
 `mrgsolve`, `PKPDsim` and `rxode2` implementation on the `PopED`'s
 website is included).
 
-Note that the speed of all the tools are reasonable. In my opinion, the
+Also to me, the speed of all the tools are reasonable. In my opinion, the
 benefit of the `babelmixr2` interface to `PopED` is the simplicity of
 using `nlmixr2` / `rxode2` functional models or fits directly in `PopED`
 without relying on conversions.
@@ -277,6 +276,7 @@ and requires a design data-set as well as a `popedControl()` to setup a
 traditionally `nlmixr2` takes a dataset, "estimation" method and
 controls to change estimation method options.
 
-This allows the same type of paradigm to be applied to `PopED`. In my
-estimation, this should allow easy translation between the systems and
-more frequent use of optimal design in designingdd clinical trials.
+`babelmixr2` adopts the same paradigm of model, data, control to be
+applied to `PopED`. This should allow easy translation between the
+systems. With easier translation, hopefully optimal design in
+clinical trials will be easier to achieve.

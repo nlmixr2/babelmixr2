@@ -42,6 +42,8 @@ jobs:
             nlmixr2/nonmem2rx
             nlmixr2/nlmixr2est
             nlmixr2/nlmixr2rpt
+            mrgsolve
+            PKPDsim
             lixoftConnectors=?ignore
             local::.
           needs: website
