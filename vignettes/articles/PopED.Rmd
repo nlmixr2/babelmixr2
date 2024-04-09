@@ -1,0 +1,320 @@
+---
+title: "PopED"
+author: "Matthew L. Fidler"
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>")
+
+# Setup the moodels from PopED's
+# https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html
+library(babelmixr2)
+library(PopED)
+library(mrgsolve)
+library(PKPDsim)
+library(rxode2)
+
+ff_analytic <- function(model_switch,xt,parameters,poped.db){
+  with(as.list(parameters),{
+    y=xt
+    N = floor(xt/TAU)+1
+    f=(DOSE/V)*(KA/(KA - CL/V)) *
+      (exp(-CL/V * (xt - (N - 1) * TAU)) * (1 - exp(-N * CL/V * TAU))/(1 - exp(-CL/V * TAU)) -
+         exp(-KA * (xt - (N - 1) * TAU)) * (1 - exp(-N * KA * TAU))/(1 - exp(-KA * TAU)))
+    return(list( f=f,poped.db=poped.db))
+  })
+}
+
+
+code <- '
+$PARAM CL=3.75, V=72.8, KA=0.25
+$CMT DEPOT CENT
+$ODE
+dxdt_DEPOT = -KA*DEPOT;
+dxdt_CENT = KA*DEPOT - (CL/V)*CENT;
+$TABLE double CP  = CENT/V;
+$CAPTURE CP
+'
+
+moda <- mrgsolve::mcode("optim", code, atol=1e-8, rtol=1e-8,maxsteps=5000)
+
+ff_ode_mrg <- function(model_switch, xt, p, poped.db){
+  times_xt <- drop(xt)
+  dose_times <- seq(from=0,to=max(times_xt),by=p[["TAU"]])
+  time <- sort(unique(c(0,times_xt,dose_times)))
+  is.dose <- time %in% dose_times
+
+  data <-
+    tibble::tibble(ID = 1,
+                   time = time,
+                   amt = ifelse(is.dose,p[["DOSE"]], 0),
+                   cmt = ifelse(is.dose, 1, 0),
+                   evid = cmt,
+                   CL = p[["CL"]], V = p[["V"]], KA = p[["KA"]])
+
+  out <- mrgsolve::mrgsim_q(moda, data=data)
+
+  f <-  out$CP
+
+  f <- f[match(times_xt,out$time)]
+
+  return(list(f=matrix(f,ncol=1),poped.db=poped.db))
+
+}
+
+sfg <- function(x,a,bpop,b,bocc){
+  parameters=c(
+    KA=bpop[1]*exp(b[1]),
+    CL=bpop[2]*exp(b[2]),
+    V=bpop[3]*exp(b[3]),
+    DOSE=a[1],
+    TAU=a[2])
+  return( parameters )
+}
+
+feps <- function(model_switch,xt,parameters,epsi,poped.db){
+  f <- do.call(poped.db$model$ff_pointer,list(model_switch,xt,parameters,poped.db))[[1]]
+  y = f*(1+epsi[,1])+epsi[,2]
+  return(list(y=y,poped.db=poped.db))
+}
+
+poped_db_analytic <- create.poped.database(
+  ff_fun =ff_analytic,
+  fg_fun =sfg,
+  fError_fun=feps,
+  bpop=c(KA=0.25,CL=3.75,V=72.8),
+  d=c(KA=0.09,CL=0.25^2,V=0.09),
+  sigma=c(prop=0.04,add=0.0025),
+  m=2,
+  groupsize=20,
+  xt=c( 1,2,8,240,245),
+  minxt=c(0,0,0,240,240),
+  maxxt=c(10,10,10,248,248),
+  bUseGrouped_xt=1,
+  a=cbind(DOSE=c(20,40),TAU=c(24,24)),
+  maxa=c(DOSE=200,TAU=24),
+  mina=c(DOSE=0,TAU=24))
+
+
+poped_db_ode_mrg <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_mrg)
+
+pk1cmtoral <- PKPDsim::new_ode_model("pk_1cmt_oral") # take from library
+ff_ode_pkpdsim <- function(model_switch, xt, p, poped.db){
+    #Set up time points for the ODE
+    times_xt <- drop(xt)
+    dose_times <- seq(from=0,to=max(times_xt),by=p[["TAU"]])
+    times <- sort(unique(c(0,times_xt,dose_times)))
+  #
+    N = length(dose_times)
+    regimen = PKPDsim::new_regimen(amt=p[["DOSE"]],n=N,interval=p[["TAU"]])
+    design <- PKPDsim::sim(
+      ode = pk1cmtoral,
+      parameters = c(CL=p[["CL"]],V=p[["V"]],KA=p[["KA"]]),
+      regimen = regimen,
+      only_obs = TRUE,
+      t_obs = times,
+      checks = FALSE,
+      return_design = TRUE)
+    tmp <- PKPDsim::sim_core(sim_object = design, ode = pk1cmtoral)
+    f <- tmp$y
+    m_tmp <- match(round(times_xt,digits = 6),tmp[,"t"])
+    if(any(is.na(m_tmp))){
+      stop("can't find time points in solution\n",
+           "try changing the digits argument in the match function")
+    }
+   #
+    f <- f[m_tmp]
+    return(list(f = f, poped.db = poped.db))
+}
+
+modrx <- rxode2::rxode2({
+  d/dt(DEPOT) = -KA*DEPOT;
+  d/dt(CENT) = KA*DEPOT - (CL/V)*CENT;
+  CP=CENT/V;
+})
+
+ff_ode_rx <- function(model_switch, xt, p, poped.db){
+  times_xt <- drop(xt)
+  et(0,amt=p[["DOSE"]], ii=p[["TAU"]], until=max(times_xt)) %>%
+    et(times_xt) -> data
+
+  out <- rxode2::rxSolve(modrx, p, data, atol=1e-8, rtol=1e-8,maxsteps=5000,
+                 returnType="data.frame")
+
+  f <-  out$CP[match(times_xt,out$time)]
+
+  return(list(f=matrix(f,ncol=1),poped.db=poped.db))
+
+}
+
+poped_db_ode_rx <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_rx)
+
+poped_db_ode_pkpdsim <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_pkpdsim)
+```
+
+## Introduction -- using babelmixr2 with PopED
+
+`babelmixr2` now introduces a new method taking `rxode2`/`nlmixr2`
+models and optimal design using `PopED`.
+
+As in the [PopED vignette comparing ODE
+solvers](https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html#speed-of-fim-computation)
+(and their speeds), this section will:
+
+-   take the model described and adapt it in two different `rxode2`
+    model functions, the solved and ode cases (this is done by the
+    `nlmixr()` call which creates a `PopED` database)
+-   compare these examples to the pharmacometric solvers in the PopED
+    vignette (`mrgsolve` and `PKPDsim`)
+
+## babelmixr2 Ode solution
+
+```{r babelmixr2_ode}
+library(babelmixr2)
+library(PopED)
+
+e <- et(amt=1, ii=24, until=250) %>%
+  et(list(c(0, 10),
+          c(0, 10),
+          c(0, 10),
+          c(240, 248),
+          c(240, 248))) %>%
+  dplyr::mutate(time =c(0, 1,2,8,240,245))
+
+# model
+f <- function() {
+  ini({
+    tKA <- 0.25
+    tCL <- 3.75
+    tV <- 72.8
+    Favail <- fix(0.9)
+    eta.ka ~ 0.09
+    eta.cl ~ 0.25 ^ 2
+    eta.v ~ 0.09
+    prop.sd <- sqrt(0.04)
+    add.sd <- sqrt(0.0025)
+  })
+  model({
+    ka <- tKA * exp(eta.ka)
+    v <- tV * exp(eta.v)
+    cl <- tCL * exp(eta.cl)
+    d/dt(depot) <- -ka * depot
+    d/dt(central) <- ka * depot - cl / v * central
+    cp <- central / v
+    f(depot) <- DOSE * Favail
+    cp ~ add(add.sd) + prop(prop.sd)
+  })
+}
+
+poped_db_ode_babelmixr2 <- nlmixr(f, e,
+                                  popedControl(a=list(c(DOSE=20),
+                                                      c(DOSE=40)),
+                                               maxa=c(DOSE=200),
+                                               mina=c(DOSE=0)))
+e <- et(amt=1, ii=24, until=250) %>%
+  et(list(c(0, 10),
+          c(0, 10),
+          c(0, 10),
+          c(240, 248),
+          c(240, 248))) %>%
+  dplyr::mutate(time =c(0, 1,2,8,240,245))
+
+# model
+f <- function() {
+  ini({
+    tKA <- 0.25
+    tCL <- 3.75
+    tV <- 72.8
+    eta.ka ~ 0.09
+    eta.cl ~ 0.25 ^ 2
+    eta.v ~ 0.09
+    prop.sd <- sqrt(0.04)
+    add.sd <- sqrt(0.0025)
+  })
+  model({
+    ka <- tKA * exp(eta.ka)
+    v <- tV * exp(eta.v)
+    cl <- tCL * exp(eta.cl)
+    d/dt(depot) <- -ka * depot
+    d/dt(central) <- ka * depot - cl / v * central
+    cp <- central / v
+    f(depot) <- DOSE
+    cp ~ add(add.sd) + prop(prop.sd)
+  })
+}
+
+poped_db_ode_babelmixr2 <- nlmixr(f, e,
+                                  popedControl(a=list(c(DOSE=20),
+                                                      c(DOSE=40)),
+                                               maxa=c(DOSE=200),
+                                               mina=c(DOSE=0)))
+f2 <- function() {
+  ini({
+    tV <- 72.8
+    tKA <- 0.25
+    tCL <- 3.75
+    Favail <- fix(0.9)
+    eta.ka ~ 0.09
+    eta.cl ~ 0.25 ^ 2
+    eta.v ~ 0.09
+    prop.sd <- sqrt(0.04)
+    add.sd <- fix(sqrt(5e-6))
+  })
+  model({
+    ka <- tKA * exp(eta.ka)
+    v <- tV * exp(eta.v)
+    cl <- tCL * exp(eta.cl)
+    cp <- linCmt()
+    f(depot) <- DOSE
+    cp ~ add(add.sd) + prop(prop.sd)
+  })
+}
+
+poped_db_analytic_babelmixr2 <- nlmixr(f, e,
+                                       popedControl(a=list(c(DOSE=20),
+                                                           c(DOSE=40)),
+                                                    maxa=c(DOSE=200),
+                                                    mina=c(DOSE=0)))
+
+
+library(ggplot2)
+library(microbenchmark)
+
+compare <- microbenchmark(
+  evaluate_design(poped_db_analytic),
+  evaluate_design(poped_db_analytic_babelmixr2),
+  evaluate_design(poped_db_ode_babelmixr2),
+  evaluate_design(poped_db_ode_mrg),
+  evaluate_design(poped_db_ode_pkpdsim),
+  times = 100L)
+
+autoplot(compare) + theme_bw()
+
+```
+
+Note that the `babelmixr2` ode solver is the fastest ode solver in this
+comparison. Among other things, this is because the model is loaded into
+memory and does not need to be setup each time. (As benchmarks, the
+`mrgsolve`, `PKPDsim` and `rxode2` implementation on the `PopED`'s
+website is included).
+
+Also to me, the speed of all the tools are reasonable. In my opinion,
+the benefit of the `babelmixr2` interface to `PopED` is the simplicity
+of using `nlmixr2` / `rxode2` functional models or fits directly in
+`PopED` without relying on conversions.
+
+The interface is a bit different than the traditional `PopED` interface,
+and requires a design data-set as well as a `popedControl()` to setup a
+`PopED` database to run all of the `PopED` tasks. This is because
+traditionally `nlmixr2` takes a dataset, "estimation" method and
+controls to change estimation method options.
+
+`babelmixr2` adopts the same paradigm of model, data, control to be
+applied to `PopED`. This should allow easy translation between the
+systems. With easier translation, hopefully optimal design in clinical
+trials will be easier to achieve.

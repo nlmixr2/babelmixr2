@@ -225,6 +225,7 @@ nmObjGetFoceiControl.monolix <- function(x, ...) {
   .monolixControlToFoceiControl(x[[1]])
 }
 
+#' @export
 getValidNlmixrCtl.monolix <- function(control) {
   .ctl <- control[[1]]
   .cls <- class(control)[1]

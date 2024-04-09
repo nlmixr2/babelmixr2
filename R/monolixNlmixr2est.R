@@ -128,7 +128,7 @@
 }
 
 #' Run NONMEM using either the user-specified command or function
-#' 
+#'
 #' @param ui The nlmixr2 UI object for running
 #' @param monolix are we actually running monolix
 #' @return NULL
@@ -326,6 +326,7 @@
   }
 }
 
+#' @export
 nlmixr2Est.monolix <- function(env, ...) {
   .model <- nlmixr2est::.uiApplyMu2(env)
   .ui <- env$ui
