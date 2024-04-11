@@ -99,6 +99,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           rxControl=NULL,
                           sumProd = FALSE,
                           optExpression = TRUE,
+                          literalFix=TRUE,
                           calcTables = TRUE,
                           compress = TRUE,
                           ci = 0.95,
@@ -200,6 +201,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
 
   checkmate::assertLogical(sumProd, any.missing=FALSE, len=1)
   checkmate::assertLogical(optExpression, any.missing=FALSE, len=1)
+  checkmate::assertLogical(literalFix, any.missing=FALSE, len=1)
   checkmate::assertNumeric(ci, any.missing=FALSE, len=1, lower=0, upper=1)
   checkmate::assertLogical(calcTables, len=1, any.missing=FALSE)
 
@@ -224,6 +226,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                rxControl=rxControl,
                sumProd = sumProd,
                optExpression=optExpression,
+               literalFix=literalFix,
                calcTables = calcTables,
                compress = compress,
                ci = ci,
@@ -305,7 +308,9 @@ nmObjGetControl.nonmem <- function(x, ...) {
   .foceiControl <- nlmixr2est::foceiControl(rxControl = env$nonmemControl$rxControl,
                                             maxOuterIterations = 0L, maxInnerIterations = 0L, covMethod = 0L,
                                             etaMat = env$etaMat, sumProd = .nonmemControl$sumProd,
-                                            optExpression = .nonmemControl$optExpression, scaleTo = 0,
+                                            optExpression = .nonmemControl$optExpression,
+                                            literalFix=.nonmemControl$literalFix,
+                                            scaleTo = 0,
                                             calcTables = .nonmemControl$calcTables,
                                             addProp = .nonmemControl$addProp,
                                             skipCov = .ui$foceiSkipCov, interaction = 1L,

@@ -26,6 +26,7 @@ nonmemControl(
   rxControl = NULL,
   sumProd = FALSE,
   optExpression = TRUE,
+  literalFix = TRUE,
   calcTables = TRUE,
   compress = TRUE,
   ci = 0.95,
@@ -90,6 +91,10 @@ protection numbers}
 
 \item{rxControl}{Options to pass to \code{rxode2::rxControl} for
 simulations}
+
+\item{literalFix}{boolean, substitute fixed population values as
+literals and re-adjust ui and parameter estimates after
+optimization; Default is `TRUE`.}
 
 \item{readRounding}{Try to read NONMEM output when NONMEM
 terminated due to rounding errors}

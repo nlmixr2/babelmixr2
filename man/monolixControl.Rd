@@ -24,6 +24,7 @@ monolixControl(
   rxControl = NULL,
   sumProd = FALSE,
   optExpression = TRUE,
+  literalFix = TRUE,
   calcTables = TRUE,
   compress = TRUE,
   ci = 0.95,
@@ -114,6 +115,10 @@ this is \code{FALSE}.}
 
 \item{optExpression}{Optimize the rxode2 expression to speed up
 calculation. By default this is turned on.}
+
+\item{literalFix}{boolean, substitute fixed population values as
+literals and re-adjust ui and parameter estimates after
+optimization; Default is `TRUE`.}
 
 \item{calcTables}{This boolean is to determine if the foceiFit
 will calculate tables. By default this is \code{TRUE}}

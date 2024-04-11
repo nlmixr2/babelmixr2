@@ -85,6 +85,7 @@ monolixControl <- function(nbSSDoses=7,
                            rxControl=NULL,
                            sumProd = FALSE,
                            optExpression = TRUE,
+                           literalFix=TRUE,
                            calcTables = TRUE,
                            compress = TRUE,
                            ci = 0.95,
@@ -163,6 +164,7 @@ monolixControl <- function(nbSSDoses=7,
 
   checkmate::assertLogical(sumProd, any.missing=FALSE, len=1)
   checkmate::assertLogical(optExpression, any.missing=FALSE, len=1)
+  checkmate::assertLogical(literalFix, any.missing=FALSE, len=1)
   checkmate::assertNumeric(ci, any.missing=FALSE, len=1, lower=0, upper=1)
   checkmate::assertLogical(calcTables, len=1, any.missing=FALSE)
 
@@ -190,6 +192,7 @@ monolixControl <- function(nbSSDoses=7,
                rxControl=rxControl,
                sumProd = sumProd,
                optExpression=optExpression,
+               literalFix=literalFix,
                calcTables = calcTables,
                compress = compress,
                ci = ci,
@@ -208,7 +211,9 @@ monolixControl <- function(nbSSDoses=7,
   .foceiControl <- nlmixr2est::foceiControl(rxControl = env$monolixControl$rxControl,
                                             maxOuterIterations = 0L, maxInnerIterations = 0L, covMethod = 0L,
                                             etaMat = env$etaMat, sumProd = .monolixControl$sumProd,
-                                            optExpression = .monolixControl$optExpression, scaleTo = 0,
+                                            optExpression = .monolixControl$optExpression,
+                                            literalFix=.monolixControl$literalFix,
+                                            scaleTo = 0,
                                             calcTables = .monolixControl$calcTables,
                                             addProp = .monolixControl$addProp,
                                             skipCov = .ui$foceiSkipCov, interaction = 1L,
