@@ -4,6 +4,9 @@
     <loc>/404.html</loc>
   </url>
   <url>
+    <loc>/articles/PopED.html</loc>
+  </url>
+  <url>
     <loc>/articles/index.html</loc>
   </url>
   <url>
@@ -34,6 +37,21 @@
     <loc>/reference/bblDatToMonolix.html</loc>
   </url>
   <url>
+    <loc>/reference/dot-popedF.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-popedGetErrorModelNone.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-popedRxRunSetup.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-popedW.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-setupPopEDdatabase.html</loc>
+  </url>
+  <url>
     <loc>/reference/getStandardColNames.html</loc>
   </url>
   <url>
@@ -59,6 +77,9 @@
   </url>
   <url>
     <loc>/reference/pkncaControl.html</loc>
+  </url>
+  <url>
+    <loc>/reference/popedControl.html</loc>
   </url>
   <url>
     <loc>/reference/reexports.html</loc>
