@@ -863,31 +863,35 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
     .multipleEndpoint <- TRUE
     .xt <- lapply(.poped$uid,
                   function(id) {
-                    do.call(rbind, lapply(seq_along(ui$predDf$cond),
-                           function(i) {
-                             .data <- .data[.data[[.wid]] == id &
-                                              .data[[.wevid]] == 0, ]
-                             .time <- .data[[.wtime]]
-                             .env$mt <- max(c(.time, .env$mt))
-                             if (length(.wdvid) == 1L) {
-                               .wd <- which(.data[[.wdvid]] == i)
-                               if (length(.wd) == 0) .wd <- which(.data[[.wdvid]] == ui$predDf$cond[i])
-                               if (length(.wd) > 0) {
-                                 .time <- .time[.wd]
-                                 return(data.frame(time=.time, dvid=i))
-                               }
-                             }
-                             # could not find dvid spec, try cmt spec
-                             if (length(.wcmt) == 1L) {
-                               .wd <- which(.data[[.wcmt]] == ui$predDf$cmt[i])
-                               if (length(.wd) == 0) .wd <- which(.data[[.wcmt]] == ui$predDf$cond[i])
-                               if (length(.wd) > 0) {
-                                 .time <- .time[.wd]
-                                 return(data.frame(time=.time, dvid=i))
-                               }
-                             }
-                             NULL
-                           }))
+                    do.call(rbind,
+                            lapply(seq_along(ui$predDf$cond),
+                                   function(i) {
+                                     .data <- .data[.data[[.wid]] == id &
+                                                      .data[[.wevid]] == 0, ]
+                                     .time <- .data[[.wtime]]
+                                     .env$mt <- max(c(.time, .env$mt))
+                                     if (length(.wdvid) == 1L) {
+                                       .wd <- which(.data[[.wdvid]] == i)
+                                       if (length(.wd) == 0) .wd <- which(.data[[.wdvid]] == ui$predDf$cond[i])
+                                       if (length(.wd) > 0) {
+                                         .time <- .time[.wd]
+                                         return(data.frame(time=.time, dvid=i))
+                                       }
+                                     }
+                                     # could not find dvid spec, try cmt spec
+                                     if (length(.wcmt) == 1L) {
+                                       .wd <- which(.data[[.wcmt]] == ui$predDf$cmt[i])
+                                       if (length(.wd) == 0) {
+                                         .wd <- which(.data[[.wcmt]] == ui$predDf$cond[i])
+                                       }
+                                       if (length(.wd) > 0) {
+                                         .time <- .time[.wd]
+                                         return(data.frame(time=.time, dvid=i))
+                                       }
+                                     }
+                                     stop(paste0("multiple endpoint design dataset needs either dvid/cmt for design points; missing at least '", ui$predDf$cond[i], "'"),
+                                          call.=FALSE)
+                                   }))
                   })
   } else {
     .xt <- lapply(.poped$uid,
