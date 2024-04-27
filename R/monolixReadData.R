@@ -408,7 +408,7 @@ rxUiGet.monolixCovariance <- function(x, ...) {
   .cov <- rxUiGet.monolixCovarianceEstimatesSA(x, ...)
   .ui <- x[[1]]
   .split <- .ui$getSplitMuModel
-  
+
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .sa <- TRUE
   if (is.null(.cov)) {
@@ -444,30 +444,58 @@ rxUiGet.monolixPreds <- function(x, ...) {
   .predDf <- .ui$predDf
   .exportPath <- rxUiGet.monolixExportPath(x, ...)
   if (!file.exists(.exportPath)) return(NULL)
+  .mlxtran <- monolix2rx::.monolixGetMlxtran(.ui)
+  if (inherits(.mlxtran, "monolix2rxMlxtran")) {
+    if (length(.predDf$var) > 1) {
+      do.call("rbind", lapply(seq_along(.predDf$cond),
+                              function(i) {
+                                .var <- .predDf$cond[i]
+                                .file <- file.path(.exportPath,
+                                                   paste0("predictions_", .var, ".txt"))
+                                .monolixWaitForFile(.file)
+                                .ret <- read.csv(.file)
+                                .ret$CMT <- .predDf$cond[i]
+                                names(.ret) <- sub("id", "ID",
+                                                   sub("time", "TIME",
+                                                       sub(.var, "DV", names(.ret))))
+                                .ret
+                              }))
+    } else {
+      .var <- .predDf$cond
+      .file <- file.path(.exportPath,"predictions.txt")
+      .monolixWaitForFile(.file)
+      .ret <- read.csv(.file)
+      names(.ret) <- sub("id", "ID",
+                         sub("time", "TIME",
+                             sub(.var, "DV", names(.ret))))
+      .ret
 
-  if (length(.predDf$var) > 1) {
-    do.call("rbind", lapply(seq_along(.predDf$var),
-                            function(i){
-                              .var <- .predDf$var[i]
-                              .file <- file.path(.exportPath,
-                                                 paste0("predictions_rx_prd_", .var, ".txt"))
-                              .monolixWaitForFile(.file)
-                              .ret <- read.csv(.file)
-                              .ret$CMT <- .predDf$cond[i]
-                              names(.ret) <- sub("id", "ID",
-                                                 sub("time", "TIME",
-                                                     sub(paste0("rx_prd_", .var), "DV", names(.ret))))
-                              .ret
-                            }))
+    }
   } else {
-    .var <- .predDf$var
-    .file <- file.path(.exportPath,"predictions.txt")
-    .monolixWaitForFile(.file)
-    .ret <- read.csv(.file)
-    names(.ret) <- sub("id", "ID",
-                       sub("time", "TIME",
-                           sub(paste0("rx_prd_", .var), "DV", names(.ret))))
-    .ret
+    if (length(.predDf$var) > 1) {
+      do.call("rbind", lapply(seq_along(.predDf$var),
+                              function(i) {
+                                .var <- .predDf$var[i]
+                                .file <- file.path(.exportPath,
+                                                   paste0("predictions_rx_prd_", .var, ".txt"))
+                                .monolixWaitForFile(.file)
+                                .ret <- read.csv(.file)
+                                .ret$CMT <- .predDf$cond[i]
+                                names(.ret) <- sub("id", "ID",
+                                                   sub("time", "TIME",
+                                                       sub(paste0("rx_prd_", .var), "DV", names(.ret))))
+                                .ret
+                              }))
+    } else {
+      .var <- .predDf$var
+      .file <- file.path(.exportPath,"predictions.txt")
+      .monolixWaitForFile(.file)
+      .ret <- read.csv(.file)
+      names(.ret) <- sub("id", "ID",
+                         sub("time", "TIME",
+                             sub(paste0("rx_prd_", .var), "DV", names(.ret))))
+      .ret
+    }
   }
 }
 
@@ -507,4 +535,3 @@ rxUiGet.monolixPreds <- function(x, ...) {
        individualAbs=.qai, popAbs=.qap,
        message=.msg)
 }
-

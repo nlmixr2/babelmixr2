@@ -13,6 +13,7 @@
 \alias{nmObjGetControl}
 \alias{nonmem2rx}
 \alias{as.nonmem2rx}
+\alias{monolix2rx}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -20,6 +21,8 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
+  \item{monolix2rx}{\code{\link[monolix2rx]{monolix2rx}}}
+
   \item{nlmixr2est}{\code{\link[nlmixr2est:getValidNlmixrControl]{getValidNlmixrCtl}}, \code{\link[nlmixr2est]{nlmixr2Est}}, \code{\link[nlmixr2est]{nmObjGetControl}}, \code{\link[nlmixr2est]{nmObjGetFoceiControl}}, \code{\link[nlmixr2est]{nmObjHandleControlObject}}}
 
   \item{nonmem2rx}{\code{\link[nonmem2rx]{as.nonmem2rx}}, \code{\link[nonmem2rx]{nonmem2rx}}}

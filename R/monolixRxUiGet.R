@@ -15,6 +15,16 @@ rxUiGet.monolixModelName <- function(x, ...) {
 #' @export
 rxUiGet.monolixExportPath <- function(x, ...) {
   .ui <- x[[1]]
+  # Handle monolix2rx as well
+  .mlxtran <- monolix2rx::.monolixGetMlxtran(.ui)
+  if (inherits(.mlxtran, "monolix2rxMlxtran")) {
+    .wd <- attr(.mlxtran, "dirn")
+    if (!checkmate::testDirectoryExists(.wd)) .wd <- getwd()
+    withr::with_dir(.wd, {
+      .exportPath <- .mlxtran$MONOLIX$SETTINGS$GLOBAL$exportpath
+      return(path.expand(file.path(.wd, .exportPath)))
+    })
+  }
   .extra <- ""
   .num <- rxode2::rxGetControl(.ui, ".modelNumber", 0)
   if (.num > 0) {

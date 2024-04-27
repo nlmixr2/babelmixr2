@@ -231,7 +231,7 @@
   .mlxtran <- .ui$monolixMlxtranFile
   .runLock <- .ui$monolixRunLock
 
-  if (file.exists(.qs)) {
+  if (checkmate::testFileExists(.qs)) {
     .minfo("load saved nlmixr2 object")
     .ret <- qs::qread(.qs)
     if (!exists("parHistData", .ret$env)) {
@@ -246,7 +246,7 @@
       }
     }
     return(.ret)
-  } else if (!file.exists(.model)) {
+  } else if (!checkmate::testFileExists(.model)) {
     .minfo("writing monolix files")
     writeLines(text=.modelText, con=.model)
     writeLines(text=.mlxtranText, con=.mlxtran)

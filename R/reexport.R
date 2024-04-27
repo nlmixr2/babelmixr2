@@ -38,3 +38,6 @@ nonmem2rx::nonmem2rx
 #' @export
 nonmem2rx::as.nonmem2rx
 
+#' @importFrom monolix2rx monolix2rx
+#' @export
+monolix2rx::monolix2rx
