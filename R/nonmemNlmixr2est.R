@@ -266,7 +266,7 @@
     assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
     qs::qsave(.ret, .qs)
   }
-  return(.ret)
+  .ret
 }
 
 #' Run NONMEM using either the user-specified command or function
