@@ -31,6 +31,7 @@ monolixControl(
   absolutePath = FALSE,
   modelName = NULL,
   muRefCovAlg = TRUE,
+  run = TRUE,
   ...
 )
 }
@@ -151,6 +152,8 @@ clear).  Otherwise use this character for outputs.}
 
 In general, these covariates should be more accurate since it
 changes the system to a linear compartment model.  Therefore, by default this is `TRUE`.}
+
+\item{run}{Should monolix be run and the results be imported to nlmixr2?  (Default is TRUE)}
 
 \item{...}{Ignored parameters}
 }

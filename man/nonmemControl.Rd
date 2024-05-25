@@ -20,7 +20,7 @@ nonmemControl(
   outputExtension = getOption("babelmixr2.nmOutputExtension", ".lst"),
   runCommand = getOption("babelmixr2.nonmem", ""),
   iniSigDig = 5,
-  protectZeros = TRUE,
+  protectZeros = FALSE,
   muRef = TRUE,
   addProp = c("combined2", "combined1"),
   rxControl = NULL,
@@ -44,6 +44,7 @@ nonmemControl(
   noabort = TRUE,
   modelName = NULL,
   muRefCovAlg = TRUE,
+  run = TRUE,
   ...
 )
 }
@@ -62,7 +63,8 @@ nonmemControl(
 
 \item{sstol}{NONMEM tolerance for steady state ODE solving}
 
-\item{ssatol}{NONMEM absolute tolerance for steady state ODE solving}
+\item{ssatol}{NONMEM absolute tolerance for steady state ODE
+solving}
 
 \item{sigl}{NONMEM sigl estimation option}
 
@@ -75,8 +77,8 @@ nonmemControl(
 \item{outputExtension}{Extension to use for the NONMEM output
 listing}
 
-\item{runCommand}{Command to run NONMEM (typically the path to "nmfe75") or a
-function.  See the details for more information.}
+\item{runCommand}{Command to run NONMEM (typically the path to
+"nmfe75") or a function.  See the details for more information.}
 
 \item{iniSigDig}{How many significant digits are printed in $THETA
 and $OMEGA when the estimate is zero.  Also controls the zero
@@ -99,7 +101,7 @@ due to an apparent failed optimization}
 
 \item{niter}{number of iterations in NONMEM estimation methods}
 
-\item{isample}{Isample argument for NONMEM  ITS estimation method}
+\item{isample}{Isample argument for NONMEM ITS estimation method}
 
 \item{iaccept}{Iaccept for NONMEM ITS estimation methods}
 
@@ -138,6 +140,10 @@ clear).  Otherwise use this character for outputs.}
 
 In general, these covariates should be more accurate since it
 changes the system to a linear compartment model.  Therefore, by default this is `TRUE`.}
+
+\item{run}{Should NONMEM be run (and the files imported to
+nlmixr2); default is TRUE, but FALSE will simply create the
+NONMEM control stream and data file.}
 
 \item{...}{optional \code{genRxControl} argument controlling
 automatic \code{rxControl} generation.}
