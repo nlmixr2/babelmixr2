@@ -207,6 +207,10 @@
               quote=FALSE)
     .minfo("done")
   }
+  if (!rxode2::rxGetControl(.ui, "run", TRUE)) {
+    .minfo("only exported NONMEM control stream/data")
+    return(invisible())
+  }
   if (is.na(rxode2::rxGetControl(.ui, "runCommand", ""))) {
     .minfo("not running NONMEM")
     return(.ui)
@@ -262,11 +266,11 @@
     assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
     qs::qsave(.ret, .qs)
   }
-  return(.ret)
+  .ret
 }
 
 #' Run NONMEM using either the user-specified command or function
-#' 
+#'
 #' @param ui The nlmixr2 UI object for running
 #' @param monolix are we actually running monolix
 #' @return NULL

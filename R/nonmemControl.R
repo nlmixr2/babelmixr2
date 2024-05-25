@@ -27,15 +27,16 @@
 #' @param tol NONMEM tolerance for ODE solving advan
 #' @param atol NONMEM absolute tolerance for ODE solving
 #' @param sstol NONMEM tolerance for steady state ODE solving
-#' @param ssatol NONMEM absolute tolerance for steady state ODE solving
+#' @param ssatol NONMEM absolute tolerance for steady state ODE
+#'   solving
 #' @param sigl NONMEM sigl estimation option
 #' @param sigdig the significant digits for NONMEM
 #' @param print The print number for NONMEM
 #' @param extension NONMEM file extensions
 #' @param outputExtension Extension to use for the NONMEM output
 #'   listing
-#' @param runCommand Command to run NONMEM (typically the path to "nmfe75") or a
-#'   function.  See the details for more information.
+#' @param runCommand Command to run NONMEM (typically the path to
+#'   "nmfe75") or a function.  See the details for more information.
 #' @param iniSigDig How many significant digits are printed in $THETA
 #'   and $OMEGA when the estimate is zero.  Also controls the zero
 #'   protection numbers
@@ -45,14 +46,15 @@
 #'   simulations
 #' @param mapiter the number of map iterations for IMP method
 #' @param niter number of iterations in NONMEM estimation methods
-#' @param isample Isample argument for NONMEM  ITS estimation method
+#' @param isample Isample argument for NONMEM ITS estimation method
 #' @param iaccept Iaccept for NONMEM ITS estimation methods
 #' @param iscaleMin parameter for IMP NONMEM method (ISCALE_MIN)
 #' @param iscaleMax parameter for IMP NONMEM method (ISCALE_MAX)
 #' @param df degrees of freedom for IMP method
 #' @param seed is the seed for NONMEM methods
 #' @param mapinter is the MAPINTER parameter for the IMP method
-#' @param  addProp,sumProd,optExpression,calcTables,compress,ci,sigdigTable
+#' @param
+#'   addProp,sumProd,optExpression,calcTables,compress,ci,sigdigTable
 #'   Passed to \code{nlmixr2est::foceiControl}
 #' @param readRounding Try to read NONMEM output when NONMEM
 #'   terminated due to rounding errors
@@ -62,6 +64,9 @@
 #' @param modelName Model name used to generate the NONMEM output.  If
 #'   `NULL` try to infer from the model name (could be `x` if not
 #'   clear).  Otherwise use this character for outputs.
+#' @param run Should NONMEM be run (and the files imported to
+#'   nlmixr2); default is TRUE, but FALSE will simply create the
+#'   NONMEM control stream and data file.
 #' @param ... optional \code{genRxControl} argument controlling
 #'   automatic \code{rxControl} generation.
 #'
@@ -93,7 +98,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           outputExtension=getOption("babelmixr2.nmOutputExtension", ".lst"),
                           runCommand=getOption("babelmixr2.nonmem", ""),
                           iniSigDig=5,
-                          protectZeros=TRUE,
+                          protectZeros=FALSE,
                           muRef=TRUE,
                           addProp = c("combined2", "combined1"),
                           rxControl=NULL,
@@ -117,6 +122,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           noabort=TRUE,
                           modelName=NULL,
                           muRefCovAlg=TRUE,
+                          run=TRUE,
                           ...) {
   # nonmem manual slides suggest tol=6, sigl=6 sigdig=2
   checkmate::assertIntegerish(maxeval, lower=100, len=1, any.missing=FALSE)
@@ -142,6 +148,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertIntegerish(seed, lower=1, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(mapiter, len=1, any.missing=FALSE)
   checkmate::assertLogical(muRefCovAlg, any.missing=FALSE, len=1)
+  checkmate::assertLogical(run, any.missing=FALSE, len=1)
   if (!is.null(modelName)) {
     checkmate::assertCharacter(modelName, len=1, any.missing=FALSE)
   }
@@ -240,7 +247,8 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                seed=seed,
                mapiter=mapiter,
                modelName=modelName,
-               muRefCovAlg=muRefCovAlg
+               muRefCovAlg=muRefCovAlg,
+               run=run
                )
   class(.ret) <- "nonmemControl"
   .ret
