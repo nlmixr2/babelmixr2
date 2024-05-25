@@ -1084,7 +1084,7 @@ rxUiGet.popedSettings <- function(x, ...) {
     bUseBFGSMinimizer=rxode2::rxGetControl(ui, "bUseBFGSMinimizer", FALSE) * 1,
     EACriteria=rxode2::rxGetControl(ui, "EACriteria", 1),
     run_file_pointer=rxode2::rxGetControl(ui, "strRunFile", ""),
-    poped_version=rxode2::rxGetControl(ui, "poped_version", packageVersion("PopED")),
+    poped_version=rxode2::rxGetControl(ui, "poped_version", utils::packageVersion("PopED")),
     modtit=rxode2::rxGetControl(ui, "modtit", "PopED babelmixr2 model"),
     output_file=rxode2::rxGetControl(ui, "output_file", "PopED_output_summary"),
     output_function_file=rxode2::rxGetControl(ui, "output_function_file", "PopED_output_"),
@@ -1681,7 +1681,7 @@ popedControl <- function(stickyRecalcN=4,
   checkmate::assertLogical(bUseBFGSMinimizer, len=1, any.missing=FALSE)
   checkmate::assertLogical(fixRes, len=1, any.missing=FALSE)
   if (is.null(poped_version)) {
-    poped_version <- packageVersion("PopED")
+    poped_version <- utils::packageVersion("PopED")
   }
   checkmate::assertCharacter(modtit, len=1, any.missing=FALSE, min.chars=1)
   checkmate::assertCharacter(output_file, len=1, any.missing=FALSE, min.chars = 1)

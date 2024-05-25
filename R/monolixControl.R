@@ -68,6 +68,7 @@
 #' @importFrom methods is
 #' @importFrom stats na.omit setNames
 #' @importFrom utils assignInMyNamespace read.csv write.csv
+#' @importFrom rxode2 `model<-`
 monolixControl <- function(nbSSDoses=7,
                            useLinearization=FALSE,
                            stiff=FALSE,
