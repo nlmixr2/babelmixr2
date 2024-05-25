@@ -253,6 +253,10 @@
     writeLines(text=.hashMd5, con=.hashFile)
     write.csv(.dataDf, file=.csv, na = ".", row.names = FALSE)
     .minfo("done")
+    if (!rxode2::rxGetControl(.ui, "run", TRUE)) {
+      .minfo("only exported Monolix mlxtran, txt model and data")
+      return(invisible())
+    }
     .runLS <- FALSE
     .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
     if (!identical(.cmd, "")) {
