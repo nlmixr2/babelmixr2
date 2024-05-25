@@ -26,7 +26,8 @@ Suggests:
     rmarkdown,
     spelling,
     PopED,
-    units
+    units,
+    vdiffr
 Depends:
     R (>= 3.5),
     nlmixr2 (>= 2.0.8)
