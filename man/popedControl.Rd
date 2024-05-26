@@ -520,6 +520,8 @@ Autocorrelation function, empty string means no autocorrelation.}
 \item{user_distribution_pointer}{Filename and path, or function
 name, for user defined distributions for E-family designs}
 
+\item{fixRes}{boolean; Fix the residuals to what is specified by the model}
+
 \item{...}{other parameters for PopED control}
 }
 \value{

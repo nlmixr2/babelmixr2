@@ -236,7 +236,6 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #' @return nothing, called for side effects
 #' @noRd
 #' @author Matthew L. Fidler
-#' @examples
 .popedRxRunFullSetupMe <- function(popedDb, xt, ms) {
   if (!rxode2::rxSolveSetup()) {
     .poped$setup <- 0L
@@ -423,7 +422,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   # Could be in the F anyway, need to check
   stop("pow() not implemented yet")
 }
-#' When the error isn't specified (probably a log-likelihood)
+# When the error isn't specified (probably a log-likelihood)
 .popedGetErrorModelNone <- function(ui, pred1) {
   stop("error model could not be interpreted as a PopED model")
 }
@@ -1455,6 +1454,7 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #'   name, for user defined distributions for E-family designs
 #' @param auto_pointer Filename and path, or function name, for the
 #'   Autocorrelation function, empty string means no autocorrelation.
+#' @param fixRes boolean; Fix the residuals to what is specified by the model
 #' @inheritParams nlmixr2est::foceiControl
 #' @inheritParams PopED::create.poped.database
 #' @inheritParams PopED::create_design_space
