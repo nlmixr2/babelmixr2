@@ -27,7 +27,8 @@ Suggests:
     spelling,
     PopED,
     units,
-    vdiffr
+    vdiffr,
+    dplyr
 Depends:
     R (>= 3.5),
     nlmixr2 (>= 2.0.8)
