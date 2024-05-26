@@ -159,8 +159,8 @@ poped_db_ode_pkpdsim <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_
 
 ## Introduction -- using babelmixr2 with PopED
 
-`babelmixr2` now introduces a new method taking `rxode2`/`nlmixr2`
-models and optimal design using `PopED`.
+`babelmixr2` now introduces a new method that takes `rxode2`/`nlmixr2`
+models converts them to a `PopED` database to help with optimal design.
 
 As in the [PopED vignette comparing ODE
 solvers](https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html#speed-of-fim-computation)
@@ -172,7 +172,7 @@ solvers](https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html
 -   compare these examples to the pharmacometric solvers in the PopED
     vignette (`mrgsolve` and `PKPDsim`)
 
-## babelmixr2 Ode solution
+## babelmixr2 ODE solution
 
 ```{r babelmixr2_ode}
 library(babelmixr2)
@@ -253,6 +253,10 @@ poped_db_ode_babelmixr2 <- nlmixr(f, e,
                                                       c(DOSE=40)),
                                                maxa=c(DOSE=200),
                                                mina=c(DOSE=0)))
+```
+## Linear compartment solution
+
+```r
 f2 <- function() {
   ini({
     tV <- 72.8
@@ -281,7 +285,11 @@ poped_db_analytic_babelmixr2 <- nlmixr(f, e,
                                                     maxa=c(DOSE=200),
                                                     mina=c(DOSE=0)))
 
+```
 
+## Comparing method to the speed of other methods
+
+```{r}
 library(ggplot2)
 library(microbenchmark)
 
