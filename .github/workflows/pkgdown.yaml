@@ -32,6 +32,8 @@ jobs:
         with:
           extra-packages: |
             any::pkgdown
+            any::mrgsolve
+            any::PKPDsim
             nlmixr2/lotri
             nlmixr2/dparser-R
             nlmixr2/rxode2ll

@@ -308,7 +308,7 @@ autoplot(compare) + theme_bw()
 Note that the `babelmixr2` ode solver is the fastest ode solver in this
 comparison. Among other things, this is because the model is loaded into
 memory and does not need to be setup each time. (As benchmarks, the
-`mrgsolve`, `PKPDsim` and `rxode2` implementation on the `PopED`'s
+`mrgsolve`, and `PKPDsim` implementations on the `PopED`'s
 website is included).
 
 Also to me, the speed of all the tools are reasonable. In my opinion,
