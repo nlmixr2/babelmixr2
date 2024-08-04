@@ -234,6 +234,7 @@
   .mlxtran <- .ui$monolixMlxtranFile
   .runLock <- .ui$monolixRunLock
 
+  .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
   if (file.exists(.qs)) {
     .minfo("load saved nlmixr2 object")
     .ret <- qs::qread(.qs)
@@ -261,7 +262,6 @@
       return(invisible())
     }
     .runLS <- FALSE
-    .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
     if (!identical(.cmd, "")) {
       .monolixRunner(ui=.ui)
       if (is.na(.cmd)) {
@@ -288,6 +288,10 @@
       }
     }
   } else {
+    if (is.na(.cmd)) {
+      .minfo(paste0("leaving alone monolix files because '", .model, "' is present"))
+      return(invisible())
+    }
     .minfo(paste0("assuming monolix is running because '", .model, "' is present"))
   }
   if (!dir.exists(.exportPath)) {
