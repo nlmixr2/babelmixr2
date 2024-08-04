@@ -600,13 +600,13 @@ withr::with_tempdir({
           d/dt(A_tr2) = KTR * A_tr1 - KTR * A_tr2;
           d/dt(A_tr3) = KTR * A_tr2 - KTR * A_tr3;
           d/dt(A_circ) = KTR * A_tr3 - KTR * A_circ;
-          
+
           CIRC ~ prop(prop.err)
         })
       }
-      
+
       w <- wbc()
-      
+
       expect_equal(
         w$nonmemErrF,
         paste(c(
@@ -759,5 +759,51 @@ withr::with_tempdir({
       ui <- rxode2::rxode2(one.cmt)
       expect_error(ui$nonmemModel, NA)
     })
+  })
+})
+
+
+test_that("nonmem model creation without running", {
+  withr::with_tempdir({
+
+    one.cmt <- function() {
+      ini({
+        tka <- 0.45 ; label("Ka")
+        tcl <- log(c(0, 2.7, 100)) ; label("Log Cl")
+        tv <- 3.45; label("log V")
+        cl.wt <- 0
+        v.wt <- 0
+        eta.ka ~ 0.6
+        eta.cl ~ 0.3
+        eta.v ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        ka <- exp(tka + eta.ka)
+        cl <- exp(tcl + eta.cl + WT * cl.wt)
+        v <- exp(tv + eta.v)+ WT ^ 2 * v.wt
+        d/dt(depot) <- -depot*ka
+        d/dt(central) <- depot*ka - cl*central/v
+        cp <-central/v
+        cp ~ add(add.sd)
+      })
+    }
+
+    files <- c("nonmemTest.csv", "nonmemTest.md5", "nonmemTest.nmctl")
+
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
+            nonmemControl(runCommand=NA, modelName="nonmemTest"))
+
+    lapply(files, function(f) { expect_true(file.exists(file.path("nonmemTest-nonmem", f))) })
+
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
+            nonmemControl(runCommand=NA, modelName="nonmemTest"))
+
+    lapply(files, function(f) {
+      expect_true(file.exists(file.path("nonmemTest-nonmem", f)))
+      unlink(file.path("nonmemTest-nonmem", f))
+    })
+    unlink("nonmemTest-nonmem", recursive = TRUE)
+
   })
 })

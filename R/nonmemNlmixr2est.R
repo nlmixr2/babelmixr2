@@ -207,13 +207,11 @@
               quote=FALSE)
     .minfo("done")
   }
-  if (!rxode2::rxGetControl(.ui, "run", TRUE)) {
+  .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
+  if (!rxode2::rxGetControl(.ui, "run", TRUE) ||
+        is.na(.cmd)) {
     .minfo("only exported NONMEM control stream/data")
     return(invisible())
-  }
-  if (is.na(rxode2::rxGetControl(.ui, "runCommand", ""))) {
-    .minfo("not running NONMEM")
-    return(.ui)
   }
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
     print(file.path(.exportPath, .ui$nonmemXml))
