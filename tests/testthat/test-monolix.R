@@ -85,7 +85,7 @@ if (FALSE) {
                                                           low=NA_real_, hi=NA_real_)),
                  NULL)
   })
-  
+
 }
 
 
@@ -266,4 +266,48 @@ test_that("monolix dsl", {
   .ee(.rxToM("4.3"), "4.3")
   .ee(.rxToM("add.sd"), "add__sd")
 
+})
+
+test_that("monolix model creation without running", {
+  withr::with_tempdir({
+
+    one.cmt <- function() {
+      ini({
+        tka <- 0.45 ; label("Ka")
+        tcl <- log(c(0, 2.7, 100)) ; label("Log Cl")
+        tv <- 3.45; label("log V")
+        cl.wt <- 0
+        v.wt <- 0
+        eta.ka ~ 0.6
+        eta.cl ~ 0.3
+        eta.v ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        ka <- exp(tka + eta.ka)
+        cl <- exp(tcl + eta.cl + WT * cl.wt)
+        v <- exp(tv + eta.v)+ WT ^ 2 * v.wt
+        d/dt(depot) <- -depot*ka
+        d/dt(central) <- depot*ka - cl*central/v
+        cp <-central/v
+        cp ~ add(add.sd)
+      })
+    }
+
+    files <- c("monolixTest-monolix.csv", "monolixTest-monolix.mlxtran",
+               "monolixTest-monolix.md5", "monolixTest-monolix.txt")
+
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "monolix",
+            monolixControl(runCommand=NA, modelName="monolixTest"))
+
+    lapply(files, function(f) { expect_true(file.exists(f)) })
+
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "monolix",
+            monolixControl(runCommand=NA, modelName="monolixTest"))
+    lapply(files, function(f) {
+      expect_true(file.exists(f))
+      unlink(f)
+    })
+
+  })
 })
