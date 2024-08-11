@@ -125,6 +125,7 @@ withr::with_tempdir({
     })
 
     test_that("NONMEM dsl, full model", {
+
       one.cmt <- function() {
         ini({
           tka <- 0.45 ; label("Ka")
@@ -145,16 +146,18 @@ withr::with_tempdir({
           cp ~ add(add.sd)
         })
       }
+
       expect_message(
-        ui <-
           nlmixr(
             one.cmt, data=nlmixr2data::Oral_1CPT, est="nonmem",
             control=nonmemControl(runCommand=NA)
           ),
-        regexp="not running NONMEM"
+        regexp="only exported NONMEM"
       )
+
       expect_s3_class(ui, "rxUi")
       expect_type(ui$nonmemModel, "character")
+
       expect_equal(
         ui$nonmemModel,
         paste(
@@ -223,6 +226,7 @@ withr::with_tempdir({
           collapse="\n"
         )
       )
+
     })
 
     # pk.turnover.emax3 <- function() {

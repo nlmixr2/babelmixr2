@@ -211,7 +211,7 @@
   if (!rxode2::rxGetControl(.ui, "run", TRUE) ||
         is.na(.cmd)) {
     .minfo("only exported NONMEM control stream/data")
-    return(invisible())
+    return(invisible(.ui))
   }
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
     print(file.path(.exportPath, .ui$nonmemXml))
