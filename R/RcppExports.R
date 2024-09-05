@@ -5,6 +5,30 @@ convertDataBack <- function(id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, lin
     .Call(`_babelmixr2_convertDataBack`, id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, linNcmt, linKa, neq, replaceEvid, zeroDose2)
 }
 
+popedFree <- function() {
+    .Call(`_babelmixr2_popedFree`)
+}
+
+popedSetup <- function(e, full) {
+    .Call(`_babelmixr2_popedSetup`, e, full)
+}
+
+popedSolveIdN2 <- function(theta, mt, id, totn) {
+    .Call(`_babelmixr2_popedSolveIdN2`, theta, mt, id, totn)
+}
+
+popedSolveIdN <- function(theta, mt, id, totn) {
+    .Call(`_babelmixr2_popedSolveIdN`, theta, mt, id, totn)
+}
+
+popedSolveIdME <- function(theta, umt, mt, ms, nend, id, totn) {
+    .Call(`_babelmixr2_popedSolveIdME`, theta, umt, mt, ms, nend, id, totn)
+}
+
+popedSolveIdME2 <- function(theta, umt, mt, ms, nend, id, totn) {
+    .Call(`_babelmixr2_popedSolveIdME2`, theta, umt, mt, ms, nend, id, totn)
+}
+
 transDv <- function(inDv, inCmt, cmtTrans, lambda, yj, low, high) {
     .Call(`_babelmixr2_transDv`, inDv, inCmt, cmtTrans, lambda, yj, low, high)
 }

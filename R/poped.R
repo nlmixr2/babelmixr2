@@ -1,3 +1,80 @@
+#' Free Poped memory (if any is allocated)
+#'
+#' This should not be called directly but is used in babelmixr2's
+#' poped interface
+#'
+#' @return nothing, called for side effects
+#'
+#' @export
+#' @author Matthew L. Fidler
+#' @keywords internal
+.popedFree <- function() {
+  invisible(.Call(`_babelmixr2_popedFree`))
+}
+
+#' Setup the PopED environment
+#'
+#' This should not typically be called directly
+#'
+#' @param e environment with setup information for popEd
+#' @param full setup the full model
+#' @return nothing, called for side effects
+#' @export
+#' @keywords internal
+#' @author Matthew L. Fidler
+.popedSetup <- function(e, full=FALSE) {
+  invisible(.Call(`_babelmixr2_popedSetup`, e, full))
+}
+#' Solve poped problem for appropriate times (may already be setup)
+#'
+#' This really should not be called directly (if not setup correctly
+#' can crash R)
+#'
+#' @param theta parameters (includes covariates)
+#' @param xt original unsorted time (to match the f/w against)
+#' @param id this is the design identifier
+#' @param totn This is the total number of design points tested
+#' @return a data frame with $f and $w corresponding to the function
+#'   value and standard deviation at the sampling point
+#' @export
+#' @author Matthew L. Fidler
+#' @keywords internal
+.popedSolveIdN <- function(theta, xt, id, totn) {
+  .Call(`_babelmixr2_popedSolveIdN`, theta, xt, id, totn)
+}
+#' @rdname dot-popedSolveIdN
+#' @export
+.popedSolveIdN2 <- function(theta, xt, id, totn) {
+  .Call(`_babelmixr2_popedSolveIdN2`, theta, xt, id, totn)
+}
+
+#' Solve poped problem for appropriate times with multiple endpoint models
+#'
+#' This really should not be called directly (if not setup correctly
+#' can crash R)
+#'
+#' @param theta parameters (includes covariates and modeling times)
+#' @param umt unique times sampled
+#' @param mt original unsorted time (to match the f/w against)
+#' @param ms model switch parameter integer starting with 1 (related to dvid in rxode2)
+#' @param nend specifies the number of endpoints in this model
+#' @param id this is the design identifier
+#' @param totn This is the total number of design points tested
+#' @return a data frame with $f and $w corresponding to the function
+#'   value and standard deviation at the sampling point
+#' @export
+#' @author Matthew L. Fidler
+#' @keywords internal
+.popedSolveIdME <- function(theta, umt, mt, ms, nend, id, totn) {
+  .Call(`_babelmixr2_popedSolveIdME`, theta, umt, mt, ms, nend, id, totn)
+}
+
+#' @rdname dot-popedSolveIdME
+#' @export
+.popedSolveIdME2 <- function(theta, umt, mt, ms, nend, id, totn) {
+  .Call(`_babelmixr2_popedSolveIdME2`, theta, umt, mt, ms, nend, id, totn)
+}
+
 #' get the bpop number (which is a theta in PopED)
 #'
 #' @param theta name of the population parameter
@@ -120,14 +197,14 @@ rxUiGet.popedFfFun <- function(x, ...) {
       if (.totn <  .(.poped$maxn)) {
         .p <- c(.p, .xt, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .totn))
         .popedRxRunSetup(poped.db)
-        .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
+        .ret <- .popedSolveIdN(.p, .xt, .id - 1L, .totn)
       } else if (.totn > .(.poped$maxn)) {
         .popedRxRunFullSetup(poped.db, .xt)
-        .ret <- nlmixr2est::.popedSolveIdN2(.p, .xt, .id - 1L, .totn)
+        .ret <- .popedSolveIdN2(.p, .xt, .id - 1L, .totn)
       } else {
         .p <- c(.p, .xt)
         .popedRxRunSetup(poped.db)
-        .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
+        .ret <- .popedSolveIdN(.p, .xt, .id - 1L, .totn)
       }
       return(list(f=matrix(.ret$rx_pred_, ncol=1),
                   poped.db=poped.db))
@@ -147,16 +224,16 @@ rxUiGet.popedFfFun <- function(x, ...) {
       if (.lu <  .(.poped$maxn)) {
         .p <- c(.p, .u, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .lu))
         .popedRxRunSetup(poped.db)
-        .ret <- nlmixr2est::.popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+        .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
                                             .id - 1, .totn)
       } else if (.lu > .(.poped$maxn)) {
         .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
-        .ret <- nlmixr2est::.popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+        .ret <- .popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
                                              .id - 1, .totn)
       } else {
         .p <- c(.p, .u)
         .popedRxRunSetup(poped.db)
-        .ret <- nlmixr2est::.popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+        .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
                                             .id - 1L, .totn)
       }
       return(list(f=matrix(.ret$rx_pred_, ncol=1),
@@ -221,7 +298,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   }
   if (.poped$setup != 1L) {
     rxode2::rxSolveFree()
-    nlmixr2est::.popedSetup(popedDb$babelmixr2, FALSE)
+    .popedSetup(popedDb$babelmixr2, FALSE)
     .poped$setup <- 1L
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$fullXt <- NULL
@@ -281,7 +358,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                 })))
     .et <- rxode2::etTrans(.dat, .e$modelF)
     .e$dataF <- .et
-    nlmixr2est::.popedSetup(.e, TRUE)
+    .popedSetup(.e, TRUE)
     .poped$fullXt <- length(xt)
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$setup <- 2L
@@ -338,7 +415,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                 })))
     .et <- rxode2::etTrans(.dat, .e$modelF)
     .e$dataF <- .et
-    nlmixr2est::.popedSetup(.e, TRUE)
+    .popedSetup(.e, TRUE)
     .poped$fullXt <- length(xt)
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$setup <- 2L
