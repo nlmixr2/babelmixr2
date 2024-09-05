@@ -28,6 +28,9 @@ jobs:
           pak-version: devel
           extra-packages: |
             any::covr
+            nlmixr2/n1qn1c
+            nlmixr2/lbfgsb3c
+            nlmixr2/PreciseSums
             nlmixr2/lotri
             nlmixr2/rxode2ll
             nlmixr2/rxode2
