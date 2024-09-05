@@ -1,6 +1,7 @@
 withr::with_tempdir({
   withr::with_options(list(babelmixr2.protectZeros=FALSE), {
     test_that("NONMEM dsl, individual lines", {
+
       one.cmt <- function() {
         ini({
           tka <- 0.45 ; label("Ka")
@@ -154,6 +155,8 @@ withr::with_tempdir({
           ),
         regexp="only exported NONMEM"
       )
+
+      ui <- one.cmt()
 
       expect_s3_class(ui, "rxUi")
       expect_type(ui$nonmemModel, "character")

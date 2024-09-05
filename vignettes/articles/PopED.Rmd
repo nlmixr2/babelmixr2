@@ -256,7 +256,7 @@ poped_db_ode_babelmixr2 <- nlmixr(f, e,
 ```
 ## Linear compartment solution
 
-```r
+```{r lincmt}
 f2 <- function() {
   ini({
     tV <- 72.8

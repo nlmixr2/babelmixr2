@@ -166,6 +166,7 @@ if (requireNamespace("PopED", quietly=TRUE)) {
 
     withr::with_seed(42, {
 
+      set.seed(42)
       phenoWt <- function() {
         ini({
           tcl <- log(0.008) # typical value of clearance
@@ -239,6 +240,8 @@ if (requireNamespace("PopED", quietly=TRUE)) {
 
     withr::with_seed(42, {
 
+      set.seed(42)
+
       e <- et(amt=1, ii=24, until=250) %>%
         et(list(c(0, 10),
                 c(0, 10),
@@ -274,6 +277,7 @@ if (requireNamespace("PopED", quietly=TRUE)) {
 
       withr::with_seed(42, {
 
+        set.seed(42)
         db <- nlmixr2(f, e, "poped",
                       popedControl(a=list(c(DOSE=20),
                                           c(DOSE=40)),
@@ -294,14 +298,18 @@ if (requireNamespace("PopED", quietly=TRUE)) {
         dat <- model_prediction(db,DV=TRUE)
 
         expect_equal(head(dat, n=4),
-                     data.frame(ID = factor(c(1L, 1L, 1L, 1L), levels=paste(1:40)),
+                     data.frame(
+                       ID = factor(c(1L, 1L, 1L, 1L), levels=paste(1:40)),
                                 Time = c(1, 2, 8, 240),
-                                DV = c(0.0636114439502449, 0.128497965443666, 0.146365309173223, 0.165854838702936),
-                                IPRED = c(0.0682068386181826, 0.112300266786103, 0.167870981706669, 0.153239620769789),
-                                PRED = c(0.0532502332862765, 0.0920480197661157, 0.164096088998621, 0.126713764327394),
-                                Group = factor(c(1L, 1L, 1L, 1L), levels = c("1", "2")),
-                                Model = factor(c(1L, 1L, 1L, 1L), levels = "1"),
-                                DOSE = c(20, 20, 20, 20)),
+                       DV = c(0.0353822273010824, 0.0721765325175048,
+                              0.142203020963518, 0.121570466918341),
+                       IPRED = c(0.0379965748703227, 0.0654575999147953,
+                                 0.118727861585151, 0.15387388187677),
+                       PRED = c(0.0532502332862765, 0.0920480197661157,
+                                0.164096088998621, 0.126713764327394),
+                       Group = factor(c(1L, 1L, 1L, 1L), levels = c("1", "2")),
+                       Model = factor(c(1L, 1L, 1L, 1L), levels = "1"),
+                       DOSE = c(20, 20, 20, 20)),
                      tolerance=1e-4)
 
         expect_equal(evaluate_design(db),

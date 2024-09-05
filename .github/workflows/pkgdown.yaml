@@ -34,6 +34,9 @@ jobs:
             any::pkgdown
             any::mrgsolve
             any::PKPDsim
+            nlmixr2/n1qn1c
+            nlmixr2/lbfgsb3c
+            nlmixr2/PreciseSums
             nlmixr2/lotri
             nlmixr2/dparser-R
             nlmixr2/rxode2ll
