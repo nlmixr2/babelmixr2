@@ -1,11 +1,10 @@
 pandoc: 3.1.11
-pkgdown: 2.0.9
+pkgdown: 2.1.0
 pkgdown_sha: ~
 articles:
   new-estimation: new-estimation.html
-  PopED: PopED.html
-  running-monlix: running-monlix.html
-  running-nonmem: running-nonmem.html
+  articles/PopED: PopED.html
+  articles/running-monlix: running-monlix.html
+  articles/running-nonmem: running-nonmem.html
   running-pknca: running-pknca.html
-last_built: 2024-05-26T02:02Z
-
+last_built: 2024-09-06T00:10Z

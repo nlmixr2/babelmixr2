@@ -1,93 +1,33 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>/404.html</loc>
-  </url>
-  <url>
-    <loc>/articles/PopED.html</loc>
-  </url>
-  <url>
-    <loc>/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>/articles/new-estimation.html</loc>
-  </url>
-  <url>
-    <loc>/articles/running-monlix.html</loc>
-  </url>
-  <url>
-    <loc>/articles/running-nonmem.html</loc>
-  </url>
-  <url>
-    <loc>/articles/running-pknca.html</loc>
-  </url>
-  <url>
-    <loc>/authors.html</loc>
-  </url>
-  <url>
-    <loc>/index.html</loc>
-  </url>
-  <url>
-    <loc>/news/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/as.nlmixr2.html</loc>
-  </url>
-  <url>
-    <loc>/reference/bblDatToMonolix.html</loc>
-  </url>
-  <url>
-    <loc>/reference/dot-popedF.html</loc>
-  </url>
-  <url>
-    <loc>/reference/dot-popedRxRunSetup.html</loc>
-  </url>
-  <url>
-    <loc>/reference/dot-popedW.html</loc>
-  </url>
-  <url>
-    <loc>/reference/dot-setupPopEDdatabase.html</loc>
-  </url>
-  <url>
-    <loc>/reference/getStandardColNames.html</loc>
-  </url>
-  <url>
-    <loc>/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/modelUnitConversion.html</loc>
-  </url>
-  <url>
-    <loc>/reference/monolixControl.html</loc>
-  </url>
-  <url>
-    <loc>/reference/nlmixr2Est.pknca.html</loc>
-  </url>
-  <url>
-    <loc>/reference/nmGetDistributionMonolixLines.html</loc>
-  </url>
-  <url>
-    <loc>/reference/nmGetDistributionNonmemLines.html</loc>
-  </url>
-  <url>
-    <loc>/reference/nonmemControl.html</loc>
-  </url>
-  <url>
-    <loc>/reference/pkncaControl.html</loc>
-  </url>
-  <url>
-    <loc>/reference/popedControl.html</loc>
-  </url>
-  <url>
-    <loc>/reference/reexports.html</loc>
-  </url>
-  <url>
-    <loc>/reference/rxToMonolix.html</loc>
-  </url>
-  <url>
-    <loc>/reference/rxToNonmem.html</loc>
-  </url>
-  <url>
-    <loc>/reference/simplifyUnit.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>/404.html</loc></url>
+<url><loc>/articles/PopED.html</loc></url>
+<url><loc>/articles/index.html</loc></url>
+<url><loc>/articles/new-estimation.html</loc></url>
+<url><loc>/articles/running-monlix.html</loc></url>
+<url><loc>/articles/running-nonmem.html</loc></url>
+<url><loc>/articles/running-pknca.html</loc></url>
+<url><loc>/authors.html</loc></url>
+<url><loc>/index.html</loc></url>
+<url><loc>/news/index.html</loc></url>
+<url><loc>/reference/as.nlmixr2.html</loc></url>
+<url><loc>/reference/bblDatToMonolix.html</loc></url>
+<url><loc>/reference/dot-popedF.html</loc></url>
+<url><loc>/reference/dot-popedRxRunSetup.html</loc></url>
+<url><loc>/reference/dot-popedW.html</loc></url>
+<url><loc>/reference/dot-setupPopEDdatabase.html</loc></url>
+<url><loc>/reference/getStandardColNames.html</loc></url>
+<url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/modelUnitConversion.html</loc></url>
+<url><loc>/reference/monolixControl.html</loc></url>
+<url><loc>/reference/nlmixr2Est.pknca.html</loc></url>
+<url><loc>/reference/nmGetDistributionMonolixLines.html</loc></url>
+<url><loc>/reference/nmGetDistributionNonmemLines.html</loc></url>
+<url><loc>/reference/nonmemControl.html</loc></url>
+<url><loc>/reference/pkncaControl.html</loc></url>
+<url><loc>/reference/popedControl.html</loc></url>
+<url><loc>/reference/reexports.html</loc></url>
+<url><loc>/reference/rxToMonolix.html</loc></url>
+<url><loc>/reference/rxToNonmem.html</loc></url>
+<url><loc>/reference/simplifyUnit.html</loc></url>
 </urlset>
+
