@@ -160,9 +160,10 @@ rxUiGet.popedFgFun <- function(x, ...) {
 
   .v <- c(.split$pureMuRef, .split$taintMuRef, .errTerm, .covDef)
   .allCovs <- .ui$allCovs
+  .lines <- gsub("THETA[(]([1-9][0-9]*)[)]", "b[\\1]", c(.ret, .mu2))
   .body1 <- c(list(quote(`{`)),
               .covDefLst,
-              lapply(c(.ret, .mu2),
+              lapply(.lines,
                      function(x) {
                        str2lang(x)
                      }),
