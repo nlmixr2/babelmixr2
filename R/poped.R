@@ -161,11 +161,11 @@ rxUiGet.popedFgFun <- function(x, ...) {
   .v <- c(.split$pureMuRef, .split$taintMuRef, .errTerm, .covDef)
   .allCovs <- .ui$allCovs
   .body1 <- c(list(quote(`{`)),
+              .covDefLst,
               lapply(c(.ret, .mu2),
                      function(x) {
                        str2lang(x)
                      }),
-              .covDefLst,
               .split$muRefDef,
               .errTermLst,
               list(str2lang(paste("c(ID=a[1],", paste(paste0(.v, "=", .v), collapse=","),
