@@ -709,6 +709,11 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
 }
 
 #' @export
+rxUiGet.popedFullRxModel <- function(x, ...) {
+  .popedRxModel(x[[1]], maxNumTime=0L)
+}
+
+#' @export
 rxUiGet.popedBpop <- function(x, ...) {
   .ui <- x[[1]]
   .iniDf <- .ui$iniDf
