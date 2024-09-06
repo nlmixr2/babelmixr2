@@ -118,8 +118,12 @@ rxUiGet.popedBpopRep <- function(x, ...) {
                                 integer(1), ui=.ui, USE.NAMES=FALSE),
                      mu=vapply(.thetas, .nonmemGetMuNum, character(1), ui=.ui,
                                USE.NAMES=FALSE),
+                     muName=vapply(.thetas, .nonmemGetMuName, character(1), ui=.ui,
+                                   USE.NAMES=FALSE),
                      cov=vapply(.thetas, .nonmemGetThetaMuCov, character(1),
-                                ui=.ui, covRefDf=.covRefDf, USE.NAMES=FALSE))
+                                ui=.ui, covRefDf=.covRefDf, USE.NAMES=FALSE),
+                     numMu=vapply(.thetas, .nonmemGetMuNum0, numeric(1), ui=.ui,
+                                  USE.NAMES=FALSE))
   .ret$b <- ifelse(is.na(.ret$mu), NA_character_,
                    paste0("b[",substr(.ret$mu,4, 10),"]"))
   .iniDf <- .ui$iniDf
@@ -168,21 +172,29 @@ attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in
   if (is.call(x)) {
     if (identical(x[[1]], quote(`[`))) {
       if (identical(x[[2]], quote(`b`))) {
-        ## x[[3]] <- paste0("d_", iniDf$name[which(iniDf$neta1 == x[[3]] & iniDf$neta2 == x[[3]])])
+        ## .w <- which(mu$numMu== x[[3]])
+        ## if (length(.w) == 1L) {
+        ##   x[[3]] <- paste0("d_",mu$muName[.w])
+        ## }
       } else if (identical(x[[2]], quote(`bpop`))) {
-        .w <- which(mu$num == x[[3]])
-        if (length(.w) == 1L) {
-          x[[3]] <- mu[mu$num == x[[3]],"theta"]
-        } else {
-          x[[3]] <- iniDf$name[which(iniDf$ntheta == x[[3]])]
-        }
+        ## .w <- which(mu$num == x[[3]])
+        ## if (length(.w) == 1L) {
+        ##   x[[3]] <- mu[mu$num == x[[3]],"theta"]
+        ## } else {
+        ##   x[[3]] <- iniDf$name[which(iniDf$ntheta == x[[3]])]
+        ## }
       }
       return(x)
     } else if (identical(x[[1]], quote(`THETA`))) {
-      ## x <- str2lang(paste0("bpop[",x[[2]], "]"))
-      x <- str2lang(paste0("bpop['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
-    ## } else if (identical(x[[1]], quote(`ETA`))) {
-    ##   x <- str2lang(paste0("b['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
+      ## x <- str2lang(paste0("bpop['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
+      x <- str2lang(paste0("bpop[", x[[2]], "]"))
+    } else if (identical(x[[1]], quote(`ETA`))) {
+      ## .w <- which(mu$numMu== x[[2]])
+      ## if (length(.w) == 1L) {
+      ##   x[[3]] <- paste0("d_",mu$muName[.w])
+      ## }
+      ## x <- str2lang(paste0("b['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
+      x <- str2lang(paste0("b[", x[[2]], "]"))
     } else if (identical(x[[1]], quote(`<-`)) &&
                  length(x[[3]]) == 3L &&
                  identical(x[[3]][[1]], quote(`[`)) &&
@@ -208,6 +220,7 @@ rxUiGet.popedFgFun <- function(x, ...) {
   .split <- .ui$getSplitMuModel
 
   .mu <- rxUiGet.popedBpopRep(x, ...)
+
   .ret <- vapply(seq_along(.mu$mu), function(i) {
     if (is.na(.mu$mu[i])) return(NA_character_)
     paste0(.mu$mu[i], " <- ", .mu$bpop[i],
@@ -245,12 +258,14 @@ rxUiGet.popedFgFun <- function(x, ...) {
                      .replaceNamesPopedFgFun(.body1[[i]], iniDf=.iniDf, mu=.mu)
                    })
 
+  .nb <- .mu[!is.na(.mu$numMu),]
+  .nb <- paste0("d_", .nb[order(.nb$numMu),"muName"])
   .body1 <- as.call(c(quote(`{`),
                       str2lang("a <- stats::setNames(as.vector(a), row.names(a))"),
-                      str2lang("bpop <- stats::setNames(as.vector(bpop), row.names(bpop))"),
-            .body1,
-              list(str2lang(paste("c(ID=a[1],", paste(paste0(.v, "=", .v), collapse=","),
-                                  ")")))))
+                      .body1,
+                      list(str2lang(paste("c(ID=a[1],",
+                                          paste(paste0(.v, "=", .v), collapse=","),
+                                          ")")))))
   .body1 <- as.call(.body1)
   .f <- function(x, a, bpop, b, bocc) {}
   body(.f) <- .body1
