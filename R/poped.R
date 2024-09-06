@@ -122,6 +122,26 @@ rxUiGet.popedBpopRep <- function(x, ...) {
 }
 attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in $popedFgFun"
 
+.replaceNamesPopedFgFun <- function(x, iniDf) {
+  if (is.call(x)) {
+    if (identical(x[[1]], quote(`[`))) {
+      if (identical(x[[2]], quote(`b`))) {
+        x[[3]] <- paste0("d_", iniDf$name[which(iniDf$neta1 == x[[3]] & iniDf$neta2 == x[[3]])])
+      } else if (identical(x[[2]], quote(`bpop`))) {
+        x[[3]] <- iniDf$name[which(iniDf$ntheta == x[[3]])]
+      }
+      return(x)
+    } else if (identical(x[[1]], quote(`<-`)) &&
+                 length(x[[3]]) == 3L &&
+                 identical(x[[3]][[1]], quote(`[`)) &&
+                 identical(x[[3]][[2]], quote(`a`))){
+      x[[3]][[3]] <- as.character(x[[2]])
+    } else {
+      return(as.call(c(x[[1]], lapply(x[-1], .replaceNamesPopedFgFun, iniDf=iniDf))))
+    }
+  }
+  x
+}
 
 #' @export
 rxUiGet.popedFgFun <- function(x, ...) {
@@ -160,17 +180,22 @@ rxUiGet.popedFgFun <- function(x, ...) {
 
   .v <- c(.split$pureMuRef, .split$taintMuRef, .errTerm, .covDef)
   .allCovs <- .ui$allCovs
-  .lines <- gsub("THETA[(]([1-9][0-9]*)[)]", "b[\\1]", c(.ret, .mu2))
-  .body1 <- c(list(quote(`{`)),
-              .covDefLst,
-              lapply(.lines,
+  .body1 <- c(.covDefLst,
+              lapply(c(.ret, .mu2),
                      function(x) {
                        str2lang(x)
                      }),
               .split$muRefDef,
-              .errTermLst,
-              list(str2lang(paste("c(ID=a[1],", paste(paste0(.v, "=", .v), collapse=","),
-                                  ")"))))
+              .errTermLst)
+  .body1 <- lapply(seq_along(.body1),
+                   function(i) {
+                     .replaceNamesPopedFgFun(.body1[[i]], iniDf=.iniDf)
+                   })
+
+.body1 <- as.call(c(quote(`{`),
+            .body1,
+              list(str2lang(paste("c(ID=a['ID'],", paste(paste0(.v, "=", .v), collapse=","),
+                                  ")")))))
   .body1 <- as.call(.body1)
   .f <- function(x, a, bpop, b, bocc) {}
   body(.f) <- .body1
@@ -666,7 +691,7 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
 #' @noRd
 #' @keywords internal
 #' @author Matthew L. Fidler
-.popedRxModel <- function(ui, maxNumTime=2) {
+.popedRxModel <- function(ui, maxNumTime=2, eval=TRUE) {
   checkmate::testIntegerish(maxNumTime, lower=1, len=1)
   .base <- rxUiGet.popedRxmodelBase(list(ui))
   .base2 <- eval(as.call(c(list(quote(`rxModelVars`)),
@@ -695,6 +720,9 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
   .ret0 <- as.call(c(list(quote(`rxode2`)),
                      as.call(c(list(quote(`{`), .param0),
                                .base))))
+  if (!eval) {
+    return(.ret0)
+  }
   .poped$modelF <- eval(.ret0) # Full model
   .ret <- as.call(c(list(quote(`rxode2`)),
                     as.call(c(list(quote(`{`), .param),
@@ -2026,4 +2054,38 @@ nlmixr2Est.poped <- function(env, ...) {
     }
   }, add=TRUE)
   .setupPopEDdatabase(.ui, env$data, env$control)
+}
+
+
+# This is a way to export a rxode2 optimization alternative via a file
+# This may be easier to review what is going on behind the scenes
+
+#' @export
+rxUiGet.popedScriptBeforeCtl <- function(x, ...) {
+  .rx <- deparse(.popedRxModel(x[[1]], maxNumTime=0L))
+  .rx[1] <- paste0("rxModel <- ", .rx[1])
+  .fg <- deparse(rxUiGet.popedFgFun(x,...))
+  .fg[1] <- paste0("fgFun <- ", .fg[1])
+  .ret <- c("library(PopED)",
+    "library(rxode2)",
+    "",
+    "# ODE using rxode2",
+    "# When babelmixr2 is loaded, you can see it with $popedFullRxModel",
+    "# This is slightly different then what is used for the babelmixr2 estimation",
+    "# as the babelmixr2 estimation loads the model into the memory and uses",
+    "# model mtimes",
+    "",
+    .rx,
+    "",
+    "# Now define the PopED parameter translation function",
+    "",
+    .fg
+    )
+  class(.ret) <- "babelmixr2popedScript"
+  .ret
+}
+
+#' @export
+print.babelmixr2popedScript <- function(x, ...) {
+  cat(paste(x, collapse="\n"), "\n")
 }
