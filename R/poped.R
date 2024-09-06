@@ -122,6 +122,32 @@ rxUiGet.popedBpopRep <- function(x, ...) {
 }
 attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in $popedFgFun"
 
+#' Replace Names in PopED naming/translation function
+#'
+#' This function replaces names in a given expression based on the
+#' provided initial data frame.
+#'
+#' @param x An expression or name to be processed.
+#' @param iniDf A data frame containing the initial names and their corresponding values.
+#' @return The modified expression or name.
+#' @details
+#'
+#' The function processes the input expression `x` and replaces
+#' certain names based on the values in `iniDf`.
+#'
+#' - If `x`  with `b[]` or `bpop[]`, it changes numbers to a string based on `iniDf`.
+#'
+#' - If `x` is a call to `THETA` or `ETA`, it constructs a new
+#' expression using `bpop` or `b` also with strings instead of number
+#'
+#' - If `x` is an assignment to an indexed element of `a`, it changes
+#' the `a` assignment to call the covariate name
+#'
+#' - If `x` is a name starting with `MU_`, it replaces it based on
+#' `iniDf`. ie `MU_1` becomes `MU_par`
+#'
+#' In general this makes the function more human readable.
+#' @noRd
 .replaceNamesPopedFgFun <- function(x, iniDf) {
   if (is.call(x)) {
     if (identical(x[[1]], quote(`[`))) {
@@ -131,6 +157,10 @@ attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in
         x[[3]] <- iniDf$name[which(iniDf$ntheta == x[[3]])]
       }
       return(x)
+    } else if (identical(x[[1]], quote(`THETA`))) {
+      x <- str2lang(paste0("bpop['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
+    } else if (identical(x[[1]], quote(`ETA`))) {
+      x <- str2lang(paste0("b['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
     } else if (identical(x[[1]], quote(`<-`)) &&
                  length(x[[3]]) == 3L &&
                  identical(x[[3]][[1]], quote(`[`)) &&
@@ -139,6 +169,12 @@ attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in
     } else {
       return(as.call(c(x[[1]], lapply(x[-1], .replaceNamesPopedFgFun, iniDf=iniDf))))
     }
+  } else if (is.name(x) && grepl("^MU_",as.character(x))) {
+    .x0 <- as.character(x)
+    .x0 <- substr(.x0, 4, nchar(.x0))
+    .x0 <- suppressWarnings(as.numeric(.x0))
+    if (is.na(.x0)) return(x)
+    x <- str2lang(paste0("MU_", iniDf$name[which(iniDf$ntheta == .x0)]))
   }
   x
 }
