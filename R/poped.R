@@ -82,12 +82,26 @@
 #' @return bpop[#] where # is the theta number
 #' @noRd
 #' @author Matthew L. Fidler
-.popedGetBpopNum <- function(theta, ui) {
+.popedGetBpopNum0 <- function(theta, ui) {
   .iniDf <- ui$iniDf
   .w <- which(.iniDf$name == theta)
-  if (length(.w) != 1) return(NA_character_)
-  if (is.na(.iniDf$ntheta[.w])) return(NA_character_)
-  paste0("bpop[", .iniDf$ntheta[.w], "]")
+  if (length(.w) != 1) return(NA_integer_)
+  if (is.na(.iniDf$ntheta[.w])) return(NA_integer_)
+  .iniDf$ntheta[.w]
+}
+
+#' get the bpop number (which is a theta in PopED)
+#'
+#' @param theta name of the population parameter
+#' @param ui rxode2 ui object
+#' @return bpop[#] where # is the theta number
+#' @noRd
+#' @author Matthew L. Fidler
+.popedGetBpopNum <- function(theta, ui) {
+  .iniDf <- ui$iniDf
+  .n0 <- .popedGetBpopNum0(theta, ui)
+  if (is.na(.n0)) return(NA_character_)
+  paste0("bpop[", .n0, "]")
 }
 
 #' @export
@@ -100,6 +114,8 @@ rxUiGet.popedBpopRep <- function(x, ...) {
   .ret <- data.frame(theta=.thetas,
                      bpop=vapply(.thetas, .popedGetBpopNum,
                                  character(1), ui=.ui, USE.NAMES=FALSE),
+                     num=vapply(.thetas, .popedGetBpopNum0,
+                                integer(1), ui=.ui, USE.NAMES=FALSE),
                      mu=vapply(.thetas, .nonmemGetMuNum, character(1), ui=.ui,
                                USE.NAMES=FALSE),
                      cov=vapply(.thetas, .nonmemGetThetaMuCov, character(1),
@@ -148,33 +164,34 @@ attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in
 #'
 #' In general this makes the function more human readable.
 #' @noRd
-.replaceNamesPopedFgFun <- function(x, iniDf) {
+.replaceNamesPopedFgFun <- function(x, iniDf, mu) {
   if (is.call(x)) {
     if (identical(x[[1]], quote(`[`))) {
       if (identical(x[[2]], quote(`b`))) {
-        x[[3]] <- paste0("d_", iniDf$name[which(iniDf$neta1 == x[[3]] & iniDf$neta2 == x[[3]])])
+        ## x[[3]] <- paste0("d_", iniDf$name[which(iniDf$neta1 == x[[3]] & iniDf$neta2 == x[[3]])])
       } else if (identical(x[[2]], quote(`bpop`))) {
-        x[[3]] <- iniDf$name[which(iniDf$ntheta == x[[3]])]
+        .w <- which(mu$num == x[[3]])
+        if (length(.w) == 1L) {
+          x[[3]] <- mu[mu$num == x[[3]],"theta"]
+        } else {
+          x[[3]] <- iniDf$name[which(iniDf$ntheta == x[[3]])]
+        }
       }
       return(x)
     } else if (identical(x[[1]], quote(`THETA`))) {
+      ## x <- str2lang(paste0("bpop[",x[[2]], "]"))
       x <- str2lang(paste0("bpop['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
-    } else if (identical(x[[1]], quote(`ETA`))) {
-      x <- str2lang(paste0("b['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
+    ## } else if (identical(x[[1]], quote(`ETA`))) {
+    ##   x <- str2lang(paste0("b['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
     } else if (identical(x[[1]], quote(`<-`)) &&
                  length(x[[3]]) == 3L &&
                  identical(x[[3]][[1]], quote(`[`)) &&
                  identical(x[[3]][[2]], quote(`a`))){
-      x[[3]][[3]] <- as.character(x[[2]])
+      x[[3]] <- str2lang(paste0("a['", as.character(x[[2]]), "']"))
     } else {
-      return(as.call(c(x[[1]], lapply(x[-1], .replaceNamesPopedFgFun, iniDf=iniDf))))
+      return(as.call(c(x[[1]], lapply(x[-1], .replaceNamesPopedFgFun,
+                                      iniDf=iniDf, mu=mu))))
     }
-  } else if (is.name(x) && grepl("^MU_",as.character(x))) {
-    .x0 <- as.character(x)
-    .x0 <- substr(.x0, 4, nchar(.x0))
-    .x0 <- suppressWarnings(as.numeric(.x0))
-    if (is.na(.x0)) return(x)
-    x <- str2lang(paste0("MU_", iniDf$name[which(iniDf$ntheta == .x0)]))
   }
   x
 }
@@ -225,12 +242,14 @@ rxUiGet.popedFgFun <- function(x, ...) {
               .errTermLst)
   .body1 <- lapply(seq_along(.body1),
                    function(i) {
-                     .replaceNamesPopedFgFun(.body1[[i]], iniDf=.iniDf)
+                     .replaceNamesPopedFgFun(.body1[[i]], iniDf=.iniDf, mu=.mu)
                    })
 
-.body1 <- as.call(c(quote(`{`),
+  .body1 <- as.call(c(quote(`{`),
+                      str2lang("a <- stats::setNames(as.vector(a), row.names(a))"),
+                      str2lang("bpop <- stats::setNames(as.vector(bpop), row.names(bpop))"),
             .body1,
-              list(str2lang(paste("c(ID=a['ID'],", paste(paste0(.v, "=", .v), collapse=","),
+              list(str2lang(paste("c(ID=a[1],", paste(paste0(.v, "=", .v), collapse=","),
                                   ")")))))
   .body1 <- as.call(.body1)
   .f <- function(x, a, bpop, b, bocc) {}
