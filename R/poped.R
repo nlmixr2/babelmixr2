@@ -1552,7 +1552,13 @@ rxUiGet.popedSettings <- function(x, ...) {
               "  list(settings=popedSettings, parameters=popedParameters)), ",
               "  ff_fun=ffFun,",
               "  fg_fun=fgFun,",
-              "  fError_fun=fepsFun)")
+              "  fError_fun=fepsFun)",
+              "",
+              "# Plot the model",
+              "plot_model_prediction(db, model_num_points=300, PI=TRUE)",
+              "",
+              "# Evaluate the design",
+              "evaluate_design(db)")
     class(.ret) <- "babelmixr2popedScript"
     if (isTRUE(.toScript)) {
       return(.ret)
@@ -2359,8 +2365,8 @@ rxUiGet.popedScriptBeforeCtl <- function(x, ...) {
     "# This is a way to keep the model parameters separate from",
     "# the PopED parameters and make translations with simple parameters",
     "# like a, b, not conflict with the model parameters",
-    "# This is the only part that comes from the model translation"
-    "# and the only function that has to have the rxPoped prefix"
+    "# This is the only part that comes from the model translation",
+    "# and the only function that has to have the rxPoped prefix",
     .fg,
     "",
     "# Now define the PopED error function which comes from $popedFErrorFun",
