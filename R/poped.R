@@ -261,7 +261,9 @@ rxUiGet.popedFgFun <- function(x, ...) {
   .nb <- .mu[!is.na(.mu$numMu),]
   .nb <- paste0("d_", .nb[order(.nb$numMu),"muName"])
   .body1 <- as.call(c(quote(`{`),
-                      str2lang("a <- stats::setNames(as.vector(a), row.names(a))"),
+                      str2lang(".dn <- dimnames(a)"),
+                      str2lang("a <- as.vector(a)"),
+                      str2lang("if (length(.dn[[1]]) == length(a)) { names(a) <- .dn[[1]] } else if (length(.dn[[2]]) == length(a)) { names(a) <- .dn[[2]] }"),
                       str2lang("ID <- setNames(a[1], NULL)"),
                       .body1,
                       list(str2lang(paste("c(ID=ID,",
@@ -305,9 +307,14 @@ rxUiGet.popedGetEventFun <- function(x, ...) {
     if (length(popedDosing)== 1L) {
       id <- 1L
     } else {
-      .tmp <- (id-seq_along(popedDosing))^2
-      .w <- which(.tmp == min(.tmp))
-      id <- seq_along(popedDosing)[.w[1]]
+      id <- round(id)
+      if (id < 1L) {
+        id <- 1L
+        warning("truncated id to 1", call.=FALSE)
+      } else if (id > length(popedDosing)) {
+        id <- length(popedDosing)
+        warning("truncated id to ", id, call.=FALSE)
+      }
     }
     rbind(popedDosing[[id]],
           data.frame(popedObservations[[id]], time=drop(xt)))
@@ -332,14 +339,14 @@ rxUiGet.popedFfFun <- function(x, ...) {
       if (.totn <  .(.poped$maxn)) {
         .p <- c(.p, .xt, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .totn))
         .popedRxRunSetup(poped.db)
-        .ret <- .popedSolveIdN(.p, .xt, .id, .totn)
+        .ret <- .popedSolveIdN(.p, .xt, .id-1L, .totn)
       } else if (.totn > .(.poped$maxn)) {
         .popedRxRunFullSetup(poped.db, .xt)
-        .ret <- .popedSolveIdN2(.p, .xt, .id, .totn)
+        .ret <- .popedSolveIdN2(.p, .xt, .id-1L, .totn)
       } else {
         .p <- c(.p, .xt)
         .popedRxRunSetup(poped.db)
-        .ret <- .popedSolveIdN(.p, .xt, .id, .totn)
+        .ret <- .popedSolveIdN(.p, .xt, .id-1L, .totn)
       }
       return(list(f=matrix(.ret$rx_pred_, ncol=1),
                   poped.db=poped.db))
@@ -360,16 +367,16 @@ rxUiGet.popedFfFun <- function(x, ...) {
         .p <- c(.p, .u, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .lu))
         .popedRxRunSetup(poped.db)
         .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                            .id, .totn)
+                                            .id-1, .totn)
       } else if (.lu > .(.poped$maxn)) {
         .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
         .ret <- .popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                             .id, .totn)
+                                             .id-1, .totn)
       } else {
         .p <- c(.p, .u)
         .popedRxRunSetup(poped.db)
         .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                            .id, .totn)
+                                            .id-1, .totn)
       }
       return(list(f=matrix(.ret$rx_pred_, ncol=1),
                   poped.db=poped.db))

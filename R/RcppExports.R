@@ -13,20 +13,20 @@ popedSetup <- function(e, full) {
     .Call(`_babelmixr2_popedSetup`, e, full)
 }
 
-popedSolveIdN2 <- function(theta, mt, did, totn) {
-    .Call(`_babelmixr2_popedSolveIdN2`, theta, mt, did, totn)
+popedSolveIdN2 <- function(theta, mt, iid, totn) {
+    .Call(`_babelmixr2_popedSolveIdN2`, theta, mt, iid, totn)
 }
 
-popedSolveIdN <- function(theta, mt, did, totn) {
-    .Call(`_babelmixr2_popedSolveIdN`, theta, mt, did, totn)
+popedSolveIdN <- function(theta, mt, iid, totn) {
+    .Call(`_babelmixr2_popedSolveIdN`, theta, mt, iid, totn)
 }
 
-popedSolveIdME <- function(theta, umt, mt, ms, nend, did, totn) {
-    .Call(`_babelmixr2_popedSolveIdME`, theta, umt, mt, ms, nend, did, totn)
+popedSolveIdME <- function(theta, umt, mt, ms, nend, id, totn) {
+    .Call(`_babelmixr2_popedSolveIdME`, theta, umt, mt, ms, nend, id, totn)
 }
 
-popedSolveIdME2 <- function(theta, umt, mt, ms, nend, did, totn) {
-    .Call(`_babelmixr2_popedSolveIdME2`, theta, umt, mt, ms, nend, did, totn)
+popedSolveIdME2 <- function(theta, umt, mt, ms, nend, id, totn) {
+    .Call(`_babelmixr2_popedSolveIdME2`, theta, umt, mt, ms, nend, id, totn)
 }
 
 transDv <- function(inDv, inCmt, cmtTrans, lambda, yj, low, high) {

@@ -292,7 +292,7 @@ if (requireNamespace("PopED", quietly=TRUE)) {
                                                           PI=TRUE,
                                                           separate.groups=TRUE,
                                                           model_num_points = 300,
-                                                          sample.times = FALSE))
+                                                          sample.times = FALSE)
 
 
         dat <- model_prediction(db,DV=TRUE)
