@@ -296,8 +296,26 @@ static inline bool solveCached(NumericVector &theta, int &id) {
   return as<bool>(all(last == theta));
 }
 
+int getIdFromDid(double did) {
+  rx = getRxSolve_();
+  if (rx->nsub == 1) return 0;
+  double cur = did - 1.0; // R offsets by 1, fix that here
+  double diff = 1e10;
+  int ret = 0;
+  // sometimes poped offsets :(
+  // this is a workaround
+  for (int i = 0; i < rx->nsub; i++) {
+    if (fabs(i - cur) < diff) {
+      diff = fabs(i - cur);
+      ret = i;
+    }
+  }
+  return ret;
+}
+
 //[[Rcpp::export]]
-Rcpp::DataFrame popedSolveIdN2(NumericVector &theta, NumericVector &mt, int id, int totn) {
+Rcpp::DataFrame popedSolveIdN2(NumericVector &theta, NumericVector &mt, double did, int totn) {
+  int id = getIdFromDid(did);
   if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
   NumericVector t(totn);
   arma::vec f(totn);
@@ -312,7 +330,8 @@ Rcpp::DataFrame popedSolveIdN2(NumericVector &theta, NumericVector &mt, int id, 
 }
 
 //[[Rcpp::export]]
-Rcpp::DataFrame popedSolveIdN(NumericVector &theta, NumericVector &mt, int id, int totn) {
+Rcpp::DataFrame popedSolveIdN(NumericVector &theta, NumericVector &mt, double did, int totn) {
+  int id = getIdFromDid(did);
   if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
   NumericVector t(totn);
   arma::vec f(totn);
@@ -390,7 +409,8 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
 Rcpp::DataFrame popedSolveIdME(NumericVector &theta,
                                NumericVector &umt,
                                NumericVector &mt, IntegerVector &ms,
-                               int nend, int id, int totn) {
+                               int nend, double did, int totn) {
+  int id = getIdFromDid(did);
   if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
   NumericVector t(totn);
   arma::vec f(totn);
@@ -490,7 +510,8 @@ void popedSolveFidMat2(arma::mat &matMT, NumericVector &theta, int id, int nrow,
 Rcpp::DataFrame popedSolveIdME2(NumericVector &theta,
                                 NumericVector &umt,
                                 NumericVector &mt, IntegerVector &ms,
-                                int nend, int id, int totn) {
+                                int nend, double did, int totn) {
+  int id = getIdFromDid(did);
   if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
   NumericVector t(totn);
   arma::vec f(totn);
