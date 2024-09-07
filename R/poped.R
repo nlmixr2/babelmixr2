@@ -1840,6 +1840,15 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #'   the model
 #' @param script write a PopED/rxode2 script that can be modified for
 #'   more fine control.  The default is NULL.
+#'
+#'  When `script` is TRUE, the script is returned as a lines that
+#'  would be written to a file and with the class
+#'  `babelmixr2popedScript`. This allows it to be printed as the
+#'  script on screen.
+#'
+#'  When `script` is a file name (with an R extension), the script is
+#'  written to that file.
+#'
 #' @inheritParams nlmixr2est::foceiControl
 #' @inheritParams PopED::create.poped.database
 #' @inheritParams PopED::create_design_space
@@ -2159,6 +2168,14 @@ popedControl <- function(stickyRecalcN=4,
   checkmate::assertLogical(bParallelSG, any.missing=FALSE, len=1)
   checkmate::assertLogical(bParallelMFEA, any.missing=FALSE, len=1)
   checkmate::assertLogical(bParallelLS, any.missing=FALSE, len=1)
+  if (is.null(script)) {
+  } else if (checkmate::testLogical(script, len=1, any.missing=FALSE)) {
+    if (!script) {
+      script <- NULL
+    }
+  } else {
+    checkmate::assertPathForOutput(script, extension=".R")
+  }
 
   .ret <- list(rxControl=rxControl,
                stickyRecalcN=as.integer(stickyRecalcN),

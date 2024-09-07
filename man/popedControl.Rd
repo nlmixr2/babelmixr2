@@ -132,6 +132,7 @@ popedControl(
   auto_pointer = "",
   user_distribution_pointer = "",
   fixRes = FALSE,
+  script = NULL,
   ...
 )
 }
@@ -520,7 +521,19 @@ Autocorrelation function, empty string means no autocorrelation.}
 \item{user_distribution_pointer}{Filename and path, or function
 name, for user defined distributions for E-family designs}
 
-\item{fixRes}{boolean; Fix the residuals to what is specified by the model}
+\item{fixRes}{boolean; Fix the residuals to what is specified by
+the model}
+
+\item{script}{write a PopED/rxode2 script that can be modified for
+more fine control.  The default is NULL.
+
+When \code{script} is TRUE, the script is returned as a lines that
+would be written to a file and with the class
+\code{babelmixr2popedScript}. This allows it to be printed as the
+script on screen.
+
+When \code{script} is a file name (with an R extension), the script is
+written to that file.}
 
 \item{...}{other parameters for PopED control}
 }
