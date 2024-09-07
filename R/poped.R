@@ -101,7 +101,7 @@
   .iniDf <- ui$iniDf
   .n0 <- .popedGetBpopNum0(theta, ui)
   if (is.na(.n0)) return(NA_character_)
-  paste0("bpop[", .n0, "]")
+  paste0("rxPopedBpop[", .n0, "]")
 }
 
 #' @export
@@ -125,12 +125,12 @@ rxUiGet.popedBpopRep <- function(x, ...) {
                      numMu=vapply(.thetas, .nonmemGetMuNum0, numeric(1), ui=.ui,
                                   USE.NAMES=FALSE))
   .ret$b <- ifelse(is.na(.ret$mu), NA_character_,
-                   paste0("b[",substr(.ret$mu,4, 10),"]"))
+                   paste0("rxPopedB[",substr(.ret$mu,4, 10),"]"))
   .iniDf <- .ui$iniDf
   .w <- which(is.na(.iniDf$ntheta) &.iniDf$neta1 == .iniDf$neta2)
   if (length(.w) > 0) {
     .iniDf <- .iniDf[.w, ]
-    .var <- setNames(paste0("b[",.iniDf$neta1,"]"),.iniDf$name)
+    .var <- setNames(paste0("rxPopedB[",.iniDf$neta1,"]"),.iniDf$name)
     .ret$bpop <- vapply(seq_along(.ret$bpop), function(i) {
       .v <- .ret$theta[i]
       .b <- .var[.v]
@@ -155,10 +155,10 @@ attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in
 #' The function processes the input expression `x` and replaces
 #' certain names based on the values in `iniDf`.
 #'
-#' - If `x`  with `b[]` or `bpop[]`, it changes numbers to a string based on `iniDf`.
+#' - If `x`  with `b[]` or `rxPopedBpop[]`, it changes numbers to a string based on `iniDf`.
 #'
 #' - If `x` is a call to `THETA` or `ETA`, it constructs a new
-#' expression using `bpop` or `b` also with strings instead of number
+#' expression using `rxPopedBpop` or `b` also with strings instead of number
 #'
 #' - If `x` is an assignment to an indexed element of `a`, it changes
 #' the `a` assignment to call the covariate name
@@ -171,12 +171,12 @@ attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in
 .replaceNamesPopedFgFun <- function(x, iniDf, mu) {
   if (is.call(x)) {
     if (identical(x[[1]], quote(`[`))) {
-      if (identical(x[[2]], quote(`b`))) {
+      if (identical(x[[2]], quote(`rxPopedB`))) {
         ## .w <- which(mu$numMu== x[[3]])
         ## if (length(.w) == 1L) {
         ##   x[[3]] <- paste0("d_",mu$muName[.w])
         ## }
-      } else if (identical(x[[2]], quote(`bpop`))) {
+      } else if (identical(x[[2]], quote(`rxPopedBpop`))) {
         ## .w <- which(mu$num == x[[3]])
         ## if (length(.w) == 1L) {
         ##   x[[3]] <- mu[mu$num == x[[3]],"theta"]
@@ -186,20 +186,20 @@ attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in
       }
       return(x)
     } else if (identical(x[[1]], quote(`THETA`))) {
-      ## x <- str2lang(paste0("bpop['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
-      x <- str2lang(paste0("bpop[", x[[2]], "]"))
+      ## x <- str2lang(paste0("rxPopedBpop['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
+      x <- str2lang(paste0("rxPopedBpop[", x[[2]], "]"))
     } else if (identical(x[[1]], quote(`ETA`))) {
       ## .w <- which(mu$numMu== x[[2]])
       ## if (length(.w) == 1L) {
       ##   x[[3]] <- paste0("d_",mu$muName[.w])
       ## }
-      ## x <- str2lang(paste0("b['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
-      x <- str2lang(paste0("b[", x[[2]], "]"))
+      ## x <- str2lang(paste0("rxPopedB['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
+      x <- str2lang(paste0("[", x[[2]], "]"))
     } else if (identical(x[[1]], quote(`<-`)) &&
                  length(x[[3]]) == 3L &&
                  identical(x[[3]][[1]], quote(`[`)) &&
-                 identical(x[[3]][[2]], quote(`a`))){
-      x[[3]] <- str2lang(paste0("setNames(a['", as.character(x[[2]]), "'], NULL)"))
+                 identical(x[[3]][[2]], quote(`rxPopedA`))){
+      x[[3]] <- str2lang(paste0("setNames(rxPopedA['", as.character(x[[2]]), "'], NULL)"))
     } else {
       return(as.call(c(x[[1]], lapply(x[-1], .replaceNamesPopedFgFun,
                                       iniDf=iniDf, mu=mu))))
@@ -234,14 +234,14 @@ rxUiGet.popedFgFun <- function(x, ...) {
   .covDef <- .ui$allCovs
   .covDefLst <- lapply(seq_along(.covDef),
                        function(i) {
-                         str2lang(paste0(.covDef[i], "<- a[", i + 1, "]"))
+                         str2lang(paste0(.covDef[i], "<- rxPopedA[", i + 1, "]"))
                        })
   .iniDf <- .ui$iniDf
   .w <- which(!is.na(.iniDf$ntheta) & !is.na(.iniDf$err))
   .errTerm <- .iniDf$name[.w]
   .errTermLst <- lapply(.w,
                         function(i) {
-                          str2lang(paste0(.iniDf$name[i], " <- bpop[", .iniDf$ntheta[i], "]"))
+                          str2lang(paste0(.iniDf$name[i], " <- rxPopedBpop[", .iniDf$ntheta[i], "]"))
                         })
 
   .v <- c(.split$pureMuRef, .split$taintMuRef, .errTerm, .covDef)
@@ -261,16 +261,20 @@ rxUiGet.popedFgFun <- function(x, ...) {
   .nb <- .mu[!is.na(.mu$numMu),]
   .nb <- paste0("d_", .nb[order(.nb$numMu),"muName"])
   .body1 <- as.call(c(quote(`{`),
-                      str2lang(".dn <- dimnames(a)"),
-                      str2lang("a <- as.vector(a)"),
-                      str2lang("if (length(.dn[[1]]) == length(a)) { names(a) <- .dn[[1]] } else if (length(.dn[[2]]) == length(a)) { names(a) <- .dn[[2]] }"),
-                      str2lang("ID <- setNames(a[1], NULL)"),
+                      str2lang("rxPopedDn <- dimnames(rxPopedA)"),
+                      str2lang("rxPopedA <- as.vector(rxPopedA)"),
+                      str2lang(paste(c("if (length(rxPopedDn[[1]]) == length(rxPopedA)) {",
+                                       " names(rxPopedA) <- rxPopedDn[[1]] ",
+                                       "} else if (length(rxPopedDn[[2]]) == length(rxPopedA)) {",
+                                       " names(rxPopedA) <- rxPopedDn[[2]] ",
+                                       "}"), collapse="\n")),
+                      str2lang("ID <- setNames(rxPopedA[1], NULL)"),
                       .body1,
                       list(str2lang(paste("c(ID=ID,",
                                           paste(paste0(.v, "=", .v), collapse=","),
                                           ")")))))
   .body1 <- as.call(.body1)
-  .f <- function(x, a, bpop, b, bocc) {}
+  .f <- function(rxPopedX, rxPopedA, rxPopedBpop, rxPopedB, rxPopedBocc) {}
   body(.f) <- .body1
   .f
 }
@@ -2349,16 +2353,25 @@ rxUiGet.popedScriptBeforeCtl <- function(x, ...) {
     .rx,
     "",
     "# Now define the PopED parameter translation function",
+    "# This comes from $popedFgFun in the babelmixr2 procedure",
+    "# Note the typical a, b, bpop are prefixed with rxPoped",
+    "# so that they do not conflict with the model parameters",
+    "# This is a way to keep the model parameters separate from",
+    "# the PopED parameters and make translations with simple parameters",
+    "# like a, b, not conflict with the model parameters",
+    "# This is the only part that comes from the model translation"
+    "# and the only function that has to have the rxPoped prefix"
     .fg,
     "",
-    "# Now define the PopED error function",
+    "# Now define the PopED error function which comes from $popedFErrorFun",
     .feps,
     "",
-    "# Now define the PopED function evaluation",
+    "# Now define the PopED function evaluation which comes from $popedFfFunScript",
     .ff,
     "",
     "# Now define the getEventFun function:",
     "# sometimes poped moves parameters like id, some work-arounds here",
+    "# This comes from $popedGetEventFun",
     .getEvent
     )
   class(.ret) <- "babelmixr2popedScript"
