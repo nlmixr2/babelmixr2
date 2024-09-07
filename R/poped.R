@@ -1429,7 +1429,7 @@ rxUiGet.popedSettings <- function(x, ...) {
     )
   ))
   if (is.null(rxode2::rxGetControl(ui, "script", NULL))) {
-    return(.ret)
+    .ret
   } else {
     .parallel <- .ret$settings$parallel
     .settings <- .ret$settings
