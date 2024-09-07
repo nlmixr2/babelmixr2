@@ -174,6 +174,7 @@
 <span>  auto_pointer <span class="op">=</span> <span class="st">""</span>,</span>
 <span>  user_distribution_pointer <span class="op">=</span> <span class="st">""</span>,</span>
 <span>  fixRes <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  script <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -778,7 +779,19 @@ name, for user defined distributions for E-family designs</p></dd>
 
 
 <dt id="arg-fixres">fixRes<a class="anchor" aria-label="anchor" href="#arg-fixres"></a></dt>
-<dd><p>boolean; Fix the residuals to what is specified by the model</p></dd>
+<dd><p>boolean; Fix the residuals to what is specified by
+the model</p></dd>
+
+
+<dt id="arg-script">script<a class="anchor" aria-label="anchor" href="#arg-script"></a></dt>
+<dd><p>write a PopED/rxode2 script that can be modified for
+more fine control.  The default is NULL.</p>
+<p>When <code>script</code> is TRUE, the script is returned as a lines that
+would be written to a file and with the class
+<code>babelmixr2popedScript</code>. This allows it to be printed as the
+script on screen.</p>
+<p>When <code>script</code> is a file name (with an R extension), the script is
+written to that file.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
