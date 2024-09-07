@@ -216,6 +216,15 @@ static inline rx_solving_options_ind* updateParamRetInd(NumericVector &theta, in
   return ind;
 }
 
+static inline int getSafeId(int id) {
+  if (id < 0) return 0;
+  rx = getRxSolve_();
+  if (id >= getRxNsub(rx)) {
+    return getRxNsub(rx)-1;
+  }
+  return id;
+}
+
 // Solve prediction and saved based on modeling time
 void popedSolveFid(double *f, double *w, double *t, NumericVector &theta, int id, int totn) {
   // arma::vec ret(retD, nobs, false, true);
@@ -297,7 +306,8 @@ static inline bool solveCached(NumericVector &theta, int &id) {
 }
 
 //[[Rcpp::export]]
-Rcpp::DataFrame popedSolveIdN2(NumericVector &theta, NumericVector &mt, int id, int totn) {
+Rcpp::DataFrame popedSolveIdN2(NumericVector &theta, NumericVector &mt, int iid, int totn) {
+  int id = getSafeId(iid);
   if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
   NumericVector t(totn);
   arma::vec f(totn);
@@ -312,7 +322,8 @@ Rcpp::DataFrame popedSolveIdN2(NumericVector &theta, NumericVector &mt, int id, 
 }
 
 //[[Rcpp::export]]
-Rcpp::DataFrame popedSolveIdN(NumericVector &theta, NumericVector &mt, int id, int totn) {
+Rcpp::DataFrame popedSolveIdN(NumericVector &theta, NumericVector &mt, int iid, int totn) {
+  int id = getSafeId(iid);
   if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
   NumericVector t(totn);
   arma::vec f(totn);

@@ -1,13 +1,25 @@
-.nonmemGetMuNum <- function(theta, ui) {
+.nonmemGetMuName <- function(theta, ui) {
   .muRefDf <- ui$muRefDataFrame
   .iniDf <- ui$iniDf
   .w <- which(.muRefDf$theta == theta)
   if (length(.w) != 1) return(NA_character_)
-  .eta <- .muRefDf$eta[.w]
+  .muRefDf$eta[.w]
+}
+
+.nonmemGetMuNum0 <- function(theta, ui) {
+  .eta <- .nonmemGetMuName(theta, ui)
+  if (is.na(.eta)) return(NA_real_)
+  .iniDf <- ui$iniDf
   .w <- which(.iniDf$name == .eta)
-  if (length(.w) != 1) return(NA_character_)
+  if (length(.w) != 1) return(NA_real_)
+  .iniDf$neta1[.w]
+}
+
+.nonmemGetMuNum <- function(theta, ui) {
+  .neta <- .nonmemGetMuNum0(theta, ui)
+  if (is.na(.neta)) return(NA_character_)
   .muRef <- rxode2::rxGetControl(ui, "muRef", TRUE)
-  paste0(ifelse(.muRef, "MU_", "UM_"), .iniDf$neta1[.w])
+  paste0(ifelse(.muRef, "MU_", "UM_"), .neta)
 }
 
 .nonmemGetThetaNum <- function(theta, ui) {

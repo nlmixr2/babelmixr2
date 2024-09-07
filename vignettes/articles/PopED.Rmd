@@ -155,6 +155,7 @@ ff_ode_rx <- function(model_switch, xt, p, poped.db){
 poped_db_ode_rx <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_rx)
 
 poped_db_ode_pkpdsim <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_pkpdsim)
+
 ```
 
 ## Introduction -- using babelmixr2 with PopED
@@ -175,6 +176,7 @@ solvers](https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html
 ## babelmixr2 ODE solution
 
 ```{r babelmixr2_ode}
+
 library(babelmixr2)
 library(PopED)
 

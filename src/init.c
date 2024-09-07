@@ -23,7 +23,7 @@ static const R_CallMethodDef CallEntries[] = {
   {"_babelmixr2_popedFree", (DL_FUNC) &_babelmixr2_popedFree, 0},
   {"_babelmixr2_popedSetup", (DL_FUNC) &_babelmixr2_popedSetup, 2},
   {"_babelmixr2_popedSolveIdN", (DL_FUNC) &_babelmixr2_popedSolveIdN, 4},
-  {"_babelmixr2_popedSolveIdN2", (DL_FUNC) &_babelmixr2_popedSolveIdN, 4},
+  {"_babelmixr2_popedSolveIdN2", (DL_FUNC) &_babelmixr2_popedSolveIdN2, 4},
   {"_babelmixr2_popedSolveIdME", (DL_FUNC) &_babelmixr2_popedSolveIdME, 7},
   {"_babelmixr2_popedSolveIdME2", (DL_FUNC) &_babelmixr2_popedSolveIdME2, 7},
   {"_babelmixr2_iniRxodePtrs", (DL_FUNC) &_babelmixr2_iniRxodePtrs, 1},

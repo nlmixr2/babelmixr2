@@ -13,12 +13,12 @@ popedSetup <- function(e, full) {
     .Call(`_babelmixr2_popedSetup`, e, full)
 }
 
-popedSolveIdN2 <- function(theta, mt, id, totn) {
-    .Call(`_babelmixr2_popedSolveIdN2`, theta, mt, id, totn)
+popedSolveIdN2 <- function(theta, mt, iid, totn) {
+    .Call(`_babelmixr2_popedSolveIdN2`, theta, mt, iid, totn)
 }
 
-popedSolveIdN <- function(theta, mt, id, totn) {
-    .Call(`_babelmixr2_popedSolveIdN`, theta, mt, id, totn)
+popedSolveIdN <- function(theta, mt, iid, totn) {
+    .Call(`_babelmixr2_popedSolveIdN`, theta, mt, iid, totn)
 }
 
 popedSolveIdME <- function(theta, umt, mt, ms, nend, id, totn) {
