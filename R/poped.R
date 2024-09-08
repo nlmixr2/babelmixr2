@@ -1449,6 +1449,33 @@ rxUiGet.popedSettings <- function(x, ...) {
   }
 }
 
+#' Does the PopED control imply different sampling schedules/designs
+#'
+#' @param control poped control object
+#' @return boolean, TRUE if different sampling schedules
+#' @noRd
+#' @author Matthew L. Fidler
+.popedSeparateSampling <- function(control) {
+  if (is.null(control$a)) return(FALSE)
+  if (is.list(control$a)) {
+    .hasId <- vapply(seq_along(control$a),
+                        function(i) {
+                          .cur <- control$a[[i]]
+                          if (is.na(.cur[["ID"]])) return(FALSE)
+                          TRUE
+                        }, logical(1), USE.NAMES=FALSE)
+    if (all(.hasId)) {
+      return(TRUE)
+    } else if (all(!.hasId)) {
+      return(FALSE)
+    } else {
+      stop("the covariate list 'a' in the `popedControl()` must either all have an ID, or none of the elements can have an ID",
+           call.=FALSE)
+    }
+  }
+  FALSE
+}
+
 #' Setup the poped database
 #'
 #' @param ui rxode2 ui function
@@ -1469,127 +1496,132 @@ rxUiGet.popedSettings <- function(x, ...) {
   .ctl <- control
   class(.ctl) <- NULL
   rxode2::rxSetControl(.ui, .ctl)
-  # To get the sigma estimates, this needs to be called before any of
-  # the other setup items
-  .err <- .ui$popedFErrorFun
   .toScript <- rxode2::rxGetControl(.ui, "script", NULL)
+  if (.popedSeparateSampling(.ctl)) {
+    stop("Separate sampling schedules are not supported yet",
+         call.=FALSE)
+  } else {
+    # To get the sigma estimates, this needs to be called before any of
+    # the other setup items
+    .err <- .ui$popedFErrorFun
 
-  .design <- .popedDataToDesignSpace(.ui, data,
-                                     time=rxode2::rxGetControl(.ui, "time", "time"),
-                                     timeLow=rxode2::rxGetControl(.ui, "low", "low"),
-                                     timeHi=rxode2::rxGetControl(.ui, "high", "high"),
-                                     id=rxode2::rxGetControl(.ui, "id", "id"),
-                                     returnList = !is.null(.toScript))
-  .poped$setup <- 0L
-  if (is.null(.toScript)) {
-    .input <- c(.design,
+    .design <- .popedDataToDesignSpace(.ui, data,
+                                       time=rxode2::rxGetControl(.ui, "time", "time"),
+                                       timeLow=rxode2::rxGetControl(.ui, "low", "low"),
+                                       timeHi=rxode2::rxGetControl(.ui, "high", "high"),
+                                       id=rxode2::rxGetControl(.ui, "id", "id"),
+                                       returnList = !is.null(.toScript))
+    .poped$setup <- 0L
+    if (is.null(.toScript)) {
+      .input <- c(.design,
+                  .ui$popedSettings,
+                  .ui$popedParameters,
+                  list(MCC_Dep=rxode2::rxGetControl(.ui, "MCC_Dep", NULL)))
+      .ret <- PopED::create.poped.database(.input,
+                                           ff_fun=.ui$popedFfFun,
+                                           fg_fun=.ui$popedFgFun,
+                                           fError_fun=.err)
+
+    } else {
+      .ln <- tolower(names(data))
+      .w <- which(.ln == "id")
+      if (length(.w) == 0L) {
+        data$id <- 1L
+      }
+      .ids <- unique(data$id)
+      .w <- which(.ln == "amt")
+      if (length(.w) == 1L) {
+        popedDosing <- lapply(seq_along(.ids),
+                              function(i) {
+                                .w <- which(data$id == .ids[i])
+                                .d <- data[.w,]
+                                .w <- which(.ln=="amt")
+                                .d <- .d[!is.na(.d[[.w]]), , drop=FALSE]
+                                .d
+                              })
+        popedObservations <- lapply(seq_along(.ids),
+                                    function(i) {
+                                      .w <- which(data$id == .ids[i])
+                                      .d <- data[.w,]
+                                      .w <- which(.ln=="amt")
+                                      .d <- .d[is.na(.d[[.w]]), , drop=FALSE]
+                                      .d <- .d[1,-which(.ln=="time"), drop=FALSE]
+                                      .d
+                                    })
+      } else {
+        popedDosing <- lapply(seq_along(.ids),
+                              function(i) {
+                                NULL
+                              })
+        popedObservations <- lapply(seq_along(.ids),
+                                    function(i) {
+                                      .w <- which(data$id == .ids[i])
+                                      .d <- data[.w,]
+                                      .d <- .d[1,-which(.ln=="time"), drop=FALSE]
+                                      .d
+                                    })
+      }
+      .ret <- c(.ui$popedScriptBeforeCtl,
+                "",
+                "# Create rxode2 control structure",
+                "popedRxControl <- list(",
+                .deparsePopedList(.ctl$rxControl),
+                "",
+                "# Create global event information -- popedDosing",
+                "popedDosing <- list(",
+                .deparsePopedList(popedDosing),
+                "",
+                "# Create global event information -- popedObservations",
+                "popedObservations <- list(",
+                .deparsePopedList(popedObservations),
+                .design,
                 .ui$popedSettings,
                 .ui$popedParameters,
-                list(MCC_Dep=rxode2::rxGetControl(.ui, "MCC_Dep", NULL)))
-    .ret <- PopED::create.poped.database(.input,
-                                         ff_fun=.ui$popedFfFun,
-                                         fg_fun=.ui$popedFgFun,
-                                         fError_fun=.err)
+                "",
+                "# Now create the PopED database",
+                "db <- PopED::create.poped.database(c(designSpace, ",
+                "  list(settings=popedSettings, parameters=popedParameters)), ",
+                "  ff_fun=ffFun,",
+                "  fg_fun=fgFun,",
+                "  fError_fun=fepsFun)",
+                "",
+                "# Plot the model",
+                "plot_model_prediction(db, model_num_points=300, PI=TRUE)",
+                "",
+                "# Evaluate the design",
+                "evaluate_design(db)")
+      class(.ret) <- "babelmixr2popedScript"
+      if (isTRUE(.toScript)) {
+        return(.ret)
+      } else {
+        writeLines(.ret, con=.toScript)
+        return(.toScript)
+      }
+    }
+    .env <- new.env(parent=emptyenv())
+    .env$uid <- .poped$uid
+    .env$modelMT <- .poped$modelMT
+    .env$dataMT <- .poped$dataMT
+    .env$paramMT <- .poped$paramMT
 
-  } else {
-    .ln <- tolower(names(data))
-    .w <- which(.ln == "id")
-    if (length(.w) == 0L) {
-      data$id <- 1L
-    }
-    .ids <- unique(data$id)
-    .w <- which(.ln == "amt")
-    if (length(.w) == 1L) {
-      popedDosing <- lapply(seq_along(.ids),
-                            function(i) {
-                              .w <- which(data$id == .ids[i])
-                              .d <- data[.w,]
-                              .w <- which(.ln=="amt")
-                              .d <- .d[!is.na(.d[[.w]]), , drop=FALSE]
-                              .d
-                            })
-      popedObservations <- lapply(seq_along(.ids),
-                                 function(i) {
-                                   .w <- which(data$id == .ids[i])
-                                   .d <- data[.w,]
-                                   .w <- which(.ln=="amt")
-                                   .d <- .d[is.na(.d[[.w]]), , drop=FALSE]
-                                   .d <- .d[1,-which(.ln=="time"), drop=FALSE]
-                                   .d
-                                 })
-    } else {
-      popedDosing <- lapply(seq_along(.ids),
-                            function(i) {
-                              NULL
-                            })
-      popedObservations <- lapply(seq_along(.ids),
-                                 function(i) {
-                                   .w <- which(data$id == .ids[i])
-                                   .d <- data[.w,]
-                                   .d <- .d[1,-which(.ln=="time"), drop=FALSE]
-                                   .d
-                                 })
-    }
-    .ret <- c(.ui$popedScriptBeforeCtl,
-              "",
-              "# Create rxode2 control structure",
-              "popedRxControl <- list(",
-              .deparsePopedList(.ctl$rxControl),
-              "",
-              "# Create global event information -- popedDosing",
-              "popedDosing <- list(",
-              .deparsePopedList(popedDosing),
-              "",
-              "# Create global event information -- popedObservations",
-              "popedObservations <- list(",
-              .deparsePopedList(popedObservations),
-              .design,
-              .ui$popedSettings,
-              .ui$popedParameters,
-              "",
-              "# Now create the PopED database",
-              "db <- PopED::create.poped.database(c(designSpace, ",
-              "  list(settings=popedSettings, parameters=popedParameters)), ",
-              "  ff_fun=ffFun,",
-              "  fg_fun=fgFun,",
-              "  fError_fun=fepsFun)",
-              "",
-              "# Plot the model",
-              "plot_model_prediction(db, model_num_points=300, PI=TRUE)",
-              "",
-              "# Evaluate the design",
-              "evaluate_design(db)")
-    class(.ret) <- "babelmixr2popedScript"
-    if (isTRUE(.toScript)) {
-      return(.ret)
-    } else {
-      writeLines(.ret, con=.toScript)
-      return(.toScript)
-    }
+    .env$modelF <- .poped$modelF
+
+    .env$maxn <- .poped$maxn
+    .env$mt <- .poped$mt
+    .env$dataF0lst <- .poped$dataF0lst
+    .env$dataF00 <- .poped$dataF00
+    .env$dataF0 <- .poped$dataF0
+    .env$paramF <- .poped$paramF
+    # PopED environment needs:
+    # - control - popedControl
+    .env$control <- .ctl
+    .env$modelNumber <- .poped$modelNumber
+    .poped$modelNumber <- .poped$modelNumber + 1
+    # - rxControl
+    .env$rxControl <- .ctl$rxControl
+    .ret$babelmixr2 <- .env
+    .ret
   }
-  .env <- new.env(parent=emptyenv())
-  .env$uid <- .poped$uid
-  .env$modelMT <- .poped$modelMT
-  .env$dataMT <- .poped$dataMT
-  .env$paramMT <- .poped$paramMT
-
-  .env$modelF <- .poped$modelF
-
-  .env$maxn <- .poped$maxn
-  .env$mt <- .poped$mt
-  .env$dataF0lst <- .poped$dataF0lst
-  .env$dataF00 <- .poped$dataF00
-  .env$dataF0 <- .poped$dataF0
-  .env$paramF <- .poped$paramF
-  # PopED environment needs:
-  # - control - popedControl
-  .env$control <- .ctl
-  .env$modelNumber <- .poped$modelNumber
-  .poped$modelNumber <- .poped$modelNumber + 1
-  # - rxControl
-  .env$rxControl <- .ctl$rxControl
-  .ret$babelmixr2 <- .env
-  .ret
 }
 
 
