@@ -1052,10 +1052,10 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   if (length(.need) > 0) {
     if (is.null(a)) {
     } else if (is.list(a)) {
-      if (length(.a[, "ID"]) != 1) {
-        stop("when optimizing design elements, only one ID in the input data can be used",
-             call.=FALSE)
-      }
+      ## if (length(.a[, "ID"]) != 1) {
+      ##   stop("when optimizing design elements, only one ID in the input data can be used",
+      ##        call.=FALSE)
+      ## }
       .a <- setNames(as.vector(.a),colnames(.a))
       .a <- lapply(seq_along(a),
                    function(i) {
