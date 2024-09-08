@@ -2158,8 +2158,18 @@ popedControl <- function(stickyRecalcN=4,
   checkmate::assertIntegerish(Doptim_iter, any.missing=FALSE, len=1, lower=1)
   checkmate::assertIntegerish(iNumProcesses, any.missing=FALSE, len=1, lower=1)
 
-  checkmate::assertIntegerish(groupsize, any.missing=FALSE, len=1, lower=1, null.ok = TRUE)
-
+  if (is.matrix(groupsize)) {
+    .d <- dim(groupsize)
+    if (.d[2] != 1L) {
+      stop("groupsize one column matrix (try rbind(a, b, c))",
+           call.=FALSE)
+    }
+    for (i in 1:.d[1]) {
+      checkmate::assertIntegerish(groupsize[i], any.missing=FALSE, len=1, lower=1, .var.name = paste0("groupsize[", i, ", ]"))
+    }
+  } else {
+    checkmate::assertIntegerish(groupsize, any.missing=FALSE, len=1, lower=1, null.ok = TRUE)
+  }
   checkmate::assertLogical(bUseMemorySolver, any.missing=FALSE, len=1)
   checkmate::assertLogical(bGreedyGroupOpt, any.missing=FALSE, len=1)
   checkmate::assertLogical(EANumPoints, any.missing=FALSE, len=1)
