@@ -583,13 +583,13 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   .w <- which(.iniDf$condition == cnd & .iniDf$err == type)
   if (length(.w) != 1L) stop("could not determine cnd: ", cnd, " type: ", type, " for error model")
   .iniDf <- .iniDf[.w, ]
-  .eta <- .poped$eta + 1
+  .eta <- .poped$epsi + 1
   .n <- .iniDf$name
-  .est <- c(.poped$etaEst, setNames(c(.iniDf$est^2), .n))
-  .poped$etaNotfixed <- c(.poped$etaNotfixed,
+  .est <- c(.poped$epsiEst, setNames(c(.iniDf$est^2), .n))
+  .poped$epsiNotfixed <- c(.poped$epsiNotfixed,
                           setNames(1L - .iniDf$fix * 1L, .n))
-  .poped$etaEst <- .est
-  .poped$eta <- .eta
+  .poped$epsiEst <- .est
+  .poped$epsi <- .eta
   return(paste0("epsi[,", .eta, "]"))
 }
 
@@ -677,9 +677,9 @@ rxUiGet.popedFErrorFun  <- function(x, ...) {
     }
     return(f)
   } else {
-    .poped$eta <- 0
-    .poped$etaEst <- NULL
-    .poped$etaNotfixed <- NULL
+    .poped$epsi <- 0
+    .poped$epsiEst <- NULL
+    .poped$epsiNotfixed <- NULL
     .predDf <- .ui$predDf
     .ret <- lapply(seq_along(.predDf$cond),
                    function(c) {
@@ -940,7 +940,7 @@ rxUiGet.popedSigma <- function(x, ...) {
     return(1.0)
   } else {
     rxUiGet.popedFErrorFun(x, ...) # called for side effect
-    return(.poped$etaEst)
+    return(.poped$epsiEst)
   }
 }
 attr(rxUiGet.popedSigma, "desc") <- "PopED database $sigma"
@@ -952,7 +952,7 @@ rxUiGet.popedNotfixedSigma <- function(x, ...) {
     return(0L)
   } else {
     rxUiGet.popedFErrorFun(x, ...) # called for side effect
-    return(.poped$etaNotfixed)
+    return(.poped$epsiNotfixed)
   }
 }
 attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
@@ -1251,73 +1251,8 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
     .designSpace <- do.call(PopED::create_design_space,
                             c(list(design=.design), .designSpace1))
   }
-  if (checkmate::testIntegerish(maxn, lower=1, any.missing=FALSE, len=1)) {
-    .poped$maxn <- maxn
-  } else {
-    .poped$maxn <- max(.designSpace$design$ni)*length(ui$predDf$cond)
-  }
-
-  .rx <- .popedRxModel(ui, maxNumTime=.poped$maxn)
-  if (!attr(.rx, "mtime")) {
-    stop("mtime models are not supported yet",
-         call.=FALSE)
-  }
   .poped$mt <- .env$mt + 0.1
-  .rx <- eval(.rx)
-  .poped$modelMT <- .rx
-  .wamt <- which(.nd == "amt")
-  .wrate <- which(.nd == "rate")
-  .wdur <- which(.nd == "dur")
-  .wss <- which(.nd == "ss")
-  .wii <- which(.nd == "ii")
-  .waddl <- which(.nd == "addl")
-  # Create an empty database for solving > number of MT defined
-  .poped$dataF00 <- .data[1, ]
-  .poped$dataF0 <- do.call(rbind,
-                           lapply(.poped$uid,
-                                  function(id) {
-                                    .data <- .data[.data[[.wid]] == id &
-                                                     .data[[.wevid]] != 0,, drop = FALSE]
-                                  }))
-  .poped$dataF0lst <- list(.wamt=.wamt,
-                           .wrate=.wrate,
-                           .wdur=.wdur,
-                           .wss=.wss,
-                           .wii=.wii,
-                           .waddl=.waddl,
-                           .wevid=.wevid,
-                           .wid=.wid,
-                           .wtime=.wtime,
-                           .wcmt=.wcmt,
-                           .wdvid=.wdvid)
-  # Create a dataset without these design points with one observation
-  # 0.5 units after
-  .dat <- do.call(rbind,
-                  lapply(.poped$uid,
-                         function(id) {
-                           .data0 <- .data
-                           .data <- .data[.data[[.wid]] == id &
-                                            .data[[.wevid]] != 0,, drop = FALSE]
-                           .len <- length(.data[[.wid]])
-                           if (.len == 0L) {
-                             .data2 <- .data0[1, ]
-                           } else {
-                             .data2 <- .data[.len, ]
-                           }
-                           .data2[[.wtime]] <- .poped$mt
-                           .data2[[.wevid]] <- 0
-                           if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
-                           if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
-                           if (length(.wdur) == 1L) .data2[[.wdur]] <- NA
-                           if (length(.wss) == 1L) .data2[[.wss]] <- NA
-                           if (length(.wii) == 1L) .data2[[.wii]] <- NA
-                           if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
-                           rbind(.data, .data2)
-                         }))
-  .id <- as.integer(factor(paste(.dat[[.wid]])))
-  .dat <- .dat[, -.wid]
-  .dat$id <- .id
-  .poped$dataMT <- rxode2::etTrans(.dat, .poped$modelMT)
+  .fillInPopEdEnv(ui, .designSpace$design$ni, .data)
   .designSpace
 }
 
@@ -1449,93 +1384,309 @@ rxUiGet.popedSettings <- function(x, ...) {
   }
 }
 
-#' Setup the poped database
+#' Does the PopED control imply different sampling schedules/designs
 #'
-#' @param ui rxode2 ui function
-#' @param data babelmixr2 design data
-#' @param control PopED control
-#' @return PopED database
+#' @param control poped control object
+#' @return boolean, TRUE if different sampling schedules
+#' @noRd
 #' @author Matthew L. Fidler
-.setupPopEDdatabase <- function(ui, data, control) {
-  # PopED environment needs:
-  # - control - popedControl
-  .poped$control <- control
-  # - rxControl
-  .poped$rxControl <- control$rxControl
-  # - model -- rxode2 model (setup with .popedDataToDesignSpace)
-  # - data -- rxode2 data (setup with .popedDataToDesignSpace)
-  .ui <- rxode2::rxUiDecompress(rxode2::assertRxUi(ui))
-  # Set control options to be used within functions
-  .ctl <- control
-  class(.ctl) <- NULL
-  rxode2::rxSetControl(.ui, .ctl)
-  # To get the sigma estimates, this needs to be called before any of
-  # the other setup items
-  .err <- .ui$popedFErrorFun
-  .toScript <- rxode2::rxGetControl(.ui, "script", NULL)
-
-  .design <- .popedDataToDesignSpace(.ui, data,
-                                     time=rxode2::rxGetControl(.ui, "time", "time"),
-                                     timeLow=rxode2::rxGetControl(.ui, "low", "low"),
-                                     timeHi=rxode2::rxGetControl(.ui, "high", "high"),
-                                     id=rxode2::rxGetControl(.ui, "id", "id"),
-                                     returnList = !is.null(.toScript))
-  .poped$setup <- 0L
-  if (is.null(.toScript)) {
-    .input <- c(.design,
-                .ui$popedSettings,
-                .ui$popedParameters,
-                list(MCC_Dep=rxode2::rxGetControl(.ui, "MCC_Dep", NULL)))
-    .ret <- PopED::create.poped.database(.input,
-                                         ff_fun=.ui$popedFfFun,
-                                         fg_fun=.ui$popedFgFun,
-                                         fError_fun=.err)
-
-  } else {
-    .ln <- tolower(names(data))
-    .w <- which(.ln == "id")
-    if (length(.w) == 0L) {
-      data$id <- 1L
+.popedSeparateSampling <- function(control) {
+  if (is.null(control$a)) return(FALSE)
+  if (is.list(control$a)) {
+    .hasId <- vapply(seq_along(control$a),
+                        function(i) {
+                          .cur <- control$a[[i]]
+                          if (is.na(.cur["ID"])) return(FALSE)
+                          TRUE
+                        }, logical(1), USE.NAMES=FALSE)
+    if (all(.hasId)) {
+      return(TRUE)
+    } else if (all(!.hasId)) {
+      return(FALSE)
+    } else {
+      stop("the covariate list 'a' in the `popedControl()` must either all have an ID, or none of the elements can have an ID",
+           call.=FALSE)
     }
-    .ids <- unique(data$id)
-    .w <- which(.ln == "amt")
+  }
+  FALSE
+}
+
+.fillInPopEdEnv <- function(ui, ni, data) {
+  .nd <- tolower(names(data))
+  .data <- data
+  .maxn <- rxode2::rxGetControl(ui, "maxn", NULL)
+  if (checkmate::testIntegerish(.maxn, lower=1, any.missing=FALSE, len=1)) {
+    .poped$maxn <- .maxn
+  } else {
+    .poped$maxn <- max(ni)*length(ui$predDf$cond)
+  }
+  .rx <- .popedRxModel(ui, maxNumTime=.poped$maxn)
+  if (!attr(.rx, "mtime")) {
+    stop("mtime models are not supported yet",
+         call.=FALSE)
+  }
+  .rx <- eval(.rx)
+  .poped$modelMT <- .rx
+  .wamt <- which(.nd == "amt")
+  .wrate <- which(.nd == "rate")
+  .wdur <- which(.nd == "dur")
+  .wss <- which(.nd == "ss")
+  .wii <- which(.nd == "ii")
+  .waddl <- which(.nd == "addl")
+  .wid <- which(.nd == "id")
+  .wevid <- which(.nd == "evid")
+  .wtime <- which(.nd == "time")
+  .wcmt <- which(.nd == "cmt")
+  .wdvid <- which(.nd == "dvid")
+  # Create an empty database for solving > number of MT defined
+  .poped$dataF00 <- .data[1, ]
+  .poped$dataF0 <- do.call(rbind,
+                           lapply(.poped$uid,
+                                  function(id) {
+                                    .data <- .data[.data[[.wid]] == id &
+                                                     .data[[.wevid]] != 0,, drop = FALSE]
+                                  }))
+  .poped$dataF0lst <- list(.wamt=.wamt,
+                           .wrate=.wrate,
+                           .wdur=.wdur,
+                           .wss=.wss,
+                           .wii=.wii,
+                           .waddl=.waddl,
+                           .wevid=.wevid,
+                           .wid=.wid,
+                           .wtime=.wtime,
+                           .wcmt=.wcmt,
+                           .wdvid=.wdvid)
+  # Create a dataset without these design points with one observation
+  # 0.5 units after
+  .dat <- do.call(rbind,
+                  lapply(.poped$uid,
+                         function(id) {
+                           .data0 <- .data
+                           .data <- .data[.data[[.wid]] == id &
+                                            .data[[.wevid]] != 0,, drop = FALSE]
+                           .len <- length(.data[[.wid]])
+                           if (.len == 0L) {
+                             .data2 <- .data0[1, ]
+                           } else {
+                             .data2 <- .data[.len, ]
+                           }
+                           .data2[[.wtime]] <- .poped$mt
+                           .data2[[.wevid]] <- 0
+                           if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
+                           if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
+                           if (length(.wdur) == 1L) .data2[[.wdur]] <- NA
+                           if (length(.wss) == 1L) .data2[[.wss]] <- NA
+                           if (length(.wii) == 1L) .data2[[.wii]] <- NA
+                           if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
+                           rbind(.data, .data2)
+                         }))
+  .id <- as.integer(factor(paste(.dat[[.wid]])))
+  .dat <- .dat[, -.wid]
+  .dat$id <- .id
+  .poped$dataMT <- rxode2::etTrans(.dat, .poped$modelMT)
+
+}
+
+.popedCreateSeparateSamplingDatabase <- function(ui, data, .ctl, .err) {
+  .a <- rxode2::rxGetControl(ui, "a", list())
+  # Get the observation data
+  .data <- data
+  .nd <- tolower(names(data))
+  .wid <- which(.nd == "id")
+  if (length(.wid) != 1L) {
+    stop("could not find the required data item: id",
+         call.=FALSE)
+  }
+  .wevid <- which(.nd == "evid")
+  if (length(.wevid) == 0L) {
+    .minfo("could not find evid, assuming all are design points")
+    .data$evid <- 0
+  }
+  .wtime <- which(.nd == "time")
+  if (length(.wtime) != 1L) {
+    stop("could not find the required data item: time",
+         call.=FALSE)
+  }
+  .multipleEndpoint <- FALSE
+  .wdvid <- NA_integer_
+  if (length(ui$predDf$cond) > 1L) {
+    .multipleEndpoint <- TRUE
+    .wdvid <- which(.nd == "dvid")
+    if (length(.wdvid) != 1L) {
+      stop("could not find the required data for multiple endpoint models: dvid",
+           call.=FALSE)
+    }
+    .dvids <- sort(unique(.data[[.wdvid]]))
+    if (!all(seq_along(.dvids) == .ids)) {
+      stop("DVIDs must be integers that are sequential in the event dataset and start with 1",
+           call.=FALSE)
+    }
+  }
+  .obs <- .data[.data[[.wevid]] == 0,]
+
+  # Get unique IDs
+  .poped$uid <- .ids <- unique(.obs[[.wid]])
+  if (!all(seq_along(.ids) == .ids)) {
+    stop("IDs must be sequential integers in the event dataset",
+         call.=FALSE)
+  }
+  # Now create the matrices necessary by first determining the maximum
+  # number of samples
+  .env <- new.env(parent=emptyenv())
+  .env$maxNumSamples <- 0L
+  .env$idSamples <- vector("list", length(.ids))
+  .env$idDvid <- vector("list", length(.ids))
+  lapply(seq_along(.a),
+         function(i) {
+           .cur <- .a[[i]]
+           .id <- .cur["ID"]
+           if (!(.id %in% .ids)) {
+             stop(sprintf("group %d requests ID=%d, but this ID is not in the dataset", i, .id),
+                  call.=FALSE)
+           }
+           if (is.null(.env$idSamples[[.id]])) {
+             .curData <- .obs[.obs[[.wid]] == .id, ]
+             .env$idSamples[[.id]] <- .curData[[.wtime]]
+             if (!is.na(.wdvid)) {
+               .env$idDvid[[.id]] <- .curData[[.wdvid]]
+             }
+             if (length(.env$idSamples[[.id]]) > .env$maxNumSamples) {
+               .env$maxNumSamples <- length(.env$idSamples[[.id]])
+             }
+           }
+         })
+
+  # Now that we have calculated the maximum number of samples, we can
+  # create the matrices for xt (the sampling time-points), G_xt (the
+  # grouping of sample points), ni (the maximum number of samples per
+  # group). If this is a multiple endpoint model, the model_switch
+  # will be calculated as well.
+  .env$xt <- PopED::zeros(length(.a), .env$maxNumSamples)
+  .env$xtT <- paste0("xt <- PopED::zeros(", paste0(length(.a)), ", ", .env$maxNumSamples, ")")
+  .env$G_xt <- PopED::zeros(length(.a), .env$maxNumSamples)
+  .env$G_xtT <- paste0("G_xt <- PopED::zeros(", paste0(length(.a)), ", ", .env$maxNumSamples, ")")
+  .env$G_xtId <- vector("list", length(.ids))
+  .env$G_xtMax <- 0L
+  .env$ni <- PopED::zeros(length(.a), 1L)
+  .env$niT <- paste0("ni <- PopED::zeros(", paste0(length(.a)), ", 1)")
+  .env$model_switch <- PopED::zeros(length(.a), .env$maxNumSamples)
+  .env$model_switchT <- paste0("model_switch <- PopED::zeros(", paste0(length(.a)), ", ", .env$maxNumSamples, ")")
+  .env$mt <- -Inf
+  lapply(seq_along(.a),
+         function(i) {
+           .cur <- .a[[i]]
+           .id <- .cur["ID"]
+           .time <- .env$idSamples[[.id]]
+           .mt <- max(.time)
+           if (.env$mt < .mt) {
+             .env$mt <- .mt
+           }
+           .env$xt[i, seq_along(.time)] <- .time
+           .env$xtT <- c(.env$xtT,
+                         paste0("xt[", i, ", ", deparse1(seq_along(.time)),
+                                "] <- ", paste(deparse(.time), collapse="\n")))
+           if (!is.na(.wdvid)) {
+             .env$model_switch[i, seq_along(.time)] <- .env$idDvid[[.id]]
+             .env$model_switchT <- c(.env$model_switchT,
+                                     paste0("model_switch[", i, ", ", deparse1(seq_along(.time)),
+                                            "] <- ",
+                                            paste(deparse(.env$idDvid[[.id]]),
+                                                  collapse="\n")))
+           }
+           if (is.null(.env$G_xtId[[.id]])) {
+             .env$G_xtId[[.id]] <- seq_along(.time) + .env$G_xtMax
+             .env$G_xtMax <- .env$G_xtMax +
+               .env$G_xtId[[.id]][length(.env$G_xtId[[.id]])]
+           }
+           .env$ni[i] <- length(.time)
+           .env$niT <- c(.env$niT,
+                         paste0("ni[", i, "] <- ", length(.time)))
+           .env$G_xt[i, seq_along(.time)] <- .env$G_xtId[[.id]]
+           .env$G_xtT <- c(.env$G_xtT,
+                           paste0("G_xt[", i, ", ", deparse1(seq_along(.time)),
+                                  "] <- ", paste(deparse(.env$G_xtId[[.id]]),
+                                                 collapse="\n")))
+         })
+  .poped$mt <- .env$mt + 0.1
+  .fillInPopEdEnv(ui, .env$ni, .data)
+
+  .toScript <- rxode2::rxGetControl(ui, "script", NULL)
+  if (is.null(.toScript)) {
+    if (!.multipleEndpoint) .env$model_switch <- NULL
+    .d <- ui$popedD
+    .NumRanEff <- length(.d)
+    .bpop <- ui$popedBpop
+    .nbpop <- length(.bpop)
+    .ret <- PopED::create.poped.database(ff_fun=ui$popedFfFun,
+                                         fError_fun=.err,
+                                         fg_fun=ui$popedFgFun,
+
+                                         groupsize=rxode2::rxGetControl(ui, "groupsize", 20),
+
+                                         m=length(.a),
+
+                                         sigma=ui$popedSigma,
+                                         notfixed_sigma=ui$popedNotfixedSigma,
+
+                                         bpop=.bpop,
+                                         nbpop=.nbpop,
+
+                                         d=.d,
+                                         notfixed_d=ui$popedNotfixedD,
+
+                                         notfixed_bpop=ui$popedNotfixedBpop,
+                                         NumRanEff=.NumRanEff,
+                                         covd=ui$popedCovd,
+                                         notfixed_covd=ui$popedNotfixedCovd,
+                                         NumDocc=0,
+                                         NumOcc=0,
+                                         xt=.env$xt,
+                                         model_switch=.env$model_switch,
+                                         ni=.env$ni,
+                                         bUseGrouped_xt=1,
+                                         G_xt=.env$G_xt,
+                                         a=.a)
+    return(.appendPopedProps(.ret, .ctl))
+  } else {
+    .w <- which(.nd == "evid")
     if (length(.w) == 1L) {
       popedDosing <- lapply(seq_along(.ids),
                             function(i) {
                               .w <- which(data$id == .ids[i])
                               .d <- data[.w,]
-                              .w <- which(.ln=="amt")
-                              .d <- .d[!is.na(.d[[.w]]), , drop=FALSE]
+                              .w <- which(.nd=="evid")
+                              .d <- .d[.d[[.w]] != 0, , drop=FALSE]
+                              .d <- .d[.d[[.w]] != 2, , drop=FALSE]
                               .d
                             })
       popedObservations <- lapply(seq_along(.ids),
-                                 function(i) {
-                                   .w <- which(data$id == .ids[i])
-                                   .d <- data[.w,]
-                                   .w <- which(.ln=="amt")
-                                   .d <- .d[is.na(.d[[.w]]), , drop=FALSE]
-                                   .d <- .d[1,-which(.ln=="time"), drop=FALSE]
-                                   .d
-                                 })
+                                  function(i) {
+                                    .w <- which(data$id == .ids[i])
+                                    .d <- data[.w,]
+                                    .w <- which(.nd== "evid")
+                                    .d <- .d[.d[[.w]] == 0, , drop=FALSE]
+                                    .d <- .d[1,-which(.nd == "time"), drop=FALSE]
+                                    .d
+                                  })
     } else {
       popedDosing <- lapply(seq_along(.ids),
                             function(i) {
                               NULL
                             })
       popedObservations <- lapply(seq_along(.ids),
-                                 function(i) {
-                                   .w <- which(data$id == .ids[i])
-                                   .d <- data[.w,]
-                                   .d <- .d[1,-which(.ln=="time"), drop=FALSE]
-                                   .d
-                                 })
+                                  function(i) {
+                                    .w <- which(data$id == .ids[i])
+                                    .d <- data[.w,]
+                                    .d <- .d[1,-which(.nd == "time"), drop=FALSE]
+                                    .d
+                                  })
     }
-    .ret <- c(.ui$popedScriptBeforeCtl,
+    .ret <- c(ui$popedScriptBeforeCtl,
               "",
               "# Create rxode2 control structure",
               "popedRxControl <- list(",
               .deparsePopedList(.ctl$rxControl),
-              "",
               "# Create global event information -- popedDosing",
               "popedDosing <- list(",
               .deparsePopedList(popedDosing),
@@ -1543,16 +1694,43 @@ rxUiGet.popedSettings <- function(x, ...) {
               "# Create global event information -- popedObservations",
               "popedObservations <- list(",
               .deparsePopedList(popedObservations),
-              .design,
-              .ui$popedSettings,
-              .ui$popedParameters,
+              "",
+              "# Create xt matrix",
+              .env$xtT)
+    if (.multipleEndpoint) {
+      .ret <- c(.ret,
+                "",
+                "# Create model_switch matrix",
+                .env$model_switchT)
+    }
+    .ret <- c(.ret,
+              "",
+              "# Create ni matrix",
+              .env$niT,
+              "",
+              "# Create G_xt matrix",
+              .env$G_xtT,
+              ui$popedSettings,
+              ui$popedParameters,
               "",
               "# Now create the PopED database",
-              "db <- PopED::create.poped.database(c(designSpace, ",
-              "  list(settings=popedSettings, parameters=popedParameters)), ",
+              "db <- PopED::create.poped.database(popedInput=list(settings=popedSettings, parameters=popedParameters), ",
               "  ff_fun=ffFun,",
               "  fg_fun=fgFun,",
-              "  fError_fun=fepsFun)",
+              "  fError_fun=fepsFun,",
+              paste0("  m=", length(.a), ",      #number of groups"),
+              "  x=xt,      #time points")
+    if (.multipleEndpoint) {
+      .ret <- c(.ret,
+                "  model_switch=model_switch,      #model switch")
+    }
+    .ret <- c(.ret,
+              "  ni= ni,      #number of samples per group",
+              " bUseGrouped_xt=1,     #use grouped time points",
+              " G_xt=G_xt,      #grouped time points",
+              " a = list(",
+              paste0(.deparsePopedList(.a), ","),
+              "  )",
               "",
               "# Plot the model",
               "plot_model_prediction(db, model_num_points=300, PI=TRUE)",
@@ -1567,6 +1745,19 @@ rxUiGet.popedSettings <- function(x, ...) {
       return(.toScript)
     }
   }
+
+}
+#' Creates an environment with the currently calculated PopED properties
+#'
+#' This is then appended to the list ret under $babelmixr2 for a
+#' PopED/babelmixr2 database
+#'
+#' @param ret PopED database to append the properties
+#' @param .ctl PopED control
+#' @return PopED database with the properties appended
+#' @noRd
+#' @author Matthew L. Fidler
+.appendPopedProps <- function(ret, .ctl) {
   .env <- new.env(parent=emptyenv())
   .env$uid <- .poped$uid
   .env$modelMT <- .poped$modelMT
@@ -1588,8 +1779,133 @@ rxUiGet.popedSettings <- function(x, ...) {
   .poped$modelNumber <- .poped$modelNumber + 1
   # - rxControl
   .env$rxControl <- .ctl$rxControl
-  .ret$babelmixr2 <- .env
-  .ret
+  ret$babelmixr2 <- .env
+  ret
+}
+
+#' Setup the poped database
+#'
+#' @param ui rxode2 ui function
+#' @param data babelmixr2 design data
+#' @param control PopED control
+#' @return PopED database
+#' @author Matthew L. Fidler
+.setupPopEDdatabase <- function(ui, data, control) {
+  # PopED environment needs:
+  # - control - popedControl
+  .poped$control <- control
+  # - rxControl
+  .poped$rxControl <- control$rxControl
+  # - model -- rxode2 model (setup with .popedDataToDesignSpace)
+  # - data -- rxode2 data (setup with .popedDataToDesignSpace)
+  .ui <- rxode2::rxUiDecompress(rxode2::assertRxUi(ui))
+  # Set control options to be used within functions
+  .ctl <- control
+  class(.ctl) <- NULL
+  rxode2::rxSetControl(.ui, .ctl)
+  .toScript <- rxode2::rxGetControl(.ui, "script", NULL)
+  # To get the sigma estimates, this needs to be called before any of
+  # the other setup items
+  .err <- .ui$popedFErrorFun
+  if (.popedSeparateSampling(.ctl)) {
+    return(.popedCreateSeparateSamplingDatabase(.ui, data, .ctl, .err))
+  } else {
+    .design <- .popedDataToDesignSpace(.ui, data,
+                                       time=rxode2::rxGetControl(.ui, "time", "time"),
+                                       timeLow=rxode2::rxGetControl(.ui, "low", "low"),
+                                       timeHi=rxode2::rxGetControl(.ui, "high", "high"),
+                                       id=rxode2::rxGetControl(.ui, "id", "id"),
+                                       returnList = !is.null(.toScript))
+    .poped$setup <- 0L
+    if (is.null(.toScript)) {
+      .input <- c(.design,
+                  .ui$popedSettings,
+                  .ui$popedParameters,
+                  list(MCC_Dep=rxode2::rxGetControl(.ui, "MCC_Dep", NULL)))
+      .ret <- PopED::create.poped.database(.input,
+                                           ff_fun=.ui$popedFfFun,
+                                           fg_fun=.ui$popedFgFun,
+                                           fError_fun=.err)
+
+    } else {
+      .ln <- tolower(names(data))
+      .w <- which(.ln == "id")
+      if (length(.w) == 0L) {
+        data$id <- 1L
+      }
+      .ids <- unique(data$id)
+      .w <- which(.ln == "evid")
+      if (length(.w) == 1L) {
+        popedDosing <- lapply(seq_along(.ids),
+                              function(i) {
+                                .w <- which(data$id == .ids[i])
+                                .d <- data[.w,]
+                                .w <- which(.ln=="evid")
+                                .d <- .d[.d[[.w]] != 0, , drop=FALSE]
+                                .d <- .d[.d[[.w]] != 2, , drop=FALSE]
+                                .d
+                              })
+        popedObservations <- lapply(seq_along(.ids),
+                                    function(i) {
+                                      .w <- which(data$id == .ids[i])
+                                      .d <- data[.w,]
+                                      .w <- which(.ln=="evid")
+                                      .d <- .d[.d[[.w]] == 0, , drop=FALSE]
+                                      .d <- .d[1,-which(.ln=="time"), drop=FALSE]
+                                      .d
+                                    })
+      } else {
+        popedDosing <- lapply(seq_along(.ids),
+                              function(i) {
+                                NULL
+                              })
+        popedObservations <- lapply(seq_along(.ids),
+                                    function(i) {
+                                      .w <- which(data$id == .ids[i])
+                                      .d <- data[.w,]
+                                      .d <- .d[1,-which(.ln=="time"), drop=FALSE]
+                                      .d
+                                    })
+      }
+      .ret <- c(.ui$popedScriptBeforeCtl,
+                "",
+                "# Create rxode2 control structure",
+                "popedRxControl <- list(",
+                .deparsePopedList(.ctl$rxControl),
+                "",
+                "# Create global event information -- popedDosing",
+                "popedDosing <- list(",
+                .deparsePopedList(popedDosing),
+                "",
+                "# Create global event information -- popedObservations",
+                "popedObservations <- list(",
+                .deparsePopedList(popedObservations),
+                .design,
+                .ui$popedSettings,
+                .ui$popedParameters,
+                "",
+                "# Now create the PopED database",
+                "db <- PopED::create.poped.database(c(designSpace, ",
+                "  list(settings=popedSettings, parameters=popedParameters)), ",
+                "  ff_fun=ffFun,",
+                "  fg_fun=fgFun,",
+                "  fError_fun=fepsFun)",
+                "",
+                "# Plot the model",
+                "plot_model_prediction(db, model_num_points=300, PI=TRUE)",
+                "",
+                "# Evaluate the design",
+                "evaluate_design(db)")
+      class(.ret) <- "babelmixr2popedScript"
+      if (isTRUE(.toScript)) {
+        return(.ret)
+      } else {
+        writeLines(.ret, con=.toScript)
+        return(.toScript)
+      }
+    }
+    .appendPopedProps(.ret, .ctl)
+  }
 }
 
 
