@@ -1477,7 +1477,11 @@ rxUiGet.popedSettings <- function(x, ...) {
 }
 
 .popedCreateSeparateSamplingDatabase <- function(ui, data) {
-  .a <- getRxControl(ui, "a", list())
+  browser()
+  # To get the sigma estimates, this needs to be called before any of
+  # the other setup items
+  .err <- .ui$popedFErrorFun
+  .a <- rxode2::rxGetControl(ui, "a", list())
   # Get the observation data
   .data <- data
   .nd <- tolower(names(data))
@@ -1520,6 +1524,7 @@ rxUiGet.popedSettings <- function(x, ...) {
   }
   # Now create the matrices necessary by first determining the maximum
   # number of samples
+  .env <- new.env(parent=emptyenv())
   .env$maxNumSamples <- 0L
   .env$idSamples <- vector("list", length(.ids))
   .env$idDvid <- vector("list", length(.ids))
@@ -1549,19 +1554,31 @@ rxUiGet.popedSettings <- function(x, ...) {
   # group). If this is a multiple endpoint model, the model_switch
   # will be calculated as well.
   .env$xt <- PopED::zeros(length(.a), .env$maxNumSamples)
+  .env$xtT <- paste0("xt <- PopED::zeros(", paste0(length(.a)), ", ", .env$maxNumSamples, ")")
   .env$G_xt <- PopED::zeros(length(.a), .env$maxNumSamples)
+  .env$G_xtT <- paste0("G_xt <- PopED::zeros(", paste0(length(.a)), ", ", .env$maxNumSamples, ")")
   .env$G_xtId <- vector("list", length(.ids))
   .env$G_xtMax <- 0L
   .env$ni <- PopED::zeros(length(.a), 1L)
+  .env$niT <- paste0("ni <- PopED::zeros(", paste0(length(.a)), ", 1)")
   .env$model_switch <- PopED::zeros(length(.a), .env$maxNumSamples)
+  .env$model_switchT <- paste0("model_switch <- PopED::zeros(", paste0(length(.a)), ", ", .env$maxNumSamples, ")")
   lapply(seq_along(.a),
          function(i) {
            .cur <- .a[[i]]
            .id <- .cur["ID"]
            .time <- .env$idSamples[[.id]]
            .env$xt[i, seq_along(.time)] <- .time
+           .env$xtT <- c(.env$xtT,
+                         paste0("xt[", i, ", ", deparse1(seq_along(.time)),
+                                "] <- ", paste(deparse(.time), collapse="\n")))
            if (!is.na(.wdvid)) {
              .env$model_switch[i, seq_along(.time)] <- .env$idDvid[[.id]]
+             .env$model_switchT <- c(.env$model_switchT,
+                                     paste0("model_switch[", i, ", ", deparse1(seq_along(.time)),
+                                            "] <- ",
+                                            paste(deparse(.env$idDvid[[.id]]),
+                                                  collapse="\n")))
            }
            if (is.null(.env$G_xtId[[.id]])) {
              .env$G_xtId[[.id]] <- seq_along(.time) + .env$G_xtMax
@@ -1569,8 +1586,130 @@ rxUiGet.popedSettings <- function(x, ...) {
                .env$G_xtId[[.id]][length(.env$G_xtId[[.id]])]
            }
            .env$ni[i] <- length(.time)
+           .env$niT <- c(.env$niT,
+                         paste0("ni[", i, "] <- ", length(.time)))
            .env$G_xt[i, seq_along(.time)] <- .env$G_xtId[[.id]]
+           .env$G_xtT <- c(.env$G_xtT,
+                           paste0("G_xt[", i, ", ", deparse1(seq_along(.time)),
+                                  "] <- ", paste(deparse(.env$G_xtId[[.id]]),
+                                                 collapse="\n")))
          })
+  .toScript <- rxode2::rxGetControl(.ui, "script", NULL)
+  if (is.null(.toScript)) {
+    .input <- c(.ui$popedSettings,
+                .ui$popedParameters,
+                list(MCC_Dep=rxode2::rxGetControl(.ui, "MCC_Dep", NULL)))
+    if (!.multipleEndpoint) .env$model_switch <- NULL
+    .ret <- PopED::create.poped.database(.input,
+                                         ff_fun=.ui$popedFfFun,
+                                         fg_fun=.ui$popedFgFun,
+                                         fError_fun=.err,
+                                         groupsize=rxode2::rxGetControl(.ui, "groupsize", 20),
+                                         m=length(.a),
+                                         xt=.env$xt,
+                                         ni=.env$ni,
+                                         bUseGrouped_xt=1,
+                                         G_xt=.env$G_xt,
+                                         model_switch=.env$model_switch)
+    return(.ret)
+  } else {
+    .w <- which(.nd == "evid")
+    if (length(.w) == 1L) {
+      popedDosing <- lapply(seq_along(.ids),
+                            function(i) {
+                              .w <- which(data$id == .ids[i])
+                              .d <- data[.w,]
+                              .w <- which(.nd=="evid")
+                              .d <- .d[.d[[.w]] != 0, , drop=FALSE]
+                              .d <- .d[.d[[.w]] != 2, , drop=FALSE]
+                              .d
+                            })
+      popedObservations <- lapply(seq_along(.ids),
+                                  function(i) {
+                                    .w <- which(data$id == .ids[i])
+                                    .d <- data[.w,]
+                                    .w <- which(.nd== "evid")
+                                    .d <- .d[.d[[.w]] == 0, , drop=FALSE]
+                                    .d <- .d[1,-which(.nd == "time"), drop=FALSE]
+                                    .d
+                                  })
+    } else {
+      popedDosing <- lapply(seq_along(.ids),
+                            function(i) {
+                              NULL
+                            })
+      popedObservations <- lapply(seq_along(.ids),
+                                  function(i) {
+                                    .w <- which(data$id == .ids[i])
+                                    .d <- data[.w,]
+                                    .d <- .d[1,-which(.nd == "time"), drop=FALSE]
+                                    .d
+                                  })
+    }
+    .ret <- c(.ui$popedScriptBeforeCtl,
+              "",
+              "# Create rxode2 control structure",
+              "popedRxControl <- list(",
+              .deparsePopedList(.ctl$rxControl),
+              "# Create global event information -- popedDosing",
+              "popedDosing <- list(",
+              .deparsePopedList(popedDosing),
+              "",
+              "# Create global event information -- popedObservations",
+              "popedObservations <- list(",
+              .deparsePopedList(popedObservations),
+              "",
+              "# Create xt matrix",
+              .env$xtT)
+    if (.multipleEndpoint) {
+      .ret <- c(.ret,
+                "",
+                "# Create model_switch matrix",
+                .env$model_switchT)
+    }
+    .ret <- c(.ret,
+              "",
+              "# Create ni matrix",
+              .env$niT,
+              "",
+              "# Create G_xt matrix",
+              .env$G_xtT,
+              .ui$popedSettings,
+              .ui$popedParameters,
+              "",
+              "# Now create the PopED database",
+              "db <- PopED::create.poped.database(popedInput=list(settings=popedSettings, parameters=popedParameters), ",
+              "  ff_fun=ffFun,",
+              "  fg_fun=fgFun,",
+              "  fError_fun=fepsFun,",
+              paste0("  m=", length(.a), ",      #number of groups"),
+              "  x=xt,      #time points")
+    if (.multipleEndpoint) {
+      .ret <- c(.ret,
+                "  model_switch=model_switch,      #model switch")
+    }
+    .ret <- c(.ret,
+              "  ni= ni,      #number of samples per group",
+              " bUseGrouped_xt=1,     #use grouped time points",
+              " G_xt=G_xt,      #grouped time points",
+              " a = list(",
+              paste0(.deparsePopedList(.a), ","),
+              "  )",
+              "",
+              "# Plot the model",
+              "plot_model_prediction(db, model_num_points=300, PI=TRUE)",
+              "",
+              "# Evaluate the design",
+              "evaluate_design(db)")
+    class(.ret) <- "babelmixr2popedScript"
+    if (isTRUE(.toScript)) {
+      return(.ret)
+    } else {
+      writeLines(.ret, con=.toScript)
+      return(.toScript)
+    }
+  }
+
 }
 
 #' Setup the poped database
@@ -1595,8 +1734,7 @@ rxUiGet.popedSettings <- function(x, ...) {
   rxode2::rxSetControl(.ui, .ctl)
   .toScript <- rxode2::rxGetControl(.ui, "script", NULL)
   if (.popedSeparateSampling(.ctl)) {
-    stop("Separate sampling schedules are not supported yet",
-         call.=FALSE)
+    return(.popedCreateSeparateSamplingDatabase(.ui, data))
   } else {
     # To get the sigma estimates, this needs to be called before any of
     # the other setup items
@@ -1626,22 +1764,23 @@ rxUiGet.popedSettings <- function(x, ...) {
         data$id <- 1L
       }
       .ids <- unique(data$id)
-      .w <- which(.ln == "amt")
+      .w <- which(.ln == "evid")
       if (length(.w) == 1L) {
         popedDosing <- lapply(seq_along(.ids),
                               function(i) {
                                 .w <- which(data$id == .ids[i])
                                 .d <- data[.w,]
-                                .w <- which(.ln=="amt")
-                                .d <- .d[!is.na(.d[[.w]]), , drop=FALSE]
+                                .w <- which(.ln=="evid")
+                                .d <- .d[.d[[.w]] != 0, , drop=FALSE]
+                                .d <- .d[.d[[.w]] != 2, , drop=FALSE]
                                 .d
                               })
         popedObservations <- lapply(seq_along(.ids),
                                     function(i) {
                                       .w <- which(data$id == .ids[i])
                                       .d <- data[.w,]
-                                      .w <- which(.ln=="amt")
-                                      .d <- .d[is.na(.d[[.w]]), , drop=FALSE]
+                                      .w <- which(.ln=="evid")
+                                      .d <- .d[.d[[.w]] == 0, , drop=FALSE]
                                       .d <- .d[1,-which(.ln=="time"), drop=FALSE]
                                       .d
                                     })
