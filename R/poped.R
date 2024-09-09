@@ -1411,6 +1411,14 @@ rxUiGet.popedSettings <- function(x, ...) {
   FALSE
 }
 
+#' Fill in the required poped values for either single design solve or
+#' multiple design solve
+#'
+#' @param ui rxode2 ui
+#' @param ni number of points
+#' @param data design data
+#' @return nothing, called for side effects
+#' @author Matthew L. Fidler
 .fillInPopEdEnv <- function(ui, ni, data) {
   .nd <- tolower(names(data))
   .data <- data
@@ -1485,7 +1493,6 @@ rxUiGet.popedSettings <- function(x, ...) {
   .dat <- .dat[, -.wid]
   .dat$id <- .id
   .poped$dataMT <- rxode2::etTrans(.dat, .poped$modelMT)
-
 }
 
 .popedCreateSeparateSamplingDatabase <- function(ui, data, .ctl, .err) {
@@ -1518,7 +1525,7 @@ rxUiGet.popedSettings <- function(x, ...) {
            call.=FALSE)
     }
     .dvids <- sort(unique(.data[[.wdvid]]))
-    if (!all(seq_along(.dvids) == .ids)) {
+    if (!all(seq_along(.dvids) == .dvids)) {
       stop("DVIDs must be integers that are sequential in the event dataset and start with 1",
            call.=FALSE)
     }
