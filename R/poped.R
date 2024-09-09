@@ -1476,6 +1476,103 @@ rxUiGet.popedSettings <- function(x, ...) {
   FALSE
 }
 
+.popedCreateSeparateSamplingDatabase <- function(ui, data) {
+  .a <- getRxControl(ui, "a", list())
+  # Get the observation data
+  .data <- data
+  .nd <- tolower(names(data))
+  .wid <- which(.nd == "id")
+  if (length(.wid) != 1L) {
+    stop("could not find the required data item: id",
+         call.=FALSE)
+  }
+  .wevid <- which(.nd == "evid")
+  if (length(.wevid) == 0L) {
+    .minfo("could not find evid, assuming all are design points")
+    .data$evid <- 0
+  }
+  .wtime <- which(.nd == "time")
+  if (length(.wtime) != 1L) {
+    stop("could not find the required data item: time",
+         call.=FALSE)
+  }
+  .multipleEndpoint <- FALSE
+  .wdvid <- NA_integer_
+  if (length(ui$predDf$cond) > 1L) {
+    .multipleEndpoint <- TRUE
+    .wdvid <- which(.nd == "dvid")
+    if (length(.wdvid) != 1L) {
+      stop("could not find the required data for multiple endpoint models: dvid",
+           call.=FALSE)
+    }
+    .dvids <- sort(unique(.data[[.wdvid]]))
+    if (!all(seq_along(.dvids) == .ids)) {
+      stop("DVIDs must be integers that are sequential in the event dataset and start with 1",
+           call.=FALSE)
+    }
+  }
+  .obs <- .data[.data[[.wevid]] == 0,]
+  # Get unique IDs
+  .ids <- unique(.obs[[.wid]])
+  if (!all(seq_along(.ids) == .ids)) {
+    stop("IDs must be sequential integers in the event dataset",
+         call.=FALSE)
+  }
+  # Now create the matrices necessary by first determining the maximum
+  # number of samples
+  .env$maxNumSamples <- 0L
+  .env$idSamples <- vector("list", length(.ids))
+  .env$idDvid <- vector("list", length(.ids))
+  lapply(seq_along(.a),
+         function(i) {
+           .cur <- .a[[i]]
+           .id <- .cur["ID"]
+           if (!(.id %in% .ids)) {
+             stop(sprintf("group %d requests ID=%d, but this ID is not in the dataset", i, .id),
+                  call.=FALSE)
+           }
+           if (is.null(.env$idSamples[[.id]])) {
+             .curData <- .obs[.obs[[.wid]] == .id, ]
+             .env$idSamples[[.id]] <- .curData[[.wtime]]
+             if (!is.na(.wdvid)) {
+               .env$idDvid[[.id]] <- .curData[[.wdvid]]
+             }
+             if (length(.env$idSamples[[.id]]) > .env$maxNumSamples) {
+               .env$maxNumSamples <- length(.env$idSamples[[.id]])
+             }
+           }
+         })
+
+  # Now that we have calculated the maximum number of samples, we can
+  # create the matrices for xt (the sampling time-points), G_xt (the
+  # grouping of sample points), ni (the maximum number of samples per
+  # group). If this is a multiple endpoint model, the model_switch
+  # will be calculated as well.
+  .env$xt <- PopED::zeros(length(.a), .env$maxNumSamples)
+  .env$G_xt <- PopED::zeros(length(.a), .env$maxNumSamples)
+  .env$G_xtId <- vector("list", length(.ids))
+  .env$G_xtMax <- 0L
+  .env$ni <- PopED::zeros(length(.a), 1L)
+  .env$model_switch <- PopED::zeros(length(.a), .env$maxNumSamples)
+  lapply(seq_along(.a),
+         function(i) {
+           .cur <- .a[[i]]
+           .id <- .cur["ID"]
+           .time <- .env$idSamples[[.id]]
+           .env$xt[i, seq_along(.time)] <- .time
+           if (!is.na(.wdvid)) {
+             .env$model_switch[i, seq_along(.time)] <- .env$idDvid[[.id]]
+           }
+           if (is.null(.env$G_xtId[[.id]])) {
+             .env$G_xtId[[.id]] <- seq_along(.time) + .env$G_xtMax
+             .env$G_xtMax <- .env$G_xtMax +
+               .env$G_xtId[[.id]][length(.env$G_xtId[[.id]])]
+           }
+           .env$ni[i] <- length(.time)
+           .env$G_xt[i, seq_along(.time)] <- .env$G_xtId[[.id]]
+         })
+}
+
 #' Setup the poped database
 #'
 #' @param ui rxode2 ui function
