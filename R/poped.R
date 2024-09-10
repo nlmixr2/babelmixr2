@@ -1448,12 +1448,14 @@ rxUiGet.popedSettings <- function(x, ...) {
   .wdvid <- which(.nd == "dvid")
   # Create an empty database for solving > number of MT defined
   .poped$dataF00 <- .data[1, ]
+  # This creates the dosing needed (if any)
   .poped$dataF0 <- do.call(rbind,
                            lapply(.poped$uid,
                                   function(id) {
                                     .data <- .data[.data[[.wid]] == id &
                                                      .data[[.wevid]] != 0,, drop = FALSE]
                                   }))
+  # These are the saved positions in the dataset
   .poped$dataF0lst <- list(.wamt=.wamt,
                            .wrate=.wrate,
                            .wdur=.wdur,
@@ -1476,6 +1478,7 @@ rxUiGet.popedSettings <- function(x, ...) {
                            .len <- length(.data[[.wid]])
                            if (.len == 0L) {
                              .data2 <- .data0[1, ]
+                             .data2[[.wid]] <- id
                            } else {
                              .data2 <- .data[.len, ]
                            }
@@ -1492,6 +1495,7 @@ rxUiGet.popedSettings <- function(x, ...) {
   .id <- as.integer(factor(paste(.dat[[.wid]])))
   .dat <- .dat[, -.wid]
   .dat$id <- .id
+
   .poped$dataMT <- rxode2::etTrans(.dat, .poped$modelMT)
 }
 
