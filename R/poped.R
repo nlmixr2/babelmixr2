@@ -483,6 +483,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                   .len <- length(.data[[.wid]])
                                   if (.len == 0) {
                                     .data2 <- .e$dataF00
+                                    .data2[[.wid]] <- id
                                   } else {
                                     .data2 <- .data[.len, ]
                                   }
@@ -601,7 +602,12 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #' @noRd
 #' @author Matthew L. Fidler
 .popedGetErrorModelAdd <- function(ui, pred1) {
-  str2lang(paste0("rxErr", pred1$dvid, " <- rxF + ", .getVarCnd(ui, pred1$cond, "add")))
+  if (pred1$transform == "lnorm") {
+    str2lang(paste0("rxErr", pred1$dvid, " <- log(rxF) + ", .getVarCnd(ui, pred1$cond, "lnorm")))
+  } else {
+    str2lang(paste0("rxErr", pred1$dvid, " <- rxF + ", .getVarCnd(ui, pred1$cond, "add")))
+  }
+
 }
 
 #' Get proportional error
@@ -739,6 +745,28 @@ rxUiGet.popedRxmodelBase <- function(x, ...) {
                .model2)
   suppressMessages(suppressWarnings(model(.ui2) <- .model2))
   .ui2 <- rxode2::rxUiDecompress(.ui2)
+  # For PopED as in example ex.8.tmdd_qss_one_target_compiled.R, the
+  # preds are not transformed, rather the errors themselves are
+  # transformed.  This is a bit of a hack to get around that by
+  # changing the .predDf to untransformed and then re-installing the
+  # original .predDf on exiting the function.
+  .predDf <- .ui2$predDf
+  .predDfNew <- .predDf
+  .predDfNew$transform <- 3L # Untransformed
+  attr(.predDfNew$transform, "levels") <- attr(.predDf$transform, "levels")
+  attr(.predDfNew$transform, "class") <- "factor"
+  # We also need to change the errors in the $iniDf to match.
+  .iniDf <- .ui2$iniDf
+  .iniDfNew <- .iniDf
+  .iniDfNew$err <- ifelse(grepl("^(lnorm|logitNorm|probitNorm)", .iniDfNew$err),
+                          "add", .iniDfNew$err)
+  assign("predDf", .predDfNew, envir=.ui2)
+  assign("iniDf", .iniDfNew, envir=.ui2)
+  on.exit({
+    assign("predDf", .predDf, envir=.ui2)
+    assign("iniDf", .iniDf, envir=.ui2)
+  })
+  # From here on, this will assume no transformation is performed
   .errLines <- nlmixr2est::rxGetDistributionFoceiLines(.ui2)
   .multi <- FALSE
   if (length(.errLines) > 1L) {
