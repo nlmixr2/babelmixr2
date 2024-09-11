@@ -590,7 +590,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                                        .e$dataF0[[.wevid]] != 0, ]
                                   .len <- length(.data[[.wid]])
                                   if (.len == 0) {
-                                    .data2 <- .e$dataF0
+                                    .data2 <- .e$dataF00
                                     .data2[[.wid]] <- id
                                   } else {
                                     .data2 <- .data[.len, ]
