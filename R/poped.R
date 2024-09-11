@@ -309,24 +309,29 @@ rxUiGet.popedFfFunScript <- function(x, ...) {
       .id <- .p[1]
       .p <- c(.p[-1], rxXt_ = 1)
       .e <- getEventFun(.id, xt)
+      .e$rxRowNum <- seq_along(.e$ID)
       .ctl <- popedRxControl
       .ctl$returnType <- "data.frame"
       .lst <- c(list(object = rxModel, params = .p, events = .e),
                 .ctl)
+      .lst$keep <- c(.lst$keep, "rxRowNum")
       .ret <- do.call(rxode2::rxSolve, .lst)
-      lapply(seq(1, .(length(.predDf$cond))), function(i) {
-        poped.db$we[[i]] <- vector("logical", length(.ret$rx_pred_1))
-      })
+      if (length(poped.db$babelmixr2$we[[1]]) != length(.ret$rx_pred_1)) {
+        lapply(seq(1, 2L), function(i) {
+          poped.db$babelmixr2$we[[i]] <- vector("logical", length(.ret$rx_pred_1))
+        })
+      }
+      .ord <- order(.ret$rxRowNum)
       .rxF <- vapply(seq_along(model_switch),
                      function(i) {
                        .ms <- model_switch[i]
                        lapply(seq(1, .(length(.predDf$cond))), function(j) {
-                         poped.db$we[[j]][j] <- (.ms == j)
+                         poped.db$babelmixr2$we[[j]][i] <- (.ms == j)
                        })
-                       c(.ret[i, "time"],
+                       c(.ret[.ord[i], "time"],
                          .ms,
-                         .ret[i, paste0("rx_pred_", .ms)],
-                         .ret[i, paste0("rx_r_", .ms)])
+                         .ret[.ord[i], paste0("rx_pred_", .ms)],
+                         .ret[.ord[i], paste0("rx_r_", .ms)])
                      }, double(4), USE.NAMES=FALSE)
       poped.db$babelmixr2$df <- setNames(data.frame(t(.rxF)), c("time", "model_switch", "rx_pred_", "rx_r_"))
       return(list(f = matrix(poped.db$babelmixr2$df$rx_pred_, ncol = 1), poped.db = poped.db))
@@ -2407,6 +2412,7 @@ popedControl <- function(stickyRecalcN=4,
                          user_distribution_pointer="",
                          fixRes=FALSE,
                          script=NULL,
+                         overwrite=TRUE,
                          ...) {
   rxode2::rxReq("PopED")
   .xtra <- list(...)
