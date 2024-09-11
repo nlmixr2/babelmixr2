@@ -320,21 +320,25 @@ rxUiGet.popedFfFunScript <- function(x, ...) {
         lapply(seq(1, 2L), function(i) {
           poped.db$babelmixr2$we[[i]] <- vector("logical", length(.ret$rx_pred_1))
         })
+        .ord <- poped.db$babelmixr2$ord <- order(.ret$rxRowNum)
+        poped.db$babelmixr2$cache <- c(xt, model_switch)
+      } else {
+        .cache <- c(xt, model_switch)
+        if (all(.cache == poped.db$babelmixr2$cache)) {
+          .ord <- poped.db$babelmixr2$ord <- order(.ret$rxRowNum)
+          poped.db$babelmixr2$cache <- .cache
+        }
       }
-      .ord <- order(.ret$rxRowNum)
       .rxF <- vapply(seq_along(model_switch),
                      function(i) {
                        .ms <- model_switch[i]
-                       lapply(seq(1, .(length(.predDf$cond))), function(j) {
-                         poped.db$babelmixr2$we[[j]][i] <- (.ms == j)
-                       })
-                       c(.ret[.ord[i], "time"],
-                         .ms,
-                         .ret[.ord[i], paste0("rx_pred_", .ms)],
-                         .ret[.ord[i], paste0("rx_r_", .ms)])
-                     }, double(4), USE.NAMES=FALSE)
-      poped.db$babelmixr2$df <- setNames(data.frame(t(.rxF)), c("time", "model_switch", "rx_pred_", "rx_r_"))
-      return(list(f = matrix(poped.db$babelmixr2$df$rx_pred_, ncol = 1), poped.db = poped.db))
+                       lapply(seq(1, .(length(.predDf$cond))),
+                              function(j) {
+                                poped.db$babelmixr2$we[[j]][i] <- (.ms == j)
+                              })
+                       .ret[.ord[i], paste0("rx_pred_", .ms)]
+                     }, double(1), USE.NAMES=FALSE)
+      return(list(f = matrix(.rxF, ncol = 1), poped.db = poped.db))
     })
   }
   .f <- function(model_switch, xt, p, poped.db){}
