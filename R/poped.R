@@ -155,10 +155,10 @@ attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in
 #' The function processes the input expression `x` and replaces
 #' certain names based on the values in `iniDf`.
 #'
-#' - If `x`  with `b[]` or `rxPopedBpop[]`, it changes numbers to a string based on `iniDf`.
-#'
-#' - If `x` is a call to `THETA` or `ETA`, it constructs a new
-#' expression using `rxPopedBpop` or `b` also with strings instead of number
+#' - If `x` with `b[]` or `rxPopedBpop[]`, it changes numbers to a
+#' string based on ` is a call to `THETA` or `ETA`, it constructs a
+#' new expression using `rxPopedBpop` or `b` also with strings instead
+#' of number
 #'
 #' - If `x` is an assignment to an indexed element of `a`, it changes
 #' the `a` assignment to call the covariate name
@@ -287,19 +287,51 @@ attr(rxUiGet.popedFgFun, "desc") <- "PopED parameter model (fg_fun)"
 
 #' @export
 rxUiGet.popedFfFunScript <- function(x, ...) {
-  .body <- bquote({
-    .p <- p
-    .id <- .p[1]
-    .p <- c(.p[-1], rxXt_=1) # rxXt_ is actually not used
-    .e <- getEventFun(.id, xt)
-    .ctl <- popedRxControl # from global
-    .ctl$returnType <- "data.frame"
-    .lst <- c(list(object=rxModel, params = .p, events = .e),
-              .ctl)
-    .ret <- do.call(rxode2::rxSolve, .lst)
-    return(list(f=matrix(.ret$rx_pred_, ncol=1),
-                poped.db=poped.db))
-  })
+  .ui <- x[[1]]
+  .predDf <- .ui$predDf
+  if (length(.predDf$cond)==1) {
+    .body <- bquote({
+      .p <- p
+      .id <- .p[1]
+      .p <- c(.p[-1], rxXt_=1) # rxXt_ is actually not used
+      .e <- getEventFun(.id, xt)
+      .ctl <- popedRxControl # from global
+      .ctl$returnType <- "data.frame"
+      .lst <- c(list(object=rxModel, params = .p, events = .e),
+                .ctl)
+      .ret <- do.call(rxode2::rxSolve, .lst)
+      return(list(f=matrix(.ret$rx_pred_, ncol=1),
+                  poped.db=poped.db))
+    })
+  } else {
+    .body <- bquote({
+      .p <- p
+      .id <- .p[1]
+      .p <- c(.p[-1], rxXt_ = 1)
+      .e <- getEventFun(.id, xt)
+      .ctl <- popedRxControl
+      .ctl$returnType <- "data.frame"
+      .lst <- c(list(object = rxModel, params = .p, events = .e),
+                .ctl)
+      .ret <- do.call(rxode2::rxSolve, .lst)
+      lapply(seq(1, .(length(.predDf$cond))), function(i) {
+        poped.db$we[[i]] <- vector("logical", length(.ret$rx_pred_1))
+      })
+      .rxF <- vapply(seq_along(model_switch),
+                     function(i) {
+                       .ms <- model_switch[i]
+                       lapply(seq(1, .(length(.predDf$cond))), function(j) {
+                         poped.db$we[[j]][j] <- (.ms == j)
+                       })
+                       c(.ret[i, "time"],
+                         .ms,
+                         .ret[i, paste0("rx_pred_", .ms)],
+                         .ret[i, paste0("rx_r_", .ms)])
+                     }, double(4), USE.NAMES=FALSE)
+      poped.db$babelmixr2$df <- setNames(data.frame(t(.rxF)), c("time", "model_switch", "rx_pred_", "rx_r_"))
+      return(list(f = matrix(poped.db$babelmixr2$df$rx_pred_, ncol = 1), poped.db = poped.db))
+    })
+  }
   .f <- function(model_switch, xt, p, poped.db){}
   body(.f) <- .body
   .f
@@ -320,8 +352,14 @@ rxUiGet.popedGetEventFun <- function(x, ...) {
         warning("truncated id to ", id, call.=FALSE)
       }
     }
-    rbind(popedDosing[[id]],
-          data.frame(popedObservations[[id]], time=drop(xt)))
+    .dosing <- popedDosing[[id]]
+    .ret <- rbind(data.frame(popedDosing[[id]]),
+                  data.frame(popedObservations[[id]],
+                             time = drop(xt)))
+    if (length(.dosing[[1]]) == 0) {
+      .ret$ID <- id
+    }
+    .ret
   })
   .f <- function(id, xt){}
   body(.f) <- .body
@@ -608,9 +646,12 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #' @author Matthew L. Fidler
 .popedGetErrorModelAdd <- function(ui, pred1) {
   if (pred1$transform == "lnorm") {
-    str2lang(paste0("rxErr", pred1$dvid, " <- log(rxF) + ", .getVarCnd(ui, pred1$cond, "lnorm")))
-  } else {
+    str2lang(paste0("rxErr", pred1$dvid, " <- log(rxF) + ",
+                    .getVarCnd(ui, pred1$cond, "lnorm")))
+  } else if (pred1$transform == "untransformed") {
     str2lang(paste0("rxErr", pred1$dvid, " <- rxF + ", .getVarCnd(ui, pred1$cond, "add")))
+  } else {
+    stop("unsupported transformation: ", pred1$transform, call.=FALSE)
   }
 
 }
@@ -1726,11 +1767,20 @@ rxUiGet.popedSettings <- function(x, ...) {
                                     .d
                                   })
     }
+    .rxControl <- rxode2::rxUiDeparse(.ctl$rxControl, "popedControl")
+    .rxControl <- .rxControl[[3]]
+    .rxControl[[1]] <- quote(`list`)
+    .rxControl <- eval(.rxControl)
+    if (length(.rxControl) == 0) {
+      .rxControl <- "popedRxControl <- rxControl()"
+    } else {
+      .rxControl <- c("popedRxControl <- rxControl(",
+                      .deparsePopedList(.rxControl))
+    }
     .ret <- c(ui$popedScriptBeforeCtl,
               "",
               "# Create rxode2 control structure",
-              "popedRxControl <- list(",
-              .deparsePopedList(.ctl$rxControl),
+              .rxControl,
               "# Create global event information -- popedDosing",
               "popedDosing <- list(",
               .deparsePopedList(popedDosing),
@@ -1747,8 +1797,15 @@ rxUiGet.popedSettings <- function(x, ...) {
                 "# Create model_switch matrix",
                 .env$model_switchT)
     }
+
+    .groupsize <- str2lang(deparse1(as.numeric(as.vector(rxode2::rxGetControl(ui, "groupsize", 20) ))))
+    if (is.call(.groupsize) &&
+          identical(.groupsize[[1]], quote(`c`))) {
+      .groupsize[[1]] <- quote(`rbind`)
+    }
+    .groupsize <- deparse1(.groupsize)
+
     .ret <- c(.ret,
-              "",
               "# Create ni matrix",
               .env$niT,
               "",
@@ -1763,18 +1820,25 @@ rxUiGet.popedSettings <- function(x, ...) {
               "  fg_fun=fgFun,",
               "  fError_fun=fepsFun,",
               paste0("  m=", length(.a), ",      #number of groups"),
-              "  x=xt,      #time points")
+              paste0("  groupsize=", .groupsize, ",      #group size"),
+              "  xt=xt,      #time points")
     if (.multipleEndpoint) {
       .ret <- c(.ret,
                 "  model_switch=model_switch,      #model switch")
     }
     .ret <- c(.ret,
               "  ni= ni,      #number of samples per group",
-              " bUseGrouped_xt=1,     #use grouped time points",
-              " G_xt=G_xt,      #grouped time points",
-              " a = list(",
-              paste0(.deparsePopedList(.a), ","),
-              "  )",
+              "  bUseGrouped_xt=1,     #use grouped time points",
+              "  G_xt=G_xt,      #grouped time points",
+              "  a = list(",
+              .deparsePopedList(.a),
+              ")",
+              "",
+              "# Create an environment to pass arguments between functions",
+              "# And reduce code differences between nlmixr2 method and script",
+              "# method",
+              "db$babelmixr2 <- new.env(parent=emptyenv())",
+              paste0("db$babelmixr2$we <- vector('list', ",length(ui$predDf$cond), ")"),
               "",
               "# Plot the model",
               "plot_model_prediction(db, model_num_points=300, PI=TRUE)",
@@ -2213,6 +2277,7 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #' @inheritParams PopED::create.poped.database
 #' @inheritParams PopED::create_design_space
 #' @inheritParams PopED::create_design
+#' @inheritParams checkmate::assertPathForOutput
 #' @param ... other parameters for PopED control
 #' @return popedControl object
 #' @export
@@ -2544,7 +2609,10 @@ popedControl <- function(stickyRecalcN=4,
       script <- NULL
     }
   } else {
-    checkmate::assertPathForOutput(script, extension=".R")
+    if (overwrite && file.exists(script)) {
+    } else {
+      checkmate::assertPathForOutput(script, extension="R")
+    }
   }
 
   .ret <- list(rxControl=rxControl,
