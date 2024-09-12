@@ -36,7 +36,7 @@ e <-  et(c(0.5, 1,2,6,24,36,72,120)) %>%
   as.data.frame()
 
 babel.db <- nlmixr2(f, e, "poped",
-                    popedControl( groupsize=32,
+                    popedControl(groupsize=32,
                                  minxt=0,
                                  maxxt=120,
                                  a=70,
@@ -115,7 +115,7 @@ plot_model_prediction(output_discrete$poped.db)
 
 
 # Optimization using a genetic algorithm
-output_ga <- poped_optim(poped.db, opt_xt = T, parallel = T, method = c("GA"))
+output_ga <- poped_optim(babel.db, opt_xt = T, parallel = T, method = c("GA"))
 
 summary(output_ga)
 
