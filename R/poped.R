@@ -2566,6 +2566,10 @@ popedControl <- function(stickyRecalcN=4,
     grad_all_switch <- match.arg(grad_all_switch)
     grad_all_switch <- c("central"=1, "complex"=0)[grad_all_switch]
   }
+  if (missing(ofv_calc_type) && (!missing(important) || !missing(unimportant))) {
+    .minfo("Using Ds-optimality for PopED")
+    ofv_calc_type <- "Ds"
+  }
   if (!checkmate::testIntegerish(ofv_calc_type, len=1, lower=1, upper=7)) {
     ofv_calc_type <- match.arg(ofv_calc_type)
     ofv_calc_type <- c("lnD"=4, "d"=1, "a"=2, "Ds"=6, "inverse"=7)[ofv_calc_type]

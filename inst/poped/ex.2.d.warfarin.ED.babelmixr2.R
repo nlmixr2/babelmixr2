@@ -69,11 +69,20 @@ babel.db <- create.poped.database(babel.db, bpop=bpop_vals_ed,
 ## increase ED_samp_size for a more accurate calculation
 tic();evaluate_design(babel.db,d_switch=FALSE,ED_samp_size=20); toc()
 
+## Note that this is a simulation procedure so each time you run it
+## you may get different results
+
+## Also note that babelmixr2 values are similar
+
+## $rse
+## CL          V         KA       d_CL        d_V       d_KA SIGMA[1,1] SIGMA[2,2]
+## 4.991010   2.977982  14.014207  29.802546  36.711408  26.754059  31.477157  25.297312
+
 ## optimization with line search search
 output_ls <- poped_optim(babel.db, opt_xt=T, parallel=T, method = "LS", d_switch=F, ED_samp_size=20)
 
-## Fixme:
-## laplace does not seem to work with babelmixr2
+## laplace does not seem to work with babelmixr2 or example:
+## See
 
 ## ED: E(det(FIM)) using Laplace approximation
 ## deterministic calculation, relatively fast
