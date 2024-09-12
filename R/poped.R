@@ -508,10 +508,10 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .poped$setup <- 0L
   }
   if (!is.environment(popedDb$babelmixr2)) {
-    ## popedDb$babelmixr2 <- .poped$lastEnv
-    .poped$setup <- 0L
+    popedDb$babelmixr2 <- .poped$lastEnv
+  } else {
+    .poped$lastEnv <- popedDb$babelmixr2
   }
-  ## .poped$lastEnv <- popedDb$babelmixr2
   if (length(popedDb$curNumber) != 1L) {
     .poped$setup <- 0L
   } else if (length(popedDb$babelmixr2$modelNumber) != 1L) {
@@ -539,6 +539,11 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 .popedRxRunFullSetupMe <- function(popedDb, xt, ms) {
   if (!rxode2::rxSolveSetup()) {
     .poped$setup <- 0L
+  }
+  if (!is.environment(popedDb$babelmixr2)) {
+    popedDb$babelmixr2 <- .poped$lastEnv
+  } else {
+    .poped$lastEnv <- popedDb$babelmixr2
   }
   if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
     .poped$setup <- 0L
@@ -600,6 +605,11 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   # reasonable assumption?
   if (!rxode2::rxSolveSetup()) {
     .poped$setup <- 0L
+  }
+  if (!is.environment(popedDb$babelmixr2)) {
+    popedDb$babelmixr2 <- .poped$lastEnv
+  } else {
+    .poped$lastEnv <- popedDb$babelmixr2
   }
   if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
     .poped$setup <- 0L
