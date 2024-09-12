@@ -1144,6 +1144,8 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                     use_grouped_x = FALSE,
                                     grouped_x = NULL,
                                     our_zero = NULL,
+                                    discrete_xt=NULL,
+                                    discrete_a=NULL,
                                     maxn=NULL,
                                     returnList=FALSE) {
   rxode2::rxSolveFree()
@@ -1162,7 +1164,8 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                 "xt_space", "a", "maxa", "mina",
                 "a_space", "x_space", "grouped_xt", "use_grouped_a",
                 "grouped_a", "grouped_x", "our_zero", "use_grouped_xt",
-                "use_grouped_a", "use_grouped_x", "maxn")) {
+                "use_grouped_a", "use_grouped_x", "maxn",
+                "discrete_xt", "discrete_a")) {
     assign(opt, rxode2::rxGetControl(ui, opt, get(opt)))
   }
   .et <- rxode2::etTrans(data, ui)
@@ -1178,6 +1181,9 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
     }
     if (length(mina) ==1L) {
       mina <- setNames(mina, .allCovs)
+    }
+    if (length(discrete_a) == 1L) {
+      discrete_a <- setNames(discrete_a, .allCovs)
     }
   }
   .need <- setdiff(.allCovs, c("ID", colnames(.a)))
@@ -1211,6 +1217,11 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
       }
       if (!is.null(mina)) {
         mina <- c(ID=1, mina)
+      }
+      if (!is.null(discrete_a)) {
+        discrete_a <- c(list(ID=1), discrete_a)
+      } else {
+        discrete_a <- list(ID=1)
       }
     } else {
       stop()
@@ -1364,6 +1375,8 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                      })
     if (.single) .maxxt <- .maxxt[[1]]
   }
+  .poped$discrete_a <- discrete_a
+  .poped$discrete_xt <- discrete_xt
   .designSpace1 <- list(maxni = maxni,
                         minni = minni,
                         maxtotni = maxtotni,
@@ -1779,6 +1792,8 @@ rxUiGet.popedSettings <- function(x, ...) {
     .NumRanEff <- length(.d)
     .bpop <- ui$popedBpop
     .nbpop <- length(.bpop)
+    # Create the PopED database
+    # Can only incorporate discrete_xt and discrete_a here.
     .ret <- PopED::create.poped.database(ff_fun=ui$popedFfFun,
                                          fError_fun=.err,
                                          fg_fun=ui$popedFgFun,
@@ -1807,7 +1822,9 @@ rxUiGet.popedSettings <- function(x, ...) {
                                          ni=.env$ni,
                                          bUseGrouped_xt=rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE),
                                          G_xt=.env$G_xt,
-                                         a=.a)
+                                         a=.a,
+                                         discrete_xt=.poped$discrete_xt,
+                                         discrete_a=.poped$discrete_a)
     return(.appendPopedProps(.ret, .ctl))
   } else {
     .w <- which(.nd == "evid")
@@ -1895,6 +1912,8 @@ rxUiGet.popedSettings <- function(x, ...) {
               "  ff_fun=ffFun,",
               "  fg_fun=fgFun,",
               "  fError_fun=fepsFun,",
+              paste0("  discrete_xt=", deparse1(.poped$discrete_xt), ","),
+              paste0("  discrete_a=", deparse1(.poped$discrete_a), ","),
               paste0("  bUseGrouped_xt=", deparse1(rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE)) , ", "),
               paste0("  m=", length(.a), ",      #number of groups"),
               paste0("  groupsize=", .groupsize, ",      #group size"),
@@ -2015,7 +2034,9 @@ rxUiGet.popedSettings <- function(x, ...) {
                                            ff_fun=.ui$popedFfFun,
                                            fg_fun=.ui$popedFgFun,
                                            fError_fun=.err,
-                                           bUseGrouped_xt=rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE))
+                                           bUseGrouped_xt=rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE),
+                                           discrete_xt=.poped$discrete_xt,
+                                           discrete_a=.poped$discrete_a)
 
     } else {
       .ln <- tolower(names(data))
@@ -2079,7 +2100,9 @@ rxUiGet.popedSettings <- function(x, ...) {
                 "  list(settings=popedSettings, parameters=popedParameters)), ",
                 "  ff_fun=ffFun,",
                 "  fg_fun=fgFun,",
-                "  fError_fun=fepsFun",
+                "  fError_fun=fepsFun, ",
+                paste0("  discrete_xt=", deparse1(.poped$discrete_xt), ","),
+                paste0("  discrete_a=", deparse1(.poped$discrete_a), ","),
                 paste0("  bUseGrouped_xt=", deparse1(rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE)) ,")"),
                 "",
                 "# Plot the model",
@@ -2491,6 +2514,8 @@ popedControl <- function(stickyRecalcN=4,
                          user_distribution_pointer="",
                          minxt=NULL,
                          maxxt=NULL,
+                         discrete_xt=NULL,
+                         discrete_a=NULL,
                          fixRes=FALSE,
                          script=NULL,
                          overwrite=TRUE,
@@ -2823,7 +2848,9 @@ popedControl <- function(stickyRecalcN=4,
                script=script,
                bUseGrouped_xt=bUseGrouped_xt,
                minxt=minxt,
-               maxxt=maxxt)
+               maxxt=maxxt,
+               discrete_xt=discrete_xt,
+               discrete_a=discrete_a)
   class(.ret) <- "popedControl"
   .ret
 }

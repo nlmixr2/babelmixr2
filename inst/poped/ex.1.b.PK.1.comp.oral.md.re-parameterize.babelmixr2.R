@@ -66,7 +66,7 @@ evaluate_design(babel.db)
 shrinkage(babel.db)
 
 # Optimization of sample times
-output <- poped_optim(babel.db, opt_xt =TRUE, parallel=TRUE)
+output <- poped_optim(babel.db, opt_xt =TRUE)
 
 # Evaluate optimization results
 summary(output)
@@ -76,7 +76,7 @@ get_rse(output$FIM,output$poped.db)
 plot_model_prediction(output$poped.db)
 
 # Optimization of sample times, doses and dose intervals
-output_2 <- poped_optim(output$poped.db, opt_xt =TRUE, opt_a = TRUE, parallel = TRUE)
+output_2 <- poped_optim(output$poped.db, opt_xt =TRUE, opt_a = TRUE)
 
 summary(output_2)
 get_rse(output_2$FIM,output_2$poped.db)
@@ -86,7 +86,7 @@ plot_model_prediction(output_2$poped.db)
 # faster than continuous optimization in this case
 babel.db.discrete <- create.poped.database(babel.db,discrete_xt = list(0:248))
 
-output_discrete <- poped_optim(babel.db.discrete, opt_xt=T, parallel = TRUE)
+output_discrete <- poped_optim(babel.db.discrete, opt_xt=T)
 
 summary(output_discrete)
 

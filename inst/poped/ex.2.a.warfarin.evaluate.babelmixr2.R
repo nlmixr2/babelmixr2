@@ -48,6 +48,12 @@ plot_model_prediction(babel.db)
 ##  create plot of model with variability
 plot_model_prediction(babel.db,IPRED=T,DV=T)
 
+#########################################
+## NOTE All PopED output for residuals
+## (add or prop) are VARIANCES instead of
+## standard deviations!
+#########################################
+
 ## get predictions from model
 model_prediction(babel.db)
 
