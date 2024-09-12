@@ -1,9 +1,8 @@
 library(babelmixr2)
 library(PopED)
 
-##-- Model: One comp first order absorption
-## -- Analytic solution for both mutiple and single dosing
 
+## define the ODE
 f <- function() {
   ini({
     tV <- 72.8
@@ -24,12 +23,10 @@ f <- function() {
     KA<-tKa*exp(eta.ka)
     CL<-tCl*exp(eta.cl)
     Favail <- tF
-    N <-  floor(time/TAU)+1
-    y <- (DOSE*Favail/V)*(KA/(KA - CL/V)) *
-      (exp(-CL/V * (time - (N - 1) * TAU)) *
-         (1 - exp(-N * CL/V * TAU))/(1 - exp(-CL/V * TAU)) -
-         exp(-KA * (time - (N - 1) * TAU)) * (1 - exp(-N * KA * TAU))/(1 - exp(-KA * TAU)))
-
+    d/dt(depot) <- -KA*depot
+    d/dt(central) <- KA*depot - (CL/V)*central
+    f(depot) <- Favail*DOSE
+    y <- central/V
     y ~ prop(prop.sd) + add(add.sd)
   })
 }
@@ -40,19 +37,20 @@ e <- et(list(c(0, 10),
              c(0, 10),
              c(240, 248),
              c(240, 248))) %>%
+  et(amt=1000, ii=24, until=248,cmt="depot") %>%
   as.data.frame()
 
 #xt
-e$time <-  c(1,2,8,240,245)
+e$time <-  c(0, 1,2,8,240,245)
 
 
 babel.db <- nlmixr2(f, e, "poped",
-                        popedControl(groupsize=20,
-                                     bUseGrouped_xt=TRUE,
-                                     a=list(c(DOSE=20,TAU=24),
-                                            c(DOSE=40, TAU=24)),
-                                     maxa=c(DOSE=200,TAU=24),
-                                     mina=c(DOSE=0,TAU=24)))
+                    popedControl(groupsize=20,
+                                 bUseGrouped_xt=TRUE,
+                                 a=list(c(DOSE=20,TAU=24),
+                                        c(DOSE=40, TAU=24)),
+                                 maxa=c(DOSE=200,TAU=24),
+                                 mina=c(DOSE=0,TAU=24)))
 
 ##  create plot of model without variability
 plot_model_prediction(babel.db, model_num_points = 300)
