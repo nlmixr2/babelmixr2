@@ -1220,8 +1220,6 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
       }
       if (!is.null(discrete_a)) {
         discrete_a <- c(list(ID=1), discrete_a)
-      } else {
-        discrete_a <- list(ID=1)
       }
     } else {
       stop()
