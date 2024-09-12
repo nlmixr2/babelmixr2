@@ -1171,6 +1171,15 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   class(.tmp) <- NULL
   .a <- as.matrix(.tmp$cov1)
   .allCovs <- ui$allCovs
+  if (length(.allCovs) == 1L && length(a) == 1L) {
+    a <- list(setNames(a, .allCovs))
+    if (length(maxa) == 1L) {
+      maxa <- setNames(maxa, .allCovs)
+    }
+    if (length(mina) ==1L) {
+      mina <- setNames(mina, .allCovs)
+    }
+  }
   .need <- setdiff(.allCovs, c("ID", colnames(.a)))
   if (length(.need) > 0) {
     if (is.null(a)) {
@@ -1312,7 +1321,16 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   }
 
   .wlow <- which(.nd == timeLow)
-  .minxt <- NULL
+  .minxt <- rxode2::rxGetControl(ui, "minxt", NULL)
+  if (is.null(.minxt)) {
+  } else {
+    if (length(.wlow) == 0L) {
+      .data$low <- .minxt
+      .wlow <- which(names(.data) == "low")
+    } else if (length(.wlow) == 1L) {
+      .data[[.wlow]] <- .minxt
+    }
+  }
   if (length(.wlow) == 1L) {
     .minxt <- lapply(.poped$uid,
                      function(id) {
@@ -1325,7 +1343,16 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
     if (.single) .minxt <- .minxt[[1]]
   }
   .whi <- which(.nd == timeHi)
-  .maxxt <- NULL
+  .maxxt <- rxode2::rxGetControl(ui, "maxxt", NULL)
+  if (is.null(.maxxt)) {
+  } else {
+    if (length(.whi) == 0L) {
+      .data$hi <- .maxxt
+      .whi <- which(names(.data) == "hi")
+    } else if (length(.whi) == 1L) {
+      .data[[.whi]] <- .maxxt
+    }
+  }
   if (length(.whi) == 1L) {
     .maxxt <- lapply(.poped$uid,
                      function(id) {
@@ -2462,6 +2489,8 @@ popedControl <- function(stickyRecalcN=4,
                          # model extras
                          auto_pointer="",
                          user_distribution_pointer="",
+                         minxt=NULL,
+                         maxxt=NULL,
                          fixRes=FALSE,
                          script=NULL,
                          overwrite=TRUE,
@@ -2792,8 +2821,9 @@ popedControl <- function(stickyRecalcN=4,
                maxn=maxn,
                fixRes=fixRes,
                script=script,
-               bUseGrouped_xt=bUseGrouped_xt
-               )
+               bUseGrouped_xt=bUseGrouped_xt,
+               minxt=minxt,
+               maxxt=maxxt)
   class(.ret) <- "popedControl"
   .ret
 }
