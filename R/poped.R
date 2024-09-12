@@ -101,7 +101,7 @@
   .iniDf <- ui$iniDf
   .n0 <- .popedGetBpopNum0(theta, ui)
   if (is.na(.n0)) return(NA_character_)
-  paste0("rxPopedBpop[", .n0, "]")
+  paste0("bpop[", .n0, "]")
 }
 
 #' @export
@@ -125,12 +125,12 @@ rxUiGet.popedBpopRep <- function(x, ...) {
                      numMu=vapply(.thetas, .nonmemGetMuNum0, numeric(1), ui=.ui,
                                   USE.NAMES=FALSE))
   .ret$b <- ifelse(is.na(.ret$mu), NA_character_,
-                   paste0("rxPopedB[",substr(.ret$mu,4, 10),"]"))
+                   paste0("b[",substr(.ret$mu,4, 10),"]"))
   .iniDf <- .ui$iniDf
   .w <- which(is.na(.iniDf$ntheta) &.iniDf$neta1 == .iniDf$neta2)
   if (length(.w) > 0) {
     .iniDf <- .iniDf[.w, ]
-    .var <- setNames(paste0("rxPopedB[",.iniDf$neta1,"]"),.iniDf$name)
+    .var <- setNames(paste0("b[",.iniDf$neta1,"]"),.iniDf$name)
     .ret$bpop <- vapply(seq_along(.ret$bpop), function(i) {
       .v <- .ret$theta[i]
       .b <- .var[.v]
@@ -169,14 +169,18 @@ attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in
 #' In general this makes the function more human readable.
 #' @noRd
 .replaceNamesPopedFgFun <- function(x, iniDf, mu) {
-  if (is.call(x)) {
+  if (is.name(x)) {
+    if (identical(x, quote(`b`))) {
+      return(str2lang("rxPopedB"))
+    } else if (identical(x, quote(`bpop`))) {
+      return(str2lang("rxPopedBpop"))
+    }
+  } else if (is.call(x)) {
     if (identical(x[[1]], quote(`[`))) {
-      if (identical(x[[2]], quote(`rxPopedB`))) {
-        ## .w <- which(mu$numMu== x[[3]])
-        ## if (length(.w) == 1L) {
-        ##   x[[3]] <- paste0("d_",mu$muName[.w])
-        ## }
-      } else if (identical(x[[2]], quote(`rxPopedBpop`))) {
+      if (identical(x[[2]], quote(`b`))) {
+        # Cannot use this approach since some PopED functions query the
+        # b[] and bpop[] indexes in the function
+      } else if (identical(x[[2]], quote(`bpop`))) {
         ## .w <- which(mu$num == x[[3]])
         ## if (length(.w) == 1L) {
         ##   x[[3]] <- mu[mu$num == x[[3]],"theta"]
@@ -186,14 +190,13 @@ attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in
       }
       return(x)
     } else if (identical(x[[1]], quote(`THETA`))) {
-      ## x <- str2lang(paste0("rxPopedBpop['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
-      x <- str2lang(paste0("rxPopedBpop[", x[[2]], "]"))
+      x <- str2lang(paste0("bpop[", x[[2]], "]"))
     } else if (identical(x[[1]], quote(`ETA`))) {
       ## .w <- which(mu$numMu== x[[2]])
       ## if (length(.w) == 1L) {
       ##   x[[3]] <- paste0("d_",mu$muName[.w])
       ## }
-      ## x <- str2lang(paste0("rxPopedB['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
+      ## x <- str2lang(paste0("b['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
       x <- str2lang(paste0("[", x[[2]], "]"))
     } else if (identical(x[[1]], quote(`<-`)) &&
                  length(x[[3]]) == 3L &&
@@ -216,6 +219,13 @@ rxUiGet.popedFgFun <- function(x, ...) {
   # bpop = population variables
   # b = eta variables
   # bocc = occasion variables
+  #
+  # Note in PopED the following code is use:
+  #
+  # largest_bpop <- find.largest.index(tmp_fg,lab = "bpop")
+  # largest_b <- find.largest.index(tmp_fg,lab = "b")
+  #
+  # This means the bpop and b parameters cannot be rxPopedBpop, or rxPopedB
   .ui <- x[[1]]
   .split <- .ui$getSplitMuModel
 
@@ -241,7 +251,7 @@ rxUiGet.popedFgFun <- function(x, ...) {
   .errTerm <- .iniDf$name[.w]
   .errTermLst <- lapply(.w,
                         function(i) {
-                          str2lang(paste0(.iniDf$name[i], " <- rxPopedBpop[", .iniDf$ntheta[i], "]"))
+                          str2lang(paste0(.iniDf$name[i], " <- bpop[", .iniDf$ntheta[i], "]"))
                         })
 
   .v <- c(.split$pureMuRef, .split$taintMuRef, .errTerm, .covDef)
@@ -260,6 +270,16 @@ rxUiGet.popedFgFun <- function(x, ...) {
 
   .nb <- .mu[!is.na(.mu$numMu),]
   .nb <- paste0("d_", .nb[order(.nb$numMu),"muName"])
+  .v2 <- vapply(.v, function(v) {
+    if (v == "bpop") {
+      return("rxPopedBpop")
+    }
+    if (v == "b") {
+      return("rxPopedB")
+    }
+    v
+  }, character(1), USE.NAMES=FALSE)
+
   .body1 <- as.call(c(quote(`{`),
                       str2lang("rxPopedDn <- dimnames(rxPopedA)"),
                       str2lang("rxPopedA <- as.vector(rxPopedA)"),
@@ -271,10 +291,11 @@ rxUiGet.popedFgFun <- function(x, ...) {
                       str2lang("ID <- setNames(rxPopedA[1], NULL)"),
                       .body1,
                       list(str2lang(paste("c(ID=ID,",
-                                          paste(paste0(.v, "=", .v), collapse=","),
+                                          paste(paste0(.v, "=", .v2),
+                                                collapse=","),
                                           ")")))))
   .body1 <- as.call(.body1)
-  .f <- function(rxPopedX, rxPopedA, rxPopedBpop, rxPopedB, rxPopedBocc) {}
+  .f <- function(rxPopedX, rxPopedA, bpop, b, rxPopedBocc) {}
   body(.f) <- .body1
   .f
 }
@@ -486,7 +507,16 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   if (!rxode2::rxSolveSetup()) {
     .poped$setup <- 0L
   }
-  if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
+  if (!is.environment(popedDb$babelmixr2)) {
+    ## popedDb$babelmixr2 <- .poped$lastEnv
+    .poped$setup <- 0L
+  }
+  ## .poped$lastEnv <- popedDb$babelmixr2
+  if (length(popedDb$curNumber) != 1L) {
+    .poped$setup <- 0L
+  } else if (length(popedDb$babelmixr2$modelNumber) != 1L) {
+    .poped$setup <- 0L
+  } else if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
     .poped$setup <- 0L
   }
   if (.poped$setup != 1L) {
@@ -1738,7 +1768,7 @@ rxUiGet.popedSettings <- function(x, ...) {
                                          xt=.env$xt,
                                          model_switch=.env$model_switch,
                                          ni=.env$ni,
-                                         bUseGrouped_xt=1,
+                                         bUseGrouped_xt=rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE),
                                          G_xt=.env$G_xt,
                                          a=.a)
     return(.appendPopedProps(.ret, .ctl))
@@ -1828,6 +1858,7 @@ rxUiGet.popedSettings <- function(x, ...) {
               "  ff_fun=ffFun,",
               "  fg_fun=fgFun,",
               "  fError_fun=fepsFun,",
+              paste0("  bUseGrouped_xt=", deparse1(rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE)) , ", "),
               paste0("  m=", length(.a), ",      #number of groups"),
               paste0("  groupsize=", .groupsize, ",      #group size"),
               "  xt=xt,      #time points")
@@ -1897,6 +1928,7 @@ rxUiGet.popedSettings <- function(x, ...) {
   # - rxControl
   .env$rxControl <- .ctl$rxControl
   ret$babelmixr2 <- .env
+  .poped$lastEnv <- .env
   ret
 }
 
@@ -1933,6 +1965,9 @@ rxUiGet.popedSettings <- function(x, ...) {
                                        timeHi=rxode2::rxGetControl(.ui, "high", "high"),
                                        id=rxode2::rxGetControl(.ui, "id", "id"),
                                        returnList = !is.null(.toScript))
+
+    .design$design_space$bUseGrouped_xt <- rxode2::rxGetControl(.ui, "bUseGrouped_xt", FALSE)
+
     .poped$setup <- 0L
     if (is.null(.toScript)) {
       .input <- c(.design,
@@ -1942,7 +1977,8 @@ rxUiGet.popedSettings <- function(x, ...) {
       .ret <- PopED::create.poped.database(.input,
                                            ff_fun=.ui$popedFfFun,
                                            fg_fun=.ui$popedFgFun,
-                                           fError_fun=.err)
+                                           fError_fun=.err,
+                                           bUseGrouped_xt=rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE))
 
     } else {
       .ln <- tolower(names(data))
@@ -2006,7 +2042,8 @@ rxUiGet.popedSettings <- function(x, ...) {
                 "  list(settings=popedSettings, parameters=popedParameters)), ",
                 "  ff_fun=ffFun,",
                 "  fg_fun=fgFun,",
-                "  fError_fun=fepsFun)",
+                "  fError_fun=fepsFun",
+                paste0("  bUseGrouped_xt=", deparse1(rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE)) ,")"),
                 "",
                 "# Plot the model",
                 "plot_model_prediction(db, model_num_points=300, PI=TRUE)",
@@ -2317,6 +2354,7 @@ popedControl <- function(stickyRecalcN=4,
                          bUseLineSearch=TRUE,
                          bUseExchangeAlgorithm=FALSE,
                          bUseBFGSMinimizer=FALSE,
+                         bUseGrouped_xt=FALSE,
                          EACriteria=c("modified", "fedorov"),
                          strRunFile="",
                          poped_version=NULL,
@@ -2510,6 +2548,7 @@ popedControl <- function(stickyRecalcN=4,
   checkmate::assertLogical(bUseExchangeAlgorithm, len=1, any.missing=FALSE)
   checkmate::assertLogical(bUseBFGSMinimizer, len=1, any.missing=FALSE)
   checkmate::assertLogical(fixRes, len=1, any.missing=FALSE)
+  checkmate::assertLogical(bUseGrouped_xt, len=1, any.missing=FALSE)
   if (is.null(poped_version)) {
     poped_version <- utils::packageVersion("PopED")
   }
@@ -2742,7 +2781,8 @@ popedControl <- function(stickyRecalcN=4,
                auto_pointer=auto_pointer,
                maxn=maxn,
                fixRes=fixRes,
-               script=script
+               script=script,
+               bUseGrouped_xt=bUseGrouped_xt
                )
   class(.ret) <- "popedControl"
   .ret
