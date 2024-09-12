@@ -31,20 +31,16 @@ f <- function() {
   })
 }
 
-e <- et(list(c(0, 120))) %>%
-  et(c(1,2,6,24,36,72,120))
-
-e$time <- c(0.5,1,2,6,24,36,72,120)
-e$low <- 0
-e$high <- 120
-
-e <- as.data.frame(e)
+e <-  et(c(0.5, 1,2,6,24,36,72,120)) %>%
+  as.data.frame()
 
 ## -- Define initial design  and design space
 babel.db <- nlmixr2(f, e, "poped",
                     control=popedControl(
-                                  groupsize=32,
-                                  a=list(c(DOSE=70))))
+                      groupsize=32,
+                      minxt=0,
+                      maxxt=120,
+                      a=70))
 
 ##  create plot of model without variability
 plot_model_prediction(babel.db)

@@ -30,6 +30,7 @@ popedControl(
   bUseLineSearch = TRUE,
   bUseExchangeAlgorithm = FALSE,
   bUseBFGSMinimizer = FALSE,
+  bUseGrouped_xt = FALSE,
   EACriteria = c("modified", "fedorov"),
   strRunFile = "",
   poped_version = NULL,
@@ -131,8 +132,11 @@ popedControl(
   our_zero = NULL,
   auto_pointer = "",
   user_distribution_pointer = "",
+  minxt = NULL,
+  maxxt = NULL,
   fixRes = FALSE,
   script = NULL,
+  overwrite = TRUE,
   ...
 )
 }
@@ -237,6 +241,8 @@ Use random search (1=TRUE, 0=FALSE)}
 \item{bUseExchangeAlgorithm}{Use Exchange algorithm (1=TRUE, 0=FALSE)}
 
 \item{bUseBFGSMinimizer}{Use BFGS Minimizer (1=TRUE, 0=FALSE)}
+
+\item{bUseGrouped_xt}{Use grouped time points (1=TRUE, 0=FALSE).}
 
 \item{EACriteria}{Exchange Algorithm Criteria:
 \itemize{
@@ -521,6 +527,12 @@ Autocorrelation function, empty string means no autocorrelation.}
 \item{user_distribution_pointer}{Filename and path, or function
 name, for user defined distributions for E-family designs}
 
+\item{minxt}{Matrix or single value defining the minimum value for each xt sample.  If a single value is 
+supplied then all xt values are given the same minimum value}
+
+\item{maxxt}{Matrix or single value defining the maximum value for each xt sample.  If a single value is 
+supplied then all xt values are given the same maximum value.}
+
 \item{fixRes}{boolean; Fix the residuals to what is specified by
 the model}
 
@@ -534,6 +546,11 @@ script on screen.
 
 When \code{script} is a file name (with an R extension), the script is
 written to that file.}
+
+\item{overwrite}{[\code{logical(1)}]\cr
+If \code{TRUE}, an existing file in place is allowed if it
+it is both readable and writable.
+Default is \code{FALSE}.}
 
 \item{...}{other parameters for PopED control}
 }
