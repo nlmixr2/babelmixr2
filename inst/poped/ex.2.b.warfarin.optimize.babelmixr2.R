@@ -115,7 +115,7 @@ plot_model_prediction(output_discrete$poped.db)
 
 
 # Optimization using a genetic algorithm
-output_ga <- poped_optim(babel.db, opt_xt = T, parallel = T, method = c("GA"))
+output_ga <- poped_optim(babel.db, opt_xt = T, parallel = T, method = "GA")
 
 summary(output_ga)
 

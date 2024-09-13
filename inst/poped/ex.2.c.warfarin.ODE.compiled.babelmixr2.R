@@ -57,4 +57,4 @@ plot_model_prediction(babel.db,IPRED=T,DV=T)
 tic(); design_ode_compiled <- evaluate_design(babel.db); toc()
 
 ## making optimization times more resonable
-output <- poped_optim(babel.db, opt_xt =TRUE, parallel=TRUE, method = c("LS"))
+output <- poped_optim(babel.db, opt_xt =TRUE, parallel=TRUE, method = "LS")
