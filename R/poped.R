@@ -678,9 +678,24 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   .iniDf <- .iniDf[.w, ]
   .eta <- .poped$epsi + 1
   .n <- .iniDf$name
+  .n <- vapply(.n, function(n) {
+    if (grepl("[_.]sd$", n)) {
+      sub("([_.])sd$", "\\1var", n)
+    } else if (grepl("[_.]sd$", n)) {
+      sub("^sd([_.])", "var\\1", n)
+    } else if (grepl("[a-z]Se$", n)) {
+      sub("([a-z])Se$", "\\1Var", n)
+    } else if (grepl("^Se[A-Z]", n)) {
+      sub("^Se([A-Z])", "Var\\1", n)
+    } else if (grepl("se[A-Z]$", n)) {
+      sub("^se([A-Z])", "var\\1", n)
+    } else {
+      paste0("var_", n)
+    }
+  }, character(1), USE.NAMES=FALSE)
   .est <- c(.poped$epsiEst, setNames(c(.iniDf$est^2), .n))
   .poped$epsiNotfixed <- c(.poped$epsiNotfixed,
-                          setNames(1L - .iniDf$fix * 1L, .n))
+                           setNames(1L - .iniDf$fix * 1L, .n))
   .poped$epsiEst <- .est
   .poped$epsi <- .eta
   return(paste0("epsi[,", .eta, "]"))
