@@ -134,6 +134,8 @@ popedControl(
   user_distribution_pointer = "",
   minxt = NULL,
   maxxt = NULL,
+  discrete_xt = NULL,
+  discrete_a = NULL,
   fixRes = FALSE,
   script = NULL,
   overwrite = TRUE,
@@ -532,6 +534,14 @@ supplied then all xt values are given the same minimum value}
 
 \item{maxxt}{Matrix or single value defining the maximum value for each xt sample.  If a single value is 
 supplied then all xt values are given the same maximum value.}
+
+\item{discrete_xt}{Cell array \code{\link[PopED]{cell}} defining the discrete variables allowed for each xt value.
+ Can also be a list of values \code{list(1:10)} (same values allowed for all xt), or a list of lists 
+\code{list(1:10, 2:23, 4:6)} (one for each value in xt). See examples in \code{\link[PopED]{create_design_space}}.}
+
+\item{discrete_a}{Cell array \code{\link[PopED]{cell}} defining the discrete variables allowed for each a value.
+ Can also be a list of values \code{list(1:10)} (same values allowed for all a), or a list of lists 
+\code{list(1:10, 2:23, 4:6)} (one for each value in a). See examples in \code{\link[PopED]{create_design_space}}.}
 
 \item{fixRes}{boolean; Fix the residuals to what is specified by
 the model}
