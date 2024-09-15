@@ -72,6 +72,7 @@
 <span>  bUseLineSearch <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  bUseExchangeAlgorithm <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  bUseBFGSMinimizer <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  bUseGrouped_xt <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  EACriteria <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"modified"</span>, <span class="st">"fedorov"</span><span class="op">)</span>,</span>
 <span>  strRunFile <span class="op">=</span> <span class="st">""</span>,</span>
 <span>  poped_version <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -173,8 +174,13 @@
 <span>  our_zero <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  auto_pointer <span class="op">=</span> <span class="st">""</span>,</span>
 <span>  user_distribution_pointer <span class="op">=</span> <span class="st">""</span>,</span>
+<span>  minxt <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  maxxt <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  discrete_xt <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  discrete_a <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fixRes <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  script <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -315,6 +321,10 @@ e.g. "cost.txt" has a function named "cost" in it.</p></dd>
 
 <dt id="arg-busebfgsminimizer">bUseBFGSMinimizer<a class="anchor" aria-label="anchor" href="#arg-busebfgsminimizer"></a></dt>
 <dd><p>Use BFGS Minimizer (1=TRUE, 0=FALSE)</p></dd>
+
+
+<dt id="arg-busegrouped-xt">bUseGrouped_xt<a class="anchor" aria-label="anchor" href="#arg-busegrouped-xt"></a></dt>
+<dd><p>Use grouped time points (1=TRUE, 0=FALSE).</p></dd>
 
 
 <dt id="arg-eacriteria">EACriteria<a class="anchor" aria-label="anchor" href="#arg-eacriteria"></a></dt>
@@ -778,6 +788,28 @@ Autocorrelation function, empty string means no autocorrelation.</p></dd>
 name, for user defined distributions for E-family designs</p></dd>
 
 
+<dt id="arg-minxt">minxt<a class="anchor" aria-label="anchor" href="#arg-minxt"></a></dt>
+<dd><p>Matrix or single value defining the minimum value for each xt sample.  If a single value is
+supplied then all xt values are given the same minimum value</p></dd>
+
+
+<dt id="arg-maxxt">maxxt<a class="anchor" aria-label="anchor" href="#arg-maxxt"></a></dt>
+<dd><p>Matrix or single value defining the maximum value for each xt sample.  If a single value is
+supplied then all xt values are given the same maximum value.</p></dd>
+
+
+<dt id="arg-discrete-xt">discrete_xt<a class="anchor" aria-label="anchor" href="#arg-discrete-xt"></a></dt>
+<dd><p>Cell array <code><a href="https://andrewhooker.github.io/PopED/reference/cell.html" class="external-link">cell</a></code> defining the discrete variables allowed for each xt value.
+ Can also be a list of values <code>list(1:10)</code> (same values allowed for all xt), or a list of lists
+<code>list(1:10, 2:23, 4:6)</code> (one for each value in xt). See examples in <code><a href="https://andrewhooker.github.io/PopED/reference/create_design_space.html" class="external-link">create_design_space</a></code>.</p></dd>
+
+
+<dt id="arg-discrete-a">discrete_a<a class="anchor" aria-label="anchor" href="#arg-discrete-a"></a></dt>
+<dd><p>Cell array <code><a href="https://andrewhooker.github.io/PopED/reference/cell.html" class="external-link">cell</a></code> defining the discrete variables allowed for each a value.
+ Can also be a list of values <code>list(1:10)</code> (same values allowed for all a), or a list of lists
+<code>list(1:10, 2:23, 4:6)</code> (one for each value in a). See examples in <code><a href="https://andrewhooker.github.io/PopED/reference/create_design_space.html" class="external-link">create_design_space</a></code>.</p></dd>
+
+
 <dt id="arg-fixres">fixRes<a class="anchor" aria-label="anchor" href="#arg-fixres"></a></dt>
 <dd><p>boolean; Fix the residuals to what is specified by
 the model</p></dd>
@@ -792,6 +824,13 @@ would be written to a file and with the class
 script on screen.</p>
 <p>When <code>script</code> is a file name (with an R extension), the script is
 written to that file.</p></dd>
+
+
+<dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
+<dd><p>[<code>logical(1)</code>]<br>
+If <code>TRUE</code>, an existing file in place is allowed if it
+it is both readable and writable.
+Default is <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
