@@ -66,6 +66,7 @@ jobs:
             nlmixr2/nlmixr2plot
             nlmixr2/nlmixr2
             nlmixr2/nonmem2rx
+            nlmixr2/monolix2rx
             lixoftConnectors=?ignore
           needs: check
 

@@ -42,6 +42,7 @@ jobs:
             nlmixr2/rxode2ll
             nlmixr2/rxode2
             nlmixr2/nonmem2rx
+            nlmixr2/monolix2rx
             nlmixr2/nlmixr2est
             nlmixr2/nlmixr2rpt
             mrgsolve

@@ -39,6 +39,7 @@ Imports:
     lotri,
     nlmixr2est (>= 2.1.6),
     nonmem2rx (>= 0.1.3),
+    monolix2rx,
     methods,
     qs,
     rex,
