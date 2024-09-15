@@ -137,6 +137,9 @@
   cmd <- rxode2::rxGetControl(ui, "runCommand", "")
   if (is.character(cmd)) {
     cmd <- .monolixRunCommand
+  } else if (is.na(cmd)) {
+    .minfo("run Monolix manually and rerun nlmixr()")
+    return(NULL)
   } else if (!is.function(cmd)) {
     stop("invalid value for monolixControl(runCommand=)",
          call.=FALSE)
@@ -231,7 +234,8 @@
   .mlxtran <- .ui$monolixMlxtranFile
   .runLock <- .ui$monolixRunLock
 
-  if (checkmate::testFileExists(.qs)) {
+  .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
+if (checkmate::testFileExists(.qs)) {
     .minfo("load saved nlmixr2 object")
     .ret <- qs::qread(.qs)
     if (!exists("parHistData", .ret$env)) {
@@ -253,10 +257,16 @@
     writeLines(text=.hashMd5, con=.hashFile)
     write.csv(.dataDf, file=.csv, na = ".", row.names = FALSE)
     .minfo("done")
+    if (!rxode2::rxGetControl(.ui, "run", TRUE)) {
+      .minfo("only exported Monolix mlxtran, txt model and data")
+      return(invisible())
+    }
     .runLS <- FALSE
-    .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
     if (!identical(.cmd, "")) {
       .monolixRunner(ui=.ui)
+      if (is.na(.cmd)) {
+        return(invisible())
+      }
     } else {
       if (.hasLixoftConnectors()) {
         .x <- try(lixoftConnectors::loadProject(.mlxtran), silent=TRUE)
@@ -278,6 +288,10 @@
       }
     }
   } else {
+    if (is.na(.cmd)) {
+      .minfo(paste0("leaving alone monolix files because '", .model, "' is present"))
+      return(invisible())
+    }
     .minfo(paste0("assuming monolix is running because '", .model, "' is present"))
   }
   if (!dir.exists(.exportPath)) {

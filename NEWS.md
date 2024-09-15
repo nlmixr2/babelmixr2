@@ -1,3 +1,11 @@
+# babelmixr2 0.1.3
+
+* Changed default NONMEM rounding protection to FALSE
+
+* Added a `run` option to the `monolixControl()` and `nonemControl()`
+  in case you only want to export the modeling files and not run the
+  models.
+
 # babelmixr2 0.1.2
 
 * Handle algebraic `mu` expressions

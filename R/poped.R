@@ -1,3 +1,95 @@
+#' Free Poped memory (if any is allocated)
+#'
+#' This should not be called directly but is used in babelmixr2's
+#' poped interface
+#'
+#' @return nothing, called for side effects
+#'
+#' @export
+#' @author Matthew L. Fidler
+#' @keywords internal
+.popedFree <- function() {
+  invisible(.Call(`_babelmixr2_popedFree`))
+}
+
+#' Setup the PopED environment
+#'
+#' This should not typically be called directly
+#'
+#' @param e environment with setup information for popEd
+#' @param full setup the full model
+#' @return nothing, called for side effects
+#' @export
+#' @keywords internal
+#' @author Matthew L. Fidler
+.popedSetup <- function(e, full=FALSE) {
+  invisible(.Call(`_babelmixr2_popedSetup`, e, full))
+}
+#' Solve poped problem for appropriate times (may already be setup)
+#'
+#' This really should not be called directly (if not setup correctly
+#' can crash R)
+#'
+#' @param theta parameters (includes covariates)
+#' @param xt original unsorted time (to match the f/w against)
+#' @param id this is the design identifier
+#' @param totn This is the total number of design points tested
+#' @return a data frame with $f and $w corresponding to the function
+#'   value and standard deviation at the sampling point
+#' @export
+#' @author Matthew L. Fidler
+#' @keywords internal
+.popedSolveIdN <- function(theta, xt, id, totn) {
+  .Call(`_babelmixr2_popedSolveIdN`, theta, xt, id, totn)
+}
+#' @rdname dot-popedSolveIdN
+#' @export
+.popedSolveIdN2 <- function(theta, xt, id, totn) {
+  .Call(`_babelmixr2_popedSolveIdN2`, theta, xt, id, totn)
+}
+
+#' Solve poped problem for appropriate times with multiple endpoint models
+#'
+#' This really should not be called directly (if not setup correctly
+#' can crash R)
+#'
+#' @param theta parameters (includes covariates and modeling times)
+#' @param umt unique times sampled
+#' @param mt original unsorted time (to match the f/w against)
+#' @param ms model switch parameter integer starting with 1 (related to dvid in rxode2)
+#' @param nend specifies the number of endpoints in this model
+#' @param id this is the design identifier
+#' @param totn This is the total number of design points tested
+#' @return a data frame with $f and $w corresponding to the function
+#'   value and standard deviation at the sampling point
+#' @export
+#' @author Matthew L. Fidler
+#' @keywords internal
+.popedSolveIdME <- function(theta, umt, mt, ms, nend, id, totn) {
+  .Call(`_babelmixr2_popedSolveIdME`, theta, umt, mt, ms, nend, id, totn)
+}
+
+#' @rdname dot-popedSolveIdME
+#' @export
+.popedSolveIdME2 <- function(theta, umt, mt, ms, nend, id, totn) {
+  .Call(`_babelmixr2_popedSolveIdME2`, theta, umt, mt, ms, nend, id, totn)
+}
+
+#' get the bpop number (which is a theta in PopED)
+#'
+#' @param theta name of the population parameter
+#' @param ui rxode2 ui object
+#' @return bpop[#] where # is the theta number
+#' @noRd
+#' @author Matthew L. Fidler
+.popedGetBpopNum0 <- function(theta, ui) {
+  .iniDf <- ui$iniDf
+  .w <- which(.iniDf$name == theta)
+  if (length(.w) != 1) return(NA_integer_)
+  if (is.na(.iniDf$ntheta[.w])) return(NA_integer_)
+  .iniDf$ntheta[.w]
+}
+
 #' get the bpop number (which is a theta in PopED)
 #'
 #' @param theta name of the population parameter
@@ -7,10 +99,9 @@
 #' @author Matthew L. Fidler
 .popedGetBpopNum <- function(theta, ui) {
   .iniDf <- ui$iniDf
-  .w <- which(.iniDf$name == theta)
-  if (length(.w) != 1) return(NA_character_)
-  if (is.na(.iniDf$ntheta[.w])) return(NA_character_)
-  paste0("bpop[", .iniDf$ntheta[.w], "]")
+  .n0 <- .popedGetBpopNum0(theta, ui)
+  if (is.na(.n0)) return(NA_character_)
+  paste0("bpop[", .n0, "]")
 }
 
 #' @export
@@ -23,10 +114,16 @@ rxUiGet.popedBpopRep <- function(x, ...) {
   .ret <- data.frame(theta=.thetas,
                      bpop=vapply(.thetas, .popedGetBpopNum,
                                  character(1), ui=.ui, USE.NAMES=FALSE),
+                     num=vapply(.thetas, .popedGetBpopNum0,
+                                integer(1), ui=.ui, USE.NAMES=FALSE),
                      mu=vapply(.thetas, .nonmemGetMuNum, character(1), ui=.ui,
                                USE.NAMES=FALSE),
+                     muName=vapply(.thetas, .nonmemGetMuName, character(1), ui=.ui,
+                                   USE.NAMES=FALSE),
                      cov=vapply(.thetas, .nonmemGetThetaMuCov, character(1),
-                                ui=.ui, covRefDf=.covRefDf, USE.NAMES=FALSE))
+                                ui=.ui, covRefDf=.covRefDf, USE.NAMES=FALSE),
+                     numMu=vapply(.thetas, .nonmemGetMuNum0, numeric(1), ui=.ui,
+                                  USE.NAMES=FALSE))
   .ret$b <- ifelse(is.na(.ret$mu), NA_character_,
                    paste0("b[",substr(.ret$mu,4, 10),"]"))
   .iniDf <- .ui$iniDf
@@ -45,6 +142,74 @@ rxUiGet.popedBpopRep <- function(x, ...) {
 }
 attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in $popedFgFun"
 
+#' Replace Names in PopED naming/translation function
+#'
+#' This function replaces names in a given expression based on the
+#' provided initial data frame.
+#'
+#' @param x An expression or name to be processed.
+#' @param iniDf A data frame containing the initial names and their corresponding values.
+#' @return The modified expression or name.
+#' @details
+#'
+#' The function processes the input expression `x` and replaces
+#' certain names based on the values in `iniDf`.
+#'
+#' - If `x` with `b[]` or `rxPopedBpop[]`, it changes numbers to a
+#' string based on ` is a call to `THETA` or `ETA`, it constructs a
+#' new expression using `rxPopedBpop` or `b` also with strings instead
+#' of number
+#'
+#' - If `x` is an assignment to an indexed element of `a`, it changes
+#' the `a` assignment to call the covariate name
+#'
+#' - If `x` is a name starting with `MU_`, it replaces it based on
+#' `iniDf`. ie `MU_1` becomes `MU_par`
+#'
+#' In general this makes the function more human readable.
+#' @noRd
+.replaceNamesPopedFgFun <- function(x, iniDf, mu) {
+  if (is.name(x)) {
+    if (identical(x, quote(`b`))) {
+      return(str2lang("rxPopedB"))
+    } else if (identical(x, quote(`bpop`))) {
+      return(str2lang("rxPopedBpop"))
+    }
+  } else if (is.call(x)) {
+    if (identical(x[[1]], quote(`[`))) {
+      if (identical(x[[2]], quote(`b`))) {
+        # Cannot use this approach since some PopED functions query the
+        # b[] and bpop[] indexes in the function
+      } else if (identical(x[[2]], quote(`bpop`))) {
+        ## .w <- which(mu$num == x[[3]])
+        ## if (length(.w) == 1L) {
+        ##   x[[3]] <- mu[mu$num == x[[3]],"theta"]
+        ## } else {
+        ##   x[[3]] <- iniDf$name[which(iniDf$ntheta == x[[3]])]
+        ## }
+      }
+      return(x)
+    } else if (identical(x[[1]], quote(`THETA`))) {
+      x <- str2lang(paste0("bpop[", x[[2]], "]"))
+    } else if (identical(x[[1]], quote(`ETA`))) {
+      ## .w <- which(mu$numMu== x[[2]])
+      ## if (length(.w) == 1L) {
+      ##   x[[3]] <- paste0("d_",mu$muName[.w])
+      ## }
+      ## x <- str2lang(paste0("b['", iniDf$name[which(iniDf$ntheta == x[[2]])], "']"))
+      x <- str2lang(paste0("[", x[[2]], "]"))
+    } else if (identical(x[[1]], quote(`<-`)) &&
+                 length(x[[3]]) == 3L &&
+                 identical(x[[3]][[1]], quote(`[`)) &&
+                 identical(x[[3]][[2]], quote(`rxPopedA`))){
+      x[[3]] <- str2lang(paste0("setNames(rxPopedA['", as.character(x[[2]]), "'], NULL)"))
+    } else {
+      return(as.call(c(x[[1]], lapply(x[-1], .replaceNamesPopedFgFun,
+                                      iniDf=iniDf, mu=mu))))
+    }
+  }
+  x
+}
 
 #' @export
 rxUiGet.popedFgFun <- function(x, ...) {
@@ -54,10 +219,18 @@ rxUiGet.popedFgFun <- function(x, ...) {
   # bpop = population variables
   # b = eta variables
   # bocc = occasion variables
+  #
+  # Note in PopED the following code is use:
+  #
+  # largest_bpop <- find.largest.index(tmp_fg,lab = "bpop")
+  # largest_b <- find.largest.index(tmp_fg,lab = "b")
+  #
+  # This means the bpop and b parameters cannot be rxPopedBpop, or rxPopedB
   .ui <- x[[1]]
   .split <- .ui$getSplitMuModel
 
   .mu <- rxUiGet.popedBpopRep(x, ...)
+
   .ret <- vapply(seq_along(.mu$mu), function(i) {
     if (is.na(.mu$mu[i])) return(NA_character_)
     paste0(.mu$mu[i], " <- ", .mu$bpop[i],
@@ -71,7 +244,7 @@ rxUiGet.popedFgFun <- function(x, ...) {
   .covDef <- .ui$allCovs
   .covDefLst <- lapply(seq_along(.covDef),
                        function(i) {
-                         str2lang(paste0(.covDef[i], "<- a[", i + 1, "]"))
+                         str2lang(paste0(.covDef[i], "<- rxPopedA[", i + 1, "]"))
                        })
   .iniDf <- .ui$iniDf
   .w <- which(!is.na(.iniDf$ntheta) & !is.na(.iniDf$err))
@@ -83,18 +256,46 @@ rxUiGet.popedFgFun <- function(x, ...) {
 
   .v <- c(.split$pureMuRef, .split$taintMuRef, .errTerm, .covDef)
   .allCovs <- .ui$allCovs
-  .body1 <- c(list(quote(`{`)),
+  .body1 <- c(.covDefLst,
               lapply(c(.ret, .mu2),
                      function(x) {
                        str2lang(x)
                      }),
-              .covDefLst,
               .split$muRefDef,
-              .errTermLst,
-              list(str2lang(paste("c(ID=a[1],", paste(paste0(.v, "=", .v), collapse=","),
-                                  ")"))))
+              .errTermLst)
+  .body1 <- lapply(seq_along(.body1),
+                   function(i) {
+                     .replaceNamesPopedFgFun(.body1[[i]], iniDf=.iniDf, mu=.mu)
+                   })
+
+  .nb <- .mu[!is.na(.mu$numMu),]
+  .nb <- paste0("d_", .nb[order(.nb$numMu),"muName"])
+  .v2 <- vapply(.v, function(v) {
+    if (v == "bpop") {
+      return("rxPopedBpop")
+    }
+    if (v == "b") {
+      return("rxPopedB")
+    }
+    v
+  }, character(1), USE.NAMES=FALSE)
+
+  .body1 <- as.call(c(quote(`{`),
+                      str2lang("rxPopedDn <- dimnames(rxPopedA)"),
+                      str2lang("rxPopedA <- as.vector(rxPopedA)"),
+                      str2lang(paste(c("if (length(rxPopedDn[[1]]) == length(rxPopedA)) {",
+                                       " names(rxPopedA) <- rxPopedDn[[1]] ",
+                                       "} else if (length(rxPopedDn[[2]]) == length(rxPopedA)) {",
+                                       " names(rxPopedA) <- rxPopedDn[[2]] ",
+                                       "}"), collapse="\n")),
+                      str2lang("ID <- setNames(rxPopedA[1], NULL)"),
+                      .body1,
+                      list(str2lang(paste("c(ID=ID,",
+                                          paste(paste0(.v, "=", .v2),
+                                                collapse=","),
+                                          ")")))))
   .body1 <- as.call(.body1)
-  .f <- function(x, a, bpop, b, bocc) {}
+  .f <- function(rxPopedX, rxPopedA, bpop, b, rxPopedBocc) {}
   body(.f) <- .body1
   .f
 }
@@ -104,6 +305,96 @@ attr(rxUiGet.popedFgFun, "desc") <- "PopED parameter model (fg_fun)"
 .poped$s <- NULL
 .poped$modelNumber <- 1L
 .poped$curNumber <- -1L
+
+#' @export
+rxUiGet.popedFfFunScript <- function(x, ...) {
+  .ui <- x[[1]]
+  .predDf <- .ui$predDf
+  if (length(.predDf$cond)==1) {
+    .body <- bquote({
+      .p <- p
+      .id <- .p[1]
+      .p <- c(.p[-1], rxXt_=1) # rxXt_ is actually not used
+      .e <- getEventFun(.id, xt)
+      .ctl <- popedRxControl # from global
+      .ctl$returnType <- "data.frame"
+      .lst <- c(list(object=rxModel, params = .p, events = .e),
+                .ctl)
+      .ret <- do.call(rxode2::rxSolve, .lst)
+      return(list(f=matrix(.ret$rx_pred_, ncol=1),
+                  poped.db=poped.db))
+    })
+  } else {
+    .body <- bquote({
+      .p <- p
+      .id <- .p[1]
+      .p <- c(.p[-1], rxXt_ = 1)
+      .e <- getEventFun(.id, xt)
+      .e$rxRowNum <- seq_along(.e$ID)
+      .ctl <- popedRxControl
+      .ctl$returnType <- "data.frame"
+      .lst <- c(list(object = rxModel, params = .p, events = .e),
+                .ctl)
+      .lst$keep <- c(.lst$keep, "rxRowNum")
+      .ret <- do.call(rxode2::rxSolve, .lst)
+      if (length(poped.db$babelmixr2$we[[1]]) != length(.ret$rx_pred_1)) {
+        lapply(seq(1, 2L), function(i) {
+          poped.db$babelmixr2$we[[i]] <- vector("logical", length(.ret$rx_pred_1))
+        })
+        .ord <- poped.db$babelmixr2$ord <- order(.ret$rxRowNum)
+        poped.db$babelmixr2$cache <- c(xt, model_switch)
+      } else {
+        .cache <- c(xt, model_switch)
+        if (all(.cache == poped.db$babelmixr2$cache)) {
+          .ord <- poped.db$babelmixr2$ord <- order(.ret$rxRowNum)
+          poped.db$babelmixr2$cache <- .cache
+        }
+      }
+      .rxF <- vapply(seq_along(model_switch),
+                     function(i) {
+                       .ms <- model_switch[i]
+                       lapply(seq(1, .(length(.predDf$cond))),
+                              function(j) {
+                                poped.db$babelmixr2$we[[j]][i] <- (.ms == j)
+                              })
+                       .ret[.ord[i], paste0("rx_pred_", .ms)]
+                     }, double(1), USE.NAMES=FALSE)
+      return(list(f = matrix(.rxF, ncol = 1), poped.db = poped.db))
+    })
+  }
+  .f <- function(model_switch, xt, p, poped.db){}
+  body(.f) <- .body
+  .f
+}
+
+#' @export
+rxUiGet.popedGetEventFun <- function(x, ...) {
+  .body <- bquote({
+    if (length(popedDosing)== 1L) {
+      id <- 1L
+    } else {
+      id <- round(id)
+      if (id < 1L) {
+        id <- 1L
+        warning("truncated id to 1", call.=FALSE)
+      } else if (id > length(popedDosing)) {
+        id <- length(popedDosing)
+        warning("truncated id to ", id, call.=FALSE)
+      }
+    }
+    .dosing <- popedDosing[[id]]
+    .ret <- rbind(data.frame(popedDosing[[id]]),
+                  data.frame(popedObservations[[id]],
+                             time = drop(xt)))
+    if (length(.dosing[[1]]) == 0) {
+      .ret$ID <- id
+    }
+    .ret
+  })
+  .f <- function(id, xt){}
+  body(.f) <- .body
+  .f
+}
 
 #' @export
 rxUiGet.popedFfFun <- function(x, ...) {
@@ -120,14 +411,14 @@ rxUiGet.popedFfFun <- function(x, ...) {
       if (.totn <  .(.poped$maxn)) {
         .p <- c(.p, .xt, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .totn))
         .popedRxRunSetup(poped.db)
-        .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
+        .ret <- .popedSolveIdN(.p, .xt, .id-1L, .totn)
       } else if (.totn > .(.poped$maxn)) {
         .popedRxRunFullSetup(poped.db, .xt)
-        .ret <- nlmixr2est::.popedSolveIdN2(.p, .xt, .id - 1L, .totn)
+        .ret <- .popedSolveIdN2(.p, .xt, .id-1L, .totn)
       } else {
         .p <- c(.p, .xt)
         .popedRxRunSetup(poped.db)
-        .ret <- nlmixr2est::.popedSolveIdN(.p, .xt, .id - 1L, .totn)
+        .ret <- .popedSolveIdN(.p, .xt, .id-1L, .totn)
       }
       return(list(f=matrix(.ret$rx_pred_, ncol=1),
                   poped.db=poped.db))
@@ -147,17 +438,17 @@ rxUiGet.popedFfFun <- function(x, ...) {
       if (.lu <  .(.poped$maxn)) {
         .p <- c(.p, .u, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .lu))
         .popedRxRunSetup(poped.db)
-        .ret <- nlmixr2est::.popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                            .id - 1, .totn)
+        .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                                            .id-1, .totn)
       } else if (.lu > .(.poped$maxn)) {
         .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
-        .ret <- nlmixr2est::.popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                             .id - 1, .totn)
+        .ret <- .popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                                             .id-1, .totn)
       } else {
         .p <- c(.p, .u)
         .popedRxRunSetup(poped.db)
-        .ret <- nlmixr2est::.popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                            .id - 1L, .totn)
+        .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                                            .id-1, .totn)
       }
       return(list(f=matrix(.ret$rx_pred_, ncol=1),
                   poped.db=poped.db))
@@ -216,12 +507,21 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   if (!rxode2::rxSolveSetup()) {
     .poped$setup <- 0L
   }
-  if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
+  if (!is.environment(popedDb$babelmixr2)) {
+    popedDb$babelmixr2 <- .poped$lastEnv
+  } else {
+    .poped$lastEnv <- popedDb$babelmixr2
+  }
+  if (length(popedDb$curNumber) != 1L) {
+    .poped$setup <- 0L
+  } else if (length(popedDb$babelmixr2$modelNumber) != 1L) {
+    .poped$setup <- 0L
+  } else if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
     .poped$setup <- 0L
   }
   if (.poped$setup != 1L) {
     rxode2::rxSolveFree()
-    nlmixr2est::.popedSetup(popedDb$babelmixr2, FALSE)
+    .popedSetup(popedDb$babelmixr2, FALSE)
     .poped$setup <- 1L
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$fullXt <- NULL
@@ -236,10 +536,14 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #' @return nothing, called for side effects
 #' @noRd
 #' @author Matthew L. Fidler
-#' @examples
 .popedRxRunFullSetupMe <- function(popedDb, xt, ms) {
   if (!rxode2::rxSolveSetup()) {
     .poped$setup <- 0L
+  }
+  if (!is.environment(popedDb$babelmixr2)) {
+    popedDb$babelmixr2 <- .poped$lastEnv
+  } else {
+    .poped$lastEnv <- popedDb$babelmixr2
   }
   if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
     .poped$setup <- 0L
@@ -261,6 +565,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                   .len <- length(.data[[.wid]])
                                   if (.len == 0) {
                                     .data2 <- .e$dataF00
+                                    .data2[[.wid]] <- id
                                   } else {
                                     .data2 <- .data[.len, ]
                                   }
@@ -282,14 +587,13 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                 })))
     .et <- rxode2::etTrans(.dat, .e$modelF)
     .e$dataF <- .et
-    nlmixr2est::.popedSetup(.e, TRUE)
+    .popedSetup(.e, TRUE)
     .poped$fullXt <- length(xt)
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$setup <- 2L
   }
 }
 #' Setup for a full solve with a single endpoint model
-#'
 #'
 #' @param popedDb Poped database
 #' @param xt design times
@@ -301,6 +605,11 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   # reasonable assumption?
   if (!rxode2::rxSolveSetup()) {
     .poped$setup <- 0L
+  }
+  if (!is.environment(popedDb$babelmixr2)) {
+    popedDb$babelmixr2 <- .poped$lastEnv
+  } else {
+    .poped$lastEnv <- popedDb$babelmixr2
   }
   if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
     .poped$setup <- 0L
@@ -320,7 +629,12 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                   .data <- .e$dataF0[.e$dataF0[[.wid]] == id &
                                                        .e$dataF0[[.wevid]] != 0, ]
                                   .len <- length(.data[[.wid]])
-                                  .data2 <- .data[.len, ]
+                                  if (.len == 0) {
+                                    .data2 <- .e$dataF00
+                                    .data2[[.wid]] <- id
+                                  } else {
+                                    .data2 <- .data[.len, ]
+                                  }
                                   .data2[[.wevid]] <- 0
                                   if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
                                   if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
@@ -339,12 +653,13 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                 })))
     .et <- rxode2::etTrans(.dat, .e$modelF)
     .e$dataF <- .et
-    nlmixr2est::.popedSetup(.e, TRUE)
+    .popedSetup(.e, TRUE)
     .poped$fullXt <- length(xt)
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$setup <- 2L
   }
 }
+
 #' This gets the epsi associated with the nlmixr2/rxode2 model specification
 #'
 #' @param ui rxode2 ui model
@@ -361,15 +676,31 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   .w <- which(.iniDf$condition == cnd & .iniDf$err == type)
   if (length(.w) != 1L) stop("could not determine cnd: ", cnd, " type: ", type, " for error model")
   .iniDf <- .iniDf[.w, ]
-  .eta <- .poped$eta + 1
+  .eta <- .poped$epsi + 1
   .n <- .iniDf$name
-  .est <- c(.poped$etaEst, setNames(c(.iniDf$est^2), .n))
-  .poped$etaNotfixed <- c(.poped$etaNotfixed,
-                          setNames(1L - .iniDf$fix * 1L, .n))
-  .poped$etaEst <- .est
-  .poped$eta <- .eta
+  .n <- vapply(.n, function(n) {
+    if (grepl("[_.]sd$", n)) {
+      sub("([_.])sd$", "\\1var", n)
+    } else if (grepl("[_.]sd$", n)) {
+      sub("^sd([_.])", "var\\1", n)
+    } else if (grepl("[a-z]Se$", n)) {
+      sub("([a-z])Se$", "\\1Var", n)
+    } else if (grepl("^Se[A-Z]", n)) {
+      sub("^Se([A-Z])", "Var\\1", n)
+    } else if (grepl("se[A-Z]$", n)) {
+      sub("^se([A-Z])", "var\\1", n)
+    } else {
+      paste0("var_", n)
+    }
+  }, character(1), USE.NAMES=FALSE)
+  .est <- c(.poped$epsiEst, setNames(c(.iniDf$est^2), .n))
+  .poped$epsiNotfixed <- c(.poped$epsiNotfixed,
+                           setNames(1L - .iniDf$fix * 1L, .n))
+  .poped$epsiEst <- .est
+  .poped$epsi <- .eta
   return(paste0("epsi[,", .eta, "]"))
 }
+
 #' Get additive error
 #'
 #' @param ui rxode2 ui model
@@ -378,8 +709,17 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #' @noRd
 #' @author Matthew L. Fidler
 .popedGetErrorModelAdd <- function(ui, pred1) {
-  str2lang(paste0("rxErr", pred1$dvid, " <- rxF + ", .getVarCnd(ui, pred1$cond, "add")))
+  if (pred1$transform == "lnorm") {
+    str2lang(paste0("rxErr", pred1$dvid, " <- log(rxF) + ",
+                    .getVarCnd(ui, pred1$cond, "lnorm")))
+  } else if (pred1$transform == "untransformed") {
+    str2lang(paste0("rxErr", pred1$dvid, " <- rxF + ", .getVarCnd(ui, pred1$cond, "add")))
+  } else {
+    stop("unsupported transformation: ", pred1$transform, call.=FALSE)
+  }
+
 }
+
 #' Get proportional error
 #'
 #' @param ui rxode2 ui model
@@ -390,6 +730,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 .popedGetErrorModelProp <- function(ui, pred1) {
   str2lang(paste0("rxErr", pred1$dvid, " <- rxF * (1 + ", .getVarCnd(ui, pred1$cond, "prop"), ")"))
 }
+
 #' Get power error
 #'
 #' @param ui rxode2 ui model
@@ -401,6 +742,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   # Could be in the F anyway, need to check
   stop("pow() not implemented yet")
 }
+
 #' Get add+prop (type 2 error)
 #'
 #' @param ui rxode2 ui model
@@ -412,6 +754,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   str2lang(paste0("rxErr", pred1$dvid, " <- rxF*(1+", .getVarCnd(ui, pred1$cond, "prop"),
                   ") + ", .getVarCnd(ui, pred1$cond, "add")))
 }
+
 #' Get add+pow (type 2 error)
 #'
 #' @param ui rxode2 ui model
@@ -423,7 +766,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   # Could be in the F anyway, need to check
   stop("pow() not implemented yet")
 }
-#' When the error isn't specified (probably a log-likelihood)
+# When the error isn't specified (probably a log-likelihood)
 .popedGetErrorModelNone <- function(ui, pred1) {
   stop("error model could not be interpreted as a PopED model")
 }
@@ -438,7 +781,6 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
          "none"=.popedGetErrorModelNone(ui, pred1))
 }
 
-
 #'@export
 rxUiGet.popedFErrorFun  <- function(x, ...) {
   .ui <- x[[1]]
@@ -451,9 +793,9 @@ rxUiGet.popedFErrorFun  <- function(x, ...) {
     }
     return(f)
   } else {
-    .poped$eta <- 0
-    .poped$etaEst <- NULL
-    .poped$etaNotfixed <- NULL
+    .poped$epsi <- 0
+    .poped$epsiEst <- NULL
+    .poped$epsiNotfixed <- NULL
     .predDf <- .ui$predDf
     .ret <- lapply(seq_along(.predDf$cond),
                    function(c) {
@@ -513,6 +855,28 @@ rxUiGet.popedRxmodelBase <- function(x, ...) {
                .model2)
   suppressMessages(suppressWarnings(model(.ui2) <- .model2))
   .ui2 <- rxode2::rxUiDecompress(.ui2)
+  # For PopED as in example ex.8.tmdd_qss_one_target_compiled.R, the
+  # preds are not transformed, rather the errors themselves are
+  # transformed.  This is a bit of a hack to get around that by
+  # changing the .predDf to untransformed and then re-installing the
+  # original .predDf on exiting the function.
+  .predDf <- .ui2$predDf
+  .predDfNew <- .predDf
+  .predDfNew$transform <- 3L # Untransformed
+  attr(.predDfNew$transform, "levels") <- attr(.predDf$transform, "levels")
+  attr(.predDfNew$transform, "class") <- "factor"
+  # We also need to change the errors in the $iniDf to match.
+  .iniDf <- .ui2$iniDf
+  .iniDfNew <- .iniDf
+  .iniDfNew$err <- ifelse(grepl("^(lnorm|logitNorm|probitNorm)", .iniDfNew$err),
+                          "add", .iniDfNew$err)
+  assign("predDf", .predDfNew, envir=.ui2)
+  assign("iniDf", .iniDfNew, envir=.ui2)
+  on.exit({
+    assign("predDf", .predDf, envir=.ui2)
+    assign("iniDf", .iniDf, envir=.ui2)
+  })
+  # From here on, this will assume no transformation is performed
   .errLines <- nlmixr2est::rxGetDistributionFoceiLines(.ui2)
   .multi <- FALSE
   if (length(.errLines) > 1L) {
@@ -589,7 +953,7 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
 #' @noRd
 #' @keywords internal
 #' @author Matthew L. Fidler
-.popedRxModel <- function(ui, maxNumTime=2) {
+.popedRxModel <- function(ui, maxNumTime=2, eval=TRUE) {
   checkmate::testIntegerish(maxNumTime, lower=1, len=1)
   .base <- rxUiGet.popedRxmodelBase(list(ui))
   .base2 <- eval(as.call(c(list(quote(`rxModelVars`)),
@@ -618,6 +982,9 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
   .ret0 <- as.call(c(list(quote(`rxode2`)),
                      as.call(c(list(quote(`{`), .param0),
                                .base))))
+  if (!eval) {
+    return(.ret0)
+  }
   .poped$modelF <- eval(.ret0) # Full model
   .ret <- as.call(c(list(quote(`rxode2`)),
                     as.call(c(list(quote(`{`), .param),
@@ -629,6 +996,11 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
   attr(.ret, "mtime") <- TRUE
   attr(.ret, "maxNumTime") <- maxNumTime
   .ret
+}
+
+#' @export
+rxUiGet.popedFullRxModel <- function(x, ...) {
+  .popedRxModel(x[[1]], maxNumTime=0L)
 }
 
 #' @export
@@ -706,7 +1078,7 @@ rxUiGet.popedSigma <- function(x, ...) {
     return(1.0)
   } else {
     rxUiGet.popedFErrorFun(x, ...) # called for side effect
-    return(.poped$etaEst)
+    return(.poped$epsiEst)
   }
 }
 attr(rxUiGet.popedSigma, "desc") <- "PopED database $sigma"
@@ -718,10 +1090,29 @@ rxUiGet.popedNotfixedSigma <- function(x, ...) {
     return(0L)
   } else {
     rxUiGet.popedFErrorFun(x, ...) # called for side effect
-    return(.poped$etaNotfixed)
+    return(.poped$epsiNotfixed)
   }
 }
 attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
+
+.deparsePopedList <- function(lst, space="  ") {
+  vapply(seq_along(lst),
+         function(i) {
+           .n <- names(lst)[i]
+           .cur <- lst[[i]]
+           if (is.list(.cur)) {
+             .d <- paste0("list(",
+                          sub("^ +", "",paste(.deparsePopedList(.cur, space=paste0(space, "  ")), collapse="\n")))
+            } else {
+              .d <- paste(deparse(.cur), collapse=paste0("\n", space))
+            }
+           if (is.null(.n)) {
+             .n <- ""
+           }
+           paste0(space, .n, ifelse(.n=="", "", " = "), .d,
+                  ifelse(i == length(lst), ")", ","))
+         }, character(1), USE.NAMES=FALSE)
+}
 
 #' Create a babelmixr2/nlmixr2 design space based on a data frame
 #'
@@ -768,7 +1159,10 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                     use_grouped_x = FALSE,
                                     grouped_x = NULL,
                                     our_zero = NULL,
-                                    maxn=NULL) {
+                                    discrete_xt=NULL,
+                                    discrete_a=NULL,
+                                    maxn=NULL,
+                                    returnList=FALSE) {
   rxode2::rxSolveFree()
   rxode2::rxReq("PopED")
   data <- as.data.frame(data)
@@ -785,7 +1179,8 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                 "xt_space", "a", "maxa", "mina",
                 "a_space", "x_space", "grouped_xt", "use_grouped_a",
                 "grouped_a", "grouped_x", "our_zero", "use_grouped_xt",
-                "use_grouped_a", "use_grouped_x", "maxn")) {
+                "use_grouped_a", "use_grouped_x", "maxn",
+                "discrete_xt", "discrete_a")) {
     assign(opt, rxode2::rxGetControl(ui, opt, get(opt)))
   }
   .et <- rxode2::etTrans(data, ui)
@@ -794,6 +1189,18 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   class(.tmp) <- NULL
   .a <- as.matrix(.tmp$cov1)
   .allCovs <- ui$allCovs
+  if (length(.allCovs) == 1L && length(a) == 1L) {
+    a <- list(setNames(a, .allCovs))
+    if (length(maxa) == 1L) {
+      maxa <- setNames(maxa, .allCovs)
+    }
+    if (length(mina) ==1L) {
+      mina <- setNames(mina, .allCovs)
+    }
+    if (length(discrete_a) == 1L) {
+      discrete_a <- setNames(discrete_a, .allCovs)
+    }
+  }
   .need <- setdiff(.allCovs, c("ID", colnames(.a)))
   if (length(.need) > 0) {
     if (is.null(a)) {
@@ -826,6 +1233,9 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
       if (!is.null(mina)) {
         mina <- c(ID=1, mina)
       }
+      if (!is.null(discrete_a)) {
+        discrete_a <- c(list(ID=1), discrete_a)
+      }
     } else {
       stop()
     }
@@ -857,6 +1267,8 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .env$mt <- -Inf
   .wcmt <- which(.nd == "cmt")
   .wdvid <- which(.nd == "dvid")
+  .wg_xt <- which(.nd == "g_xt")
+  .G_xt <- NULL
   .multipleEndpoint <- FALSE
   .poped$uid <- unique(.data[[.wid]])
   if (length(ui$predDf$cond) > 1L) {
@@ -872,9 +1284,17 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                      .env$mt <- max(c(.time, .env$mt))
                                      if (length(.wdvid) == 1L) {
                                        .wd <- which(.data[[.wdvid]] == i)
-                                       if (length(.wd) == 0) .wd <- which(.data[[.wdvid]] == ui$predDf$cond[i])
+                                       if (length(.wd) == 0) {
+                                         .wd <- which(.data[[.wdvid]] ==
+                                                        ui$predDf$cond[i])
+                                       }
                                        if (length(.wd) > 0) {
                                          .time <- .time[.wd]
+                                         if (length(.wg_xt) == 1L) {
+                                           .g_xt <- .data[[.wg_xt]]
+                                           .g_xt <- .g_xt[.wd]
+                                           return(time=.time, dvid=i, G_xt=.g_xt)
+                                         }
                                          return(data.frame(time=.time, dvid=i))
                                        }
                                      }
@@ -886,6 +1306,11 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                        }
                                        if (length(.wd) > 0) {
                                          .time <- .time[.wd]
+                                         if (length(.wg_xt) == 1L) {
+                                           .g_xt <- .data[[.wg_xt]]
+                                           .g_xt <- .g_xt[.wd]
+                                           return(time=.time, dvid=i, G_xt=.g_xt)
+                                         }
                                          return(data.frame(time=.time, dvid=i))
                                        }
                                      }
@@ -893,6 +1318,9 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                           call.=FALSE)
                                    }))
                   })
+    if (length(.wg_xt) == 1L) {
+      .G_xt <- .xt$G_xt
+    }
   } else {
     .xt <- lapply(.poped$uid,
                   function(id) {
@@ -915,19 +1343,36 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
     }
     .single <- TRUE
   }
+
   if (length(ui$predDf$cond) > 1L) {
-    .design <- PopED::create_design(xt=.xt,
-                                    groupsize=groupsize,
-                                    m = m, x = x, a = .a, ni = ni,
-                                    model_switch = .modelSwitch)
+    .design1 <- list(xt=.xt,
+                     groupsize=groupsize,
+                     m = m, x = x, a = .a, ni = ni,
+                     model_switch = .modelSwitch)
   } else {
-    .design <- PopED::create_design(xt=.xt,
-                                    groupsize=groupsize,
-                                    m = m, x = x, a = .a, ni = ni,
-                                    model_switch = NULL)
+    .design1 <- list(xt=.xt,
+                     groupsize=groupsize,
+                     m = m, x = x, a = .a, ni = ni,
+                     model_switch = NULL)
   }
+  if (!returnList) {
+    .design <- do.call(PopED::create_design, .design1)
+  } else {
+    .design1 <- c("design <- PopED::create_design(",
+                  .deparsePopedList(.design1))
+  }
+
   .wlow <- which(.nd == timeLow)
-  .minxt <- NULL
+  .minxt <- rxode2::rxGetControl(ui, "minxt", NULL)
+  if (is.null(.minxt)) {
+  } else {
+    if (length(.wlow) == 0L) {
+      .data$low <- .minxt
+      .wlow <- which(names(.data) == "low")
+    } else if (length(.wlow) == 1L) {
+      .data[[.wlow]] <- .minxt
+    }
+  }
   if (length(.wlow) == 1L) {
     .minxt <- lapply(.poped$uid,
                      function(id) {
@@ -940,7 +1385,16 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
     if (.single) .minxt <- .minxt[[1]]
   }
   .whi <- which(.nd == timeHi)
-  .maxxt <- NULL
+  .maxxt <- rxode2::rxGetControl(ui, "maxxt", NULL)
+  if (is.null(.maxxt)) {
+  } else {
+    if (length(.whi) == 0L) {
+      .data$hi <- .maxxt
+      .whi <- which(names(.data) == "hi")
+    } else if (length(.whi) == 1L) {
+      .data[[.whi]] <- .maxxt
+    }
+  }
   if (length(.whi) == 1L) {
     .maxxt <- lapply(.poped$uid,
                      function(id) {
@@ -952,98 +1406,48 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                      })
     if (.single) .maxxt <- .maxxt[[1]]
   }
-
-  .designSpace <-
-    PopED::create_design_space(.design,
-                               maxni = maxni,
-                               minni = minni,
-                               maxtotni = maxtotni,
-                               mintotni = mintotni,
-                               maxgroupsize = maxgroupsize,
-                               mingroupsize = mingroupsize,
-                               maxtotgroupsize = maxtotgroupsize,
-                               mintotgroupsize = mintotgroupsize,
-                               maxxt=.maxxt,
-                               minxt=.minxt,
-                               xt_space = xt_space,
-                               mina = mina,
-                               maxa = maxa,
-                               a_space = a_space,
-                               x_space = x_space,
-                               use_grouped_xt = use_grouped_xt,
-                               grouped_xt = grouped_xt,
-                               use_grouped_a = use_grouped_a,
-                               grouped_a = grouped_a,
-                               use_grouped_x = use_grouped_x,
-                               grouped_x = grouped_x,
-                               our_zero = our_zero)
-  if (checkmate::testIntegerish(maxn, lower=1, any.missing=FALSE, len=1)) {
-    .poped$maxn <- maxn
+  .poped$G_xt <- .G_xt
+  .poped$discrete_a <- discrete_a
+  .poped$discrete_xt <- discrete_xt
+  .designSpace1 <- list(maxni = maxni,
+                        minni = minni,
+                        maxtotni = maxtotni,
+                        mintotni = mintotni,
+                        maxgroupsize = maxgroupsize,
+                        mingroupsize = mingroupsize,
+                        maxtotgroupsize = maxtotgroupsize,
+                        mintotgroupsize = mintotgroupsize,
+                        maxxt=.maxxt,
+                        minxt=.minxt,
+                        xt_space = xt_space,
+                        mina = mina,
+                        maxa = maxa,
+                        a_space = a_space,
+                        x_space = x_space,
+                        use_grouped_xt = use_grouped_xt,
+                        grouped_xt = grouped_xt,
+                        use_grouped_a = use_grouped_a,
+                        grouped_a = grouped_a,
+                        use_grouped_x = use_grouped_x,
+                        grouped_x = grouped_x,
+                        our_zero = our_zero)
+  if (returnList) {
+    .designSpace1 <- c("designSpace <- PopED::create_design_space(design, ",
+                  vapply(seq_along(.designSpace1),
+                         function(i) {
+                           .n <- names(.designSpace1)[i]
+                           .d <- paste(deparse(.designSpace1[[i]]), collapse="\n")
+                           paste0("  ", .n, " = ", .d,
+                                  ifelse(i == length(.designSpace1), ")", ","))
+                         }, character(1), USE.NAMES=FALSE))
+    return(c("", "# First create the design", .design1,
+             "", "# Now create the design space", .designSpace1))
   } else {
-    .poped$maxn <- max(.designSpace$design$ni)*length(ui$predDf$cond)
-  }
-
-  .rx <- .popedRxModel(ui, maxNumTime=.poped$maxn)
-  if (!attr(.rx, "mtime")) {
-    stop("mtime models are not supported yet",
-         call.=FALSE)
+    .designSpace <- do.call(PopED::create_design_space,
+                            c(list(design=.design), .designSpace1))
   }
   .poped$mt <- .env$mt + 0.1
-  .rx <- eval(.rx)
-  .poped$modelMT <- .rx
-  .wamt <- which(.nd == "amt")
-  .wrate <- which(.nd == "rate")
-  .wdur <- which(.nd == "dur")
-  .wss <- which(.nd == "ss")
-  .wii <- which(.nd == "ii")
-  .waddl <- which(.nd == "addl")
-  # Create an empty database for solving > number of MT defined
-  .poped$dataF00 <- .data[1, ]
-  .poped$dataF0 <- do.call(rbind,
-                           lapply(.poped$uid,
-                                  function(id) {
-                                    .data <- .data[.data[[.wid]] == id &
-                                                     .data[[.wevid]] != 0,, drop = FALSE]
-                                  }))
-  .poped$dataF0lst <- list(.wamt=.wamt,
-                           .wrate=.wrate,
-                           .wdur=.wdur,
-                           .wss=.wss,
-                           .wii=.wii,
-                           .waddl=.waddl,
-                           .wevid=.wevid,
-                           .wid=.wid,
-                           .wtime=.wtime,
-                           .wcmt=.wcmt,
-                           .wdvid=.wdvid)
-  # Create a dataset without these design points with one observation
-  # 0.5 units after
-  .dat <- do.call(rbind,
-                  lapply(.poped$uid,
-                         function(id) {
-                           .data0 <- .data
-                           .data <- .data[.data[[.wid]] == id &
-                                            .data[[.wevid]] != 0,, drop = FALSE]
-                           .len <- length(.data[[.wid]])
-                           if (.len == 0L) {
-                             .data2 <- .data0[1, ]
-                           } else {
-                             .data2 <- .data[.len, ]
-                           }
-                           .data2[[.wtime]] <- .poped$mt
-                           .data2[[.wevid]] <- 0
-                           if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
-                           if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
-                           if (length(.wdur) == 1L) .data2[[.wdur]] <- NA
-                           if (length(.wss) == 1L) .data2[[.wss]] <- NA
-                           if (length(.wii) == 1L) .data2[[.wii]] <- NA
-                           if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
-                           rbind(.data, .data2)
-                         }))
-  .id <- as.integer(factor(paste(.dat[[.wid]])))
-  .dat <- .dat[, -.wid]
-  .dat$id <- .id
-  .poped$dataMT <- rxode2::etTrans(.dat, .poped$modelMT)
+  .fillInPopEdEnv(ui, .designSpace$design$ni, .data)
   .designSpace
 }
 
@@ -1066,7 +1470,8 @@ rxUiGet.popedSettings <- function(x, ...) {
   if (checkmate::testLogical(.line_optx, any.missing = FALSE, len=1)) {
     .line_optx <- .line_optx * 1
   }
-  list(settings=list(
+
+  .ret <- list(settings=list(
     iFIMCalculationType=rxode2::rxGetControl(ui, "iFIMCalculationType", 1),
     iApproximationMethod=rxode2::rxGetControl(ui, "iApproximationMethod", 0),
     iFOCENumInd=rxode2::rxGetControl(ui, "iFOCENumInd", 1000),
@@ -1084,7 +1489,7 @@ rxUiGet.popedSettings <- function(x, ...) {
     bUseBFGSMinimizer=rxode2::rxGetControl(ui, "bUseBFGSMinimizer", FALSE) * 1,
     EACriteria=rxode2::rxGetControl(ui, "EACriteria", 1),
     run_file_pointer=rxode2::rxGetControl(ui, "strRunFile", ""),
-    poped_version=rxode2::rxGetControl(ui, "poped_version", packageVersion("PopED")),
+    poped_version=rxode2::rxGetControl(ui, "poped_version", utils::packageVersion("PopED")),
     modtit=rxode2::rxGetControl(ui, "modtit", "PopED babelmixr2 model"),
     output_file=rxode2::rxGetControl(ui, "output_file", "PopED_output_summary"),
     output_function_file=rxode2::rxGetControl(ui, "output_function_file", "PopED_output_"),
@@ -1151,8 +1556,471 @@ rxUiGet.popedSettings <- function(x, ...) {
       bParallelSG=rxode2::rxGetControl(ui, "bParallelSG", FALSE),
       bParallelMFEA=rxode2::rxGetControl(ui, "bParallelMFEA", FALSE),
       bParallelLS=rxode2::rxGetControl(ui, "bParallelLS", FALSE)
-      )
+    )
   ))
+  if (is.null(rxode2::rxGetControl(ui, "script", NULL))) {
+    .ret
+  } else {
+    .parallel <- .ret$settings$parallel
+    .settings <- .ret$settings
+    .settings$parallel <- NULL
+    .settings$poped_version <- NULL
+    .settings$user_data <- NULL
+    c("",
+      "# Create PopED parallel settings",
+      "popedSettingsParallel <- list(",
+      .deparsePopedList(.parallel),
+      "",
+      "# Get the popedSettings",
+      "popedSettings <- list(",
+      "  parallel=popedSettingsParallel,",
+      .deparsePopedList(.settings)
+      )
+  }
+}
+
+#' Does the PopED control imply different sampling schedules/designs
+#'
+#' @param control poped control object
+#' @return boolean, TRUE if different sampling schedules
+#' @noRd
+#' @author Matthew L. Fidler
+.popedSeparateSampling <- function(control) {
+  if (is.null(control$a)) return(FALSE)
+  if (is.list(control$a)) {
+    .hasId <- vapply(seq_along(control$a),
+                        function(i) {
+                          .cur <- control$a[[i]]
+                          if (is.na(.cur["ID"])) return(FALSE)
+                          TRUE
+                        }, logical(1), USE.NAMES=FALSE)
+    if (all(.hasId)) {
+      return(TRUE)
+    } else if (all(!.hasId)) {
+      return(FALSE)
+    } else {
+      stop("the covariate list 'a' in the `popedControl()` must either all have an ID, or none of the elements can have an ID",
+           call.=FALSE)
+    }
+  }
+  FALSE
+}
+
+#' Fill in the required poped values for either single design solve or
+#' multiple design solve
+#'
+#' @param ui rxode2 ui
+#' @param ni number of points
+#' @param data design data
+#' @return nothing, called for side effects
+#' @author Matthew L. Fidler
+#' @noRd
+.fillInPopEdEnv <- function(ui, ni, data) {
+  .nd <- tolower(names(data))
+  .data <- data
+  .maxn <- rxode2::rxGetControl(ui, "maxn", NULL)
+  if (checkmate::testIntegerish(.maxn, lower=1, any.missing=FALSE, len=1)) {
+    .poped$maxn <- .maxn
+  } else {
+    .poped$maxn <- max(ni)*length(ui$predDf$cond)
+  }
+  .rx <- .popedRxModel(ui, maxNumTime=.poped$maxn)
+  if (!attr(.rx, "mtime")) {
+    stop("mtime models are not supported yet",
+         call.=FALSE)
+  }
+  .rx <- eval(.rx)
+  .poped$modelMT <- .rx
+  .wamt <- which(.nd == "amt")
+  .wrate <- which(.nd == "rate")
+  .wdur <- which(.nd == "dur")
+  .wss <- which(.nd == "ss")
+  .wii <- which(.nd == "ii")
+  .waddl <- which(.nd == "addl")
+  .wid <- which(.nd == "id")
+  .wevid <- which(.nd == "evid")
+  .wtime <- which(.nd == "time")
+  .wcmt <- which(.nd == "cmt")
+  .wdvid <- which(.nd == "dvid")
+  # Create an empty database for solving > number of MT defined
+  .poped$dataF00 <- .data[1, ]
+  # This creates the dosing needed (if any)
+  .poped$dataF0 <- do.call(rbind,
+                           lapply(.poped$uid,
+                                  function(id) {
+                                    .data <- .data[.data[[.wid]] == id &
+                                                     .data[[.wevid]] != 0,, drop = FALSE]
+                                  }))
+  # These are the saved positions in the dataset
+  .poped$dataF0lst <- list(.wamt=.wamt,
+                           .wrate=.wrate,
+                           .wdur=.wdur,
+                           .wss=.wss,
+                           .wii=.wii,
+                           .waddl=.waddl,
+                           .wevid=.wevid,
+                           .wid=.wid,
+                           .wtime=.wtime,
+                           .wcmt=.wcmt,
+                           .wdvid=.wdvid)
+  # Create a dataset without these design points with one observation
+  # 0.5 units after
+  .dat <- do.call(rbind,
+                  lapply(.poped$uid,
+                         function(id) {
+                           .data0 <- .data
+                           .data <- .data[.data[[.wid]] == id &
+                                            .data[[.wevid]] != 0,, drop = FALSE]
+                           .len <- length(.data[[.wid]])
+                           if (.len == 0L) {
+                             .data2 <- .data0[1, ]
+                             .data2[[.wid]] <- id
+                           } else {
+                             .data2 <- .data[.len, ]
+                           }
+                           .data2[[.wtime]] <- .poped$mt
+                           .data2[[.wevid]] <- 0
+                           if (length(.wamt) == 1L) .data2[[.wamt]] <- NA
+                           if (length(.wrate) == 1L) .data2[[.wrate]] <- NA
+                           if (length(.wdur) == 1L) .data2[[.wdur]] <- NA
+                           if (length(.wss) == 1L) .data2[[.wss]] <- NA
+                           if (length(.wii) == 1L) .data2[[.wii]] <- NA
+                           if (length(.waddl) == 1L) .data2[[.waddl]] <- NA
+                           rbind(.data, .data2)
+                         }))
+  .id <- as.integer(factor(paste(.dat[[.wid]])))
+  .dat <- .dat[, -.wid]
+  .dat$id <- .id
+
+  .poped$dataMT <- rxode2::etTrans(.dat, .poped$modelMT)
+}
+
+.popedCreateSeparateSamplingDatabase <- function(ui, data, .ctl, .err) {
+  .a <- rxode2::rxGetControl(ui, "a", list())
+  # Get the observation data
+  .data <- data
+  .nd <- tolower(names(data))
+  .wid <- which(.nd == "id")
+  if (length(.wid) != 1L) {
+    stop("could not find the required data item: id",
+         call.=FALSE)
+  }
+  .wevid <- which(.nd == "evid")
+  if (length(.wevid) == 0L) {
+    .minfo("could not find evid, assuming all are design points")
+    .data$evid <- 0
+  }
+  .wtime <- which(.nd == "time")
+  if (length(.wtime) != 1L) {
+    stop("could not find the required data item: time",
+         call.=FALSE)
+  }
+  .multipleEndpoint <- FALSE
+  .wdvid <- NA_integer_
+  if (length(ui$predDf$cond) > 1L) {
+    .multipleEndpoint <- TRUE
+    .wdvid <- which(.nd == "dvid")
+    if (length(.wdvid) != 1L) {
+      stop("could not find the required data for multiple endpoint models: dvid",
+           call.=FALSE)
+    }
+    .dvids <- sort(unique(.data[[.wdvid]]))
+    if (!all(seq_along(.dvids) == .dvids)) {
+      stop("DVIDs must be integers that are sequential in the event dataset and start with 1",
+           call.=FALSE)
+    }
+  }
+  .obs <- .data[.data[[.wevid]] == 0,]
+
+  # Get unique IDs
+  .poped$uid <- .ids <- unique(.obs[[.wid]])
+  if (!all(seq_along(.ids) == .ids)) {
+    stop("IDs must be sequential integers in the event dataset",
+         call.=FALSE)
+  }
+  # Now create the matrices necessary by first determining the maximum
+  # number of samples
+  .env <- new.env(parent=emptyenv())
+  .env$maxNumSamples <- 0L
+  .env$idSamples <- vector("list", length(.ids))
+  .env$idDvid <- vector("list", length(.ids))
+  lapply(seq_along(.a),
+         function(i) {
+           .cur <- .a[[i]]
+           .id <- .cur["ID"]
+           if (!(.id %in% .ids)) {
+             stop(sprintf("group %d requests ID=%d, but this ID is not in the dataset", i, .id),
+                  call.=FALSE)
+           }
+           if (is.null(.env$idSamples[[.id]])) {
+             .curData <- .obs[.obs[[.wid]] == .id, ]
+             .env$idSamples[[.id]] <- .curData[[.wtime]]
+             if (!is.na(.wdvid)) {
+               .env$idDvid[[.id]] <- .curData[[.wdvid]]
+             }
+             if (length(.env$idSamples[[.id]]) > .env$maxNumSamples) {
+               .env$maxNumSamples <- length(.env$idSamples[[.id]])
+             }
+           }
+         })
+
+  # Now that we have calculated the maximum number of samples, we can
+  # create the matrices for xt (the sampling time-points), G_xt (the
+  # grouping of sample points), ni (the maximum number of samples per
+  # group). If this is a multiple endpoint model, the model_switch
+  # will be calculated as well.
+  .env$xt <- PopED::zeros(length(.a), .env$maxNumSamples)
+  .env$xtT <- paste0("xt <- PopED::zeros(", paste0(length(.a)), ", ", .env$maxNumSamples, ")")
+  .env$G_xt <- PopED::zeros(length(.a), .env$maxNumSamples)
+  .env$G_xtT <- paste0("G_xt <- PopED::zeros(", paste0(length(.a)), ", ", .env$maxNumSamples, ")")
+  .env$G_xtId <- vector("list", length(.ids))
+  .env$G_xtMax <- 0L
+  .env$ni <- PopED::zeros(length(.a), 1L)
+  .env$niT <- paste0("ni <- PopED::zeros(", paste0(length(.a)), ", 1)")
+  .env$model_switch <- PopED::zeros(length(.a), .env$maxNumSamples)
+  .env$model_switchT <- paste0("model_switch <- PopED::zeros(", paste0(length(.a)), ", ", .env$maxNumSamples, ")")
+  .env$mt <- -Inf
+  lapply(seq_along(.a),
+         function(i) {
+           .cur <- .a[[i]]
+           .id <- .cur["ID"]
+           .time <- .env$idSamples[[.id]]
+           .mt <- max(.time)
+           if (.env$mt < .mt) {
+             .env$mt <- .mt
+           }
+           .env$xt[i, seq_along(.time)] <- .time
+           .env$xtT <- c(.env$xtT,
+                         paste0("xt[", i, ", ", deparse1(seq_along(.time)),
+                                "] <- ", paste(deparse(.time), collapse="\n")))
+           if (!is.na(.wdvid)) {
+             .env$model_switch[i, seq_along(.time)] <- .env$idDvid[[.id]]
+             .env$model_switchT <- c(.env$model_switchT,
+                                     paste0("model_switch[", i, ", ", deparse1(seq_along(.time)),
+                                            "] <- ",
+                                            paste(deparse(.env$idDvid[[.id]]),
+                                                  collapse="\n")))
+           }
+           if (is.null(.env$G_xtId[[.id]])) {
+             .env$G_xtId[[.id]] <- seq_along(.time) + .env$G_xtMax
+             .env$G_xtMax <- .env$G_xtMax +
+               .env$G_xtId[[.id]][length(.env$G_xtId[[.id]])]
+           }
+           .env$ni[i] <- length(.time)
+           .env$niT <- c(.env$niT,
+                         paste0("ni[", i, "] <- ", length(.time)))
+           .env$G_xt[i, seq_along(.time)] <- .env$G_xtId[[.id]]
+           .env$G_xtT <- c(.env$G_xtT,
+                           paste0("G_xt[", i, ", ", deparse1(seq_along(.time)),
+                                  "] <- ", paste(deparse(.env$G_xtId[[.id]]),
+                                                 collapse="\n")))
+         })
+  .poped$mt <- .env$mt + 0.1
+  .fillInPopEdEnv(ui, .env$ni, .data)
+
+  .toScript <- rxode2::rxGetControl(ui, "script", NULL)
+  if (is.null(.toScript)) {
+    if (!.multipleEndpoint) .env$model_switch <- NULL
+    .d <- ui$popedD
+    .NumRanEff <- length(.d)
+    .bpop <- ui$popedBpop
+    .nbpop <- length(.bpop)
+    # Create the PopED database
+    # Can only incorporate discrete_xt and discrete_a here.
+    .ret <- PopED::create.poped.database(ff_fun=ui$popedFfFun,
+                                         fError_fun=.err,
+                                         fg_fun=ui$popedFgFun,
+
+                                         groupsize=rxode2::rxGetControl(ui, "groupsize", 20),
+
+                                         m=length(.a),
+
+                                         sigma=ui$popedSigma,
+                                         notfixed_sigma=ui$popedNotfixedSigma,
+
+                                         bpop=.bpop,
+                                         nbpop=.nbpop,
+
+                                         d=.d,
+                                         notfixed_d=ui$popedNotfixedD,
+
+                                         notfixed_bpop=ui$popedNotfixedBpop,
+                                         NumRanEff=.NumRanEff,
+                                         covd=ui$popedCovd,
+                                         notfixed_covd=ui$popedNotfixedCovd,
+                                         NumDocc=0,
+                                         NumOcc=0,
+                                         xt=.env$xt,
+                                         model_switch=.env$model_switch,
+                                         ni=.env$ni,
+                                         bUseGrouped_xt=rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE),
+                                         G_xt=.env$G_xt,
+                                         a=.a,
+                                         discrete_xt=.poped$discrete_xt,
+                                         discrete_a=.poped$discrete_a,
+                                         G_xt=.poped$G_xt)
+    return(.appendPopedProps(.ret, .ctl))
+  } else {
+    .w <- which(.nd == "evid")
+    if (length(.w) == 1L) {
+      popedDosing <- lapply(seq_along(.ids),
+                            function(i) {
+                              .w <- which(data$id == .ids[i])
+                              .d <- data[.w,]
+                              .w <- which(.nd=="evid")
+                              .d <- .d[.d[[.w]] != 0, , drop=FALSE]
+                              .d <- .d[.d[[.w]] != 2, , drop=FALSE]
+                              .d
+                            })
+      popedObservations <- lapply(seq_along(.ids),
+                                  function(i) {
+                                    .w <- which(data$id == .ids[i])
+                                    .d <- data[.w,]
+                                    .w <- which(.nd== "evid")
+                                    .d <- .d[.d[[.w]] == 0, , drop=FALSE]
+                                    .d <- .d[1,-which(.nd == "time"), drop=FALSE]
+                                    .d
+                                  })
+    } else {
+      popedDosing <- lapply(seq_along(.ids),
+                            function(i) {
+                              NULL
+                            })
+      popedObservations <- lapply(seq_along(.ids),
+                                  function(i) {
+                                    .w <- which(data$id == .ids[i])
+                                    .d <- data[.w,]
+                                    .d <- .d[1,-which(.nd == "time"), drop=FALSE]
+                                    .d
+                                  })
+    }
+    .rxControl <- rxode2::rxUiDeparse(.ctl$rxControl, "popedControl")
+    .rxControl <- .rxControl[[3]]
+    .rxControl[[1]] <- quote(`list`)
+    .rxControl <- eval(.rxControl)
+    if (length(.rxControl) == 0) {
+      .rxControl <- "popedRxControl <- rxControl()"
+    } else {
+      .rxControl <- c("popedRxControl <- rxControl(",
+                      .deparsePopedList(.rxControl))
+    }
+    .ret <- c(ui$popedScriptBeforeCtl,
+              "",
+              "# Create rxode2 control structure",
+              .rxControl,
+              "# Create global event information -- popedDosing",
+              "popedDosing <- list(",
+              .deparsePopedList(popedDosing),
+              "",
+              "# Create global event information -- popedObservations",
+              "popedObservations <- list(",
+              .deparsePopedList(popedObservations),
+              "",
+              "# Create xt matrix",
+              .env$xtT)
+    if (.multipleEndpoint) {
+      .ret <- c(.ret,
+                "",
+                "# Create model_switch matrix",
+                .env$model_switchT)
+    }
+
+    .groupsize <- str2lang(deparse1(as.numeric(as.vector(rxode2::rxGetControl(ui, "groupsize", 20) ))))
+    if (is.call(.groupsize) &&
+          identical(.groupsize[[1]], quote(`c`))) {
+      .groupsize[[1]] <- quote(`rbind`)
+    }
+    .groupsize <- deparse1(.groupsize)
+
+    .ret <- c(.ret,
+              "# Create ni matrix",
+              .env$niT,
+              "",
+              "# Create G_xt matrix",
+              .env$G_xtT,
+              ui$popedSettings,
+              ui$popedParameters,
+              "",
+              "# Now create the PopED database",
+              "db <- PopED::create.poped.database(popedInput=list(settings=popedSettings, parameters=popedParameters), ",
+              "  ff_fun=ffFun,",
+              "  fg_fun=fgFun,",
+              "  fError_fun=fepsFun,",
+              paste0("  discrete_xt=", deparse1(.poped$discrete_xt), ","),
+              paste0("  discrete_a=", deparse1(.poped$discrete_a), ","),
+              paste0("  G_xt=", deparse1(.poped$G_xt), ","),
+              paste0("  bUseGrouped_xt=", deparse1(rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE)) , ", "),
+              paste0("  m=", length(.a), ",      #number of groups"),
+              paste0("  groupsize=", .groupsize, ",      #group size"),
+              "  xt=xt,      #time points")
+    if (.multipleEndpoint) {
+      .ret <- c(.ret,
+                "  model_switch=model_switch,      #model switch")
+    }
+    .ret <- c(.ret,
+              "  ni= ni,      #number of samples per group",
+              "  bUseGrouped_xt=1,     #use grouped time points",
+              "  G_xt=G_xt,      #grouped time points",
+              "  a = list(",
+              .deparsePopedList(.a),
+              ")",
+              "",
+              "# Create an environment to pass arguments between functions",
+              "# And reduce code differences between nlmixr2 method and script",
+              "# method",
+              "db$babelmixr2 <- new.env(parent=emptyenv())",
+              paste0("db$babelmixr2$we <- vector('list', ",length(ui$predDf$cond), ")"),
+              "",
+              "# Plot the model",
+              "plot_model_prediction(db, model_num_points=300, PI=TRUE)",
+              "",
+              "# Evaluate the design",
+              "evaluate_design(db)")
+    class(.ret) <- "babelmixr2popedScript"
+    if (isTRUE(.toScript)) {
+      return(.ret)
+    } else {
+      writeLines(.ret, con=.toScript)
+      return(.toScript)
+    }
+  }
+
+}
+#' Creates an environment with the currently calculated PopED properties
+#'
+#' This is then appended to the list ret under $babelmixr2 for a
+#' PopED/babelmixr2 database
+#'
+#' @param ret PopED database to append the properties
+#' @param .ctl PopED control
+#' @return PopED database with the properties appended
+#' @noRd
+#' @author Matthew L. Fidler
+.appendPopedProps <- function(ret, .ctl) {
+  .env <- new.env(parent=emptyenv())
+  .env$uid <- .poped$uid
+  .env$modelMT <- .poped$modelMT
+  .env$dataMT <- .poped$dataMT
+  .env$paramMT <- .poped$paramMT
+
+  .env$modelF <- .poped$modelF
+
+  .env$maxn <- .poped$maxn
+  .env$mt <- .poped$mt
+  .env$dataF0lst <- .poped$dataF0lst
+  .env$dataF00 <- .poped$dataF00
+  .env$dataF0 <- .poped$dataF0
+  .env$paramF <- .poped$paramF
+  # PopED environment needs:
+  # - control - popedControl
+  .env$control <- .ctl
+  .env$modelNumber <- .poped$modelNumber
+  .poped$modelNumber <- .poped$modelNumber + 1
+  # - rxControl
+  .env$rxControl <- .ctl$rxControl
+  ret$babelmixr2 <- .env
+  .poped$lastEnv <- .env
+  ret
 }
 
 #' Setup the poped database
@@ -1175,46 +2043,120 @@ rxUiGet.popedSettings <- function(x, ...) {
   .ctl <- control
   class(.ctl) <- NULL
   rxode2::rxSetControl(.ui, .ctl)
+  .toScript <- rxode2::rxGetControl(.ui, "script", NULL)
   # To get the sigma estimates, this needs to be called before any of
   # the other setup items
   .err <- .ui$popedFErrorFun
-  .design <- .popedDataToDesignSpace(.ui, data,
-                                     time=rxode2::rxGetControl(.ui, "time", "time"),
-                                     timeLow=rxode2::rxGetControl(.ui, "low", "low"),
-                                     timeHi=rxode2::rxGetControl(.ui, "high", "high"),
-                                     id=rxode2::rxGetControl(.ui, "id", "id"))
-  .poped$setup <- 0L
-  .input <- c(.design,
-              .ui$popedSettings,
-              .ui$popedParameters,
-              list(MCC_Dep=rxode2::rxGetControl(.ui, "MCC_Dep", NULL)))
-  .ret <- PopED::create.poped.database(.input,
-                               ff_fun=.ui$popedFfFun,
-                               fg_fun=.ui$popedFgFun,
-                               fError_fun=.err)
-  .env <- new.env(parent=emptyenv())
-  .env$uid <- .poped$uid
-  .env$modelMT <- .poped$modelMT
-  .env$dataMT <- .poped$dataMT
-  .env$paramMT <- .poped$paramMT
+  if (.popedSeparateSampling(.ctl)) {
+    return(.popedCreateSeparateSamplingDatabase(.ui, data, .ctl, .err))
+  } else {
+    .design <- .popedDataToDesignSpace(.ui, data,
+                                       time=rxode2::rxGetControl(.ui, "time", "time"),
+                                       timeLow=rxode2::rxGetControl(.ui, "low", "low"),
+                                       timeHi=rxode2::rxGetControl(.ui, "high", "high"),
+                                       id=rxode2::rxGetControl(.ui, "id", "id"),
+                                       returnList = !is.null(.toScript))
 
-  .env$modelF <- .poped$modelF
+    .design$design_space$bUseGrouped_xt <- rxode2::rxGetControl(.ui, "bUseGrouped_xt", FALSE)
 
-  .env$maxn <- .poped$maxn
-  .env$mt <- .poped$mt
-  .env$dataF0lst <- .poped$dataF0lst
-  .env$dataF00 <- .poped$dataF00
-  .env$dataF0 <- .poped$dataF0
-  .env$paramF <- .poped$paramF
-  # PopED environment needs:
-  # - control - popedControl
-  .env$control <- .ctl
-  .env$modelNumber <- .poped$modelNumber
-  .poped$modelNumber <- .poped$modelNumber + 1
-  # - rxControl
-  .env$rxControl <- .ctl$rxControl
-  .ret$babelmixr2 <- .env
-  .ret
+    .poped$setup <- 0L
+    if (is.null(.toScript)) {
+      .input <- c(.design,
+                  .ui$popedSettings,
+                  .ui$popedParameters,
+                  list(MCC_Dep=rxode2::rxGetControl(.ui, "MCC_Dep", NULL)))
+      .ret <- PopED::create.poped.database(.input,
+                                           ff_fun=.ui$popedFfFun,
+                                           fg_fun=.ui$popedFgFun,
+                                           fError_fun=.err,
+                                           bUseGrouped_xt=rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE),
+                                           discrete_xt=.poped$discrete_xt,
+                                           discrete_a=.poped$discrete_a,
+                                           G_xt=.poped$G_xt)
+
+    } else {
+      .ln <- tolower(names(data))
+      .w <- which(.ln == "id")
+      if (length(.w) == 0L) {
+        data$id <- 1L
+      }
+      .ids <- unique(data$id)
+      .w <- which(.ln == "evid")
+      if (length(.w) == 1L) {
+        popedDosing <- lapply(seq_along(.ids),
+                              function(i) {
+                                .w <- which(data$id == .ids[i])
+                                .d <- data[.w,]
+                                .w <- which(.ln=="evid")
+                                .d <- .d[.d[[.w]] != 0, , drop=FALSE]
+                                .d <- .d[.d[[.w]] != 2, , drop=FALSE]
+                                .d
+                              })
+        popedObservations <- lapply(seq_along(.ids),
+                                    function(i) {
+                                      .w <- which(data$id == .ids[i])
+                                      .d <- data[.w,]
+                                      .w <- which(.ln=="evid")
+                                      .d <- .d[.d[[.w]] == 0, , drop=FALSE]
+                                      .d <- .d[1,-which(.ln=="time"), drop=FALSE]
+                                      .d
+                                    })
+      } else {
+        popedDosing <- lapply(seq_along(.ids),
+                              function(i) {
+                                NULL
+                              })
+        popedObservations <- lapply(seq_along(.ids),
+                                    function(i) {
+                                      .w <- which(data$id == .ids[i])
+                                      .d <- data[.w,]
+                                      .d <- .d[1,-which(.ln=="time"), drop=FALSE]
+                                      .d
+                                    })
+      }
+      .ret <- c(.ui$popedScriptBeforeCtl,
+                "",
+                "# Create rxode2 control structure",
+                "popedRxControl <- list(",
+                .deparsePopedList(.ctl$rxControl),
+                "",
+                "# Create global event information -- popedDosing",
+                "popedDosing <- list(",
+                .deparsePopedList(popedDosing),
+                "",
+                "# Create global event information -- popedObservations",
+                "popedObservations <- list(",
+                .deparsePopedList(popedObservations),
+                .design,
+                .ui$popedSettings,
+                .ui$popedParameters,
+                "",
+                "# Now create the PopED database",
+                "db <- PopED::create.poped.database(c(designSpace, ",
+                "  list(settings=popedSettings, parameters=popedParameters)), ",
+                "  ff_fun=ffFun,",
+                "  fg_fun=fgFun,",
+                "  fError_fun=fepsFun, ",
+                paste0("  discrete_xt=", deparse1(.poped$discrete_xt), ","),
+                paste0("  discrete_a=", deparse1(.poped$discrete_a), ","),
+                paste0("  G_xt=", deparse1(.poped$G_xt), ","),
+                paste0("  bUseGrouped_xt=", deparse1(rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE)) ,")"),
+                "",
+                "# Plot the model",
+                "plot_model_prediction(db, model_num_points=300, PI=TRUE)",
+                "",
+                "# Evaluate the design",
+                "evaluate_design(db)")
+      class(.ret) <- "babelmixr2popedScript"
+      if (isTRUE(.toScript)) {
+        return(.ret)
+      } else {
+        writeLines(.ret, con=.toScript)
+        return(.toScript)
+      }
+    }
+    .appendPopedProps(.ret, .ctl)
+  }
 }
 
 
@@ -1294,7 +2236,13 @@ rxUiGet.popedParameters <- function(x, ...) {
   if (rxode2::rxGetControl(ui, "ofv_calc_type", 4) == 6) {
     .ret <- .popedImportant(ui, .ret)
   }
-  .ret
+  if (is.null(rxode2::rxGetControl(ui, "script", NULL))) {
+    .ret
+  } else {
+    c("", "# Create PopED parameters",
+      "popedParameters <- list(",
+      .deparsePopedList(.ret$parameters))
+  }
 }
 attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 
@@ -1455,10 +2403,24 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #'   name, for user defined distributions for E-family designs
 #' @param auto_pointer Filename and path, or function name, for the
 #'   Autocorrelation function, empty string means no autocorrelation.
+#' @param fixRes boolean; Fix the residuals to what is specified by
+#'   the model
+#' @param script write a PopED/rxode2 script that can be modified for
+#'   more fine control.  The default is NULL.
+#'
+#'  When `script` is TRUE, the script is returned as a lines that
+#'  would be written to a file and with the class
+#'  `babelmixr2popedScript`. This allows it to be printed as the
+#'  script on screen.
+#'
+#'  When `script` is a file name (with an R extension), the script is
+#'  written to that file.
+#'
 #' @inheritParams nlmixr2est::foceiControl
 #' @inheritParams PopED::create.poped.database
 #' @inheritParams PopED::create_design_space
 #' @inheritParams PopED::create_design
+#' @inheritParams checkmate::assertPathForOutput
 #' @param ... other parameters for PopED control
 #' @return popedControl object
 #' @export
@@ -1489,6 +2451,7 @@ popedControl <- function(stickyRecalcN=4,
                          bUseLineSearch=TRUE,
                          bUseExchangeAlgorithm=FALSE,
                          bUseBFGSMinimizer=FALSE,
+                         bUseGrouped_xt=FALSE,
                          EACriteria=c("modified", "fedorov"),
                          strRunFile="",
                          poped_version=NULL,
@@ -1586,7 +2549,13 @@ popedControl <- function(stickyRecalcN=4,
                          # model extras
                          auto_pointer="",
                          user_distribution_pointer="",
+                         minxt=NULL,
+                         maxxt=NULL,
+                         discrete_xt=NULL,
+                         discrete_a=NULL,
                          fixRes=FALSE,
+                         script=NULL,
+                         overwrite=TRUE,
                          ...) {
   rxode2::rxReq("PopED")
   .xtra <- list(...)
@@ -1636,6 +2605,10 @@ popedControl <- function(stickyRecalcN=4,
     grad_all_switch <- match.arg(grad_all_switch)
     grad_all_switch <- c("central"=1, "complex"=0)[grad_all_switch]
   }
+  if (missing(ofv_calc_type) && (!missing(important) || !missing(unimportant))) {
+    .minfo("Using Ds-optimality for PopED")
+    ofv_calc_type <- "Ds"
+  }
   if (!checkmate::testIntegerish(ofv_calc_type, len=1, lower=1, upper=7)) {
     ofv_calc_type <- match.arg(ofv_calc_type)
     ofv_calc_type <- c("lnD"=4, "d"=1, "a"=2, "Ds"=6, "inverse"=7)[ofv_calc_type]
@@ -1680,8 +2653,9 @@ popedControl <- function(stickyRecalcN=4,
   checkmate::assertLogical(bUseExchangeAlgorithm, len=1, any.missing=FALSE)
   checkmate::assertLogical(bUseBFGSMinimizer, len=1, any.missing=FALSE)
   checkmate::assertLogical(fixRes, len=1, any.missing=FALSE)
+  checkmate::assertLogical(bUseGrouped_xt, len=1, any.missing=FALSE)
   if (is.null(poped_version)) {
-    poped_version <- packageVersion("PopED")
+    poped_version <- utils::packageVersion("PopED")
   }
   checkmate::assertCharacter(modtit, len=1, any.missing=FALSE, min.chars=1)
   checkmate::assertCharacter(output_file, len=1, any.missing=FALSE, min.chars = 1)
@@ -1763,8 +2737,18 @@ popedControl <- function(stickyRecalcN=4,
   checkmate::assertIntegerish(Doptim_iter, any.missing=FALSE, len=1, lower=1)
   checkmate::assertIntegerish(iNumProcesses, any.missing=FALSE, len=1, lower=1)
 
-  checkmate::assertIntegerish(groupsize, any.missing=FALSE, len=1, lower=1, null.ok = TRUE)
-
+  if (is.matrix(groupsize)) {
+    .d <- dim(groupsize)
+    if (.d[2] != 1L) {
+      stop("groupsize one column matrix (try rbind(a, b, c))",
+           call.=FALSE)
+    }
+    for (i in 1:.d[1]) {
+      checkmate::assertIntegerish(groupsize[i], any.missing=FALSE, len=1, lower=1, .var.name = paste0("groupsize[", i, ", ]"))
+    }
+  } else {
+    checkmate::assertIntegerish(groupsize, any.missing=FALSE, len=1, lower=1, null.ok = TRUE)
+  }
   checkmate::assertLogical(bUseMemorySolver, any.missing=FALSE, len=1)
   checkmate::assertLogical(bGreedyGroupOpt, any.missing=FALSE, len=1)
   checkmate::assertLogical(EANumPoints, any.missing=FALSE, len=1)
@@ -1773,6 +2757,17 @@ popedControl <- function(stickyRecalcN=4,
   checkmate::assertLogical(bParallelSG, any.missing=FALSE, len=1)
   checkmate::assertLogical(bParallelMFEA, any.missing=FALSE, len=1)
   checkmate::assertLogical(bParallelLS, any.missing=FALSE, len=1)
+  if (is.null(script)) {
+  } else if (checkmate::testLogical(script, len=1, any.missing=FALSE)) {
+    if (!script) {
+      script <- NULL
+    }
+  } else {
+    if (overwrite && file.exists(script)) {
+    } else {
+      checkmate::assertPathForOutput(script, extension="R")
+    }
+  }
 
   .ret <- list(rxControl=rxControl,
                stickyRecalcN=as.integer(stickyRecalcN),
@@ -1890,8 +2885,13 @@ popedControl <- function(stickyRecalcN=4,
                user_distribution_pointer=user_distribution_pointer,
                auto_pointer=auto_pointer,
                maxn=maxn,
-               fixRes=fixRes
-               )
+               fixRes=fixRes,
+               script=script,
+               bUseGrouped_xt=bUseGrouped_xt,
+               minxt=minxt,
+               maxxt=maxxt,
+               discrete_xt=discrete_xt,
+               discrete_a=discrete_a)
   class(.ret) <- "popedControl"
   .ret
 }
@@ -1943,4 +2943,61 @@ nlmixr2Est.poped <- function(env, ...) {
     }
   }, add=TRUE)
   .setupPopEDdatabase(.ui, env$data, env$control)
+}
+
+
+# This is a way to export a rxode2 optimization alternative via a file
+# This may be easier to review what is going on behind the scenes
+
+#' @export
+rxUiGet.popedScriptBeforeCtl <- function(x, ...) {
+  .rx <- deparse(.popedRxModel(x[[1]], maxNumTime=0L))
+  .rx[1] <- paste0("rxModel <- ", .rx[1])
+  .fg <- deparse(rxUiGet.popedFgFun(x,...))
+  .fg[1] <- paste0("fgFun <- ", .fg[1])
+  .feps <- deparse(rxUiGet.popedFErrorFun(x, ...))
+  .feps[1] <- paste0("fepsFun <- ", .feps[1])
+  .ff <- deparse(rxUiGet.popedFfFunScript(x, ...))
+  .ff[1] <- paste0("ffFun <- ", .ff[1])
+  .getEvent <- deparse(rxUiGet.popedGetEventFun(x, ...))
+  .getEvent[1] <- paste0("getEventFun <- ", .getEvent[1])
+  .ret <- c("library(PopED)",
+    "library(rxode2)",
+    "",
+    "# ODE using rxode2",
+    "# When babelmixr2 is loaded, you can see it with $popedFullRxModel",
+    "# This is slightly different then what is used for the babelmixr2 estimation",
+    "# as the babelmixr2 estimation loads the model into the memory and uses",
+    "# model mtimes",
+    .rx,
+    "",
+    "# Now define the PopED parameter translation function",
+    "# This comes from $popedFgFun in the babelmixr2 procedure",
+    "# Note the typical a, b, bpop are prefixed with rxPoped",
+    "# so that they do not conflict with the model parameters",
+    "# This is a way to keep the model parameters separate from",
+    "# the PopED parameters and make translations with simple parameters",
+    "# like a, b, not conflict with the model parameters",
+    "# This is the only part that comes from the model translation",
+    "# and the only function that has to have the rxPoped prefix",
+    .fg,
+    "",
+    "# Now define the PopED error function which comes from $popedFErrorFun",
+    .feps,
+    "",
+    "# Now define the PopED function evaluation which comes from $popedFfFunScript",
+    .ff,
+    "",
+    "# Now define the getEventFun function:",
+    "# sometimes poped moves parameters like id, some work-arounds here",
+    "# This comes from $popedGetEventFun",
+    .getEvent
+    )
+  class(.ret) <- "babelmixr2popedScript"
+  .ret
+}
+
+#' @export
+print.babelmixr2popedScript <- function(x, ...) {
+  cat(paste(x, collapse="\n"), "\n")
 }

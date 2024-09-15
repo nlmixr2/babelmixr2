@@ -155,12 +155,13 @@ ff_ode_rx <- function(model_switch, xt, p, poped.db){
 poped_db_ode_rx <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_rx)
 
 poped_db_ode_pkpdsim <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_pkpdsim)
+
 ```
 
 ## Introduction -- using babelmixr2 with PopED
 
-`babelmixr2` now introduces a new method taking `rxode2`/`nlmixr2`
-models and optimal design using `PopED`.
+`babelmixr2` now introduces a new method that takes `rxode2`/`nlmixr2`
+models converts them to a `PopED` database to help with optimal design.
 
 As in the [PopED vignette comparing ODE
 solvers](https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html#speed-of-fim-computation)
@@ -172,9 +173,10 @@ solvers](https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html
 -   compare these examples to the pharmacometric solvers in the PopED
     vignette (`mrgsolve` and `PKPDsim`)
 
-## babelmixr2 Ode solution
+## babelmixr2 ODE solution
 
 ```{r babelmixr2_ode}
+
 library(babelmixr2)
 library(PopED)
 
@@ -253,6 +255,10 @@ poped_db_ode_babelmixr2 <- nlmixr(f, e,
                                                       c(DOSE=40)),
                                                maxa=c(DOSE=200),
                                                mina=c(DOSE=0)))
+```
+## Linear compartment solution
+
+```{r lincmt}
 f2 <- function() {
   ini({
     tV <- 72.8
@@ -281,7 +287,11 @@ poped_db_analytic_babelmixr2 <- nlmixr(f, e,
                                                     maxa=c(DOSE=200),
                                                     mina=c(DOSE=0)))
 
+```
 
+## Comparing method to the speed of other methods
+
+```{r}
 library(ggplot2)
 library(microbenchmark)
 
@@ -300,7 +310,7 @@ autoplot(compare) + theme_bw()
 Note that the `babelmixr2` ode solver is the fastest ode solver in this
 comparison. Among other things, this is because the model is loaded into
 memory and does not need to be setup each time. (As benchmarks, the
-`mrgsolve`, `PKPDsim` and `rxode2` implementation on the `PopED`'s
+`mrgsolve`, and `PKPDsim` implementations on the `PopED`'s
 website is included).
 
 Also to me, the speed of all the tools are reasonable. In my opinion,

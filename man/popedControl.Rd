@@ -30,6 +30,7 @@ popedControl(
   bUseLineSearch = TRUE,
   bUseExchangeAlgorithm = FALSE,
   bUseBFGSMinimizer = FALSE,
+  bUseGrouped_xt = FALSE,
   EACriteria = c("modified", "fedorov"),
   strRunFile = "",
   poped_version = NULL,
@@ -131,7 +132,13 @@ popedControl(
   our_zero = NULL,
   auto_pointer = "",
   user_distribution_pointer = "",
+  minxt = NULL,
+  maxxt = NULL,
+  discrete_xt = NULL,
+  discrete_a = NULL,
   fixRes = FALSE,
+  script = NULL,
+  overwrite = TRUE,
   ...
 )
 }
@@ -236,6 +243,8 @@ Use random search (1=TRUE, 0=FALSE)}
 \item{bUseExchangeAlgorithm}{Use Exchange algorithm (1=TRUE, 0=FALSE)}
 
 \item{bUseBFGSMinimizer}{Use BFGS Minimizer (1=TRUE, 0=FALSE)}
+
+\item{bUseGrouped_xt}{Use grouped time points (1=TRUE, 0=FALSE).}
 
 \item{EACriteria}{Exchange Algorithm Criteria:
 \itemize{
@@ -519,6 +528,39 @@ Autocorrelation function, empty string means no autocorrelation.}
 
 \item{user_distribution_pointer}{Filename and path, or function
 name, for user defined distributions for E-family designs}
+
+\item{minxt}{Matrix or single value defining the minimum value for each xt sample.  If a single value is 
+supplied then all xt values are given the same minimum value}
+
+\item{maxxt}{Matrix or single value defining the maximum value for each xt sample.  If a single value is 
+supplied then all xt values are given the same maximum value.}
+
+\item{discrete_xt}{Cell array \code{\link[PopED]{cell}} defining the discrete variables allowed for each xt value.
+ Can also be a list of values \code{list(1:10)} (same values allowed for all xt), or a list of lists 
+\code{list(1:10, 2:23, 4:6)} (one for each value in xt). See examples in \code{\link[PopED]{create_design_space}}.}
+
+\item{discrete_a}{Cell array \code{\link[PopED]{cell}} defining the discrete variables allowed for each a value.
+ Can also be a list of values \code{list(1:10)} (same values allowed for all a), or a list of lists 
+\code{list(1:10, 2:23, 4:6)} (one for each value in a). See examples in \code{\link[PopED]{create_design_space}}.}
+
+\item{fixRes}{boolean; Fix the residuals to what is specified by
+the model}
+
+\item{script}{write a PopED/rxode2 script that can be modified for
+more fine control.  The default is NULL.
+
+When \code{script} is TRUE, the script is returned as a lines that
+would be written to a file and with the class
+\code{babelmixr2popedScript}. This allows it to be printed as the
+script on screen.
+
+When \code{script} is a file name (with an R extension), the script is
+written to that file.}
+
+\item{overwrite}{[\code{logical(1)}]\cr
+If \code{TRUE}, an existing file in place is allowed if it
+it is both readable and writable.
+Default is \code{FALSE}.}
 
 \item{...}{other parameters for PopED control}
 }

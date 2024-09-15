@@ -34,6 +34,8 @@
 #'   monolix. See details for function usage.
 #' @param absolutePath Boolean indicating if the absolute path should
 #'   be used for the monolix runs
+#'
+#' @param run Should monolix be run and the results be imported to nlmixr2?  (Default is TRUE)
 #' @inheritParams nonmemControl
 #' @inheritParams nlmixr2est::saemControl
 #' @return A monolix control object
@@ -66,6 +68,7 @@
 #' @importFrom methods is
 #' @importFrom stats na.omit setNames
 #' @importFrom utils assignInMyNamespace read.csv write.csv
+#' @importFrom rxode2 `model<-`
 monolixControl <- function(nbSSDoses=7,
                            useLinearization=FALSE,
                            stiff=FALSE,
@@ -92,6 +95,7 @@ monolixControl <- function(nbSSDoses=7,
                            absolutePath=FALSE,
                            modelName=NULL,
                            muRefCovAlg=TRUE,
+                           run=TRUE,
                            ...) {
   checkmate::assertLogical(stiff, max.len=1, any.missing=FALSE)
   checkmate::assertLogical(exploratoryAutoStop, max.len=1, any.missing=FALSE)
@@ -109,6 +113,7 @@ monolixControl <- function(nbSSDoses=7,
   checkmate::assertNumeric(exploratoryAlpha, lower=0.0, upper=1.0)
   checkmate::assertNumeric(omegaTau, lower=0.0, upper=1.0)
   checkmate::assertNumeric(errorModelTau, lower=0.0, upper=1.0)
+  checkmate::assertLogical(run, len=1, any.missing=FALSE)
 
   if (!is.null(modelName)) {
     checkmate::assertCharacter(modelName, len=1, any.missing=FALSE)
@@ -197,7 +202,8 @@ monolixControl <- function(nbSSDoses=7,
                genRxControl=genRxControl,
                useLinearization=useLinearization,
                modelName=modelName,
-               muRefCovAlg=muRefCovAlg)
+               muRefCovAlg=muRefCovAlg,
+               run=run)
   class(.ret) <- "monolixControl"
   .ret
 }
