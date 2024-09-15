@@ -43,7 +43,6 @@ nmObjGetControl.monolix2rx <- function(x, ...) {
 
 #' @export
 as.nlmixr2.monolix2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl()) {
-  browser()
   #need x$nonmemData
   # need x to have at least one endpoint
   # The environment needs:
