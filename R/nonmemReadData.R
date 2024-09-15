@@ -291,7 +291,7 @@ rxUiGet.nonmemPreds <- function(x, ...) {
     .ret <- .ret[.ret$NMREP ==1, names(.ret) != "NMREP"]
     setNames(.ret,
              c("ID", "TIME", "nonmemIPRED", "nonmemPRED", "RXROW"))
-    
+
   }
 }
 
@@ -333,11 +333,7 @@ rxUiGet.nonmemRoundingErrors <- function(x, ...) {
   .tmp$RXROW <- fit$env$.rownum
   .by <- c("ID", "TIME", "RXROW")
   .ret <- merge(.np, .tmp, by=.by)
--  if (!is.numeric(fit$nonmemControl$ci)) {
-    .ci0 <- 0.95
-  } else {
-    .ci0 <- fit$nonmemControl$ci
-  }
+  .ci0 <- fit$nonmemControl$ci
   .ci <- (1 - .ci0) / 2
   .q <- c(0, .ci, 0.5, 1 - .ci, 1)
   .qi <- stats::quantile(with(.ret, 100*abs((IPRED-nonmemIPRED)/nonmemIPRED)), .q, na.rm=TRUE)

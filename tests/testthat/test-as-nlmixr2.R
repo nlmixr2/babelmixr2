@@ -6,7 +6,7 @@
 
 test_that("nlmixr2 translation from nonmem2x", {
   skip_on_cran()
-  
+
   mod <- .nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
                    determineError=FALSE, lst=".res", save=FALSE)
 
@@ -60,3 +60,17 @@ test_that("nlmixr2 translation from nonmem2x", {
 
 })
 
+.monolix2rx <- function(...) suppressWarnings(suppressMessages(monolix2rx::monolix2rx(...)))
+
+test_that("nlmixr2 translation from monolix2rx", {
+  skip_on_cran()
+
+  pkgTheo <- system.file("theo/theophylline_project.mlxtran", package="monolix2rx")
+
+  mod <- .monolix2rx(pkgTheo)
+
+  fit <- .as.nlmixr2(mod)
+
+  expect_true(inherits(fit, "nlmixr2FitData"))
+
+})

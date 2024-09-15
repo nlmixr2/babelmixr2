@@ -6,6 +6,8 @@
 #' @param rxControl is the `rxode2::rxControl()` options, which is
 #'   generally needed for how `addl` doses are handled in the
 #'   translation
+#' @param ci is the confidence interval of the residual differences
+#'   calculated (by default 0.95)
 #' @return nlmixr2 fit object
 #' @export
 #' @author Matthew L. Fidler
@@ -63,7 +65,7 @@
 #' print(fit)
 #'
 #' }
-as.nlmixr2 <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl()) {
+as.nlmixr2 <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl(), ci=0.95) {
   UseMethod("as.nlmixr2")
 }
 #' @rdname as.nlmixr2
@@ -71,7 +73,7 @@ as.nlmixr2 <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode
 as.nlmixr <- as.nlmixr2
 
 #' @export
-as.nlmixr2.default <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl()) {
+as.nlmixr2.default <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl(), ci=0.95) {
   stop("cannot figure out how to create an nlmixr2 object from the input",
        call.=FALSE)
 }
