@@ -50,14 +50,16 @@
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">...</span>,</span>
 <span>  table <span class="op">=</span> <span class="fu">nlmixr2est</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/tableControl.html" class="external-link">tableControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  rxControl <span class="op">=</span> <span class="fu">rxode2</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/rxSolve.html" class="external-link">rxControl</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  rxControl <span class="op">=</span> <span class="fu">rxode2</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/rxSolve.html" class="external-link">rxControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  ci <span class="op">=</span> <span class="fl">0.95</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">as.nlmixr</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">...</span>,</span>
 <span>  table <span class="op">=</span> <span class="fu">nlmixr2est</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/tableControl.html" class="external-link">tableControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  rxControl <span class="op">=</span> <span class="fu">rxode2</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/rxSolve.html" class="external-link">rxControl</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  rxControl <span class="op">=</span> <span class="fu">rxode2</span><span class="fu">::</span><span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/rxSolve.html" class="external-link">rxControl</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  ci <span class="op">=</span> <span class="fl">0.95</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -81,6 +83,11 @@
 <dd><p>is the <code><a href="https://nlmixr2.github.io/rxode2/reference/rxSolve.html" class="external-link">rxode2::rxControl()</a></code> options, which is
 generally needed for how <code>addl</code> doses are handled in the
 translation</p></dd>
+
+
+<dt id="arg-ci">ci<a class="anchor" aria-label="anchor" href="#arg-ci"></a></dt>
+<dd><p>is the confidence interval of the residual differences
+calculated (by default 0.95)</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -245,8 +252,8 @@ translation</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">── Time (sec </span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>            setup table compress NONMEM as.nlmixr2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> elapsed 0.034653 0.111    0.018 100.95      2.693</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           setup table compress NONMEM as.nlmixr2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> elapsed 0.03449 0.082    0.014 100.95      2.756</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">── Population Parameters (</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

@@ -94,7 +94,9 @@
 <ul>
 <li><p>Running your nlmixr2 model in a commercial nonlinear mixed effects modeling tool like <a href="https://nlmixr2.github.io/babelmixr2/articles/running-nonmem.html" class="external-link"><code>NONMEM</code></a> or <code>Monolix</code></p></li>
 <li><p>Convert your <a href="https://nlmixr2.github.io/nonmem2rx/articles/convert-nlmixr2.html" class="external-link"><code>NONMEM</code> model to a nlmixr2 model</a> (in conjunction with <code>nonmem2rx</code>)</p></li>
+<li><p>Convert you <a href="https://nlmixr2.github.io/nonmem2rx/articles/convert-nlmixr2.html" class="external-link"><code>Monolix</code> model to a nlmixr2 model</a> (in conjunction with <code>monolix2rx</code>)</p></li>
 <li><p>Calculate scaling factors and automatically add initial conditions based on non-compartmental analysis (using <code>PKNCA</code>)</p></li>
+<li><p>Perform Optimal design using nlmixr2 as an interface to <code>PopED</code></p></li>
 </ul>
 </div>
 <div class="section level2">
@@ -103,7 +105,7 @@
 <p>While not required, you can get/install the R ‘lixoftConnectors’ package in the ‘Monolix’ installation, as described at the following url <a href="https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/" class="external-link uri">https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/</a>. When ‘lixoftConnectors’ is available, R can run ‘Monolix’ directly instead of using a command line.</p>
 </div>
 <div class="section level2">
-<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
+<h2 id="pknca-example">PKNCA Example<a class="anchor" aria-label="anchor" href="#pknca-example"></a>
 </h2>
 <p>After installed, if you use the standard interface, you can obtain new initial estimates with PKNCA:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
@@ -112,10 +114,18 @@
 <span>    <span class="va">nlmixrFun</span>, <span class="va">nlmmixrData</span>, est <span class="op">=</span> <span class="st">"pknca"</span>,</span>
 <span>    control <span class="op">=</span> <span class="fu"><a href="reference/pkncaControl.html">pkncaControl</a></span><span class="op">(</span>concu <span class="op">=</span> <span class="st">"ng/mL"</span>, doseu <span class="op">=</span> <span class="st">"mg"</span>, timeu <span class="op">=</span> <span class="st">"hr"</span>, volumeu <span class="op">=</span> <span class="st">"L"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<p>or, you can convert to Monolix with</p>
+</div>
+<div class="section level2">
+<h2 id="monolix-example">Monolix example<a class="anchor" aria-label="anchor" href="#monolix-example"></a>
+</h2>
+<p>With babelmixr2 loaded, you can use <code>nlmixr2</code> to convert a nlmixr2 model to Monolix, run with monolix, and import back to nlmixr2 with the following:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu">nlmixr</span><span class="op">(</span><span class="va">nlmixrFun</span>, <span class="va">nlmmixrData</span>, est<span class="op">=</span><span class="st">"monolix"</span><span class="op">)</span></span></code></pre></div>
-<p>or, you can convert to NONMEM with</p>
+</div>
+<div class="section level2">
+<h2 id="nonmem-example">NONMEM example<a class="anchor" aria-label="anchor" href="#nonmem-example"></a>
+</h2>
+<p>With babelmixr2 loadid you can use <code>nlmixr2</code> to convert a nlmixr2 model to NONMEM, run NONMEM and import back to nlmixr2 with the following:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu">nlmixr</span><span class="op">(</span><span class="va">nlmixrFun</span>, <span class="va">nlmmixrData</span>, est<span class="op">=</span><span class="st">"nonmem"</span><span class="op">)</span></span></code></pre></div>
 </div>
