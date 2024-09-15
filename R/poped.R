@@ -1614,6 +1614,7 @@ rxUiGet.popedSettings <- function(x, ...) {
 #' @param data design data
 #' @return nothing, called for side effects
 #' @author Matthew L. Fidler
+#' @noRd
 .fillInPopEdEnv <- function(ui, ni, data) {
   .nd <- tolower(names(data))
   .data <- data
