@@ -9,14 +9,16 @@ as.nlmixr2(
   x,
   ...,
   table = nlmixr2est::tableControl(),
-  rxControl = rxode2::rxControl()
+  rxControl = rxode2::rxControl(),
+  ci = 0.95
 )
 
 as.nlmixr(
   x,
   ...,
   table = nlmixr2est::tableControl(),
-  rxControl = rxode2::rxControl()
+  rxControl = rxode2::rxControl(),
+  ci = 0.95
 )
 }
 \arguments{
@@ -29,6 +31,9 @@ as.nlmixr(
 \item{rxControl}{is the \code{rxode2::rxControl()} options, which is
 generally needed for how \code{addl} doses are handled in the
 translation}
+
+\item{ci}{is the confidence interval of the residual differences
+calculated (by default 0.95)}
 }
 \value{
 nlmixr2 fit object

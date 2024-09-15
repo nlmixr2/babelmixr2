@@ -42,7 +42,7 @@ nmObjGetControl.monolix2rx <- function(x, ...) {
 }
 
 #' @export
-as.nlmixr2.monolix2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl()) {
+as.nlmixr2.monolix2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl(), ci=0.95) {
   #need x$nonmemData
   # need x to have at least one endpoint
   # The environment needs:
@@ -74,7 +74,7 @@ as.nlmixr2.monolix2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxCo
       }
       .df[["OBJI"]] <- NA_real_
       env$etaObf <- .df
-      warning("since NONMEM did not output between subject variability, assuming all ETA(#) are zero",
+      warning("since Monolix did not output between subject variability, assuming all ETA(#) are zero",
               call.=FALSE)
     }
     # - $cov For covariance
@@ -115,7 +115,9 @@ as.nlmixr2.monolix2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxCo
                                                   control=env$control, table=env$table,
                                                   env=env, est="monolix2rx")
     if (inherits(.ret, "nlmixr2FitData")) {
+      assign("monolixControl", list(ci=ci), .ret$env)
       .msg <- .monolixMergePredsAndCalcRelativeErr(.ret)
+      rm("monolixControl", envir=.ret$env)
       .msg$message <- c(.msg$message)
       .tmp <- .ret$ui$monolixParHistory
       assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)

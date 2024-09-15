@@ -27,11 +27,11 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
                                             interaction = 1L)
   if (assign)
     env$control <- .foceiControl
-  .foceiControl 
+  .foceiControl
 }
 
 #' @export
-as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl()) {
+as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl(), ci=0.95) {
   #need x$nonmemData
   # need x to have at least one endpoint
   # The environment needs:
@@ -105,7 +105,9 @@ as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxCon
                                                   control=env$control, table=env$table,
                                                   env=env, est="nonmem2rx")
     if (inherits(.ret, "nlmixr2FitData")) {
+      assign("nonmemControl", list(ci=ci), .ret$env)
       .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
+      rm("nonmemControl", envir=.ret$env)
       .prderrPath <- file.path(x$nonmemExportPath, "PRDERR")
       .msg$message <- c(.ui$nonmemTransMessage,
                         .ui$nonmemTermMessage,
