@@ -12,8 +12,14 @@
 \alias{nmObjHandleControlObject}
 \alias{nmObjGetControl}
 \alias{nonmem2rx}
+\alias{nmcov}
+\alias{nmext}
+\alias{nminfo}
+\alias{nmtab}
+\alias{nmxml}
 \alias{as.nonmem2rx}
 \alias{monolix2rx}
+\alias{mlxtran}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -21,11 +27,11 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
-  \item{monolix2rx}{\code{\link[monolix2rx]{monolix2rx}}}
+  \item{monolix2rx}{\code{\link[monolix2rx]{mlxtran}}, \code{\link[monolix2rx]{monolix2rx}}}
 
   \item{nlmixr2est}{\code{\link[nlmixr2est:getValidNlmixrControl]{getValidNlmixrCtl}}, \code{\link[nlmixr2est]{nlmixr2Est}}, \code{\link[nlmixr2est]{nmObjGetControl}}, \code{\link[nlmixr2est]{nmObjGetFoceiControl}}, \code{\link[nlmixr2est]{nmObjHandleControlObject}}}
 
-  \item{nonmem2rx}{\code{\link[nonmem2rx]{as.nonmem2rx}}, \code{\link[nonmem2rx]{nonmem2rx}}}
+  \item{nonmem2rx}{\code{\link[nonmem2rx]{as.nonmem2rx}}, \code{\link[nonmem2rx]{nmcov}}, \code{\link[nonmem2rx]{nmext}}, \code{\link[nonmem2rx]{nminfo}}, \code{\link[nonmem2rx]{nmtab}}, \code{\link[nonmem2rx]{nmxml}}, \code{\link[nonmem2rx]{nonmem2rx}}}
 
   \item{rxode2}{\code{\link[rxode2:dot-minfo]{.minfo}}, \code{\link[rxode2]{rxModelVars}}, \code{\link[rxode2]{rxUiGet}}}
 }}
