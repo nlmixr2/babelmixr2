@@ -208,6 +208,12 @@ monolixControl <- function(nbSSDoses=7,
   .ret
 }
 
+rxUiDeparse.monolixControl <- function(object, var) {
+  .default <- monolixControl()
+  .w <- nlmixr2est::.deparseDifferent(.default, object, "genRxControl")
+  nlmixr2est::.deparseFinal(.default, object, .w, var)
+}
+
 .monolixControlToFoceiControl <- function(env, assign = TRUE) {
   .monolixControl <- env$monolixControl
   .ui <- env$ui
