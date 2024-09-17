@@ -254,6 +254,13 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   .ret
 }
 
+rxUiDeparse.nonmemControl <- function(object, var) {
+  .default <- nonmemControl()
+  .w <- nlmixr2est::.deparseDifferent(.default, object, "genRxControl")
+  nlmixr2est::.deparseFinal(.default, object, .w, var)
+}
+
+
 #' @export
 getValidNlmixrCtl.nonmem <- function(control) {
   .ctl <- control[[1]]

@@ -431,6 +431,13 @@ pkncaControl <- function(concu = NA_character_, doseu = NA_character_, timeu = N
   )
 }
 
+rxUiDeparse.pkncaControl <- function(object, var) {
+  .default <- pkncaControl()
+  .w <- nlmixr2est::.deparseDifferent(.default, object, "genRxControl")
+  nlmixr2est::.deparseFinal(.default, object, .w, var)
+}
+
+
 #' @export
 getValidNlmixrCtl.pknca <- function(control) {
   orig <- control

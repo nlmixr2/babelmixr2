@@ -2896,6 +2896,13 @@ popedControl <- function(stickyRecalcN=4,
   .ret
 }
 
+rxUiDeparse.popedControl <- function(object, var) {
+  .default <- popedControl()
+  .w <- nlmixr2est::.deparseDifferent(.default, object, "genRxControl")
+  nlmixr2est::.deparseFinal(.default, object, .w, var)
+}
+
+
 
 .popedFamilyControl <- function(env, ...) {
   .ui <- env$ui
