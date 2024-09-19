@@ -2033,6 +2033,23 @@ rxUiGet.popedSettings <- function(x, ...) {
 .setupPopEDdatabase <- function(ui, data, control) {
   # PopED environment needs:
   # - control - popedControl
+
+  #
+  # Data needs to match what PopED prefers, so order by id, dvid then time, not the typical ordering.  This only needs to be done in cases where there is a dvid.
+  #
+  .nd <- tolower(names(data))
+  .wdvid <- which(.nd == "dvid")
+  if (length(.wdvid) == 1L) {
+    .wid <- which(.nd == "id")
+    .wtime <- which(.nd == "time")
+    if (length(.wid) == 1L) {
+      .minfo("ordering data by id, dvid and time")
+      data <- data[order(data[[.wid]], data[[.wdvid]], data[[.wtime]]),]
+    } else {
+      .minfo("ordering data by dvid and time")
+      data <- data[order(data[[.wdvid]], data[[.wtime]]),]
+    }
+  }
   .poped$control <- control
   # - rxControl
   .poped$rxControl <- control$rxControl

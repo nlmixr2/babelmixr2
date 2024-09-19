@@ -61,11 +61,31 @@ plot_model_prediction(babel.db, model_num_points = 300)
 plot_model_prediction(babel.db, IPRED=T, DV=T, separate.groups=T, model_num_points = 300)
 
 ## evaluate initial design
+## From original
+## $rse
+##        V        KA        CL       d_V      d_KA      d_CL
+## 8.215338 10.090955  4.400304 39.833230 60.089601 27.391518
+
 evaluate_design(babel.db)
 
+
+## original: > shrinkage(poped.db)
+## # A tibble: 9 × 5
+##     d_V  d_KA   d_CL type       group
+##   <dbl> <dbl>  <dbl> <chr>      <chr>
+## 1 0.364 0.578 0.184  shrink_var all_groups
+## 2 0.364 0.579 0.184  shrink_var grp_1
+## 3 0.363 0.577 0.183  shrink_var grp_2
+## 4 0.202 0.350 0.0965 shrink_sd  all_groups
+## 5 0.202 0.351 0.0967 shrink_sd  grp_1
+## 6 0.202 0.350 0.0963 shrink_sd  grp_2
+## 7 0.181 0.228 0.107  se         all_groups
+## 8 0.181 0.228 0.107  se         grp_1
+## 9 0.181 0.228 0.107  se         grp_2
 shrinkage(babel.db)
 
 # Optimization of sample times
+
 output <- poped_optim(babel.db, opt_xt =TRUE)
 
 # Evaluate optimization results

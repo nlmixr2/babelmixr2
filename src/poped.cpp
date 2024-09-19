@@ -414,9 +414,21 @@ Rcpp::DataFrame popedSolveIdME(NumericVector &theta,
   }
 
   popedSolveFidMat(matMT, theta, id, nrow, nend);
-  // arma::uvec m = as<arma::uvec>(match(mt, t))-1;
-  // f = f(m);
-  // w = w(m);
+  // this gets the information from:
+  // - the model time
+  // - the model_switch
+  // It will match the model switch being supplied
+  // and the time being supplied
+  //
+  // Hence for models sent to this routine, it should match what seems
+  // to be PopED's prefered way of handling the information
+  // that is: ordering by model_switch, then model time, for example:
+  // model_switch = 1, 1, 1, 2, 2, 2
+  // time         = 0, 1, 2, 0, 1, 2
+  //
+  // This is not how rxode2/nlmixr2 handles the information, but this
+  // routine should put it in whatever order is supplied to
+  // model_switch and time
   for (int i = 0; i < totn; ++i) {
     double curT = mt[i];
     int curMS = ms[i];

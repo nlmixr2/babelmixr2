@@ -9,7 +9,7 @@ Description: Run other estimation and simulation software via the 'nlmixr2' (Fid
   <doi:10.1002/psp4.12445>) interface including 'PKNCA', 'NONMEM' and 'Monolix'. While not required, you can
   get/install the 'lixoftConnectors' package in the 'Monolix' installation, as
   described at the following url
-  <https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/>. When
+  <https://monolixsuite.slp-software.com/r-functions/2024R1/installation-and-initialization>. When
   'lixoftConnectors' is available, 'Monolix' can be run directly instead of setting up
   command line usage.
 License: GPL (>= 3)
