@@ -100,7 +100,7 @@ output$E_fim
 ## optimization with line search
 output <- poped_optim(babel.db, opt_xt = T, parallel = T,
                       d_switch=F,ED_samp_size=20,
-                      method = c("LS"))
+                      method = "LS")
 
 summary(output)
 
