@@ -1,7 +1,7 @@
 
 library(babelmixr2)
-library(PopED)
 
+library(PopED)
 
 ##-- Model: One comp first order absorption + inhibitory imax
 ## -- works for both mutiple and single dosing
@@ -12,7 +12,7 @@ f <- function() {
     tCl <- 3.75
     tFavail <- fix(0.9)
     tE0 <- 1120
-    tImax <- 0.807
+    tImax <- 0.87
     tIC50 <- 0.0993
 
     eta.v ~ 0.09
@@ -40,7 +40,6 @@ f <- function() {
       (exp(-CL/V * (time - (N - 1) * TAU)) *
          (1 - exp(-N * CL/V * TAU))/(1 - exp(-CL/V * TAU)) -
          exp(-KA * (time - (N - 1) * TAU)) * (1 - exp(-N * KA * TAU))/(1 - exp(-KA * TAU)))
-
     # PD model
     EFF <- E0*(1 - CONC*IMAX/(IC50 + CONC))
 
@@ -61,6 +60,7 @@ e1$high <- c(10,10,10,248, 248)
 # variable which is defined in the dataset as G_xt since it is defined
 # in PopED as G_xt
 e1$G_xt <- seq_along(e1$low)
+
 e2 <- e1
 e2$dvid <- 2
 e <- rbind(e1, e2)
@@ -72,22 +72,20 @@ babel.db <- nlmixr2(f, e, "poped",
                       bUseGrouped_xt=TRUE,
                       a=list(c(DOSE=20,TAU=24),
                              c(DOSE=40, TAU=24),
-                              c(DOSE=0, TAU=24)),
+                             c(DOSE=0, TAU=24)),
                       maxa=c(DOSE=200,TAU=40),
                       mina=c(DOSE=0,TAU=2),
                       ourzero=0
                     ))
 
+
+##  create plot of model and design
+plot_model_prediction(babel.db,facet_scales="free")
+
+plot_model_prediction(babel.db,IPRED=T,DV=T,facet_scales="free",separate.groups=T)
+
 ## evaluate initial design
-# $rse
-# V        KA        CL        E0      IMAX      IC50       d_V      d_KA      d_CL
-# 8.119842  9.968612  4.304635  7.076883  9.895340 39.478269 38.960998 58.523188 25.832775
-# d_E0
-# 22.036110
 evaluate_design(babel.db)
-
-
-
 shrinkage(babel.db)
 
 # Optimization

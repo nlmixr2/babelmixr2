@@ -333,7 +333,7 @@ rxUiGet.popedFgFun  <- function(x, ...) {
                       str2lang("ID <- setNames(rxPopedA[1], NULL)"),
                       .body1,
                       list(str2lang(paste("c(ID=ID,",
-                                          paste(paste0(.v, "=setNames(", .v2, ", NULL)"),
+                                          paste(paste0(.v, "=", .v2),
                                                 collapse=","),
                                           ")")))))
   .body1 <- as.call(.body1)
