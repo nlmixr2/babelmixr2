@@ -3058,3 +3058,21 @@ rxUiGet.popedScriptBeforeCtl <- function(x, ...) {
 print.babelmixr2popedScript <- function(x, ...) {
   cat(paste(x, collapse="\n"), "\n")
 }
+#' Expand a babelmixr2 PopED database
+#'
+#' @param popedInput The babelmixr2 generated PopED database
+#' @param ... other parameters sent to `PopED::create.poped.database()`
+#' @return babelmixr2 PopED database (with $babelmixr2 in database)
+#' @export
+#' @author Matthew L. Fidler
+babel.poped.database <- function(popedInput, ...) {
+  if (is.environment(popedInput$babelmixr2)) {
+    .babelmixr2 <- popedInput$babelmixr2
+    .db <- PopED::create.poped.database(popedInput=popedInput, ...)
+    .db$babelmixr2 <- .babelmixr2
+    return(.db)
+  } else {
+    stop("this object is not a PopED database from babelmixr2",
+         call.=FALSE)
+  }
+}
