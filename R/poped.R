@@ -291,7 +291,9 @@ rxUiGet.popedFgFun <- function(x, ...) {
                       str2lang("ID <- setNames(rxPopedA[1], NULL)"),
                       .body1,
                       list(str2lang(paste("c(ID=ID,",
-                                          paste(paste0(.v, "=", .v2),
+                                          paste(paste0(.v,
+                                                       "= setNames(",
+                                                       .v2, ", NULL)"),
                                                 collapse=","),
                                           ")")))))
   .body1 <- as.call(.body1)
@@ -583,7 +585,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                                              .d[[.wtime]] <- t
                                                              .d
                                                            }))
-                                  rbind(.data, .data3)
+                                  rbind(.data, .data3)[, -.wdvid]
                                 })))
     .et <- rxode2::etTrans(.dat, .e$modelF)
     .e$dataF <- .et
@@ -1183,7 +1185,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                 "discrete_xt", "discrete_a")) {
     assign(opt, rxode2::rxGetControl(ui, opt, get(opt)))
   }
-  .et <- rxode2::etTrans(data, ui)
+  .et <- suppressWarnings(rxode2::etTrans(data, ui))
 
   .tmp <- attr(class(.et),".rxode2.lst")
   class(.tmp) <- NULL
@@ -1689,9 +1691,12 @@ rxUiGet.popedSettings <- function(x, ...) {
                            rbind(.data, .data2)
                          }))
   .id <- as.integer(factor(paste(.dat[[.wid]])))
-  .dat <- .dat[, -.wid]
+  if (length(.wdvid) > 0L) {
+    .dat <- .dat[, -c(.wid, .wdvid)]
+  } else {
+    .dat <- .dat[, -.wid]
+  }
   .dat$id <- .id
-
   .poped$dataMT <- rxode2::etTrans(.dat, .poped$modelMT)
 }
 
@@ -1857,8 +1862,9 @@ rxUiGet.popedSettings <- function(x, ...) {
                                          G_xt=.env$G_xt,
                                          a=.a,
                                          discrete_xt=.poped$discrete_xt,
-                                         discrete_a=.poped$discrete_a,
-                                         G_xt=.poped$G_xt)
+                                         discrete_a=.poped$discrete_a## ,
+                                         ## G_xt=.poped$G_xt
+                                         )
     return(.appendPopedProps(.ret, .ctl))
   } else {
     .w <- which(.nd == "evid")
