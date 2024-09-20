@@ -3072,7 +3072,7 @@ babel.poped.database <- function(popedInput, ...) {
     .babelmixr2 <- popedInput$babelmixr2
     .db <- PopED::create.poped.database(popedInput=popedInput, ...)
     .db$babelmixr2 <- .babelmixr2
-    return(.db)
+    .db
   } else {
     stop("this object is not a PopED database from babelmixr2",
          call.=FALSE)
