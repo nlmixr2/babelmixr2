@@ -75,6 +75,15 @@
   .Call(`_babelmixr2_popedSolveIdME2`, theta, umt, mt, ms, nend, id, totn)
 }
 
+.popedGetThetaDf <- function(ui) {
+  .iniDf <- ui$iniDf
+  .w <- which(!is.na(.iniDf$ntheta) & is.na(.iniDf$err))
+  if (length(.w) == 0) return(.iniDf[.w, , drop=FALSE])
+  .ret <- .iniDf[.w,]
+  .ret$ntheta <- seq_along(.ret$ntheta)
+  .ret
+}
+
 #' get the bpop number (which is a theta in PopED)
 #'
 #' @param theta name of the population parameter
@@ -83,7 +92,7 @@
 #' @noRd
 #' @author Matthew L. Fidler
 .popedGetBpopNum0 <- function(theta, ui) {
-  .iniDf <- ui$iniDf
+  .iniDf <- .popedGetThetaDf(ui)
   .w <- which(.iniDf$name == theta)
   if (length(.w) != 1) return(NA_integer_)
   if (is.na(.iniDf$ntheta[.w])) return(NA_integer_)
@@ -248,21 +257,20 @@ rxUiGet.popedFgFun <- function(x, ...) {
                        })
   .iniDf <- .ui$iniDf
   .w <- which(!is.na(.iniDf$ntheta) & !is.na(.iniDf$err))
-  .errTerm <- .iniDf$name[.w]
-  .errTermLst <- lapply(.w,
-                        function(i) {
-                          str2lang(paste0(.iniDf$name[i], " <- bpop[", .iniDf$ntheta[i], "]"))
-                        })
+  ## .errTerm <- .iniDf$name[.w]
+  ## .errTermLst <- lapply(.w,
+  ##                       function(i) {
+  ##                         str2lang(paste0(.iniDf$name[i], " <- bpop[", .iniDf$ntheta[i], "]"))
+  ##                       })
 
-  .v <- c(.split$pureMuRef, .split$taintMuRef, .errTerm, .covDef)
+  .v <- c(.split$pureMuRef, .split$taintMuRef, .covDef)
   .allCovs <- .ui$allCovs
   .body1 <- c(.covDefLst,
               lapply(c(.ret, .mu2),
                      function(x) {
                        str2lang(x)
                      }),
-              .split$muRefDef,
-              .errTermLst)
+              .split$muRefDef)
   .body1 <- lapply(seq_along(.body1),
                    function(i) {
                      .replaceNamesPopedFgFun(.body1[[i]], iniDf=.iniDf, mu=.mu)
@@ -783,6 +791,20 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
          "none"=.popedGetErrorModelNone(ui, pred1))
 }
 
+.replaceErrWithConst <- function(x, errDf) {
+  if (is.name(x)) {
+    .err <- as.character(x)
+    .w <- which(errDf$name == .err)
+    if (length(.w) == 1L) {
+      return(errDf$est[.w])
+    }
+  } else if (is.call(x)) {
+    return(as.call(c(x[[1]], lapply(x[-1], .replaceErrWithConst,
+                                    errDf=errDf))))
+  }
+  x
+}
+
 #'@export
 rxUiGet.popedFErrorFun  <- function(x, ...) {
   .ui <- x[[1]]
@@ -911,6 +933,8 @@ rxUiGet.popedRxmodelBase <- function(x, ...) {
                      },
                      logical(1), USE.NAMES = FALSE))
   .mod <- .mod[.w]
+  .errDf <- .iniDf[!is.na(.iniDf$err), ,drop=FALSE]
+
   .mod <- lapply(seq_along(.mod),
                  function(i) {
                    .cur <- .mod[[i]]
@@ -927,7 +951,7 @@ rxUiGet.popedRxmodelBase <- function(x, ...) {
                            identical(.cur[[2]], quote(`rx_r_`)))
                        .cur[[1]] <- quote(`<-`)
                    }
-                   .cur
+                   .replaceErrWithConst(.cur, .errDf)
                  })
   .mod
 }
@@ -973,7 +997,7 @@ attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for P
   .iniDf <- ui$iniDf
   .w <- which(!is.na(.iniDf$ntheta) & !is.na(.iniDf$err))
   .errTerm <- .iniDf$name[.w]
-  .poped$paramF <- c(.split$pureMuRef, .split$taintMuRef, .errTerm,
+  .poped$paramF <- c(.split$pureMuRef, .split$taintMuRef, #.errTerm,
                     .covDef)
   .poped$paramMT <- c(.poped$paramF, paste0("rxXt_", seq_len(maxNumTime)))
   .param0 <- str2lang(paste0("params(", paste(.poped$paramF, collapse=","), ")"))
@@ -1008,8 +1032,7 @@ rxUiGet.popedFullRxModel <- function(x, ...) {
 #' @export
 rxUiGet.popedBpop <- function(x, ...) {
   .ui <- x[[1]]
-  .iniDf <- .ui$iniDf
-  .bpop <- .iniDf[!is.na(.ui$iniDf$ntheta), ]
+  .bpop <- .popedGetThetaDf(.ui)
   setNames(.bpop$est, .bpop$name)
 }
 attr(rxUiGet.popedBpop, "desc") <- "Get PopED's $bpop"
@@ -1017,11 +1040,12 @@ attr(rxUiGet.popedBpop, "desc") <- "Get PopED's $bpop"
 #' @export
 rxUiGet.popedNotfixedBpop <- function(x, ...) {
   .ui <- x[[1]]
-  .iniDf <- .ui$iniDf
-  .bpop <- .iniDf[!is.na(.ui$iniDf$ntheta), ]
+  .bpop <- .popedGetThetaDf(.ui)
   # Residual errors are "fixed" parameters
   .bpop$fix[!is.na(.bpop$err)] <- TRUE
-  1 - .bpop$fix * 1
+  .ret <- 1 - .bpop$fix * 1
+  if (all(.ret == 1)) return(NULL)
+  .ret
 }
 attr(rxUiGet.popedNotfixedBpop, "desc") <- "Get PopED's $notfixed_bpop"
 
@@ -2579,6 +2603,7 @@ popedControl <- function(stickyRecalcN=4,
                          fixRes=FALSE,
                          script=NULL,
                          overwrite=TRUE,
+                         literalFix=TRUE,
                          ...) {
   rxode2::rxReq("PopED")
   .xtra <- list(...)
