@@ -1,0 +1,115 @@
+library(babelmixr2)
+
+library(PopED)
+
+f <- function() {
+  ini({
+    tCl     <- 0.3
+    tVc     <- 3
+    tQ      <- 0.2
+    tVp     <- 3
+    tFavail <- 0.7
+    tKa     <- 0.5
+    tVmax   <- fix(0)
+    tKmss   <- fix(0)
+    tR0     <- 0.1
+    tKsss   <- 0.015
+    tKdeg   <- 10
+    tKint   <- 0.05
+
+    eta.cl     ~ 0.09
+    eta.vc     ~ 0.09
+    eta.q      ~ 0.04
+    eta.vp     ~ 0.04
+    eta.favail ~ 0.04
+    eta.ka     ~ 0.16
+    eta.vmax   ~ fix(0)
+    eta.kmss   ~ fix(0)
+    eta.r0     ~ 0.09
+    eta.ksss   ~ 0.09
+    eta.kdeg   ~ 0.04
+    eta.kint   ~ 0.04
+
+    rtot.sd <- sqrt(0.04)
+    free.sd <- sqrt(0.0225)
+  })
+  model({
+    Cl     <- tCl     * exp(eta.cl)
+    Vc     <- tVc     * exp(eta.vc)
+    Q      <- tQ      * exp(eta.q)
+    Vp     <- tVp     * exp(eta.vp)
+    Favail <- tFavail * exp(eta.favail)
+    Ka     <- tKa     * exp(eta.ka)
+    Vmax   <- tVmax   * exp(eta.vmax)
+    Kmss   <- tKmss   * exp(eta.kmss)
+    R0     <- tR0     * exp(eta.r0)
+    Ksss   <- tKsss   * exp(eta.ksss)
+    Kdeg   <- tKdeg   * exp(eta.kdeg)
+    Kint   <- tKint   * exp(eta.kint)
+
+    Ctot          <- central/Vc
+    Cfree         <- 0.5*((Ctot-Rtot-Ksss)+sqrt((Ctot-Rtot-Ksss)^2+4*Ksss*Ctot))
+    depot(0)      <- DOSE*SC_FLAG
+    d/dt(depot)   <- -Ka*depot
+    central(0)    <- DOSE*(1-SC_FLAG)
+    d/dt(central) <- Ka*depot*Favail + (Q/Vp)*periph - (Cl/Vc+Q/Vc)*Cfree*Vc -
+      Rtot*Kint*Cfree*Vc/(Ksss+Cfree)
+    d/dt(periph)  <- (Q/Vc)*Cfree*Vc - (Q/Vp)*periph
+    Rtot(0)       <- R0
+    d/dt(Rtot)    <- R0*Kdeg - Kdeg*Rtot - (Kint-Kdeg)*(Rtot*Cfree/(Ksss+Cfree))
+
+    Rtot         ~  lnorm(rtot.sd)
+    Cfree        ~  lnorm(free.sd)
+  })
+}
+
+f <- f()
+
+e1 <- et(c(0.0417,0.25,0.5,1,3,7,14,21,28,35,42,49,56)) %>%
+  as.data.frame() %>% dplyr::mutate(dvid=1)
+
+e2 <- e1
+e2$dvid <- 2
+
+e0 <- rbind(e1, e2) %>%
+  dplyr::mutate(ID=1)
+
+e1 <- et(c(0.0417,1,1,7,14,21,28,56,63,70,77,84,91,98,105)) %>%
+  as.data.frame() %>% dplyr::mutate(dvid=1)
+
+e2 <- e1
+e2$dvid <- 2
+
+e <- rbind(e1, e2) %>%
+  dplyr::mutate(ID=2)
+
+e <- rbind(e0, e)
+
+
+db <- nlmixr2(f, e, "poped",
+              control=popedControl(
+                groupsize=rbind(6,6,6,6,100,100),
+                a=list(c(ID=1, DOSE=100, SC_FLAG=0),
+                       c(ID=1, DOSE=300, SC_FLAG=0),
+                       c(ID=1, DOSE=600, SC_FLAG=0),
+                       c(ID=1, DOSE=1000, SC_FLAG=1),
+                       c(ID=2, DOSE=600, SC_FLAG=0),
+                       c(ID=2, DOSE=1000, SC_FLAG=1)),
+                discrete_a = list(DOSE=seq(100,1000,by=100),
+                                  SC_FLAG=c(0,1))))
+
+
+plot_model_prediction(db, model_num_points=300, PI=TRUE, facet_scales="free")
+
+#plot_model_prediction(db,facet_scales="free")
+
+# Original example:
+## $rse
+## CL         V1          Q         V2     FAVAIL         KA         R0       KSSS
+## 2.418464   2.493863   2.390597   2.757785   3.023260   4.838732   2.800056   3.122798
+## KDEG       KINT       d_CL       d_V1        d_Q       d_V2   d_FAVAIL       d_KA
+## 2.711192   2.431927  10.830828  12.269644  22.271256  20.032780  24.240763  19.409710
+## d_R0     d_KSSS     d_KDEG     d_KINT SIGMA[1,1] SIGMA[2,2]
+## 11.890735  13.446074  20.396815  18.125143   2.731176   2.906398
+
+tic();e2 <- evaluate_design(db);toc()
