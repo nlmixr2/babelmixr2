@@ -139,6 +139,7 @@ popedControl(
   fixRes = FALSE,
   script = NULL,
   overwrite = TRUE,
+  literalFix = TRUE,
   ...
 )
 }
@@ -561,6 +562,10 @@ written to that file.}
 If \code{TRUE}, an existing file in place is allowed if it
 it is both readable and writable.
 Default is \code{FALSE}.}
+
+\item{literalFix}{boolean, substitute fixed population values as
+literals and re-adjust ui and parameter estimates after
+optimization; Default is `TRUE`.}
 
 \item{...}{other parameters for PopED control}
 }
