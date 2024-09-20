@@ -12,7 +12,7 @@ f <- function() {
     tCl <- 3.75
     tFavail <- fix(0.9)
     tE0 <- 1120
-    tImax <- 0.87
+    tImax <- 0.807
     tIC50 <- 0.0993
 
     eta.v ~ 0.09
@@ -85,7 +85,33 @@ plot_model_prediction(babel.db,facet_scales="free")
 plot_model_prediction(babel.db,IPRED=T,DV=T,facet_scales="free",separate.groups=T)
 
 ## evaluate initial design
+
+# Original PopED
+## $rse
+## V        KA        CL        E0      IMAX      IC50       d_V      d_KA      d_CL
+## 8.119842  9.968612  4.304635  7.076883  9.895340 39.478269 38.960998 58.523188 25.832775
+## d_E0
+## 22.036110
 evaluate_design(babel.db)
+
+# Original:
+## > shrinkage(poped.db)
+## # A tibble: 12 × 6
+## d_V  d_KA   d_CL   d_E0 type       group
+## <dbl> <dbl>  <dbl>  <dbl> <chr>      <chr>
+## 1 0.358 0.573 0.134  0.171  shrink_var all_groups
+## 2 0.359 0.575 0.135  0.173  shrink_var grp_1
+## 3 0.358 0.571 0.134  0.175  shrink_var grp_2
+## 4 1     1     1      0.167  shrink_var grp_3
+## 5 0.199 0.346 0.0696 0.0898 shrink_sd  all_groups
+## 6 0.199 0.348 0.0699 0.0906 shrink_sd  grp_1
+## 7 0.199 0.345 0.0694 0.0915 shrink_sd  grp_2
+## 8 1     1     1      0.0872 shrink_sd  grp_3
+## 9 0.220 0.251 0.144  0.124  se         all_groups
+## 10 0.180 0.227 0.0918 0.125  se         grp_1
+## 11 0.179 0.227 0.0915 0.125  se         grp_2
+## 12 0.3   0.3   0.25   0.123  se         grp_3
+
 shrinkage(babel.db)
 
 # Optimization
