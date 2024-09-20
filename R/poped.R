@@ -2224,7 +2224,11 @@ rxUiGet.popedSettings <- function(x, ...) {
   unimportant <- rxode2::rxGetControl(ui, "unimportant", unimportant)
   .par <- lst$parameters
   .err <- ui$iniDf$name[!is.na(ui$iniDf$err)]
-  .importantFixed <- names(.par$bpop[which(.par$notfixed_bpop==1)])
+  if (is.null(.par$notfixed_bpop)) {
+    .importantFixed <- names(.par$bpop)
+  } else {
+    .importantFixed <- names(.par$bpop[which(.par$notfixed_bpop==1)])
+  }
   if (is.null(.par$notfixed_d)) {
     .unimportantRandom <- names(.par$d)
   } else {
