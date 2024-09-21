@@ -35,14 +35,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // popedGetMultipleEndpointModelingTimes
-Rcpp::NumericVector popedGetMultipleEndpointModelingTimes(Rcpp::NumericVector times, Rcpp::IntegerVector modelSwitch);
-RcppExport SEXP _babelmixr2_popedGetMultipleEndpointModelingTimes(SEXP timesSEXP, SEXP modelSwitchSEXP) {
+Rcpp::NumericVector popedGetMultipleEndpointModelingTimes(Rcpp::NumericVector times, Rcpp::IntegerVector modelSwitch, bool sorted);
+RcppExport SEXP _babelmixr2_popedGetMultipleEndpointModelingTimes(SEXP timesSEXP, SEXP modelSwitchSEXP, SEXP sortedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type times(timesSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type modelSwitch(modelSwitchSEXP);
-    rcpp_result_gen = Rcpp::wrap(popedGetMultipleEndpointModelingTimes(times, modelSwitch));
+    Rcpp::traits::input_parameter< bool >::type sorted(sortedSEXP);
+    rcpp_result_gen = Rcpp::wrap(popedGetMultipleEndpointModelingTimes(times, modelSwitch, sorted));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -57,12 +58,38 @@ BEGIN_RCPP
 END_RCPP
 }
 // popedMultipleEndpointIndexDataFrame
-Rcpp::List popedMultipleEndpointIndexDataFrame();
-RcppExport SEXP _babelmixr2_popedMultipleEndpointIndexDataFrame() {
+Rcpp::List popedMultipleEndpointIndexDataFrame(bool print);
+RcppExport SEXP _babelmixr2_popedMultipleEndpointIndexDataFrame(SEXP printSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(popedMultipleEndpointIndexDataFrame());
+    Rcpp::traits::input_parameter< bool >::type print(printSEXP);
+    rcpp_result_gen = Rcpp::wrap(popedMultipleEndpointIndexDataFrame(print));
+    return rcpp_result_gen;
+END_RCPP
+}
+// popedMultipleEndpointParam
+Rcpp::NumericVector popedMultipleEndpointParam(Rcpp::NumericVector p, Rcpp::NumericVector times, Rcpp::IntegerVector modelSwitch, int maxMT);
+RcppExport SEXP _babelmixr2_popedMultipleEndpointParam(SEXP pSEXP, SEXP timesSEXP, SEXP modelSwitchSEXP, SEXP maxMTSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type p(pSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type times(timesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type modelSwitch(modelSwitchSEXP);
+    Rcpp::traits::input_parameter< int >::type maxMT(maxMTSEXP);
+    rcpp_result_gen = Rcpp::wrap(popedMultipleEndpointParam(p, times, modelSwitch, maxMT));
+    return rcpp_result_gen;
+END_RCPP
+}
+// popedMultipleEndpointIsLastTimeSetup
+bool popedMultipleEndpointIsLastTimeSetup(std::vector<double> times);
+RcppExport SEXP _babelmixr2_popedMultipleEndpointIsLastTimeSetup(SEXP timesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<double> >::type times(timesSEXP);
+    rcpp_result_gen = Rcpp::wrap(popedMultipleEndpointIsLastTimeSetup(times));
     return rcpp_result_gen;
 END_RCPP
 }

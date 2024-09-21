@@ -96,7 +96,30 @@ db <- nlmixr2(f, e, "poped",
                        c(ID=2, DOSE=600, SC_FLAG=0),
                        c(ID=2, DOSE=1000, SC_FLAG=1)),
                 discrete_a = list(DOSE=seq(100,1000,by=100),
-                                  SC_FLAG=c(0,1))))
+                                  SC_FLAG=c(0,1)),
+              ))
+
+tic();e2 <- evaluate_design(db);toc()
+
+# Currently if you are optimizing times, you need to specify that in
+# the popedControl otherwise it may not work as expected.
+db <- nlmixr2(f, e, "poped",
+              control=popedControl(
+                groupsize=rbind(6,6,6,6,100,100),
+                a=list(c(ID=1, DOSE=100, SC_FLAG=0),
+                       c(ID=1, DOSE=300, SC_FLAG=0),
+                       c(ID=1, DOSE=600, SC_FLAG=0),
+                       c(ID=1, DOSE=1000, SC_FLAG=1),
+                       c(ID=2, DOSE=600, SC_FLAG=0),
+                       c(ID=2, DOSE=1000, SC_FLAG=1)),
+                discrete_a = list(DOSE=seq(100,1000,by=100),
+                                  SC_FLAG=c(0,1)),
+                opt_xt=TRUE
+              ))
+
+# This takes a bit longer because it checks to see if times have
+# changed before solving
+tic();e2 <- evaluate_design(db);toc()
 
 
 plot_model_prediction(db, model_num_points=300, PI=TRUE, facet_scales="free")

@@ -18,15 +18,20 @@ SEXP _babelmixr2_popedSolveIdN(SEXP thetaSEXP, SEXP mtSEXP, SEXP idSEXP, SEXP to
 SEXP _babelmixr2_popedSolveIdME(SEXP thetaSEXP, SEXP umtSEXP, SEXP mtSEXP, SEXP msSEXP, SEXP nendSEXP, SEXP idSEXP, SEXP totnSEXP);
 SEXP _babelmixr2_popedSolveIdME2(SEXP thetaSEXP, SEXP umtSEXP, SEXP mtSEXP, SEXP msSEXP, SEXP nendSEXP, SEXP idSEXP, SEXP totnSEXP);
 SEXP _babelmixr2_popedSolveIdN2(SEXP thetaSEXP, SEXP mtSEXP, SEXP idSEXP, SEXP totnSEXP);
-SEXP _babelmixr2_popedGetMultipleEndpointModelingTimes(SEXP, SEXP);
+SEXP _babelmixr2_popedGetMultipleEndpointModelingTimes(SEXP, SEXP, SEXP);
 SEXP _babelmixr2_popedMultipleEndpointResetTimeIndex(void);
-SEXP _babelmixr2_popedMultipleEndpointIndexDataFrame(void);
+SEXP _babelmixr2_popedMultipleEndpointIndexDataFrame(SEXP);
+SEXP _babelmixr2_popedMultipleEndpointParam(SEXP, SEXP, SEXP, SEXP);
+SEXP _babelmixr2_popedMultipleEndpointIsLastTimeSetup(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
-  {"_babelmixr2_popedMultipleEndpointIndexDataFrame", (DL_FUNC) &_babelmixr2_popedMultipleEndpointIndexDataFrame, 0},
+  {"_babelmixr2_popedMultipleEndpointIsLastTimeSetup", (DL_FUNC) &_babelmixr2_popedMultipleEndpointIsLastTimeSetup, 1},
+  {"_babelmixr2_popedMultipleEndpointParam",
+   (DL_FUNC) &_babelmixr2_popedMultipleEndpointParam, 4},
+  {"_babelmixr2_popedMultipleEndpointIndexDataFrame", (DL_FUNC) &_babelmixr2_popedMultipleEndpointIndexDataFrame, 1},
   {"_babelmixr2_popedMultipleEndpointResetTimeIndex", (DL_FUNC) &_babelmixr2_popedMultipleEndpointResetTimeIndex, 0},
   {"_babelmixr2_popedGetMultipleEndpointModelingTimes",
-   (DL_FUNC) &_babelmixr2_popedGetMultipleEndpointModelingTimes, 2},
+   (DL_FUNC) &_babelmixr2_popedGetMultipleEndpointModelingTimes, 3},
   {"_babelmixr2_popedFree", (DL_FUNC) &_babelmixr2_popedFree, 0},
   {"_babelmixr2_popedSetup", (DL_FUNC) &_babelmixr2_popedSetup, 2},
   {"_babelmixr2_popedSolveIdN", (DL_FUNC) &_babelmixr2_popedSolveIdN, 4},

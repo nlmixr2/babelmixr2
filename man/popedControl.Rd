@@ -140,6 +140,10 @@ popedControl(
   script = NULL,
   overwrite = TRUE,
   literalFix = TRUE,
+  opt_xt = FALSE,
+  opt_a = FALSE,
+  opt_x = FALSE,
+  opt_samps = FALSE,
   ...
 )
 }

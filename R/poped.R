@@ -440,25 +440,25 @@ rxUiGet.popedFfFun <- function(x, ...) {
     .body <- bquote({
       .xt <- drop(xt)
       .id <- p[1]
-      .p <- p[-1]
       .u <- .xt
       .lu <- length(.u)
       .totn <- length(.xt)
       # unlike standard rxode2, parameters need not be named, but must be in the right order
-      if (.lu <  .(.poped$maxn)) {
-        .p <- c(.p, .u, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .lu))
+      if (.lu <=  .(.poped$maxn)) {
+        # only check for time reset if it is specified in the model
+        if (poped.db$settings$optsw[2] && !babelmixr2::popedMultipleEndpointIsLastTimeSetup(.u)) {
+          babelmixr2::popedMultipleEndpointResetTimeIndex()
+        }
+        .p <- babelmixr2::popedMultipleEndpointParam(p, .u, model_switch,
+                                                     .(.poped$maxn))
         .popedRxRunSetup(poped.db)
         .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                            .id-1, .totn)
+                                .id-1, .totn)
       } else if (.lu > .(.poped$maxn)) {
+        .p <- p[-1]
         .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
         .ret <- .popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
                                              .id-1, .totn)
-      } else {
-        .p <- c(.p, .u)
-        .popedRxRunSetup(poped.db)
-        .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                            .id-1, .totn)
       }
       return(list(f=matrix(.ret$rx_pred_, ncol=1),
                   poped.db=poped.db))
@@ -522,7 +522,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   } else {
     .poped$lastEnv <- popedDb$babelmixr2
   }
-  if (length(popedDb$curNumber) != 1L) {
+  if (!identical(.poped$lastEnv, popedDb$babelmixr2)) {
     .poped$setup <- 0L
   } else if (length(popedDb$babelmixr2$modelNumber) != 1L) {
     .poped$setup <- 0L
@@ -532,8 +532,8 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   if (.poped$setup != 1L) {
     rxode2::rxSolveFree()
     .popedSetup(popedDb$babelmixr2, FALSE)
-    .poped$setup <- 1L
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
+    .poped$setup <- 1L
     .poped$fullXt <- NULL
   }
   invisible()
@@ -1724,6 +1724,17 @@ rxUiGet.popedSettings <- function(x, ...) {
   .poped$dataMT <- rxode2::etTrans(.dat, .poped$modelMT)
 }
 
+#' @export
+rxUiGet.popedOptsw <- function(x, ...) {
+  .ui <- x[[1]]
+  c(rxode2::rxGetControl(.ui, "opt_samps", FALSE)*1, #1
+    rxode2::rxGetControl(.ui, "opt_xt", FALSE)*1, # 2
+    rxode2::rxGetControl(.ui, "opt_x", FALSE)*1, # 3
+    rxode2::rxGetControl(.ui, "opt_a", FALSE)*1, # 4
+    rxode2::rxGetControl(.ui, "opt_inds", FALSE)*1 #5
+    )
+}
+
 .popedCreateSeparateSamplingDatabase <- function(ui, data, .ctl, .err) {
   .a <- rxode2::rxGetControl(ui, "a", list())
   # Get the observation data
@@ -1886,6 +1897,7 @@ rxUiGet.popedSettings <- function(x, ...) {
                                          G_xt=.env$G_xt,
                                          a=.a,
                                          discrete_xt=.poped$discrete_xt,
+                                         optsw=ui$popedOptsw,
                                          discrete_a=.poped$discrete_a## ,
                                          ## G_xt=.poped$G_xt
                                          )
@@ -2119,6 +2131,7 @@ rxUiGet.popedSettings <- function(x, ...) {
                                            bUseGrouped_xt=rxode2::rxGetControl(ui, "bUseGrouped_xt", FALSE),
                                            discrete_xt=.poped$discrete_xt,
                                            discrete_a=.poped$discrete_a,
+                                           optsw=.ui$popedOptsw,
                                            G_xt=.poped$G_xt)
 
     } else {
@@ -2608,6 +2621,10 @@ popedControl <- function(stickyRecalcN=4,
                          script=NULL,
                          overwrite=TRUE,
                          literalFix=TRUE,
+                         opt_xt=FALSE,
+                         opt_a=FALSE,
+                         opt_x=FALSE,
+                         opt_samps=FALSE,
                          ...) {
   rxode2::rxReq("PopED")
   .xtra <- list(...)
@@ -2809,6 +2826,10 @@ popedControl <- function(stickyRecalcN=4,
   checkmate::assertLogical(bParallelSG, any.missing=FALSE, len=1)
   checkmate::assertLogical(bParallelMFEA, any.missing=FALSE, len=1)
   checkmate::assertLogical(bParallelLS, any.missing=FALSE, len=1)
+  checkmate::assertLogical(opt_xt, any.missing=FALSE, len=1)
+  checkmate::assertLogical(opt_a, any.missing=FALSE, len=1)
+  checkmate::assertLogical(opt_x, any.missing=FALSE, len=1)
+  checkmate::assertLogical(opt_samps, any.missing=FALSE, len=1)
   if (is.null(script)) {
   } else if (checkmate::testLogical(script, len=1, any.missing=FALSE)) {
     if (!script) {
@@ -2943,7 +2964,11 @@ popedControl <- function(stickyRecalcN=4,
                minxt=minxt,
                maxxt=maxxt,
                discrete_xt=discrete_xt,
-               discrete_a=discrete_a)
+               discrete_a=discrete_a,
+               opt_xt=opt_xt,
+               opt_a=opt_a,
+               opt_x=opt_x,
+               opt_samps=opt_samps)
   class(.ret) <- "popedControl"
   .ret
 }

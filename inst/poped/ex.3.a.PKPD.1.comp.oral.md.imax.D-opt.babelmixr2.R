@@ -78,7 +78,6 @@ babel.db <- nlmixr2(f, e, "poped",
                       ourzero=0
                     ))
 
-
 ##  create plot of model and design
 plot_model_prediction(babel.db,facet_scales="free")
 
