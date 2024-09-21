@@ -25,30 +25,7 @@
 .popedSetup <- function(e, full=FALSE) {
   invisible(.Call(`_babelmixr2_popedSetup`, e, full))
 }
-#' Solve poped problem for appropriate times (may already be setup)
-#'
-#' This really should not be called directly (if not setup correctly
-#' can crash R)
-#'
-#' @param theta parameters (includes covariates)
-#' @param xt original unsorted time (to match the f/w against)
-#' @param id this is the design identifier
-#' @param totn This is the total number of design points tested
-#' @return a data frame with $f and $w corresponding to the function
-#'   value and standard deviation at the sampling point
-#' @export
-#' @author Matthew L. Fidler
-#' @keywords internal
-.popedSolveIdN <- function(theta, xt, id, totn) {
-  .Call(`_babelmixr2_popedSolveIdN`, theta, xt, id, totn)
-}
-#' @rdname dot-popedSolveIdN
-#' @export
-.popedSolveIdN2 <- function(theta, xt, id, totn) {
-  .Call(`_babelmixr2_popedSolveIdN2`, theta, xt, id, totn)
-}
-
-#' Solve poped problem for appropriate times with multiple endpoint models
+#' Solve poped problem for appropriate times with single/multiple endpoint models
 #'
 #' This really should not be called directly (if not setup correctly
 #' can crash R)
@@ -320,58 +297,42 @@ attr(rxUiGet.popedFgFun, "desc") <- "PopED parameter model (fg_fun)"
 rxUiGet.popedFfFunScript <- function(x, ...) {
   .ui <- x[[1]]
   .predDf <- .ui$predDf
-  if (length(.predDf$cond)==1) {
-    .body <- bquote({
-      .p <- p
-      .id <- .p[1]
-      .p <- c(.p[-1], rxXt_=1) # rxXt_ is actually not used
-      .e <- getEventFun(.id, xt)
-      .ctl <- popedRxControl # from global
-      .ctl$returnType <- "data.frame"
-      .lst <- c(list(object=rxModel, params = .p, events = .e),
-                .ctl)
-      .ret <- do.call(rxode2::rxSolve, .lst)
-      return(list(f=matrix(.ret$rx_pred_, ncol=1),
-                  poped.db=poped.db))
-    })
-  } else {
-    .body <- bquote({
-      .p <- p
-      .id <- .p[1]
-      .p <- c(.p[-1], rxXt_ = 1)
-      .e <- getEventFun(.id, xt)
-      .e$rxRowNum <- seq_along(.e$ID)
-      .ctl <- popedRxControl
-      .ctl$returnType <- "data.frame"
-      .lst <- c(list(object = rxModel, params = .p, events = .e),
-                .ctl)
-      .lst$keep <- c(.lst$keep, "rxRowNum")
-      .ret <- do.call(rxode2::rxSolve, .lst)
-      if (length(poped.db$babelmixr2$we[[1]]) != length(.ret$rx_pred_1)) {
-        lapply(seq(1, 2L), function(i) {
-          poped.db$babelmixr2$we[[i]] <- vector("logical", length(.ret$rx_pred_1))
-        })
+  .body <- bquote({
+    .p <- p
+    .id <- .p[1]
+    .p <- c(.p[-1], rxXt_ = 1)
+    .e <- getEventFun(.id, xt)
+    .e$rxRowNum <- seq_along(.e$ID)
+    .ctl <- popedRxControl
+    .ctl$returnType <- "data.frame"
+    .lst <- c(list(object = rxModel, params = .p, events = .e),
+              .ctl)
+    .lst$keep <- c(.lst$keep, "rxRowNum")
+    .ret <- do.call(rxode2::rxSolve, .lst)
+    if (length(poped.db$babelmixr2$we[[1]]) != length(.ret$rx_pred_1)) {
+      lapply(seq(1, 2L), function(i) {
+        poped.db$babelmixr2$we[[i]] <- vector("logical", length(.ret$rx_pred_1))
+      })
+      .ord <- poped.db$babelmixr2$ord <- order(.ret$rxRowNum)
+      poped.db$babelmixr2$cache <- c(xt, model_switch)
+    } else {
+      .cache <- c(xt, model_switch)
+      if (all(.cache == poped.db$babelmixr2$cache)) {
         .ord <- poped.db$babelmixr2$ord <- order(.ret$rxRowNum)
-        poped.db$babelmixr2$cache <- c(xt, model_switch)
-      } else {
-        .cache <- c(xt, model_switch)
-        if (all(.cache == poped.db$babelmixr2$cache)) {
-          .ord <- poped.db$babelmixr2$ord <- order(.ret$rxRowNum)
-          poped.db$babelmixr2$cache <- .cache
-        }
+        poped.db$babelmixr2$cache <- .cache
       }
-      .rxF <- vapply(seq_along(model_switch),
-                     function(i) {
-                       .ms <- model_switch[i]
-                       lapply(seq(1, .(length(.predDf$cond))),
-                              function(j) {
-                                poped.db$babelmixr2$we[[j]][i] <- (.ms == j)
-                              })
-                       .ret[.ord[i], paste0("rx_pred_", .ms)]
-                     }, double(1), USE.NAMES=FALSE)
-      return(list(f = matrix(.rxF, ncol = 1), poped.db = poped.db))
-    })
-  }
+    }
+    .rxF <- vapply(seq_along(model_switch),
+                   function(i) {
+                     .ms <- model_switch[i]
+                     lapply(seq(1, .(length(.predDf$cond))),
+                            function(j) {
+                              poped.db$babelmixr2$we[[j]][i] <- (.ms == j)
+                            })
+                     .ret[.ord[i], paste0("rx_pred_", .ms)]
+                   }, double(1), USE.NAMES=FALSE)
+    return(list(f = matrix(.rxF, ncol = 1), poped.db = poped.db))
+  })
   .f <- function(model_switch, xt, p, poped.db){}
   body(.f) <- .body
   .f
@@ -410,63 +371,35 @@ rxUiGet.popedGetEventFun <- function(x, ...) {
 rxUiGet.popedFfFun <- function(x, ...) {
   .ui <- x[[1]]
   .predDf <- .ui$predDf
-  if (length(.predDf$cond) == 1L) {
-    .body <- bquote({
-      .xt <- drop(xt)
-      .p <- p
-      .id <- .p[1]
-      .p <- .p[-1]
-      .totn <- length(.xt)
-      # unlike standard rxode2, parameters need not be named, but must be in the right order
-      if (.totn <  .(.poped$maxn)) {
-        .p <- c(.p, .xt, seq(.(.poped$mt), by=0.1, length.out=.(.poped$maxn) - .totn))
-        .popedRxRunSetup(poped.db)
-        .ret <- .popedSolveIdN(.p, .xt, .id-1L, .totn)
-      } else if (.totn > .(.poped$maxn)) {
-        .popedRxRunFullSetup(poped.db, .xt)
-        .ret <- .popedSolveIdN2(.p, .xt, .id-1L, .totn)
-      } else {
-        .p <- c(.p, .xt)
-        .popedRxRunSetup(poped.db)
-        .ret <- .popedSolveIdN(.p, .xt, .id-1L, .totn)
+  .body <- bquote({
+    .xt <- drop(xt)
+    .id <- p[1]
+    .u <- .xt
+    .lu <- length(.u)
+    .totn <- length(.xt)
+    # unlike standard rxode2, parameters need not be named, but must be in the right order
+    if (.lu <=  .(.poped$maxn)) {
+      # only check for time reset if it is specified in the model
+      if (poped.db$settings$optsw[2] && !babelmixr2::popedMultipleEndpointIsLastTimeSetup(.u)) {
+        babelmixr2::popedMultipleEndpointResetTimeIndex()
       }
-      return(list(f=matrix(.ret$rx_pred_, ncol=1),
-                  poped.db=poped.db))
-    })
-    .f <- function(model_switch, xt, p, poped.db){}
-    body(.f) <- .body
-    .f
-  } else {
-    .body <- bquote({
-      .xt <- drop(xt)
-      .id <- p[1]
-      .u <- .xt
-      .lu <- length(.u)
-      .totn <- length(.xt)
-      # unlike standard rxode2, parameters need not be named, but must be in the right order
-      if (.lu <=  .(.poped$maxn)) {
-        # only check for time reset if it is specified in the model
-        if (poped.db$settings$optsw[2] && !babelmixr2::popedMultipleEndpointIsLastTimeSetup(.u)) {
-          babelmixr2::popedMultipleEndpointResetTimeIndex()
-        }
-        .p <- babelmixr2::popedMultipleEndpointParam(p, .u, model_switch,
-                                                     .(.poped$maxn))
-        .popedRxRunSetup(poped.db)
-        .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                .id-1, .totn)
-      } else if (.lu > .(.poped$maxn)) {
-        .p <- p[-1]
-        .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
-        .ret <- .popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                             .id-1, .totn)
-      }
-      return(list(f=matrix(.ret$rx_pred_, ncol=1),
-                  poped.db=poped.db))
-    })
-    .f <- function(model_switch, xt, p, poped.db){}
-    body(.f) <- .body
-    .f
-  }
+      .p <- babelmixr2::popedMultipleEndpointParam(p, .u, model_switch,
+                                                   .(.poped$maxn))
+      .popedRxRunSetup(poped.db)
+      .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                              .id-1, .totn)
+    } else if (.lu > .(.poped$maxn)) {
+      .p <- p[-1]
+      .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
+      .ret <- .popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                               .id-1, .totn)
+    }
+    return(list(f=matrix(.ret$rx_pred_, ncol=1),
+                poped.db=poped.db))
+  })
+  .f <- function(model_switch, xt, p, poped.db){}
+  body(.f) <- .body
+  .f
 }
 attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 ## @export

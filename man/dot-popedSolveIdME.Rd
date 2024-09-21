@@ -3,7 +3,7 @@
 \name{.popedSolveIdME}
 \alias{.popedSolveIdME}
 \alias{.popedSolveIdME2}
-\title{Solve poped problem for appropriate times with multiple endpoint models}
+\title{Solve poped problem for appropriate times with single/multiple endpoint models}
 \usage{
 .popedSolveIdME(theta, umt, mt, ms, nend, id, totn)
 

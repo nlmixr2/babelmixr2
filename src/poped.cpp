@@ -473,118 +473,11 @@ static inline int getSafeId(int id) {
   return id;
 }
 
-// Solve prediction and saved based on modeling time
-void popedSolveFid(double *f, double *w, double *t, NumericVector &theta, int id, int totn) {
-  // arma::vec ret(retD, nobs, false, true);
-  rx_solving_options_ind *ind =  updateParamRetInd(theta, id);
-  rx_solving_options *op = getSolvingOptions(rx);
-  iniSubjectE(id, 1, ind, op, rx, rxInner.update_inis);
-  popedSolve(id);
-  int kk, k=0;
-  double curT;
-  for (int j = 0; j < getIndNallTimes(ind); ++j) {
-    setIndIdx(ind, j);
-    kk = getIndIx(ind, j);
-    curT = getTime(kk, ind);
-    double *lhs = getIndLhs(ind);
-    if (isDose(getIndEvid(ind, kk))) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-      continue;
-    } else if (getIndEvid(ind, kk) == 0) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-      if (ISNA(lhs[0])) {
-        popedOp.naZero=1;
-        lhs[0] = 0.0;
-      }
-      // ret(k) = lhs[0];
-      // k++;
-    } else if (getIndEvid(ind, kk) >= 10 && getIndEvid(ind, kk) <= 99) {
-      // mtimes to calculate information
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-      f[k] = lhs[0];
-      w[k] = sqrt(lhs[1]);
-      t[k] = curT;
-      k++;
-      if (k >= totn) return; // vector has been created, break
-    }
-  }
-}
-
-void popedSolveFid2(double *f, double *w, double *t, NumericVector &theta, int id, int totn) {
-  // arma::vec ret(retD, nobs, false, true);
-  rx_solving_options_ind *ind =  updateParamRetInd(theta, id);
-  rx_solving_options *op = getSolvingOptions(rx);
-  iniSubjectE(id, 1, ind, op, rx, rxInner.update_inis);
-  popedSolve(id);
-  int kk, k=0;
-  double curT;
-  for (int j = 0; j < getIndNallTimes(ind); ++j) {
-    setIndIdx(ind, j);
-    kk = getIndIx(ind, j);
-    curT = getTime(kk, ind);
-    double *lhs = getIndLhs(ind);
-    if (isDose(getIndEvid(ind, kk))) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-      continue;
-    } else if (getIndEvid(ind, kk) == 0) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-      if (ISNA(lhs[0])) {
-        popedOp.naZero=1;
-        lhs[0] = 0.0;
-      }
-      // ret(k) = lhs[0];
-      // k++;
-      f[k] = lhs[0];
-      w[k] = sqrt(lhs[1]);
-      t[k] = curT;
-      k++;
-      if (k >= totn) return; // vector has been created, break
-    } else if (getIndEvid(ind, kk) >= 10 && getIndEvid(ind, kk) <= 99) {
-      // mtimes to calculate information
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-    }
-  }
-}
-
 static inline bool solveCached(NumericVector &theta, int &id) {
   int lid = as<int>(_popedE["lid"]);
   if (lid != id) return false;
   NumericVector last = as<NumericVector>(_popedE["paramCache"]);
   return as<bool>(all(last == theta));
-}
-
-//[[Rcpp::export]]
-Rcpp::DataFrame popedSolveIdN2(NumericVector &theta, NumericVector &mt, int iid, int totn) {
-  int id = getSafeId(iid);
-  if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
-  NumericVector t(totn);
-  arma::vec f(totn);
-  arma::vec w(totn);
-  popedSolveFid2(&f[0], &w[0], &t[0], theta, id, totn);
-  DataFrame ret = DataFrame::create(_["t"]=t,
-                                    _["rx_pred_"]=f, // match rxode2/nlmixr2 to simplify code of mtime models
-                                    _["w"]=w); // w = sqrt(rx_r_)
-  _popedE["s"] = ret;
-
-  return ret;
-}
-
-//[[Rcpp::export]]
-Rcpp::DataFrame popedSolveIdN(NumericVector &theta, NumericVector &mt, int iid, int totn) {
-  int id = getSafeId(iid);
-  if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
-  NumericVector t(totn);
-  arma::vec f(totn);
-  arma::vec w(totn);
-  popedSolveFid(&f[0], &w[0], &t[0], theta, id, totn);
-  // arma::uvec m = as<arma::uvec>(match(mt, t))-1;
-  // f = f(m);
-  // w = w(m);
-  DataFrame ret = DataFrame::create(_["t"]=t,
-                                    _["rx_pred_"]=f, // match rxode2/nlmixr2 to simplify code of mtime models
-                                    _["w"]=w); // w = sqrt(rx_r_)
-  _popedE["s"] = ret;
-  return ret;
 }
 
 void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, int nend) {
