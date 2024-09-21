@@ -12,6 +12,253 @@
 #include <RcppArmadillo.h>
 #include <rxode2ptr.h>
 
+#include "timsort.h"
+#include <iostream>
+#include <unordered_map>
+#include <vector>
+#include <algorithm>
+#include <set>
+
+struct timeInfo {
+  int id;
+  int firstIndex;
+  int count;
+};
+
+
+class timeIndexer {
+public:
+
+  timeIndexer() : initialized(false), sorted(false), nIds(0) {}
+
+  timeIndexer(const std::vector<int>& ids,
+              const std::vector<std::vector<double>>& times) {
+    initialize(ids, times);
+  }
+
+  void initialize(const std::vector<int>& ids, const std::vector<std::vector<double>>& times) {
+    reset();
+    nIds = ids.size();
+    size_t k = 0;
+    std::unordered_map<double, std::unordered_map<int, int>> timeIdCount;
+    std::unordered_map<double, std::unordered_map<int, int>> timeIdFirstIndex;
+
+    for (size_t i = ids.size(); i--;) {
+      int id = ids[i];
+      for (size_t j = 0; j < times[i].size(); ++j) {
+        double time = times[i][j];
+        if (timeIdCount[time].find(id) == timeIdCount[time].end()) {
+          timeIdCount[time][id] = 0;
+          timeIdFirstIndex[time][id] = k;
+        }
+        timeIdCount[time][id]++;
+        uniqueTimes.insert(time);
+        k++;
+      }
+    }
+
+    for (const auto& timeEntry : timeIdCount) {
+      double time = timeEntry.first;
+      for (const auto& idEntry : timeEntry.second) {
+        int id = idEntry.first;
+        int count = idEntry.second;
+        int firstIndex = timeIdFirstIndex[time][id];
+        timeToInfo[time].emplace_back(timeInfo{id, firstIndex, count});
+      }
+    }
+
+    initialized = true;
+    sorted = false;
+  }
+
+  void reset() {
+    timeToInfo.clear();
+    uniqueTimes.clear();
+    sortedTimes.clear();
+    initialized = false;
+    sorted = false;
+    nIds=0;
+  }
+
+  size_t getNid() {
+    return nIds;
+  }
+
+  bool isInitialized() const {
+    return initialized;
+  }
+
+  std::vector<double> getSortedUniqueTimes() {
+    if (!initialized) {
+      throw std::runtime_error("timeIndexer has not been initialized");
+    }
+    if (!sorted) {
+      sortedTimes.assign(uniqueTimes.begin(), uniqueTimes.end());
+      gfx::timsort(sortedTimes.begin(), sortedTimes.end());
+      sorted = true;
+    }
+    return sortedTimes;
+  }
+
+  const std::vector<timeInfo>& getTimeInfo(double time) const {
+    if (!initialized) {
+      throw std::runtime_error("timeIndexer has not been initialized");
+    }
+    return timeToInfo.at(time);
+  }
+
+private:
+  std::unordered_map<double, std::vector<timeInfo>> timeToInfo;
+  std::set<double> uniqueTimes;
+  std::vector<double> sortedTimes;
+  bool initialized;
+  bool sorted;
+  size_t nIds;
+};
+
+
+timeIndexer globalTimeIndexer;
+
+void convertToTimeIndexerStructure(const std::vector<double>& times,
+                                   const std::vector<int>& ids,
+                                   std::vector<int>& outIds,
+                                   std::vector<std::vector<double>>& outTimes) {
+
+  std::unordered_map<int, std::vector<double>> idToTimesMap;
+
+  for (size_t i = 0; i < times.size(); ++i) {
+    idToTimesMap[ids[i]].push_back(times[i]);
+  }
+
+  for (const auto& pair : idToTimesMap) {
+    outIds.push_back(pair.first);
+    outTimes.push_back(pair.second);
+  }
+}
+
+
+//' @title Get Multiple Endpoint Modeling Times
+//'
+//' @description
+//'
+//' This function takes a vector of times and a corresponding vector
+//'   of IDs, groups the times by their IDs, initializes an internal
+//'   C++ global TimeIndexer, that is used to efficiently lookup the
+//'   final output from the rxode2 solve and then returns the sorted
+//'   unique times
+//'
+//' @param times A numeric vector of times.
+//'
+//' @param modelSwitch An integer vector of model switch indicator
+//'   corresponding to the times
+//'
+//' @return A numeric vector of sorted unique times.
+//'
+//' @examples
+//'
+//' \donttest{
+//'
+//' times <- c(1.1, 1.2, 1.3, 2.1, 2.2, 3.1)
+//' modelSwitch <- c(1, 1, 1, 2, 2, 3)
+//' sortedTimes <- popedGetMultipleEndpointModelingTimes(times, modelSwitch)
+//' print(sortedTimes)
+//'
+//' # now show the output of the data frame representing the model
+//' # switch to endpoint index
+//'
+//' popedMultipleEndpointIndexDataFrame()
+//'
+//' # now show a more complex example with overlaps etc.
+//'
+//' times <- c(1.1, 1.2, 1.3, 0.5, 2.2, 1.1, 0.75,0.75)
+//' modelSwitch <- c(1, 1, 1, 2, 2, 2, 3, 3)
+//' sortedTimes <- popedGetMultipleEndpointModelingTimes(times, modelSwitch)
+//' print(sortedTimes)
+//'
+//' popedMultipleEndpointIndexDataFrame()
+//'
+//' }
+// [[Rcpp::export]]
+Rcpp::NumericVector popedGetMultipleEndpointModelingTimes(Rcpp::NumericVector times,
+                                                          Rcpp::IntegerVector modelSwitch) {
+  std::vector<int> idsVec = Rcpp::as<std::vector<int>>(modelSwitch);
+  std::vector<double> timesVec = Rcpp::as<std::vector<double>>(times);
+
+  std::vector<int> outIds;
+  std::vector<std::vector<double>> outTimes;
+
+  convertToTimeIndexerStructure(timesVec, idsVec, outIds, outTimes);
+
+  // this will reset if needed
+  globalTimeIndexer.initialize(outIds, outTimes);
+
+  return Rcpp::wrap(globalTimeIndexer.getSortedUniqueTimes());
+}
+
+//' @title Reset the Global Time Indexer for Multiple Endpoint Modeling
+//'
+//' @description
+//'
+//' This clears the memory and resets the global time indexer used for
+//'   multiple endpoint modeling.
+//'
+//' @return NULL, called for side effects
+//'
+//' @examples
+//'
+//' \donttest{
+//'
+//' popedMultipleEndpointResetTimeIndex()
+//'
+//' }
+// [[Rcpp::export]]
+Rcpp::RObject popedMultipleEndpointResetTimeIndex() {
+  globalTimeIndexer.reset();
+  return R_NilValue;
+}
+
+//' @rdname popedGetMultipleEndpointModelingTimes
+//' @export
+//[[Rcpp::export]]
+Rcpp::List popedMultipleEndpointIndexDataFrame() {
+  if (!globalTimeIndexer.isInitialized()) {
+    Rcpp::stop("Time indexer has not been initialized");
+  }
+  Rcpp::NumericVector times = Rcpp::wrap(globalTimeIndexer.getSortedUniqueTimes());
+  size_t nId = globalTimeIndexer.getNid();
+  Rcpp::List ret(1+nId*2);
+  ret[0] = times;
+  // initialize the rest with NA_integer_
+  for (size_t i = 0; i < nId*2; ++i) {
+    Rcpp::IntegerVector cur(times.size());
+    std::fill_n(cur.begin(), cur.size(), NA_INTEGER);
+    ret[i+1] = cur;
+  }
+  size_t timei = 0;
+  for (const auto& time : times) {
+    const auto& infos= globalTimeIndexer.getTimeInfo(time);
+    for (const auto& info : infos) {
+      if (info.id > (int)nId ||
+          info.id <= 0) {
+        Rcpp::stop("IDs need to be sequential 1, 2, 3, ..., n");
+      }
+      INTEGER(ret[2*(info.id-1)+1])[timei] = info.firstIndex + 1;
+      INTEGER(ret[2*(info.id-1)+2])[timei] = info.count;
+    }
+    timei++;
+  }
+  Rcpp::CharacterVector names(nId*2+1);
+  names[0] = "time";
+  for (size_t i = 0; i < nId*2; i+=2) {
+    names[i+1] = "MS:" + std::to_string(i+1);
+    names[i+2] = "N:" + std::to_string(i+1);
+  }
+  ret.names() = names;
+  ret.attr("class") = "data.frame";
+  ret.attr("row.names") = Rcpp::IntegerVector::create(NA_INTEGER, -times.size());
+  return ret;
+}
+
 #define max2( a , b )  ( (a) > (b) ? (a) : (b) )
 #define isSameTime(xout, xp) (fabs((xout)-(xp))  <= DBL_EPSILON*max2(fabs(xout),fabs(xp)))
 

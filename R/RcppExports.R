@@ -5,6 +5,77 @@ convertDataBack <- function(id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, lin
     .Call(`_babelmixr2_convertDataBack`, id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, linNcmt, linKa, neq, replaceEvid, zeroDose2)
 }
 
+#' @title Get Multiple Endpoint Modeling Times
+#'
+#' @description
+#'
+#' This function takes a vector of times and a corresponding vector
+#'   of IDs, groups the times by their IDs, initializes an internal
+#'   C++ global TimeIndexer, that is used to efficiently lookup the
+#'   final output from the rxode2 solve and then returns the sorted
+#'   unique times
+#'
+#' @param times A numeric vector of times.
+#'
+#' @param modelSwitch An integer vector of model switch indicator
+#'   corresponding to the times
+#'
+#' @return A numeric vector of sorted unique times.
+#'
+#' @examples
+#'
+#' \donttest{
+#'
+#' times <- c(1.1, 1.2, 1.3, 2.1, 2.2, 3.1)
+#' modelSwitch <- c(1, 1, 1, 2, 2, 3)
+#' sortedTimes <- popedGetMultipleEndpointModelingTimes(times, modelSwitch)
+#' print(sortedTimes)
+#'
+#' # now show the output of the data frame representing the model
+#' # switch to endpoint index
+#'
+#' popedMultipleEndpointIndexDataFrame()
+#'
+#' # now show a more complex example with overlaps etc.
+#'
+#' times <- c(1.1, 1.2, 1.3, 0.5, 2.2, 1.1, 0.75,0.75)
+#' modelSwitch <- c(1, 1, 1, 2, 2, 2, 3, 3)
+#' sortedTimes <- popedGetMultipleEndpointModelingTimes(times, modelSwitch)
+#' print(sortedTimes)
+#'
+#' popedMultipleEndpointIndexDataFrame()
+#'
+#' }
+popedGetMultipleEndpointModelingTimes <- function(times, modelSwitch) {
+    .Call(`_babelmixr2_popedGetMultipleEndpointModelingTimes`, times, modelSwitch)
+}
+
+#' @title Reset the Global Time Indexer for Multiple Endpoint Modeling
+#'
+#' @description
+#'
+#' This clears the memory and resets the global time indexer used for
+#'   multiple endpoint modeling.
+#'
+#' @return NULL, called for side effects
+#'
+#' @examples
+#'
+#' \donttest{
+#'
+#' popedMultipleEndpointResetTimeIndex()
+#'
+#' }
+popedMultipleEndpointResetTimeIndex <- function() {
+    .Call(`_babelmixr2_popedMultipleEndpointResetTimeIndex`)
+}
+
+#' @rdname popedGetMultipleEndpointModelingTimes
+#' @export
+popedMultipleEndpointIndexDataFrame <- function() {
+    .Call(`_babelmixr2_popedMultipleEndpointIndexDataFrame`)
+}
+
 popedFree <- function() {
     .Call(`_babelmixr2_popedFree`)
 }

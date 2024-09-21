@@ -34,6 +34,38 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// popedGetMultipleEndpointModelingTimes
+Rcpp::NumericVector popedGetMultipleEndpointModelingTimes(Rcpp::NumericVector times, Rcpp::IntegerVector modelSwitch);
+RcppExport SEXP _babelmixr2_popedGetMultipleEndpointModelingTimes(SEXP timesSEXP, SEXP modelSwitchSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type times(timesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type modelSwitch(modelSwitchSEXP);
+    rcpp_result_gen = Rcpp::wrap(popedGetMultipleEndpointModelingTimes(times, modelSwitch));
+    return rcpp_result_gen;
+END_RCPP
+}
+// popedMultipleEndpointResetTimeIndex
+Rcpp::RObject popedMultipleEndpointResetTimeIndex();
+RcppExport SEXP _babelmixr2_popedMultipleEndpointResetTimeIndex() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(popedMultipleEndpointResetTimeIndex());
+    return rcpp_result_gen;
+END_RCPP
+}
+// popedMultipleEndpointIndexDataFrame
+Rcpp::List popedMultipleEndpointIndexDataFrame();
+RcppExport SEXP _babelmixr2_popedMultipleEndpointIndexDataFrame() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(popedMultipleEndpointIndexDataFrame());
+    return rcpp_result_gen;
+END_RCPP
+}
 // popedFree
 RObject popedFree();
 RcppExport SEXP _babelmixr2_popedFree() {
