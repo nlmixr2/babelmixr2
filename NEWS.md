@@ -1,6 +1,6 @@
 # babelmixr2 0.1.4
 
-* Added experimental PopED integration
+* Added experimental `PopED` integration
 
 * Removed dependence on `rxode2parse`
 
