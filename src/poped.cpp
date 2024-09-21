@@ -248,7 +248,7 @@ Rcpp::NumericVector popedMultipleEndpointParam(Rcpp::NumericVector p,
 //'
 //' @export
 //[[Rcpp::export]]
-bool poperdMultipleEndpointIsLastTimeSetup(std::vector<double> times) {
+bool popedMultipleEndpointIsLastTimeSetup(std::vector<double> times) {
   if (!globalTimeIndexer.isInitialized()) {
     return false;
   }
