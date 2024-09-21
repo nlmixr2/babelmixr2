@@ -68,7 +68,7 @@ Babelmixr2 can help you by:
 
 While not required, you can get/install the R ‘lixoftConnectors’ package
 in the ‘Monolix’ installation, as described at the following url
-<https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/>.
+<https://monolixsuite.slp-software.com/r-functions/2024R1/installation-and-initialization/>.
 When ‘lixoftConnectors’ is available, R can run ‘Monolix’ directly
 instead of using a command line.
 
