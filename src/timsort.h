@@ -646,7 +646,6 @@ template <typename RandomAccessIterator, typename Compare> class TimSort {
     }
 
 public:
-
     static void merge(iter_t const lo, iter_t const mid, iter_t const hi, Compare compare) {
         GFX_TIMSORT_ASSERT(lo <= mid);
         GFX_TIMSORT_ASSERT(mid <= hi);

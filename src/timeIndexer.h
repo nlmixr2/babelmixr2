@@ -9,7 +9,6 @@ struct timeInfo {
 
 class timeIndexer {
  public:
-
   timeIndexer() : initialized(false), sorted(false), nIds(0) {}
 
   timeIndexer(const std::vector<int>& ids,
