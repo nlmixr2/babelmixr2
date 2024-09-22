@@ -4,7 +4,7 @@
 \alias{babel.poped.database}
 \title{Expand a babelmixr2 PopED database}
 \usage{
-babel.poped.database(popedInput, ...)
+babel.poped.database(popedInput, ..., optTime = NA)
 }
 \arguments{
 \item{popedInput}{The babelmixr2 generated PopED database}

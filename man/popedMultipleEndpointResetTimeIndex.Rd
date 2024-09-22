@@ -15,7 +15,7 @@ multiple endpoint modeling.
 }
 \examples{
 
-\dontrun{
+\donttest{
 
 popedMultipleEndpointResetTimeIndex()
 

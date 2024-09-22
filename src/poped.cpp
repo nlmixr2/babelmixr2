@@ -52,7 +52,10 @@ timeIndexer globalTimeIndexer;
 //'
 //' @return A numeric vector of unique times.
 //'
+//' @export
+//'
 //' @examples
+//'
 //'
 //' \donttest{
 //'
@@ -73,7 +76,7 @@ timeIndexer globalTimeIndexer;
 //' sortedTimes <- popedGetMultipleEndpointModelingTimes(times, modelSwitch, TRUE)
 //' print(sortedTimes)
 //'
-//' popedMultipleEndpointIndexDataFrame()
+//' popedMultipleEndpointIndexDataFrame(TRUE) # Print to show individual matching
 //'
 //' }
 // [[Rcpp::export]]
@@ -101,7 +104,7 @@ Rcpp::NumericVector popedGetMultipleEndpointModelingTimes(Rcpp::NumericVector ti
 //'
 //' @examples
 //'
-//' \dontrun{
+//' \donttest{
 //'
 //' popedMultipleEndpointResetTimeIndex()
 //'
@@ -195,7 +198,8 @@ Rcpp::List popedMultipleEndpointIndexDataFrame(bool print=false) {
 //'    filled with the maximum time.
 //'
 //' @examples
-//' \dontrun{
+//'
+//' \donttest{
 //'
 //' p <- c(1.0, 2.0, 3.0)
 //' times <- c(0.5, 1.5, 2.5)

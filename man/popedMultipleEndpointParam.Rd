@@ -4,7 +4,7 @@
 \alias{popedMultipleEndpointParam}
 \title{Populates Multiple Endpoint Parameters for internal solving}
 \usage{
-popedMultipleEndpointParam(p, times, modelSwitch, maxMT)
+popedMultipleEndpointParam(p, times, modelSwitch, maxMT, optTime = TRUE)
 }
 \arguments{
 \item{p}{A numeric vector of parameters}
@@ -38,7 +38,8 @@ filled with the maximum time.
 }
 }
 \examples{
-\dontrun{
+
+\donttest{
 
 p <- c(1.0, 2.0, 3.0)
 times <- c(0.5, 1.5, 2.5)

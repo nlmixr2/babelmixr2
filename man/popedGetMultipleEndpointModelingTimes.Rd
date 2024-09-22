@@ -39,6 +39,7 @@ indexes in the data.frame
 }
 \examples{
 
+
 \donttest{
 
 times <- c(1.1, 1.2, 1.3, 2.1, 2.2, 3.1)
@@ -58,7 +59,7 @@ modelSwitch <- c(1, 1, 1, 2, 2, 2, 3, 3)
 sortedTimes <- popedGetMultipleEndpointModelingTimes(times, modelSwitch, TRUE)
 print(sortedTimes)
 
-popedMultipleEndpointIndexDataFrame()
+popedMultipleEndpointIndexDataFrame(TRUE) # Print to show individual matching
 
 }
 }

@@ -144,6 +144,7 @@ popedControl(
   opt_a = FALSE,
   opt_x = FALSE,
   opt_samps = FALSE,
+  optTime = TRUE,
   ...
 )
 }

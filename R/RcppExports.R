@@ -34,7 +34,10 @@ convertDataBack <- function(id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, lin
 #'
 #' @return A numeric vector of unique times.
 #'
+#' @export
+#'
 #' @examples
+#'
 #'
 #' \donttest{
 #'
@@ -55,7 +58,7 @@ convertDataBack <- function(id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, lin
 #' sortedTimes <- popedGetMultipleEndpointModelingTimes(times, modelSwitch, TRUE)
 #' print(sortedTimes)
 #'
-#' popedMultipleEndpointIndexDataFrame()
+#' popedMultipleEndpointIndexDataFrame(TRUE) # Print to show individual matching
 #'
 #' }
 popedGetMultipleEndpointModelingTimes <- function(times, modelSwitch, sorted = FALSE) {
@@ -75,7 +78,7 @@ popedGetMultipleEndpointModelingTimes <- function(times, modelSwitch, sorted = F
 #'
 #' @examples
 #'
-#' \dontrun{
+#' \donttest{
 #'
 #' popedMultipleEndpointResetTimeIndex()
 #'
@@ -121,7 +124,8 @@ popedMultipleEndpointIndexDataFrame <- function(print = FALSE) {
 #'    filled with the maximum time.
 #'
 #' @examples
-#' \dontrun{
+#'
+#' \donttest{
 #'
 #' p <- c(1.0, 2.0, 3.0)
 #' times <- c(0.5, 1.5, 2.5)
