@@ -42,8 +42,8 @@
 #' @export
 #' @author Matthew L. Fidler
 #' @keywords internal
-.popedSolveIdME <- function(theta, umt, mt, ms, nend, id, totn) {
-  .Call(`_babelmixr2_popedSolveIdME`, theta, umt, mt, ms, nend, id, totn)
+.popedSolveIdME <- function(theta, id) {
+  .Call(`_babelmixr2_popedSolveIdME`, theta, id)
 }
 
 #' @rdname dot-popedSolveIdME
@@ -340,8 +340,7 @@ rxUiGet.popedFfFun <- function(x, ...) {
                                                    .(.poped$maxn),
                                                    poped.db$babelmixr2$optTime)
       .popedRxRunSetup(poped.db)
-      .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                              .id-1, .totn)
+      .ret <- .popedSolveIdME(.p, .id-1)
     } else if (.lu > .(.poped$maxn)) {
       .p <- p[-1]
       .popedRxRunFullSetupMe(poped.db, .xt, model_switch)

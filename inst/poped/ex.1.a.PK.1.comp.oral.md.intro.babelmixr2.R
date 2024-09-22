@@ -46,6 +46,16 @@ e <- et(list(c(0, 10),
 #xt
 e$time <-  c(1,2,8,240,245)
 
+f <- f()
+
+babel.db <- nlmixr2(f, e, "poped",
+                        popedControl(groupsize=20,
+                                     bUseGrouped_xt=TRUE,
+                                     a=list(c(DOSE=20,TAU=24),
+                                            c(DOSE=40, TAU=24)),
+                                     maxa=c(DOSE=200,TAU=24),
+                                     mina=c(DOSE=0,TAU=24),
+                                     script=TRUE))
 
 babel.db <- nlmixr2(f, e, "poped",
                         popedControl(groupsize=20,

@@ -149,8 +149,8 @@ popedSetup <- function(e, full) {
     .Call(`_babelmixr2_popedSetup`, e, full)
 }
 
-popedSolveIdME <- function(theta, umt, mt, ms, nend, id, totn) {
-    .Call(`_babelmixr2_popedSolveIdME`, theta, umt, mt, ms, nend, id, totn)
+popedSolveIdME <- function(theta, id) {
+    .Call(`_babelmixr2_popedSolveIdME`, theta, id)
 }
 
 popedSolveIdME2 <- function(theta, umt, mt, ms, nend, id, totn) {
