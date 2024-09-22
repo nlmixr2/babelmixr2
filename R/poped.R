@@ -2400,12 +2400,16 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #' @param timeHi string that represents the upper design time (ie
 #'   maxmt)
 #' @param id The id variable
+#'
 #' @param user_distribution_pointer Filename and path, or function
 #'   name, for user defined distributions for E-family designs
+#'
 #' @param auto_pointer Filename and path, or function name, for the
-#'   Autocorrelation function, empty string means no autocorrelation.
+#'   Autocorrelation function, empty string means no autocorrelation
+#'
 #' @param fixRes boolean; Fix the residuals to what is specified by
 #'   the model
+#'
 #' @param script write a PopED/rxode2 script that can be modified for
 #'   more fine control.  The default is NULL.
 #'
@@ -2416,6 +2420,16 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #'
 #'  When `script` is a file name (with an R extension), the script is
 #'  written to that file.
+#'
+#' @param opt_xt boolean to indicate if this is meant for optimizing times
+#'
+#' @param opt_a boolean to indicate if this is meant for optimizing covariates
+#'
+#' @param opt_x boolean to indicate if the discrete design variables
+#'   be optimized
+#'
+#' @param opt_samps boolean to indicate if the sample optimizer is
+#'   used (not implemented yet in `PopED`)
 #'
 #' @inheritParams nlmixr2est::foceiControl
 #' @inheritParams PopED::create.poped.database

@@ -529,7 +529,7 @@ Allows for finer control than \code{use_grouped_x}.}
 \item{our_zero}{Value to interpret as zero in design.}
 
 \item{auto_pointer}{Filename and path, or function name, for the
-Autocorrelation function, empty string means no autocorrelation.}
+Autocorrelation function, empty string means no autocorrelation}
 
 \item{user_distribution_pointer}{Filename and path, or function
 name, for user defined distributions for E-family designs}
@@ -570,6 +570,16 @@ Default is \code{FALSE}.}
 \item{literalFix}{boolean, substitute fixed population values as
 literals and re-adjust ui and parameter estimates after
 optimization; Default is `TRUE`.}
+
+\item{opt_xt}{boolean to indicate if this is meant for optimizing times}
+
+\item{opt_a}{boolean to indicate if this is meant for optimizing covariates}
+
+\item{opt_x}{boolean to indicate if the discrete design variables
+be optimized}
+
+\item{opt_samps}{boolean to indicate if the sample optimizer is
+used (not implemented yet in \code{PopED})}
 
 \item{...}{other parameters for PopED control}
 }
