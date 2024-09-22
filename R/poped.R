@@ -524,7 +524,11 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                                              .d[[.wtime]] <- t
                                                              .d
                                                            }))
-                                  rbind(.data, .data3)[, -.wdvid]
+                                  if (length(.wdvid) == 1L) {
+                                    rbind(.data, .data3)[, -.wdvid]
+                                  } else {
+                                    rbind(.data, .data3)
+                                  }
                                 })))
     .et <- rxode2::etTrans(.dat, .e$modelF)
     .e$dataF <- .et

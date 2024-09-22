@@ -59,11 +59,15 @@ class timeIndexer {
     sorted = false;
   }
 
-  void initialize(const std::vector<int>& ids, const std::vector<double>& times) {
-    std::unordered_map<int, std::vector<double>> idToTimesMap;
+  void initialize(const std::vector<int>& ids, const std::vector<double>& times,
+                  const bool optTime) {
+    if (optTime && initialized) {
+      return;
+    }
     if (isSame(ids, times)) {
       return;
     }
+    std::unordered_map<int, std::vector<double>> idToTimesMap;
     reset();
 
     this->times = times;
@@ -84,10 +88,19 @@ class timeIndexer {
     initialize(outIds, outTimes);
   }
 
-  void initialize(Rcpp::IntegerVector& ids, Rcpp::NumericVector& time) {
+  void initialize(const std::vector<int>& ids, const std::vector<double>& times) {
+    initialize(ids, times, false);
+  }
+
+  void initialize(Rcpp::IntegerVector& ids, Rcpp::NumericVector& time,
+                  const bool optTime) {
     std::vector<int> idsVec = Rcpp::as<std::vector<int>>(ids);
     std::vector<double> timeVec = Rcpp::as<std::vector<double>>(time);
-    initialize(idsVec, timeVec);
+    initialize(idsVec, timeVec, optTime);
+  }
+
+  void initialize(Rcpp::IntegerVector& ids, Rcpp::NumericVector& time) {
+    initialize(ids, time, false);
   }
 
   bool isSame(const std::vector<int>& ids, const std::vector<double>& times) {
