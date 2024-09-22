@@ -97,29 +97,34 @@ db <- nlmixr2(f, e, "poped",
                        c(ID=2, DOSE=1000, SC_FLAG=1)),
                 discrete_a = list(DOSE=seq(100,1000,by=100),
                                   SC_FLAG=c(0,1)),
-              ))
+                ))
+
+m1 <- microbenchmark::microbenchmark(compareTime=evaluate_design(db), times=25)
+
 
 tic();e2 <- evaluate_design(db);toc()
 
-# Currently if you are optimizing times, you need to specify that in
-# the popedControl otherwise it may not work as expected.
-db <- nlmixr2(f, e, "poped",
-              control=popedControl(
-                groupsize=rbind(6,6,6,6,100,100),
-                a=list(c(ID=1, DOSE=100, SC_FLAG=0),
-                       c(ID=1, DOSE=300, SC_FLAG=0),
-                       c(ID=1, DOSE=600, SC_FLAG=0),
-                       c(ID=1, DOSE=1000, SC_FLAG=1),
-                       c(ID=2, DOSE=600, SC_FLAG=0),
-                       c(ID=2, DOSE=1000, SC_FLAG=1)),
-                discrete_a = list(DOSE=seq(100,1000,by=100),
-                                  SC_FLAG=c(0,1)),
-                opt_xt=TRUE
-              ))
+# Models created by babelmixr2 check for time and model_switch
+# changes.  If you are not optimizing over times, some can be lost
 
-# This takes a bit longer because it checks to see if times have
-# changed before solving
+db <- babel.poped.database(db, optTime=FALSE)
+
+# This takes a little less time to run the times are only setup once
 tic();e2 <- evaluate_design(db);toc()
+
+m2 <- microbenchmark::microbenchmark(assumeTimesDontChange=evaluate_design(db), times=25)
+
+# But this may not matter in the problem (like this one).  In most
+# cases it is OK to leave the time comparison option enabled to allow
+# optimizing over time
+
+db <- babel.poped.database(db, optTime=TRUE)
+
+library(ggplot2)
+
+m3 <- rbind(m1, m2)
+
+autoplot(m3)
 
 
 plot_model_prediction(db, model_num_points=300, PI=TRUE, facet_scales="free")
