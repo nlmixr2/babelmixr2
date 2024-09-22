@@ -377,12 +377,10 @@ rxUiGet.popedFfFun <- function(x, ...) {
     .u <- .xt
     .lu <- length(.u)
     .totn <- length(.xt)
-    # unlike standard rxode2, parameters need not be named, but must be in the right order
+    # unlike standard rxode2, parameters need not be named, but must
+    # be in the right order
     if (.lu <=  .(.poped$maxn)) {
       # only check for time reset if it is specified in the model
-      if (poped.db$settings$optsw[2] && !babelmixr2::popedMultipleEndpointIsLastTimeSetup(.u)) {
-        babelmixr2::popedMultipleEndpointResetTimeIndex()
-      }
       .p <- babelmixr2::popedMultipleEndpointParam(p, .u, model_switch,
                                                    .(.poped$maxn))
       .popedRxRunSetup(poped.db)
@@ -1241,21 +1239,19 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                                       .data[[.wevid]] == 0, ]
                                      .time <- .data[[.wtime]]
                                      .env$mt <- max(c(.time, .env$mt))
-                                     if (length(.wdvid) == 1L) {
-                                       .wd <- which(.data[[.wdvid]] == i)
-                                       if (length(.wd) == 0) {
-                                         .wd <- which(.data[[.wdvid]] ==
-                                                        ui$predDf$cond[i])
+                                     .wd <- which(.data[[.wdvid]] == i)
+                                     if (length(.wd) == 0) {
+                                       .wd <- which(.data[[.wdvid]] ==
+                                                      ui$predDf$cond[i])
+                                     }
+                                     if (length(.wd) > 0) {
+                                       .time <- .time[.wd]
+                                       if (length(.wg_xt) == 1L) {
+                                         .g_xt <- .data[[.wg_xt]]
+                                         .g_xt <- .g_xt[.wd]
+                                         return(time=.time, dvid=i, G_xt=.g_xt)
                                        }
-                                       if (length(.wd) > 0) {
-                                         .time <- .time[.wd]
-                                         if (length(.wg_xt) == 1L) {
-                                           .g_xt <- .data[[.wg_xt]]
-                                           .g_xt <- .g_xt[.wd]
-                                           return(time=.time, dvid=i, G_xt=.g_xt)
-                                         }
-                                         return(data.frame(time=.time, dvid=i))
-                                       }
+                                       return(data.frame(time=.time, dvid=i))
                                      }
                                      # could not find dvid spec, try cmt spec
                                      if (length(.wcmt) == 1L) {
@@ -1702,6 +1698,10 @@ rxUiGet.popedOptsw <- function(x, ...) {
       stop("DVIDs must be integers that are sequential in the event dataset and start with 1",
            call.=FALSE)
     }
+  } else {
+    # Add dvid
+    .data$dvid <- 1L
+    .wdvid <- which(.nd == "dvid")
   }
   .obs <- .data[.data[[.wevid]] == 0,]
 

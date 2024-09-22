@@ -137,18 +137,6 @@ popedMultipleEndpointParam <- function(p, times, modelSwitch, maxMT) {
     .Call(`_babelmixr2_popedMultipleEndpointParam`, p, times, modelSwitch, maxMT)
 }
 
-#' @title Get the Last Time Vector setup for Multiple Endpoint Modeling
-#'
-#' @param times A numeric vector of times
-#'
-#' @return boolean indicating if the last time vector setup is the
-#'   same as what is currently setup
-#'
-#' @export
-popedMultipleEndpointIsLastTimeSetup <- function(times) {
-    .Call(`_babelmixr2_popedMultipleEndpointIsLastTimeSetup`, times)
-}
-
 popedFree <- function() {
     .Call(`_babelmixr2_popedFree`)
 }

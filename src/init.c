@@ -20,10 +20,8 @@ SEXP _babelmixr2_popedGetMultipleEndpointModelingTimes(SEXP, SEXP, SEXP);
 SEXP _babelmixr2_popedMultipleEndpointResetTimeIndex(void);
 SEXP _babelmixr2_popedMultipleEndpointIndexDataFrame(SEXP);
 SEXP _babelmixr2_popedMultipleEndpointParam(SEXP, SEXP, SEXP, SEXP);
-SEXP _babelmixr2_popedMultipleEndpointIsLastTimeSetup(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
-  {"_babelmixr2_popedMultipleEndpointIsLastTimeSetup", (DL_FUNC) &_babelmixr2_popedMultipleEndpointIsLastTimeSetup, 1},
   {"_babelmixr2_popedMultipleEndpointParam",
    (DL_FUNC) &_babelmixr2_popedMultipleEndpointParam, 4},
   {"_babelmixr2_popedMultipleEndpointIndexDataFrame", (DL_FUNC) &_babelmixr2_popedMultipleEndpointIndexDataFrame, 1},

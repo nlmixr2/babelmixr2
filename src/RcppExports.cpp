@@ -82,17 +82,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// popedMultipleEndpointIsLastTimeSetup
-bool popedMultipleEndpointIsLastTimeSetup(std::vector<double> times);
-RcppExport SEXP _babelmixr2_popedMultipleEndpointIsLastTimeSetup(SEXP timesSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::vector<double> >::type times(timesSEXP);
-    rcpp_result_gen = Rcpp::wrap(popedMultipleEndpointIsLastTimeSetup(times));
-    return rcpp_result_gen;
-END_RCPP
-}
 // popedFree
 RObject popedFree();
 RcppExport SEXP _babelmixr2_popedFree() {

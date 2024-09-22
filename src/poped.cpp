@@ -23,21 +23,6 @@
 
 timeIndexer globalTimeIndexer;
 
-
-void convertRinputToGlobalTimeIndexer(Rcpp::NumericVector times,
-                                      Rcpp::IntegerVector modelSwitch) {
-  if (globalTimeIndexer.isInitialized()) return;
-  std::vector<int> idsVec = Rcpp::as<std::vector<int>>(modelSwitch);
-  std::vector<double> timesVec = Rcpp::as<std::vector<double>>(times);
-
-  std::vector<int> outIds;
-  std::vector<std::vector<double>> outTimes;
-
-  convertToTimeIndexerStructure(timesVec, idsVec, outIds, outTimes);
-  // this will reset if needed
-  globalTimeIndexer.initialize(outIds, outTimes);
-}
-
 //' @title Get Multiple Endpoint Modeling Times
 //'
 //' @description
@@ -95,7 +80,7 @@ void convertRinputToGlobalTimeIndexer(Rcpp::NumericVector times,
 Rcpp::NumericVector popedGetMultipleEndpointModelingTimes(Rcpp::NumericVector times,
                                                           Rcpp::IntegerVector modelSwitch,
                                                           bool sorted = false) {
-  convertRinputToGlobalTimeIndexer(times, modelSwitch);
+  globalTimeIndexer.initialize(modelSwitch, times);
   if (sorted) {
     return Rcpp::wrap(globalTimeIndexer.getSortedUniqueTimes());
   } else {
@@ -227,37 +212,13 @@ Rcpp::NumericVector popedMultipleEndpointParam(Rcpp::NumericVector p,
                                                Rcpp::NumericVector times,
                                                Rcpp::IntegerVector modelSwitch,
                                                int maxMT) {
-  convertRinputToGlobalTimeIndexer(times, modelSwitch);
+  globalTimeIndexer.initialize(modelSwitch, times);
   Rcpp::NumericVector ret(p.size()-1+maxMT);
+  std::fill(ret.begin(), ret.end(), globalTimeIndexer.getMaxTime());
   std::copy(p.begin()+1, p.end(), ret.begin());
   std::vector<double> ut = globalTimeIndexer.getUniqueTimes();
   std::copy(ut.begin(), ut.end(), ret.begin()+ p.size() - 1);
-  if (times.size() < maxMT) {
-    std::fill(ret.begin() + p.size() + ut.size() - 1,
-              ret.end(), globalTimeIndexer.getMaxTime());
-  }
   return ret;
-}
-
-//' @title Get the Last Time Vector setup for Multiple Endpoint Modeling
-//'
-//' @param times A numeric vector of times
-//'
-//' @return boolean indicating if the last time vector setup is the
-//'   same as what is currently setup
-//'
-//' @export
-//[[Rcpp::export]]
-bool popedMultipleEndpointIsLastTimeSetup(std::vector<double> times) {
-  if (!globalTimeIndexer.isInitialized()) {
-    return false;
-  }
-  std::vector<double> lt = globalTimeIndexer.getTimes();
-  if (times.size() != lt.size()) return false;
-  if (std::equal(times.begin(), times.end(), lt.begin())) {
-    return true;
-  }
-  return false;
 }
 
 #define max2( a , b )  ( (a) > (b) ? (a) : (b) )
