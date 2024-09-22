@@ -490,16 +490,15 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
   }
 }
 
-//[[Rcpp::export]]
-Rcpp::DataFrame popedSolveIdME(NumericVector &theta, int id) {
-  if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
-  size_t totn = globalTimeIndexer.getTimes().size();
+Rcpp::DataFrame popedPostSolveMat(arma::mat& matMT, Rcpp::Environment& env) {
+  if (!globalTimeIndexer.isInitialized()) {
+     Rcpp::stop("time indexer has not been initialized");
+  }
+  size_t nrow = globalTimeIndexer.getUniqueTimes().size();//umt.size();
   size_t nend = globalTimeIndexer.getNid();
-  NumericVector t(totn);
+  size_t totn = globalTimeIndexer.getTimes().size();
   arma::vec f(totn);
   arma::vec w(totn);
-  size_t nrow = globalTimeIndexer.getUniqueTimes().size();//umt.size();
-  arma::mat matMT(nrow, nend*2+1);
   List we(nend);
   for (int i = 0; i < nend; i++) {
     LogicalVector curLV = LogicalVector(totn);
@@ -508,7 +507,7 @@ Rcpp::DataFrame popedSolveIdME(NumericVector &theta, int id) {
     we[i] = curLV;
   }
 
-  popedSolveFidMat(matMT, theta, id, nrow, nend);
+
   // this gets the information from:
   // - the model time
   // - the model_switch
@@ -545,9 +544,69 @@ Rcpp::DataFrame popedSolveIdME(NumericVector &theta, int id) {
                                     Rcpp::wrap(globalTimeIndexer.getModelSwitch()),
                                     _["rx_pred_"]=f, // match rxode2/nlmixr2 to simplify code of mtime models
                                     _["w"]=w); // w = sqrt(rx_r_)
-  _popedE["s"] = ret;
-  _popedE["we"] = we;
+  env["s"] = ret;
+  env["we"] = we;
   return ret;
+}
+
+
+//' @title Get Solved f based on matched solving times
+//' @description
+//'
+//' This function takes the solved matrix and matches it to the order
+//'   of the input times and model_switch from `PopED`.  It assumes
+//'   the global time indexer has been setup with something like
+//'   `babelmixr2::popedMultipleEndpointParam()`
+//'
+//'
+//'
+//' @param matMT This is the solved matrix that with the following columns (in order):
+//'
+//' - `time`
+//'
+//' - For each endpoint it needs the following (repeated for each endpoint):
+//'
+//'   - endpoint prediction (f)
+//'   - endpoint prediction variance (w)
+//'
+//' @param env This is an R environment where the boolean indexes of
+//'   which item is a which modeling switch is saved (as well as the
+//'   last data frame solved created by this method)
+//'
+//' @return A data.frame with the following output items:
+//'
+//' - `t` The time points
+//'
+//' - `ms` The model switch
+//'
+//' - `rx_pred_` The predicted value
+//'
+//' - `w` The variance of the predicted value
+//'
+//' This also has a side effect of saving the data.frame in the
+//' environment as `s` and the boolean indexes of which item is a
+//' which modeling switch is saved in the environment as `we`
+//'
+//' (i.e. env$we[[1]] is a boolean vector of which items are model switch 1,
+//' env$we[[2]] is a boolean vector of which items are model switch 2, etc.)
+//'
+//' @keywords internal
+//'
+//' @export
+//[[Rcpp::export]]
+Rcpp::DataFrame popedPostSolveMat(Rcpp::NumericMatrix& matMT, Rcpp::Environment& env) {
+  arma::mat matMT2 = as<arma::mat>(matMT);
+  return popedPostSolveMat(matMT2, env);
+}
+
+//[[Rcpp::export]]
+Rcpp::DataFrame popedSolveIdME(NumericVector &theta, int id) {
+  if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
+  size_t nrow = globalTimeIndexer.getUniqueTimes().size();//umt.size();
+  size_t nend = globalTimeIndexer.getNid();
+  arma::mat matMT(nrow, nend*2+1);
+  popedSolveFidMat(matMT, theta, id, nrow, nend);
+  return popedPostSolveMat(matMT, _popedE);
 }
 
 

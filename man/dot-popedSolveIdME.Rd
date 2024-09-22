@@ -5,12 +5,14 @@
 \alias{.popedSolveIdME2}
 \title{Solve poped problem for appropriate times with single/multiple endpoint models}
 \usage{
-.popedSolveIdME(theta, umt, mt, ms, nend, id, totn)
+.popedSolveIdME(theta, id)
 
 .popedSolveIdME2(theta, umt, mt, ms, nend, id, totn)
 }
 \arguments{
 \item{theta}{parameters (includes covariates and modeling times)}
+
+\item{id}{this is the design identifier}
 
 \item{umt}{unique times sampled}
 
@@ -19,8 +21,6 @@
 \item{ms}{model switch parameter integer starting with 1 (related to dvid in rxode2)}
 
 \item{nend}{specifies the number of endpoints in this model}
-
-\item{id}{this is the design identifier}
 
 \item{totn}{This is the total number of design points tested}
 }

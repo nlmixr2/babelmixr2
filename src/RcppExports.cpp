@@ -105,6 +105,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// popedPostSolveMat
+Rcpp::DataFrame popedPostSolveMat(Rcpp::NumericMatrix& matMT, Rcpp::Environment& env);
+RcppExport SEXP _babelmixr2_popedPostSolveMat(SEXP matMTSEXP, SEXP envSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix& >::type matMT(matMTSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Environment& >::type env(envSEXP);
+    rcpp_result_gen = Rcpp::wrap(popedPostSolveMat(matMT, env));
+    return rcpp_result_gen;
+END_RCPP
+}
 // popedSolveIdME
 Rcpp::DataFrame popedSolveIdME(NumericVector& theta, int id);
 RcppExport SEXP _babelmixr2_popedSolveIdME(SEXP thetaSEXP, SEXP idSEXP) {
