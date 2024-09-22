@@ -382,7 +382,8 @@ rxUiGet.popedFfFun <- function(x, ...) {
     if (.lu <=  .(.poped$maxn)) {
       # only check for time reset if it is specified in the model
       .p <- babelmixr2::popedMultipleEndpointParam(p, .u, model_switch,
-                                                   .(.poped$maxn))
+                                                   .(.poped$maxn),
+                                                   poped.db$babelmixr2$optTime)
       .popedRxRunSetup(poped.db)
       .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
                               .id-1, .totn)
@@ -1998,6 +1999,7 @@ rxUiGet.popedOptsw <- function(x, ...) {
   # - rxControl
   .env$rxControl <- .ctl$rxControl
   ret$babelmixr2 <- .env
+  ret$babelmixr2$optTime <- .ctl$optTime
   .poped$lastEnv <- .env
   ret
 }
@@ -2576,6 +2578,7 @@ popedControl <- function(stickyRecalcN=4,
                          opt_a=FALSE,
                          opt_x=FALSE,
                          opt_samps=FALSE,
+                         optTime=TRUE,
                          ...) {
   rxode2::rxReq("PopED")
   .xtra <- list(...)
@@ -2757,6 +2760,8 @@ popedControl <- function(stickyRecalcN=4,
   checkmate::assertIntegerish(Doptim_iter, any.missing=FALSE, len=1, lower=1)
   checkmate::assertIntegerish(iNumProcesses, any.missing=FALSE, len=1, lower=1)
 
+  checkmate::assertLogical(optTime, any.missing=FALSE, len=1)
+
   if (is.matrix(groupsize)) {
     .d <- dim(groupsize)
     if (.d[2] != 1L) {
@@ -2919,7 +2924,9 @@ popedControl <- function(stickyRecalcN=4,
                opt_xt=opt_xt,
                opt_a=opt_a,
                opt_x=opt_x,
-               opt_samps=opt_samps)
+               opt_samps=opt_samps,
+               optTime=optTime)
+  popedMultipleEndpointResetTimeIndex()
   class(.ret) <- "popedControl"
   .ret
 }
@@ -3039,15 +3046,26 @@ print.babelmixr2popedScript <- function(x, ...) {
 #' Expand a babelmixr2 PopED database
 #'
 #' @param popedInput The babelmixr2 generated PopED database
+#'
 #' @param ... other parameters sent to `PopED::create.poped.database()`
+#'
 #' @return babelmixr2 PopED database (with $babelmixr2 in database)
+#'
+#' @inheritParams popedControl
+#'
 #' @export
+#'
 #' @author Matthew L. Fidler
-babel.poped.database <- function(popedInput, ...) {
+babel.poped.database <- function(popedInput, ..., optTime=NA) {
   if (is.environment(popedInput$babelmixr2)) {
     .babelmixr2 <- popedInput$babelmixr2
     .db <- PopED::create.poped.database(popedInput=popedInput, ...)
     .db$babelmixr2 <- .babelmixr2
+    if (is.logical(optTime) && length(optTime) == 1L &&
+          !is.na(optTime)) {
+      popedMultipleEndpointResetTimeIndex()
+      .db$babelmixr2$optTime <- optTime
+    }
     .db
   } else {
     stop("this object is not a PopED database from babelmixr2",

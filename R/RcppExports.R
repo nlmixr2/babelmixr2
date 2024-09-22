@@ -133,8 +133,8 @@ popedMultipleEndpointIndexDataFrame <- function(print = FALSE) {
 #' @export
 #' @keywords internal
 #' @author Matthew L. Fidler
-popedMultipleEndpointParam <- function(p, times, modelSwitch, maxMT) {
-    .Call(`_babelmixr2_popedMultipleEndpointParam`, p, times, modelSwitch, maxMT)
+popedMultipleEndpointParam <- function(p, times, modelSwitch, maxMT, optTime = TRUE) {
+    .Call(`_babelmixr2_popedMultipleEndpointParam`, p, times, modelSwitch, maxMT, optTime)
 }
 
 popedFree <- function() {

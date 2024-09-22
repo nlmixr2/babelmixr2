@@ -211,8 +211,9 @@ Rcpp::List popedMultipleEndpointIndexDataFrame(bool print=false) {
 Rcpp::NumericVector popedMultipleEndpointParam(Rcpp::NumericVector p,
                                                Rcpp::NumericVector times,
                                                Rcpp::IntegerVector modelSwitch,
-                                               int maxMT) {
-  globalTimeIndexer.initialize(modelSwitch, times);
+                                               int maxMT,
+                                               bool optTime=true) {
+  globalTimeIndexer.initialize(modelSwitch, times, optTime);
   Rcpp::NumericVector ret(p.size()-1+maxMT);
   std::fill(ret.begin(), ret.end(), globalTimeIndexer.getMaxTime());
   std::copy(p.begin()+1, p.end(), ret.begin());
