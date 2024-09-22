@@ -61,7 +61,7 @@
   .ret
 }
 
-#' get the bpop number (which is a theta in PopED)
+#' Get the bpop number (which is a theta in PopED)
 #'
 #' @param theta name of the population parameter
 #' @param ui rxode2 ui object
@@ -98,9 +98,11 @@ rxUiGet.popedBpopRep <- function(x, ...) {
   .thetas <- names(.muRef)
   .covRefDf <- .ui$saemMuRefCovariateDataFrame
   .ret <- data.frame(theta=.thetas,
-                     bpop=vapply(.thetas, .popedGetBpopNum,
+                     bpop=vapply(.thetas,
+                                 .popedGetBpopNum,
                                  character(1), ui=.ui, USE.NAMES=FALSE),
-                     num=vapply(.thetas, .popedGetBpopNum0,
+                     num=vapply(.thetas,
+                                .popedGetBpopNum0,
                                 integer(1), ui=.ui, USE.NAMES=FALSE),
                      mu=vapply(.thetas, .nonmemGetMuNum, character(1), ui=.ui,
                                USE.NAMES=FALSE),
@@ -317,7 +319,53 @@ rxUiGet.popedGetEventFun <- function(x, ...) {
     }
     .ret
   })
-  .f <- function(id, xt){}
+  .f <- function(id, xt=babelmixr2$maxTime){}
+  body(.f) <- .body
+  .f
+}
+
+#' @export
+rxUiGet.popedFfFunScript <- function(x, ...) {
+  .ui <- x[[1]]
+  .body <- bquote({
+    .xt <- drop(xt)
+    .id <- p[1]
+    .u <- .xt
+    .lu <- length(.u)
+    .totn <- length(.xt)
+    if (is.environment(poped.db$babelmixr2)) {
+      poped.db$babelmixr2 <- babelmixr2
+    }
+    # unlike standard rxode2, parameters need not be named, but must
+    # be in the right order
+    if (.lu <=  .(.poped$maxn)) {
+      # only check for time reset if it is specified in the model
+      .p <- babelmixr2::popedMultipleEndpointParam(p, .u, model_switch,
+                                                   .(.poped$maxn),
+                                                   poped.db$babelmixr2$optTime)
+      .event <- getEventFun(.id)
+      .ctl <- popedRxControl
+      .ctl$returnType <- c(matrix=1L)
+      .mat <- do.call(rxode2::rxSolve, c(list(object=rxMtModel,
+                                              params=.p,
+                                              events=.event),
+                                         .ctl))
+      .ret <- popedPostSolveMat(.mat, poped.db$babelmixr2)
+    } else if (.lu > .(.poped$maxn)) {
+      .p <- p[-1]
+      .event <- getEventFun(.id, .u)
+      .ctl <- popedRxControl
+      .ctl$returnType <- c(data.frame=2L)
+      .ret <- do.call(rxode2::rxSolve,
+                      c(list(object=rxFullModel,
+                             params=.p,
+                             events=.event),
+                        .ctl))
+    }
+    return(list(f=matrix(.ret$rx_pred_, ncol=1),
+                poped.db=poped.db))
+  })
+  .f <- function(model_switch, xt, p, poped.db){}
   body(.f) <- .body
   .f
 }
@@ -1623,6 +1671,20 @@ rxUiGet.popedOptsw <- function(x, ...) {
     )
 }
 
+.popedScriptGetRxControlLines <- function(rxControl) {
+  .rxControl <- rxode2::rxUiDeparse(rxControl, "popedControl")
+  .rxControl <- .rxControl[[3]]
+  .rxControl[[1]] <- quote(`list`)
+  .rxControl <- eval(.rxControl)
+  if (length(.rxControl) == 0) {
+    .rxControl <- "popedRxControl <- rxControl()"
+  } else {
+    .rxControl <- c("popedRxControl <- rxControl(",
+                    .deparsePopedList(.rxControl))
+  }
+  .rxControl
+}
+
 .popedCreateSeparateSamplingDatabase <- function(ui, data, .ctl, .err) {
   .a <- rxode2::rxGetControl(ui, "a", list())
   # Get the observation data
@@ -1828,20 +1890,10 @@ rxUiGet.popedOptsw <- function(x, ...) {
                                     .d
                                   })
     }
-    .rxControl <- rxode2::rxUiDeparse(.ctl$rxControl, "popedControl")
-    .rxControl <- .rxControl[[3]]
-    .rxControl[[1]] <- quote(`list`)
-    .rxControl <- eval(.rxControl)
-    if (length(.rxControl) == 0) {
-      .rxControl <- "popedRxControl <- rxControl()"
-    } else {
-      .rxControl <- c("popedRxControl <- rxControl(",
-                      .deparsePopedList(.rxControl))
-    }
     .ret <- c(ui$popedScriptBeforeCtl,
               "",
               "# Create rxode2 control structure",
-              .rxControl,
+              .popedScriptGetRxControlLines(.ctl$rxControl),
               "# Create global event information -- popedDosing",
               "popedDosing <- list(",
               .deparsePopedList(popedDosing),
@@ -2013,7 +2065,8 @@ rxUiGet.popedOptsw <- function(x, ...) {
       .design$design_space$bUseGrouped_xt <- rxode2::rxGetControl(.ui, "bUseGrouped_xt", FALSE)
     } else {
       .design <- c(.design,
-                   paste0("designSpace$design_space$ bUseGrouped_xt=", deparse1(rxode2::rxGetControl(.ui, "bUseGrouped_xt", FALSE))))
+                   paste0("designSpace$design_space$bUseGrouped_xt <- ",
+                          deparse1(rxode2::rxGetControl(.ui, "bUseGrouped_xt", FALSE))))
     }
 
     .poped$setup <- 0L
@@ -2079,6 +2132,7 @@ rxUiGet.popedOptsw <- function(x, ...) {
       }
       .wtime <- which(.nd == "time")
       .nmt <- length(data[data[[.wevid]] == 0, .wtime])
+      .poped$maxn <- .nmt
       .rx <- deparse(.popedRxModel(.ui, maxNumTime=.nmt))
       .rx[1] <- paste0("rxMtModel <- ", .rx[1])
       .ret <- c(.ui$popedScriptBeforeCtl,
@@ -2088,8 +2142,7 @@ rxUiGet.popedOptsw <- function(x, ...) {
                 .rx,
                 "",
                 "# Create rxode2 control structure",
-                "popedRxControl <- list(",
-                .deparsePopedList(.ctl$rxControl),
+                .popedScriptGetRxControlLines(.ctl$rxControl),
                 "",
                 "# Create global event information -- popedDosing",
                 "popedDosing <- list(",
@@ -2971,11 +3024,12 @@ rxUiGet.popedScriptBeforeCtl <- function(x, ...) {
   .fg[1] <- paste0("fgFun <- ", .fg[1])
   .feps <- deparse(rxUiGet.popedFErrorFun(x, ...))
   .feps[1] <- paste0("fepsFun <- ", .feps[1])
-  ## .ff <- deparse(rxUiGet.popedFfFunScript(x, ...))
-  ## .ff[1] <- paste0("ffFun <- ", .ff[1])
+  .ff <- deparse(rxUiGet.popedFfFunScript(x, ...))
+  .ff[1] <- paste0("ffFun <- ", .ff[1])
   .getEvent <- deparse(rxUiGet.popedGetEventFun(x, ...))
   .getEvent[1] <- paste0("getEventFun <- ", .getEvent[1])
-  .ret <- c("library(PopED)",
+  .ret <- c(
+    "library(PopED)",
     "library(rxode2)",
     "",
     "# ODE using rxode2 for solving an arbitrary number of points",
@@ -2984,17 +3038,33 @@ rxUiGet.popedScriptBeforeCtl <- function(x, ...) {
     "",
     "# Now define the PopED parameter translation function",
     "# This comes from $popedFgFun in the babelmixr2 procedure",
-    "# Note the typical a, b, bpop are prefixed with rxPoped",
+    "# Note the typical x, a, and bocc are prefixed with rxPoped",
     "# so that they do not conflict with the model parameters",
     "# This is a way to keep the model parameters separate from",
-    "# the PopED parameters and make translations with simple parameters",
-    "# like a, b, not conflict with the model parameters",
+    "# the PopED parameters and make translations simpler.",
+    "# However PopED queries bpop and b parameters in shrinkage calculation",
+    "# and assumes they are named 'bpop' and 'b'. This may occur elsewhere too.",
+    "# Therefore, inside this function these parameters are then called",
+    "# rxPopedBpop and rxPopedB, respectively. When outputting the final parameters",
+    "# These are changed back to bpop and b respectively for solving in rxode2",
     "# This is the only part that comes from the model translation",
-    "# and the only function that has to have the rxPoped prefix",
+    "# and the only function that has to have the rxPoped prefix work-around",
     .fg,
     "",
     "# Now define the PopED error function which comes from $popedFErrorFun",
-    .feps)
+    .feps,
+    "",
+    "# Create an empty babelmixr2 environment for item storage",
+    "babelmixr2 <- new.env(parent=emptyenv())",
+    "babelmixr2$maxTime <- 0",
+    "babelmixr2$optTime <- TRUE",
+    "",
+    "# Define the function to get the rxode2 event table",
+    .getEvent,
+    "",
+    "# Get the evaluation function based on the number of mtimes",
+    .ff)
+
   class(.ret) <- "babelmixr2popedScript"
   .ret
 }
