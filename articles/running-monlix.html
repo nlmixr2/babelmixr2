@@ -68,7 +68,7 @@
       <img src="../logo.svg" class="logo" alt=""><h1>Running Monolix</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/nlmixr2/babelmixr2/blob/main/vignettes/articles/running-monlix.Rmd" class="external-link"><code>vignettes/articles/running-monlix.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/nlmixr2/babelmixr2/blob/v0.1.4/vignettes/articles/running-monlix.Rmd" class="external-link"><code>vignettes/articles/running-monlix.Rmd</code></a></small>
       <div class="d-none name"><code>running-monlix.Rmd</code></div>
     </div>
 
@@ -156,6 +156,8 @@ the function here).</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/nlmixr2.html" class="external-link">nlmixr</a></span><span class="op">(</span><span class="va">pk.turnover.emax3</span>, <span class="fu">nlmixr2data</span><span class="fu">::</span><span class="va"><a href="https://nlmixr2.github.io/nlmixr2data/reference/warfarin.html" class="external-link">warfarin</a></span>, <span class="st">"monolix"</span>,</span>
 <span>                              <span class="fu"><a href="../reference/monolixControl.html">monolixControl</a></span><span class="op">(</span>modelName<span class="op">=</span><span class="st">"pk.turnover.emax3"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> parameter labels from comments are typically ignored in non-interactive mode</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Need to run with the source intact to parse comments</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> assuming monolix is running because 'pk.turnover.emax3-monolix.txt' is present</span></span>
 <span><span class="co">#&gt; → loading into <span style="color: #0000BB;">symengine</span> environment...</span></span>
 <span><span class="co">#&gt; → pruning branches (`if`/`else`) of full model...</span></span>
@@ -198,8 +200,8 @@ the input).</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Time (sec </span><span style="color: #BBBB00; font-weight: bold;">fit</span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;           setup table compress   other</span></span>
-<span><span class="co">#&gt; elapsed 0.00271 0.135    0.006 4.40529</span></span>
+<span><span class="co">#&gt;            setup table compress    other</span></span>
+<span><span class="co">#&gt; elapsed 0.002858 0.123    0.006 4.323142</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Population Parameters (</span><span style="color: #BBBB00; font-weight: bold;">fit</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #BBBB00; font-weight: bold;">fit</span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
@@ -379,7 +381,7 @@ compartment uses empty macro</p></li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
     </footer>
