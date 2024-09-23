@@ -491,14 +491,15 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
 }
 
 //[[Rcpp::export]]
-Rcpp::DataFrame popedSolveIdME(NumericVector &theta, int id) {
+Rcpp::DataFrame popedSolveIdME(NumericVector &theta,
+                               NumericVector &umt,
+                               NumericVector &mt, IntegerVector &ms,
+                               int nend, int id, int totn) {
   if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
-  size_t totn = globalTimeIndexer.getTimes().size();
-  size_t nend = globalTimeIndexer.getNid();
   NumericVector t(totn);
   arma::vec f(totn);
   arma::vec w(totn);
-  size_t nrow = globalTimeIndexer.getUniqueTimes().size();//umt.size();
+  int nrow = umt.size();
   arma::mat matMT(nrow, nend*2+1);
   List we(nend);
   for (int i = 0; i < nend; i++) {
@@ -524,12 +525,13 @@ Rcpp::DataFrame popedSolveIdME(NumericVector &theta, int id) {
   // This is not how rxode2/nlmixr2 handles the information, but this
   // routine should put it in whatever order is supplied to
   // model_switch and time
+  size_t nId = globalTimeIndexer.getNid();
   std::vector<double> ut = globalTimeIndexer.getUniqueTimes();
   for (int i = 0; i < (int)ut.size(); ++i) {
     double curT = matMT(i, 0);
     const auto& infos= globalTimeIndexer.getTimeInfo(curT);
     for (const auto& info : infos) {
-      if (info.id > (int)nend ||
+      if (info.id > (int)nId ||
           info.id <= 0) {
         Rcpp::stop("modelSwitch need to be sequential 1, 2, 3, ..., n");
       }
@@ -540,9 +542,8 @@ Rcpp::DataFrame popedSolveIdME(NumericVector &theta, int id) {
       }
     }
   }
-  DataFrame ret = DataFrame::create(_["t"]=Rcpp::wrap(globalTimeIndexer.getTimes()),
-                                    _["ms"]=
-                                    Rcpp::wrap(globalTimeIndexer.getModelSwitch()),
+  DataFrame ret = DataFrame::create(_["t"]=mt,
+                                    _["ms"]=ms,
                                     _["rx_pred_"]=f, // match rxode2/nlmixr2 to simplify code of mtime models
                                     _["w"]=w); // w = sqrt(rx_r_)
   _popedE["s"] = ret;
