@@ -7,22 +7,23 @@
 \usage{
 .popedSolveIdME(theta, id)
 
-.popedSolveIdME2(theta, umt, mt, ms, nend, id, totn)
+.popedSolveIdME2(theta, ms, nrow, nend, id)
 }
 \arguments{
 \item{theta}{parameters (includes covariates and modeling times)}
 
 \item{id}{this is the design identifier}
 
-\item{umt}{unique times sampled}
+\item{ms}{model switch parameter integer starting with 1 (related
+to dvid in rxode2)}
 
-\item{mt}{original unsorted time (to match the f/w against)}
-
-\item{ms}{model switch parameter integer starting with 1 (related to dvid in rxode2)}
+\item{nrow}{number of rows in the output}
 
 \item{nend}{specifies the number of endpoints in this model}
 
-\item{totn}{This is the total number of design points tested}
+\item{umt}{unique times sampled}
+
+\item{mt}{original unsorted time (to match the f/w against)}
 }
 \value{
 a data frame with $f and $w corresponding to the function

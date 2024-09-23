@@ -190,7 +190,7 @@ popedSetup <- function(e, full) {
 #' env$we[[2]] is a boolean vector of which items are model switch 2, etc.)
 #'
 #' @keywords internal
-#'
+#' @author Matthew L. Fidler
 #' @export
 popedPostSolveMat <- function(matMT, env) {
     .Call(`_babelmixr2_popedPostSolveMat`, matMT, env)
@@ -200,8 +200,50 @@ popedSolveIdME <- function(theta, id) {
     .Call(`_babelmixr2_popedSolveIdME`, theta, id)
 }
 
-popedSolveIdME2 <- function(theta, umt, mt, ms, nend, id, totn) {
-    .Call(`_babelmixr2_popedSolveIdME2`, theta, umt, mt, ms, nend, id, totn)
+#' @title Get Solved f based on matched solving times (Full Solve)
+#'
+#' @param matMT This is the solved matrix that with the following columns (in order):
+#'
+#' - `time`
+#'
+#' - For each endpoint it needs the following (repeated for each endpoint):
+#'
+#'  - endpoint prediction (f)
+#'
+#'  - endpoint prediction variance (w)
+#'
+#' @param ms The model switch parameter
+#'
+#' @param env This is an R environment where the boolean indexes of
+#'  which item is a which modeling switch is saved (as well as the
+#'  last data frame solved created by this method)
+#'
+#' @return A data.frame with the following output items:
+#'
+#' - `t` The time points
+#'
+#' - `ms` The model switch
+#'
+#' - `rx_pred_` The predicted value
+#'
+#' - `w` The variance of the predicted value
+#'
+#' This also has a side effect of saving the data.frame in the
+#' environment as `s` and the boolean indexes of which item is a
+#' which modeling switch is saved in the environment as `we`
+#'
+#' (i.e. env$we[[1]] is a boolean vector of which items are model switch 1,
+#' env$we[[2]] is a boolean vector of which items are model switch 2, etc.)
+#'
+#' @export
+#' @keywords internal
+#' @author Matthew L. Fidler
+popedPostSolveFull <- function(matMT, ms, env) {
+    .Call(`_babelmixr2_popedPostSolveFull`, matMT, ms, env)
+}
+
+popedSolveIdME2 <- function(theta, ms, nrow, nend, id) {
+    .Call(`_babelmixr2_popedSolveIdME2`, theta, ms, nrow, nend, id)
 }
 
 transDv <- function(inDv, inCmt, cmtTrans, lambda, yj, low, high) {

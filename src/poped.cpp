@@ -604,7 +604,7 @@ Rcpp::DataFrame popedPostSolveMat(arma::mat& matMT, Rcpp::Environment& env) {
 //' env$we[[2]] is a boolean vector of which items are model switch 2, etc.)
 //'
 //' @keywords internal
-//'
+//' @author Matthew L. Fidler
 //' @export
 //[[Rcpp::export]]
 Rcpp::DataFrame popedPostSolveMat(Rcpp::NumericMatrix& matMT, Rcpp::Environment& env) {
@@ -658,52 +658,90 @@ void popedSolveFidMat2(arma::mat &matMT, NumericVector &theta, int id, int nrow,
   }
 }
 
-//[[Rcpp::export]]
-Rcpp::DataFrame popedSolveIdME2(NumericVector &theta,
-                                NumericVector &umt,
-                                NumericVector &mt, IntegerVector &ms,
-                                int nend, int id, int totn) {
-  if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
-  NumericVector t(totn);
-  arma::vec f(totn);
-  arma::vec w(totn);
-  int nrow = umt.size();
-  arma::mat matMT(nrow, nend*2+1);
+Rcpp::DataFrame popedPostSolveFull(arma::mat& matMT, IntegerVector &ms,
+                                   Rcpp::Environment& env) {
+  size_t nend = (matMT.n_cols-1)/2;
+  size_t totn = ms.size();
   List we(nend);
   for (int i = 0; i < nend; i++) {
-    we[i] = LogicalVector(totn);
+    LogicalVector curLV = LogicalVector(totn);
+    // assumes FALSE int the beginning
+    std::fill(curLV.begin(), curLV.end(), 0);
+    we[i] = curLV;
   }
-
-  popedSolveFidMat2(matMT, theta, id, nrow, nend);
-  // arma::uvec m = as<arma::uvec>(match(mt, t))-1;
-  // f = f(m);
-  // w = w(m);
+  NumericVector t(totn);
+  NumericVector f(totn);
+  NumericVector w(totn);
   for (int i = 0; i < totn; ++i) {
-    double curT = mt[i];
-    int curMS = ms[i];
-    // Create a logical vector for which endpoint (used in error per endpoint identification)
-    for (int j = 0; j < nend; j++) {
-      LogicalVector cur = we[j];
-      cur[i] = (curMS-1 == j);
-      we[j] = cur;
-    }
-    for (int j = 0; j < nrow; ++j) {
-      if (curT == matMT(j, 0)) {
-        f[i] = matMT(j, (curMS-1)*2+1);
-        w[i] = matMT(j, (curMS-1)*2+2);
-        break;
-      }
-      if (j == nrow-1) {
-        f[i] = NA_REAL;
-        w[i] = NA_REAL;
-      }
-    }
+    t[i] = matMT(i, 0);
+    size_t curMS = ms[i] - 1;
+    //
+    // Create a logical vector for which endpoint (used in error per
+    // endpoint identification)
+    //
+    INTEGER(we[curMS])[i] = 1;
+    f[i] = matMT(i, (curMS)*2+1);
+    w[i] = matMT(i, (curMS)*2+2);
   }
-  DataFrame ret = DataFrame::create(_["t"]=mt,
+  DataFrame ret = DataFrame::create(_["t"]=t,
                                     _["ms"]=ms,
                                     _["rx_pred_"]=f, // match rxode2/nlmixr2 to simplify code of mtime models
                                     _["w"]=w); // w = sqrt(rx_r_)
-  _popedE["s"] = ret;
-  _popedE["we"] = we;
+  env["s"] = ret;
+  env["we"] = we;
   return ret;
+}
+
+//' @title Get Solved f based on matched solving times (Full Solve)
+//'
+//' @param matMT This is the solved matrix that with the following columns (in order):
+//'
+//' - `time`
+//'
+//' - For each endpoint it needs the following (repeated for each endpoint):
+//'
+//'  - endpoint prediction (f)
+//'
+//'  - endpoint prediction variance (w)
+//'
+//' @param ms The model switch parameter
+//'
+//' @param env This is an R environment where the boolean indexes of
+//'  which item is a which modeling switch is saved (as well as the
+//'  last data frame solved created by this method)
+//'
+//' @return A data.frame with the following output items:
+//'
+//' - `t` The time points
+//'
+//' - `ms` The model switch
+//'
+//' - `rx_pred_` The predicted value
+//'
+//' - `w` The variance of the predicted value
+//'
+//' This also has a side effect of saving the data.frame in the
+//' environment as `s` and the boolean indexes of which item is a
+//' which modeling switch is saved in the environment as `we`
+//'
+//' (i.e. env$we[[1]] is a boolean vector of which items are model switch 1,
+//' env$we[[2]] is a boolean vector of which items are model switch 2, etc.)
+//'
+//' @export
+//' @keywords internal
+//' @author Matthew L. Fidler
+//[[Rcpp::export]]
+Rcpp::DataFrame popedPostSolveFull(Rcpp::NumericMatrix& matMT,
+                                   Rcpp::IntegerVector &ms,
+                                   Rcpp::Environment& env) {
+  arma::mat matMT2 = as<arma::mat>(matMT);
+  return popedPostSolveFull(matMT2, ms, env);
+}
+//[[Rcpp::export]]
+Rcpp::DataFrame popedSolveIdME2(NumericVector &theta, IntegerVector &ms,
+                                int nrow, int nend, int id) {
+  if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
+  arma::mat matMT(nrow, nend*2+1);
+  popedSolveFidMat2(matMT, theta, id, nrow, nend);
+  return popedPostSolveFull(matMT, ms, _popedE);
 }

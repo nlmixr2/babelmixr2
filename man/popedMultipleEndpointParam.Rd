@@ -4,7 +4,14 @@
 \alias{popedMultipleEndpointParam}
 \title{Populates Multiple Endpoint Parameters for internal solving}
 \usage{
-popedMultipleEndpointParam(p, times, modelSwitch, maxMT, optTime = TRUE)
+popedMultipleEndpointParam(
+  p,
+  times,
+  modelSwitch,
+  maxMT,
+  optTime = TRUE,
+  name = FALSE
+)
 }
 \arguments{
 \item{p}{A numeric vector of parameters}

@@ -130,20 +130,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// popedPostSolveFull
+Rcpp::DataFrame popedPostSolveFull(Rcpp::NumericMatrix& matMT, Rcpp::IntegerVector& ms, Rcpp::Environment& env);
+RcppExport SEXP _babelmixr2_popedPostSolveFull(SEXP matMTSEXP, SEXP msSEXP, SEXP envSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix& >::type matMT(matMTSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type ms(msSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Environment& >::type env(envSEXP);
+    rcpp_result_gen = Rcpp::wrap(popedPostSolveFull(matMT, ms, env));
+    return rcpp_result_gen;
+END_RCPP
+}
 // popedSolveIdME2
-Rcpp::DataFrame popedSolveIdME2(NumericVector& theta, NumericVector& umt, NumericVector& mt, IntegerVector& ms, int nend, int id, int totn);
-RcppExport SEXP _babelmixr2_popedSolveIdME2(SEXP thetaSEXP, SEXP umtSEXP, SEXP mtSEXP, SEXP msSEXP, SEXP nendSEXP, SEXP idSEXP, SEXP totnSEXP) {
+Rcpp::DataFrame popedSolveIdME2(NumericVector& theta, IntegerVector& ms, int nrow, int nend, int id);
+RcppExport SEXP _babelmixr2_popedSolveIdME2(SEXP thetaSEXP, SEXP msSEXP, SEXP nrowSEXP, SEXP nendSEXP, SEXP idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector& >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< NumericVector& >::type umt(umtSEXP);
-    Rcpp::traits::input_parameter< NumericVector& >::type mt(mtSEXP);
     Rcpp::traits::input_parameter< IntegerVector& >::type ms(msSEXP);
+    Rcpp::traits::input_parameter< int >::type nrow(nrowSEXP);
     Rcpp::traits::input_parameter< int >::type nend(nendSEXP);
     Rcpp::traits::input_parameter< int >::type id(idSEXP);
-    Rcpp::traits::input_parameter< int >::type totn(totnSEXP);
-    rcpp_result_gen = Rcpp::wrap(popedSolveIdME2(theta, umt, mt, ms, nend, id, totn));
+    rcpp_result_gen = Rcpp::wrap(popedSolveIdME2(theta, ms, nrow, nend, id));
     return rcpp_result_gen;
 END_RCPP
 }
