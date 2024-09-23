@@ -43,7 +43,4 @@ of the input times and model_switch from \code{PopED}.  It assumes
 the global time indexer has been setup with something like
 \code{babelmixr2::popedMultipleEndpointParam()}
 }
-\author{
-Matthew L. Fidler
-}
 \keyword{internal}

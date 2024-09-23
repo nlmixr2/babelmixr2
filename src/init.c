@@ -15,17 +15,15 @@ SEXP _babelmixr2_iniRxodePtrs(SEXP in);
 SEXP _babelmixr2_popedFree(void);
 SEXP _babelmixr2_popedSetup(SEXP eSEXP, SEXP fullSEXP);
 SEXP _babelmixr2_popedSolveIdME(SEXP thetaSEXP, SEXP idSEXP);
-SEXP _babelmixr2_popedSolveIdME2(SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP _babelmixr2_popedSolveIdME2(SEXP thetaSEXP, SEXP umtSEXP, SEXP mtSEXP, SEXP msSEXP, SEXP nendSEXP, SEXP idSEXP, SEXP totnSEXP);
 SEXP _babelmixr2_popedGetMultipleEndpointModelingTimes(SEXP, SEXP, SEXP);
 SEXP _babelmixr2_popedMultipleEndpointResetTimeIndex(void);
 SEXP _babelmixr2_popedMultipleEndpointIndexDataFrame(SEXP);
 SEXP _babelmixr2_popedMultipleEndpointParam(SEXP, SEXP, SEXP, SEXP, SEXP,
                                             SEXP );
 SEXP _babelmixr2_popedPostSolveMat(SEXP, SEXP);
-SEXP _babelmixr2_popedPostSolveFull(SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
-  {"_babelmixr2_popedPostSolveFull", (DL_FUNC) &_babelmixr2_popedPostSolveFull, 3},
   {"_babelmixr2_popedPostSolveMat", (DL_FUNC) &_babelmixr2_popedPostSolveMat, 2},
   {"_babelmixr2_popedMultipleEndpointParam",
    (DL_FUNC) &_babelmixr2_popedMultipleEndpointParam, 6},
@@ -36,7 +34,7 @@ static const R_CallMethodDef CallEntries[] = {
   {"_babelmixr2_popedFree", (DL_FUNC) &_babelmixr2_popedFree, 0},
   {"_babelmixr2_popedSetup", (DL_FUNC) &_babelmixr2_popedSetup, 2},
   {"_babelmixr2_popedSolveIdME", (DL_FUNC) &_babelmixr2_popedSolveIdME, 2},
-  {"_babelmixr2_popedSolveIdME2", (DL_FUNC) &_babelmixr2_popedSolveIdME2, 5},
+  {"_babelmixr2_popedSolveIdME2", (DL_FUNC) &_babelmixr2_popedSolveIdME2, 7},
   {"_babelmixr2_iniRxodePtrs", (DL_FUNC) &_babelmixr2_iniRxodePtrs, 1},
   {"_babelmixr2_convertDataBack", (DL_FUNC) &_babelmixr2_convertDataBack, 13},
   {"_babelmixr2_transDv", (DL_FUNC) &_babelmixr2_transDv, 7},

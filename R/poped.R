@@ -31,37 +31,25 @@
 #' can crash R)
 #'
 #' @param theta parameters (includes covariates and modeling times)
-#'
 #' @param umt unique times sampled
-#'
 #' @param mt original unsorted time (to match the f/w against)
-#'
-#' @param ms model switch parameter integer starting with 1 (related
-#'   to dvid in rxode2)
-#'
-#' @param nrow number of rows in the output
-#'
+#' @param ms model switch parameter integer starting with 1 (related to dvid in rxode2)
 #' @param nend specifies the number of endpoints in this model
-#'
 #' @param id this is the design identifier
-#'
+#' @param totn This is the total number of design points tested
 #' @return a data frame with $f and $w corresponding to the function
 #'   value and standard deviation at the sampling point
-#'
 #' @export
-#'
 #' @author Matthew L. Fidler
-#'
 #' @keywords internal
-#'
 .popedSolveIdME <- function(theta, id) {
   .Call(`_babelmixr2_popedSolveIdME`, theta, id)
 }
 
 #' @rdname dot-popedSolveIdME
 #' @export
-.popedSolveIdME2 <- function(theta, ms, nrow, nend, id) {
-  .Call(`_babelmixr2_popedSolveIdME2`, theta, ms, nrow, nend, id)
+.popedSolveIdME2 <- function(theta, umt, mt, ms, nend, id, totn) {
+  .Call(`_babelmixr2_popedSolveIdME2`, theta, umt, mt, ms, nend, id, totn)
 }
 
 .popedGetThetaDf <- function(ui) {
@@ -342,7 +330,7 @@ rxUiGet.popedGetEventFun <- function(x, ...) {
 #' @export
 rxUiGet.popedScriptMtTrans <- function(x, ...) {
   bquote(popedMtTrans <- lapply(seq_along(popedDosing), function(id) {
-    .ret <- rxode2::etTrans(getEventFun(id, 0.0), rxMtModel)
+    .ret <- etTrans(getEventFun(id, 0.0), rxMtModel)
     .cls <- class(.ret)
     .tmp <- attr(.cls, ".rxode2.lst")
     .tmp$nobs <- 0L
@@ -386,26 +374,24 @@ rxUiGet.popedFfFunScript <- function(x, ...) {
                                                    .(.poped$maxn),
                                                    poped.db$babelmixr2$optTime,
                                                    TRUE)
-      .event <- getEventFun(.id, numeric(0))
+      .event <- getEventFun(.id, max(.u))
       .ctl <- popedRxControl
       .ctl$returnType <- c(matrix=1L)
       .mat <- do.call(rxode2::rxSolve, c(list(object=rxMtModel,
                                               params=.p,
                                               events=.event),
                                          .ctl))
-      .ret <- babelmixr2::popedPostSolveMat(.mat, poped.db$babelmixr2)
+      .ret <- popedPostSolveMat(.mat, poped.db$babelmixr2)
     } else if (.lu > .(.poped$maxn)) {
       .p <- c(p[-1], rxXt_=0.0)
       .event <- getEventFun(.id, .u)
       .ctl <- popedRxControl
-      .ctl$returnType <- c(matrix=1L)
+      .ctl$returnType <- c(data.frame=2L)
       .ret <- do.call(rxode2::rxSolve,
                       c(list(object=rxFullModel,
                              params=.p,
                              events=.event),
                         .ctl))
-      .ret <- babelmixr2::popedPostSolveFull(.ret, model_switch,
-                                             poped.db$babelmixr2)
     }
     return(list(f=matrix(.ret$rx_pred_, ncol=1),
                 poped.db=poped.db))
@@ -429,16 +415,16 @@ rxUiGet.popedFfFun <- function(x, ...) {
     # be in the right order
     if (.lu <=  .(.poped$maxn)) {
       # only check for time reset if it is specified in the model
-      poped.db <- .popedRxRunSetup(poped.db)
       .p <- babelmixr2::popedMultipleEndpointParam(p, .u, model_switch,
                                                    .(.poped$maxn),
                                                    poped.db$babelmixr2$optTime)
+      .popedRxRunSetup(poped.db)
       .ret <- .popedSolveIdME(.p, .id-1)
     } else if (.lu > .(.poped$maxn)) {
       .p <- c(p[-1], rxXt_=0.0)
-      poped.db <- .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
-      .ret <- .popedSolveIdME2(.p, model_switch, length(.u),
-                               .(length(.predDf$cond)), .id-1)
+      .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
+      .ret <- .popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                               .id-1, .totn)
     }
     return(list(f=matrix(.ret$rx_pred_, ncol=1),
                 poped.db=poped.db))
@@ -515,7 +501,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .poped$setup <- 1L
     .poped$fullXt <- NULL
   }
-  invisible(popedDb)
+  invisible()
 }
 #' Setup a full solve for a multiple-endpoint model
 #'
@@ -584,7 +570,6 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .poped$fullXt <- length(xt)
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$setup <- 2L
-    return(popedDb)
   }
 }
 #' Setup for a full solve with a single endpoint model
@@ -1948,8 +1933,6 @@ rxUiGet.popedOptsw <- function(x, ...) {
               "popedObservations <- list(",
               .deparsePopedList(popedObservations),
               "",
-              "# popedMtTrans is pre-translated event tables",
-              deparse(ui$popedScriptMtTrans),
               "# Create xt matrix",
               .env$xtT)
     if (.multipleEndpoint) {
@@ -2196,12 +2179,12 @@ rxUiGet.popedOptsw <- function(x, ...) {
                 "popedDosing <- list(",
                 .deparsePopedList(popedDosing),
                 "",
+                "# popedMtTrans pre-translate and get information for rxSolve:",
+                ui$popedScriptMtTrans,
+                "",
                 "# Create global event information -- popedObservations",
                 "popedObservations <- list(",
                 .deparsePopedList(popedObservations),
-                "",
-                "# popedMtTrans is pre-translated event tables",
-                deparse(ui$popedScriptMtTrans),
                 .design,
                 .ui$popedSettings,
                 .ui$popedParameters,
