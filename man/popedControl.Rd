@@ -582,6 +582,15 @@ be optimized}
 \item{opt_samps}{boolean to indicate if the sample optimizer is
 used (not implemented yet in \code{PopED})}
 
+\item{optTime}{boolean to indicate if the global time indexer
+inside of babelmixr2 is reset if the times are different. By
+default this is \code{TRUE}.  If \code{FALSE} you can get slightly better
+run times and possibly slightly different results.  When
+\code{optTime} is \code{FALSE} the global indexer is reset every time the
+PopED rxode2 is setup for a problem or when a poped dataset is
+created.  You can manually reset with
+\code{popedMultipleEndpointResetTimeIndex()}}
+
 \item{...}{other parameters for PopED control}
 }
 \value{

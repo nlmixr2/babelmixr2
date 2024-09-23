@@ -2408,6 +2408,15 @@ attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 #' @param opt_samps boolean to indicate if the sample optimizer is
 #'   used (not implemented yet in `PopED`)
 #'
+#' @param optTime boolean to indicate if the global time indexer
+#'   inside of babelmixr2 is reset if the times are different. By
+#'   default this is `TRUE`.  If `FALSE` you can get slightly better
+#'   run times and possibly slightly different results.  When
+#'   `optTime` is `FALSE` the global indexer is reset every time the
+#'   PopED rxode2 is setup for a problem or when a poped dataset is
+#'   created.  You can manually reset with
+#'   `popedMultipleEndpointResetTimeIndex()`
+#'
 #' @inheritParams nlmixr2est::foceiControl
 #' @inheritParams PopED::create.poped.database
 #' @inheritParams PopED::create_design_space

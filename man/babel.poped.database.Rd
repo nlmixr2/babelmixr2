@@ -10,6 +10,15 @@ babel.poped.database(popedInput, ..., optTime = NA)
 \item{popedInput}{The babelmixr2 generated PopED database}
 
 \item{...}{other parameters sent to \code{PopED::create.poped.database()}}
+
+\item{optTime}{boolean to indicate if the global time indexer
+inside of babelmixr2 is reset if the times are different. By
+default this is \code{TRUE}.  If \code{FALSE} you can get slightly better
+run times and possibly slightly different results.  When
+\code{optTime} is \code{FALSE} the global indexer is reset every time the
+PopED rxode2 is setup for a problem or when a poped dataset is
+created.  You can manually reset with
+\code{popedMultipleEndpointResetTimeIndex()}}
 }
 \value{
 babelmixr2 PopED database (with $babelmixr2 in database)
