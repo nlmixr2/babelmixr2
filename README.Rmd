@@ -102,7 +102,7 @@ mod <- nlmixr(nlmixrFun, nlmmixrData, est="monolix")
 
 ## NONMEM example
 
-With babelmixr2 loadid you can use `nlmixr2` to convert a nlmixr2
+With babelmixr2 loaded you can use `nlmixr2` to convert a nlmixr2
 model to NONMEM, run NONMEM and import back to nlmixr2 with the
 following:
 
