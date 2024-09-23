@@ -216,26 +216,13 @@ Rcpp::NumericVector popedMultipleEndpointParam(Rcpp::NumericVector p,
                                                Rcpp::NumericVector times,
                                                Rcpp::IntegerVector modelSwitch,
                                                int maxMT,
-                                               bool optTime=true,
-                                               bool name=false) {
+                                               bool optTime=true) {
   globalTimeIndexer.initialize(modelSwitch, times, optTime);
   Rcpp::NumericVector ret(p.size()-1+maxMT);
   std::fill(ret.begin(), ret.end(), globalTimeIndexer.getMaxTime());
   std::copy(p.begin()+1, p.end(), ret.begin());
   std::vector<double> ut = globalTimeIndexer.getUniqueTimes();
   std::copy(ut.begin(), ut.end(), ret.begin()+ p.size() - 1);
-  if (name) {
-    Rcpp::CharacterVector nf(ret.size());
-    Rcpp::CharacterVector np = p.names();
-    for (size_t i = 0; i < p.size()-1; ++i) {
-      nf[i] = np[i+1];
-    }
-    for (size_t i = p.size()-1; i < ret.size(); ++i) {
-      std::string cur = "rxXt_" + std::to_string(i- p.size()+2);
-      nf[i] = cur;
-    }
-    ret.names() = nf;
-  }
   return ret;
 }
 

@@ -69,8 +69,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // popedMultipleEndpointParam
-Rcpp::NumericVector popedMultipleEndpointParam(Rcpp::NumericVector p, Rcpp::NumericVector times, Rcpp::IntegerVector modelSwitch, int maxMT, bool optTime, bool name);
-RcppExport SEXP _babelmixr2_popedMultipleEndpointParam(SEXP pSEXP, SEXP timesSEXP, SEXP modelSwitchSEXP, SEXP maxMTSEXP, SEXP optTimeSEXP, SEXP nameSEXP) {
+Rcpp::NumericVector popedMultipleEndpointParam(Rcpp::NumericVector p, Rcpp::NumericVector times, Rcpp::IntegerVector modelSwitch, int maxMT, bool optTime);
+RcppExport SEXP _babelmixr2_popedMultipleEndpointParam(SEXP pSEXP, SEXP timesSEXP, SEXP modelSwitchSEXP, SEXP maxMTSEXP, SEXP optTimeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -79,8 +79,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type modelSwitch(modelSwitchSEXP);
     Rcpp::traits::input_parameter< int >::type maxMT(maxMTSEXP);
     Rcpp::traits::input_parameter< bool >::type optTime(optTimeSEXP);
-    Rcpp::traits::input_parameter< bool >::type name(nameSEXP);
-    rcpp_result_gen = Rcpp::wrap(popedMultipleEndpointParam(p, times, modelSwitch, maxMT, optTime, name));
+    rcpp_result_gen = Rcpp::wrap(popedMultipleEndpointParam(p, times, modelSwitch, maxMT, optTime));
     return rcpp_result_gen;
 END_RCPP
 }

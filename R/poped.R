@@ -310,9 +310,6 @@ rxUiGet.popedGetEventFun <- function(x, ...) {
         warning("truncated id to ", id, call.=FALSE)
       }
     }
-    if (length(xt) == 0) {
-      return(popedMtTrans[[id]])
-    }
     .dosing <- popedDosing[[id]]
     .ret <- rbind(data.frame(popedDosing[[id]]),
                   data.frame(popedObservations[[id]],
@@ -328,24 +325,6 @@ rxUiGet.popedGetEventFun <- function(x, ...) {
 }
 
 #' @export
-rxUiGet.popedScriptMtTrans <- function(x, ...) {
-  bquote(popedMtTrans <- lapply(seq_along(popedDosing), function(id) {
-    .ret <- etTrans(getEventFun(id, 0.0), rxMtModel)
-    .cls <- class(.ret)
-    .tmp <- attr(.cls, ".rxode2.lst")
-    .tmp$nobs <- 0L
-    class(.ret) <- "data.frame"
-    .w <- which(.ret$EVID == 0L & .ret$TIME == 0)
-    if (length(.w) > 0L) {
-      .ret <- .ret[-.w,]
-    }
-    attr(.cls, ".rxode2.lst") <- .tmp
-    class(.ret) <- .cls
-    .ret
-  }))
-}
-
-#' @export
 rxUiGet.popedFfFunScript <- function(x, ...) {
   .ui <- x[[1]]
   .body <- bquote({
@@ -354,17 +333,8 @@ rxUiGet.popedFfFunScript <- function(x, ...) {
     .u <- .xt
     .lu <- length(.u)
     .totn <- length(.xt)
-    if (!is.environment(poped.db$babelmixr2)) {
-      if (is.environment(babelmixr2)) {
-        poped.db$babelmixr2 <- babelmixr2
-      } else {
-        poped.db$babelmixr2 <- new.env(parent=emptyenv())
-      }
-    }
-    if (!exists("optTime", envir=poped.db$babelmixr2)) {
-      poped.db$babelmixr2$optTime <- TRUE
-    } else if (!is.logical(poped.db$babelmixr2$optTime)) {
-      poped.db$babelmixr2$optTime <- TRUE
+    if (is.environment(poped.db$babelmixr2)) {
+      poped.db$babelmixr2 <- babelmixr2
     }
     # unlike standard rxode2, parameters need not be named, but must
     # be in the right order
@@ -372,9 +342,8 @@ rxUiGet.popedFfFunScript <- function(x, ...) {
       # only check for time reset if it is specified in the model
       .p <- babelmixr2::popedMultipleEndpointParam(p, .u, model_switch,
                                                    .(.poped$maxn),
-                                                   poped.db$babelmixr2$optTime,
-                                                   TRUE)
-      .event <- getEventFun(.id, max(.u))
+                                                   poped.db$babelmixr2$optTime)
+      .event <- getEventFun(.id)
       .ctl <- popedRxControl
       .ctl$returnType <- c(matrix=1L)
       .mat <- do.call(rxode2::rxSolve, c(list(object=rxMtModel,
@@ -383,7 +352,7 @@ rxUiGet.popedFfFunScript <- function(x, ...) {
                                          .ctl))
       .ret <- popedPostSolveMat(.mat, poped.db$babelmixr2)
     } else if (.lu > .(.poped$maxn)) {
-      .p <- c(p[-1], rxXt_=0.0)
+      .p <- p[-1]
       .event <- getEventFun(.id, .u)
       .ctl <- popedRxControl
       .ctl$returnType <- c(data.frame=2L)
@@ -421,7 +390,7 @@ rxUiGet.popedFfFun <- function(x, ...) {
       .popedRxRunSetup(poped.db)
       .ret <- .popedSolveIdME(.p, .id-1)
     } else if (.lu > .(.poped$maxn)) {
-      .p <- c(p[-1], rxXt_=0.0)
+      .p <- p[-1]
       .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
       .ret <- .popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
                                .id-1, .totn)
@@ -2178,9 +2147,6 @@ rxUiGet.popedOptsw <- function(x, ...) {
                 "# Create global event information -- popedDosing",
                 "popedDosing <- list(",
                 .deparsePopedList(popedDosing),
-                "",
-                "# popedMtTrans pre-translate and get information for rxSolve:",
-                ui$popedScriptMtTrans,
                 "",
                 "# Create global event information -- popedObservations",
                 "popedObservations <- list(",
