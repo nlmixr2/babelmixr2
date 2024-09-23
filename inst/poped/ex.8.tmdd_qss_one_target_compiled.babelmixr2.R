@@ -1,3 +1,4 @@
+
 library(babelmixr2)
 
 library(PopED)
@@ -99,18 +100,41 @@ db <- nlmixr2(f, e, "poped",
                                   SC_FLAG=c(0,1)),
                 ))
 
-m1 <- microbenchmark::microbenchmark(compareTime=evaluate_design(db), times=25)
+# This is a longer running example, so the choice to check times for
+# changes each time may not be ideal.
 
-
-tic();e2 <- evaluate_design(db);toc()
-
-# Models created by babelmixr2 check for time and model_switch
-# changes.  If you are not optimizing over times, some can be lost
+# For this first example, we will not check time differences, which
+# speeds up solving a bit
 
 db <- babel.poped.database(db, optTime=FALSE)
 
-# This takes a little less time to run the times are only setup once
+tic();e1 <- evaluate_design(db);toc()
+
+# You can see that without allowing times to be changed, you close the
+# same value as the original ex.8.tmdd from PopED (with a little rounding error)
+
+# Original example:
+## $rse
+##   CL         V1          Q         V2     FAVAIL         KA         R0       KSSS
+## 2.418464   2.493863   2.390597   2.757785   3.023260   4.838732   2.800056   3.122798
+## KDEG       KINT       d_CL       d_V1        d_Q       d_V2   d_FAVAIL       d_KA
+## 2.711192   2.431927  10.830828  12.269644  22.271256  20.032780  24.240763  19.409710
+##      d_R0     d_KSSS     d_KDEG     d_KINT SIGMA[1,1] SIGMA[2,2]
+## 11.890735  13.446074  20.396815  18.125143   2.731176   2.906398
+
+# If you check for time changes, this is slower and gives a slightly
+# different answer
+db <- babel.poped.database(db, optTime=TRUE)
+
 tic();e2 <- evaluate_design(db);toc()
+
+
+# You can see the differences between the two with microbenchmark.
+m1 <- microbenchmark::microbenchmark(compareTime=evaluate_design(db), times=25)
+
+# Models created by babelmixr2 check for time and model_switch
+# changes.  If you are not optimizing over times, some can be lost
+db <- babel.poped.database(db, optTime=FALSE)
 
 m2 <- microbenchmark::microbenchmark(assumeTimesDontChange=evaluate_design(db), times=25)
 
@@ -126,18 +150,7 @@ m3 <- rbind(m1, m2)
 
 autoplot(m3)
 
+# Going back to the model where time differences are not checked:
+db <- babel.poped.database(db, optTime=FALSE)
 
 plot_model_prediction(db, model_num_points=300, PI=TRUE, facet_scales="free")
-
-#plot_model_prediction(db,facet_scales="free")
-
-# Original example:
-## $rse
-## CL         V1          Q         V2     FAVAIL         KA         R0       KSSS
-## 2.418464   2.493863   2.390597   2.757785   3.023260   4.838732   2.800056   3.122798
-## KDEG       KINT       d_CL       d_V1        d_Q       d_V2   d_FAVAIL       d_KA
-## 2.711192   2.431927  10.830828  12.269644  22.271256  20.032780  24.240763  19.409710
-## d_R0     d_KSSS     d_KDEG     d_KINT SIGMA[1,1] SIGMA[2,2]
-## 11.890735  13.446074  20.396815  18.125143   2.731176   2.906398
-
-tic();e2 <- evaluate_design(db);toc()

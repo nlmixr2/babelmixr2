@@ -1476,6 +1476,7 @@ rxUiGet.popedSettings <- function(x, ...) {
   if (is.null(rxode2::rxGetControl(ui, "script", NULL))) {
     .ret
   } else {
+    stop("script is not supported yet", call.=FALSE)
     .parallel <- .ret$settings$parallel
     .settings <- .ret$settings
     .settings$parallel <- NULL
@@ -1796,6 +1797,7 @@ rxUiGet.popedOptsw <- function(x, ...) {
                                          )
     return(.appendPopedProps(.ret, .ctl))
   } else {
+    stop("script is not supported yet", call.=FALSE)
     .w <- which(.nd == "evid")
     if (length(.w) == 1L) {
       popedDosing <- lapply(seq_along(.ids),
