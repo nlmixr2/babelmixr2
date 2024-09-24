@@ -17,8 +17,8 @@
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.4.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Use nlmixr2 to Interact with Open Source and Commercial Software">
-<meta name="description" content="Run other estimation and simulation software via the nlmixr2 (Fidler et al (2019) &lt;doi:10.1002/psp4.12445&gt;) interface including PKNCA, NONMEM and Monolix. While not required, you can get/install the lixoftConnectors package in the Monolix installation, as described at the following url &lt;https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/&gt;. When lixoftConnectors is available, Monolix can be run directly instead of setting up command line usage.">
-<meta property="og:description" content="Run other estimation and simulation software via the nlmixr2 (Fidler et al (2019) &lt;doi:10.1002/psp4.12445&gt;) interface including PKNCA, NONMEM and Monolix. While not required, you can get/install the lixoftConnectors package in the Monolix installation, as described at the following url &lt;https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/&gt;. When lixoftConnectors is available, Monolix can be run directly instead of setting up command line usage.">
+<meta name="description" content="Run other estimation and simulation software via the nlmixr2 (Fidler et al (2019) &lt;doi:10.1002/psp4.12445&gt;) interface including PKNCA, NONMEM and Monolix. While not required, you can get/install the lixoftConnectors package in the Monolix installation, as described at the following url &lt;https://monolixsuite.slp-software.com/r-functions/2024R1/installation-and-initialization&gt;. When lixoftConnectors is available, Monolix can be run directly instead of setting up command line usage.">
+<meta property="og:description" content="Run other estimation and simulation software via the nlmixr2 (Fidler et al (2019) &lt;doi:10.1002/psp4.12445&gt;) interface including PKNCA, NONMEM and Monolix. While not required, you can get/install the lixoftConnectors package in the Monolix installation, as described at the following url &lt;https://monolixsuite.slp-software.com/r-functions/2024R1/installation-and-initialization&gt;. When lixoftConnectors is available, Monolix can be run directly instead of setting up command line usage.">
 <meta property="og:image" content="/logo.svg">
 </head>
 <body>
@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="index.html">babelmixr2</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,7 +102,7 @@
 <div class="section level2">
 <h2 id="monolix-setup">Monolix Setup<a class="anchor" aria-label="anchor" href="#monolix-setup"></a>
 </h2>
-<p>While not required, you can get/install the R ‘lixoftConnectors’ package in the ‘Monolix’ installation, as described at the following url <a href="https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/" class="external-link uri">https://monolix.lixoft.com/monolix-api/lixoftconnectors_installation/</a>. When ‘lixoftConnectors’ is available, R can run ‘Monolix’ directly instead of using a command line.</p>
+<p>While not required, you can get/install the R ‘lixoftConnectors’ package in the ‘Monolix’ installation, as described at the following url <a href="https://monolixsuite.slp-software.com/r-functions/2024R1/installation-and-initialization" class="external-link uri">https://monolixsuite.slp-software.com/r-functions/2024R1/installation-and-initialization</a>. When ‘lixoftConnectors’ is available, R can run ‘Monolix’ directly instead of using a command line.</p>
 </div>
 <div class="section level2">
 <h2 id="pknca-example">PKNCA Example<a class="anchor" aria-label="anchor" href="#pknca-example"></a>
@@ -125,7 +125,7 @@
 <div class="section level2">
 <h2 id="nonmem-example">NONMEM example<a class="anchor" aria-label="anchor" href="#nonmem-example"></a>
 </h2>
-<p>With babelmixr2 loadid you can use <code>nlmixr2</code> to convert a nlmixr2 model to NONMEM, run NONMEM and import back to nlmixr2 with the following:</p>
+<p>With babelmixr2 loaded you can use <code>nlmixr2</code> to convert a nlmixr2 model to NONMEM, run NONMEM and import back to nlmixr2 with the following:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu">nlmixr</span><span class="op">(</span><span class="va">nlmixrFun</span>, <span class="va">nlmmixrData</span>, est<span class="op">=</span><span class="st">"nonmem"</span><span class="op">)</span></span></code></pre></div>
 </div>

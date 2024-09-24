@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">babelmixr2</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +36,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Control for a PopED design task</h1>
-      <small class="dont-index">Source: <a href="https://github.com/nlmixr2/babelmixr2/blob/v0.1.4/R/poped.R" class="external-link"><code>R/poped.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/nlmixr2/babelmixr2/blob/main/R/poped.R" class="external-link"><code>R/poped.R</code></a></small>
       <div class="d-none name"><code>popedControl.Rd</code></div>
     </div>
 
@@ -181,6 +181,12 @@
 <span>  fixRes <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  script <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  literalFix <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  opt_xt <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  opt_a <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  opt_x <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  opt_samps <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  optTime <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -780,7 +786,7 @@ Allows for finer control than <code>use_grouped_x</code>.</p></dd>
 
 <dt id="arg-auto-pointer">auto_pointer<a class="anchor" aria-label="anchor" href="#arg-auto-pointer"></a></dt>
 <dd><p>Filename and path, or function name, for the
-Autocorrelation function, empty string means no autocorrelation.</p></dd>
+Autocorrelation function, empty string means no autocorrelation</p></dd>
 
 
 <dt id="arg-user-distribution-pointer">user_distribution_pointer<a class="anchor" aria-label="anchor" href="#arg-user-distribution-pointer"></a></dt>
@@ -831,6 +837,41 @@ written to that file.</p></dd>
 If <code>TRUE</code>, an existing file in place is allowed if it
 it is both readable and writable.
 Default is <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-literalfix">literalFix<a class="anchor" aria-label="anchor" href="#arg-literalfix"></a></dt>
+<dd><p>boolean, substitute fixed population values as
+literals and re-adjust ui and parameter estimates after
+optimization; Default is `TRUE`.</p></dd>
+
+
+<dt id="arg-opt-xt">opt_xt<a class="anchor" aria-label="anchor" href="#arg-opt-xt"></a></dt>
+<dd><p>boolean to indicate if this is meant for optimizing times</p></dd>
+
+
+<dt id="arg-opt-a">opt_a<a class="anchor" aria-label="anchor" href="#arg-opt-a"></a></dt>
+<dd><p>boolean to indicate if this is meant for optimizing covariates</p></dd>
+
+
+<dt id="arg-opt-x">opt_x<a class="anchor" aria-label="anchor" href="#arg-opt-x"></a></dt>
+<dd><p>boolean to indicate if the discrete design variables
+be optimized</p></dd>
+
+
+<dt id="arg-opt-samps">opt_samps<a class="anchor" aria-label="anchor" href="#arg-opt-samps"></a></dt>
+<dd><p>boolean to indicate if the sample optimizer is
+used (not implemented yet in <code>PopED</code>)</p></dd>
+
+
+<dt id="arg-opttime">optTime<a class="anchor" aria-label="anchor" href="#arg-opttime"></a></dt>
+<dd><p>boolean to indicate if the global time indexer
+inside of babelmixr2 is reset if the times are different. By
+default this is <code>TRUE</code>.  If <code>FALSE</code> you can get slightly better
+run times and possibly slightly different results.  When
+<code>optTime</code> is <code>FALSE</code> the global indexer is reset every time the
+PopED rxode2 is setup for a problem or when a poped dataset is
+created.  You can manually reset with
+<code><a href="popedMultipleEndpointResetTimeIndex.html">popedMultipleEndpointResetTimeIndex()</a></code></p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

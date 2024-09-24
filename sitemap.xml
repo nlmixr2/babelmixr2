@@ -10,13 +10,13 @@
 <url><loc>/index.html</loc></url>
 <url><loc>/news/index.html</loc></url>
 <url><loc>/reference/as.nlmixr2.html</loc></url>
+<url><loc>/reference/babel.poped.database.html</loc></url>
 <url><loc>/reference/bblDatToMonolix.html</loc></url>
 <url><loc>/reference/dot-popedF.html</loc></url>
 <url><loc>/reference/dot-popedFree.html</loc></url>
 <url><loc>/reference/dot-popedRxRunSetup.html</loc></url>
 <url><loc>/reference/dot-popedSetup.html</loc></url>
 <url><loc>/reference/dot-popedSolveIdME.html</loc></url>
-<url><loc>/reference/dot-popedSolveIdN.html</loc></url>
 <url><loc>/reference/dot-popedW.html</loc></url>
 <url><loc>/reference/dot-setupPopEDdatabase.html</loc></url>
 <url><loc>/reference/getStandardColNames.html</loc></url>
@@ -29,6 +29,9 @@
 <url><loc>/reference/nonmemControl.html</loc></url>
 <url><loc>/reference/pkncaControl.html</loc></url>
 <url><loc>/reference/popedControl.html</loc></url>
+<url><loc>/reference/popedGetMultipleEndpointModelingTimes.html</loc></url>
+<url><loc>/reference/popedMultipleEndpointParam.html</loc></url>
+<url><loc>/reference/popedMultipleEndpointResetTimeIndex.html</loc></url>
 <url><loc>/reference/reexports.html</loc></url>
 <url><loc>/reference/rxToMonolix.html</loc></url>
 <url><loc>/reference/rxToNonmem.html</loc></url>
