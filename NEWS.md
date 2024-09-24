@@ -1,5 +1,7 @@
 # babelmixr2 (development version)
 
+* Fix bug where `PopED` could error with certain `dvid` values
+
 # babelmixr2 0.1.4
 
 * Added experimental `PopED` integration
