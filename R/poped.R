@@ -1714,6 +1714,9 @@ rxUiGet.popedOptsw <- function(x, ...) {
   .env$model_switch <- PopED::zeros(length(.a), .env$maxNumSamples)
   .env$model_switchT <- paste0("model_switch <- PopED::zeros(", paste0(length(.a)), ", ", .env$maxNumSamples, ")")
   .env$mt <- -Inf
+  if (length(.wdvid) != 1L) {
+    .wdvid <- NA_integer_
+  }
   lapply(seq_along(.a),
          function(i) {
            .cur <- .a[[i]]
