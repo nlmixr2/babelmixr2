@@ -34,6 +34,55 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// popedGetMultipleEndpointModelingTimes
+Rcpp::NumericVector popedGetMultipleEndpointModelingTimes(Rcpp::NumericVector times, Rcpp::IntegerVector modelSwitch, bool sorted);
+RcppExport SEXP _babelmixr2_popedGetMultipleEndpointModelingTimes(SEXP timesSEXP, SEXP modelSwitchSEXP, SEXP sortedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type times(timesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type modelSwitch(modelSwitchSEXP);
+    Rcpp::traits::input_parameter< bool >::type sorted(sortedSEXP);
+    rcpp_result_gen = Rcpp::wrap(popedGetMultipleEndpointModelingTimes(times, modelSwitch, sorted));
+    return rcpp_result_gen;
+END_RCPP
+}
+// popedMultipleEndpointResetTimeIndex
+Rcpp::RObject popedMultipleEndpointResetTimeIndex();
+RcppExport SEXP _babelmixr2_popedMultipleEndpointResetTimeIndex() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(popedMultipleEndpointResetTimeIndex());
+    return rcpp_result_gen;
+END_RCPP
+}
+// popedMultipleEndpointIndexDataFrame
+Rcpp::List popedMultipleEndpointIndexDataFrame(bool print);
+RcppExport SEXP _babelmixr2_popedMultipleEndpointIndexDataFrame(SEXP printSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< bool >::type print(printSEXP);
+    rcpp_result_gen = Rcpp::wrap(popedMultipleEndpointIndexDataFrame(print));
+    return rcpp_result_gen;
+END_RCPP
+}
+// popedMultipleEndpointParam
+Rcpp::NumericVector popedMultipleEndpointParam(Rcpp::NumericVector p, Rcpp::NumericVector times, Rcpp::IntegerVector modelSwitch, int maxMT, bool optTime);
+RcppExport SEXP _babelmixr2_popedMultipleEndpointParam(SEXP pSEXP, SEXP timesSEXP, SEXP modelSwitchSEXP, SEXP maxMTSEXP, SEXP optTimeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type p(pSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type times(timesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type modelSwitch(modelSwitchSEXP);
+    Rcpp::traits::input_parameter< int >::type maxMT(maxMTSEXP);
+    Rcpp::traits::input_parameter< bool >::type optTime(optTimeSEXP);
+    rcpp_result_gen = Rcpp::wrap(popedMultipleEndpointParam(p, times, modelSwitch, maxMT, optTime));
+    return rcpp_result_gen;
+END_RCPP
+}
 // popedFree
 RObject popedFree();
 RcppExport SEXP _babelmixr2_popedFree() {
@@ -53,34 +102,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Environment >::type e(eSEXP);
     Rcpp::traits::input_parameter< bool >::type full(fullSEXP);
     rcpp_result_gen = Rcpp::wrap(popedSetup(e, full));
-    return rcpp_result_gen;
-END_RCPP
-}
-// popedSolveIdN2
-Rcpp::DataFrame popedSolveIdN2(NumericVector& theta, NumericVector& mt, int iid, int totn);
-RcppExport SEXP _babelmixr2_popedSolveIdN2(SEXP thetaSEXP, SEXP mtSEXP, SEXP iidSEXP, SEXP totnSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector& >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< NumericVector& >::type mt(mtSEXP);
-    Rcpp::traits::input_parameter< int >::type iid(iidSEXP);
-    Rcpp::traits::input_parameter< int >::type totn(totnSEXP);
-    rcpp_result_gen = Rcpp::wrap(popedSolveIdN2(theta, mt, iid, totn));
-    return rcpp_result_gen;
-END_RCPP
-}
-// popedSolveIdN
-Rcpp::DataFrame popedSolveIdN(NumericVector& theta, NumericVector& mt, int iid, int totn);
-RcppExport SEXP _babelmixr2_popedSolveIdN(SEXP thetaSEXP, SEXP mtSEXP, SEXP iidSEXP, SEXP totnSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector& >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< NumericVector& >::type mt(mtSEXP);
-    Rcpp::traits::input_parameter< int >::type iid(iidSEXP);
-    Rcpp::traits::input_parameter< int >::type totn(totnSEXP);
-    rcpp_result_gen = Rcpp::wrap(popedSolveIdN(theta, mt, iid, totn));
     return rcpp_result_gen;
 END_RCPP
 }

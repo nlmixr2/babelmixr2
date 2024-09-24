@@ -55,10 +55,26 @@ plot_model_prediction(babel.db,IPRED=T,DV=T)
 #########################################
 
 ## get predictions from model
+## Original:
+## > model_prediction(poped.db)
+## >    Time      PRED Group Model a_i
+## 1   0.5 3.4254357     1     1  70
+## 2   1.0 5.4711041     1     1  70
+## 3   2.0 7.3821834     1     1  70
+## 4   6.0 7.9462805     1     1  70
+## 5  24.0 5.6858561     1     1  70
+## 6  36.0 4.5402483     1     1  70
+## 7  72.0 2.3116966     1     1  70
+## 8 120.0 0.9398657     1     1  70
 model_prediction(babel.db)
 
 ## evaluate initial design
+# Original:
+## $rse
+## CL          V         KA       d_CL        d_V       d_KA SIGMA[1,1]
+## 4.738266   2.756206  13.925829  25.627205  30.344316  25.777327  11.170784
 evaluate_design(babel.db)
+
 shrinkage(babel.db)
 
 ## Evaluate with full FIM

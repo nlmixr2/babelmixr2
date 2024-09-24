@@ -139,6 +139,12 @@ popedControl(
   fixRes = FALSE,
   script = NULL,
   overwrite = TRUE,
+  literalFix = TRUE,
+  opt_xt = FALSE,
+  opt_a = FALSE,
+  opt_x = FALSE,
+  opt_samps = FALSE,
+  optTime = TRUE,
   ...
 )
 }
@@ -524,7 +530,7 @@ Allows for finer control than \code{use_grouped_x}.}
 \item{our_zero}{Value to interpret as zero in design.}
 
 \item{auto_pointer}{Filename and path, or function name, for the
-Autocorrelation function, empty string means no autocorrelation.}
+Autocorrelation function, empty string means no autocorrelation}
 
 \item{user_distribution_pointer}{Filename and path, or function
 name, for user defined distributions for E-family designs}
@@ -561,6 +567,29 @@ written to that file.}
 If \code{TRUE}, an existing file in place is allowed if it
 it is both readable and writable.
 Default is \code{FALSE}.}
+
+\item{literalFix}{boolean, substitute fixed population values as
+literals and re-adjust ui and parameter estimates after
+optimization; Default is `TRUE`.}
+
+\item{opt_xt}{boolean to indicate if this is meant for optimizing times}
+
+\item{opt_a}{boolean to indicate if this is meant for optimizing covariates}
+
+\item{opt_x}{boolean to indicate if the discrete design variables
+be optimized}
+
+\item{opt_samps}{boolean to indicate if the sample optimizer is
+used (not implemented yet in \code{PopED})}
+
+\item{optTime}{boolean to indicate if the global time indexer
+inside of babelmixr2 is reset if the times are different. By
+default this is \code{TRUE}.  If \code{FALSE} you can get slightly better
+run times and possibly slightly different results.  When
+\code{optTime} is \code{FALSE} the global indexer is reset every time the
+PopED rxode2 is setup for a problem or when a poped dataset is
+created.  You can manually reset with
+\code{popedMultipleEndpointResetTimeIndex()}}
 
 \item{...}{other parameters for PopED control}
 }

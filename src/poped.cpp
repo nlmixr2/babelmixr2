@@ -12,6 +12,220 @@
 #include <RcppArmadillo.h>
 #include <rxode2ptr.h>
 
+#include "timsort.h"
+#include <iostream>
+#include <unordered_map>
+#include <vector>
+#include <algorithm>
+#include <set>
+
+#include "timeIndexer.h"
+
+timeIndexer globalTimeIndexer;
+
+//' @title Get Multiple Endpoint Modeling Times
+//'
+//' @description
+//'
+//' This function takes a vector of times and a corresponding vector
+//'   of IDs, groups the times by their IDs, initializes an internal
+//'   C++ global TimeIndexer, that is used to efficiently lookup the
+//'   final output from the rxode2 solve and then returns the sorted
+//'   unique times.
+//'
+//' The `popedMultipleEndpointIndexDataFrame()` function can be used
+//'   to visualize the internal data structure inside R, but it does
+//'   not show all the indexes in the case of time ties for a given
+//'   ID.  Rather it shows one of the indexs and the total number of
+//'   indexes in the data.frame
+//'
+//' @param times A numeric vector of times.
+//'
+//' @param modelSwitch An integer vector of model switch indicator
+//'   corresponding to the times
+//'
+//' @param sorted A boolean indicating if the returned times should be sorted
+//'
+//' @param print boolean for `popedMultipleEndpointIndexDataFrame()`
+//'   when `TRUE` show each id/index per time even though it may not
+//'   reflect in the returned data.frame
+//'
+//' @return A numeric vector of unique times.
+//'
+//' @export
+//'
+//' @examples
+//'
+//'
+//' \donttest{
+//'
+//' times <- c(1.1, 1.2, 1.3, 2.1, 2.2, 3.1)
+//' modelSwitch <- c(1, 1, 1, 2, 2, 3)
+//' sortedTimes <- popedGetMultipleEndpointModelingTimes(times, modelSwitch, TRUE)
+//' print(sortedTimes)
+//'
+//' # now show the output of the data frame representing the model
+//' # switch to endpoint index
+//'
+//' popedMultipleEndpointIndexDataFrame()
+//'
+//' # now show a more complex example with overlaps etc.
+//'
+//' times <- c(1.1, 1.2, 1.3, 0.5, 2.2, 1.1, 0.75,0.75)
+//' modelSwitch <- c(1, 1, 1, 2, 2, 2, 3, 3)
+//' sortedTimes <- popedGetMultipleEndpointModelingTimes(times, modelSwitch, TRUE)
+//' print(sortedTimes)
+//'
+//' popedMultipleEndpointIndexDataFrame(TRUE) # Print to show individual matching
+//'
+//' }
+// [[Rcpp::export]]
+Rcpp::NumericVector popedGetMultipleEndpointModelingTimes(Rcpp::NumericVector times,
+                                                          Rcpp::IntegerVector modelSwitch,
+                                                          bool sorted = false) {
+  globalTimeIndexer.initialize(modelSwitch, times);
+  if (sorted) {
+    return Rcpp::wrap(globalTimeIndexer.getSortedUniqueTimes());
+  } else {
+    return Rcpp::wrap(globalTimeIndexer.getUniqueTimes());
+  }
+}
+
+//' @title Reset the Global Time Indexer for Multiple Endpoint Modeling
+//'
+//' @description
+//'
+//' This clears the memory and resets the global time indexer used for
+//'   multiple endpoint modeling.
+//'
+//' @return NULL, called for side effects
+//'
+//' @export
+//'
+//' @examples
+//'
+//' \donttest{
+//'
+//' popedMultipleEndpointResetTimeIndex()
+//'
+//' }
+// [[Rcpp::export]]
+Rcpp::RObject popedMultipleEndpointResetTimeIndex() {
+  globalTimeIndexer.reset();
+  return R_NilValue;
+}
+
+//' @rdname popedGetMultipleEndpointModelingTimes
+//' @export
+//[[Rcpp::export]]
+Rcpp::List popedMultipleEndpointIndexDataFrame(bool print=false) {
+  if (!globalTimeIndexer.isInitialized()) {
+    Rcpp::stop("Time indexer has not been initialized");
+  }
+  Rcpp::NumericVector times = Rcpp::wrap(globalTimeIndexer.getSortedUniqueTimes());
+  size_t nId = globalTimeIndexer.getNid();
+  Rcpp::List ret(1+nId*2);
+  ret[0] = times;
+  // initialize the rest with NA_integer_
+  for (size_t i = 0; i < nId*2; ++i) {
+    Rcpp::IntegerVector cur(times.size());
+    std::fill_n(cur.begin(), cur.size(), NA_INTEGER);
+    ret[i+1] = cur;
+  }
+  size_t timei = 0;
+  for (const auto& time : times) {
+    const auto& infos= globalTimeIndexer.getTimeInfo(time);
+    for (const auto& info : infos) {
+      if (info.id > (int)nId ||
+          info.id <= 0) {
+        Rcpp::stop("modelSwitch need to be sequential 1, 2, 3, ..., n");
+      }
+      if (print) {
+        Rprintf("modelSwitch: %d time: %f: ", info.id, time);
+        for (size_t cur = 0; cur < info.indices.size(); cur++) {
+          Rprintf("%d", info.indices[cur] + 1);
+          if (cur + 1 != info.indices.size()) {
+            Rprintf(", ");
+          }
+        }
+        Rprintf("\n");
+      }
+      INTEGER(ret[2*(info.id-1)+1])[timei] = info.indices[0] + 1;
+      INTEGER(ret[2*(info.id-1)+2])[timei] = info.indices.size();
+    }
+    timei++;
+  }
+  Rcpp::CharacterVector names(nId*2+1);
+  names[0] = "time";
+  for (size_t i = 0; i < nId*2; i+=2) {
+    names[i+1] = "MS:" + std::to_string(i+1);
+    names[i+2] = "N:" + std::to_string(i+1);
+  }
+  ret.names() = names;
+  ret.attr("class") = "data.frame";
+  ret.attr("row.names") = Rcpp::IntegerVector::create(NA_INTEGER, -times.size());
+  return ret;
+}
+
+//' Populates Multiple Endpoint Parameters for internal solving
+//'
+//' This function populates a numeric vector with parameters and
+//' unique times and also populates the internal C++ global index
+//'
+//' @param p A numeric vector of parameters
+//'
+//' @param times A numeric vector of times
+//'
+//' @param modelSwitch An integer vector indicating model switches from PopED
+//'
+//' @param maxMT An integer specifying the maximum number of time
+//'   points in the mtimes model
+//'
+//' @return A numeric vector containing the parameters followed by
+//'   unique times, if the maximum number of times is greater than the
+//'   input this will append the maximum observed times in the
+//'   input. This assumes the first parameter is the id and is dropped
+//'   fro the output.
+//'
+//' @details
+//'
+//'  - This function first uses the input times and model switches to
+//'   a global time indexer.
+//'
+//'  - It then creates a new numeric vector
+//'    that combines the input parameters and unique times.  If the
+//'    number of times is less than `maxMT`, the remaining elements are
+//'    filled with the maximum time.
+//'
+//' @examples
+//'
+//' \donttest{
+//'
+//' p <- c(1.0, 2.0, 3.0)
+//' times <- c(0.5, 1.5, 2.5)
+//' modelSwitch <- c(1, 2, 3)
+//' maxMT <- 5
+//' popedMultipleEndpointParam(p, times, modelSwitch, maxMT)
+//'
+//' }
+//' @export
+//' @keywords internal
+//' @author Matthew L. Fidler
+//[[Rcpp::export]]
+Rcpp::NumericVector popedMultipleEndpointParam(Rcpp::NumericVector p,
+                                               Rcpp::NumericVector times,
+                                               Rcpp::IntegerVector modelSwitch,
+                                               int maxMT,
+                                               bool optTime=true) {
+  globalTimeIndexer.initialize(modelSwitch, times, optTime);
+  Rcpp::NumericVector ret(p.size()-1+maxMT);
+  std::fill(ret.begin(), ret.end(), globalTimeIndexer.getMaxTime());
+  std::copy(p.begin()+1, p.end(), ret.begin());
+  std::vector<double> ut = globalTimeIndexer.getUniqueTimes();
+  std::copy(ut.begin(), ut.end(), ret.begin()+ p.size() - 1);
+  return ret;
+}
+
 #define max2( a , b )  ( (a) > (b) ? (a) : (b) )
 #define isSameTime(xout, xp) (fabs((xout)-(xp))  <= DBL_EPSILON*max2(fabs(xout),fabs(xp)))
 
@@ -225,118 +439,11 @@ static inline int getSafeId(int id) {
   return id;
 }
 
-// Solve prediction and saved based on modeling time
-void popedSolveFid(double *f, double *w, double *t, NumericVector &theta, int id, int totn) {
-  // arma::vec ret(retD, nobs, false, true);
-  rx_solving_options_ind *ind =  updateParamRetInd(theta, id);
-  rx_solving_options *op = getSolvingOptions(rx);
-  iniSubjectE(id, 1, ind, op, rx, rxInner.update_inis);
-  popedSolve(id);
-  int kk, k=0;
-  double curT;
-  for (int j = 0; j < getIndNallTimes(ind); ++j) {
-    setIndIdx(ind, j);
-    kk = getIndIx(ind, j);
-    curT = getTime(kk, ind);
-    double *lhs = getIndLhs(ind);
-    if (isDose(getIndEvid(ind, kk))) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-      continue;
-    } else if (getIndEvid(ind, kk) == 0) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-      if (ISNA(lhs[0])) {
-        popedOp.naZero=1;
-        lhs[0] = 0.0;
-      }
-      // ret(k) = lhs[0];
-      // k++;
-    } else if (getIndEvid(ind, kk) >= 10 && getIndEvid(ind, kk) <= 99) {
-      // mtimes to calculate information
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-      f[k] = lhs[0];
-      w[k] = sqrt(lhs[1]);
-      t[k] = curT;
-      k++;
-      if (k >= totn) return; // vector has been created, break
-    }
-  }
-}
-
-void popedSolveFid2(double *f, double *w, double *t, NumericVector &theta, int id, int totn) {
-  // arma::vec ret(retD, nobs, false, true);
-  rx_solving_options_ind *ind =  updateParamRetInd(theta, id);
-  rx_solving_options *op = getSolvingOptions(rx);
-  iniSubjectE(id, 1, ind, op, rx, rxInner.update_inis);
-  popedSolve(id);
-  int kk, k=0;
-  double curT;
-  for (int j = 0; j < getIndNallTimes(ind); ++j) {
-    setIndIdx(ind, j);
-    kk = getIndIx(ind, j);
-    curT = getTime(kk, ind);
-    double *lhs = getIndLhs(ind);
-    if (isDose(getIndEvid(ind, kk))) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-      continue;
-    } else if (getIndEvid(ind, kk) == 0) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-      if (ISNA(lhs[0])) {
-        popedOp.naZero=1;
-        lhs[0] = 0.0;
-      }
-      // ret(k) = lhs[0];
-      // k++;
-      f[k] = lhs[0];
-      w[k] = sqrt(lhs[1]);
-      t[k] = curT;
-      k++;
-      if (k >= totn) return; // vector has been created, break
-    } else if (getIndEvid(ind, kk) >= 10 && getIndEvid(ind, kk) <= 99) {
-      // mtimes to calculate information
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-    }
-  }
-}
-
 static inline bool solveCached(NumericVector &theta, int &id) {
   int lid = as<int>(_popedE["lid"]);
   if (lid != id) return false;
   NumericVector last = as<NumericVector>(_popedE["paramCache"]);
   return as<bool>(all(last == theta));
-}
-
-//[[Rcpp::export]]
-Rcpp::DataFrame popedSolveIdN2(NumericVector &theta, NumericVector &mt, int iid, int totn) {
-  int id = getSafeId(iid);
-  if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
-  NumericVector t(totn);
-  arma::vec f(totn);
-  arma::vec w(totn);
-  popedSolveFid2(&f[0], &w[0], &t[0], theta, id, totn);
-  DataFrame ret = DataFrame::create(_["t"]=t,
-                                    _["rx_pred_"]=f, // match rxode2/nlmixr2 to simplify code of mtime models
-                                    _["w"]=w); // w = sqrt(rx_r_)
-  _popedE["s"] = ret;
-
-  return ret;
-}
-
-//[[Rcpp::export]]
-Rcpp::DataFrame popedSolveIdN(NumericVector &theta, NumericVector &mt, int iid, int totn) {
-  int id = getSafeId(iid);
-  if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
-  NumericVector t(totn);
-  arma::vec f(totn);
-  arma::vec w(totn);
-  popedSolveFid(&f[0], &w[0], &t[0], theta, id, totn);
-  // arma::uvec m = as<arma::uvec>(match(mt, t))-1;
-  // f = f(m);
-  // w = w(m);
-  DataFrame ret = DataFrame::create(_["t"]=t,
-                                    _["rx_pred_"]=f, // match rxode2/nlmixr2 to simplify code of mtime models
-                                    _["w"]=w); // w = sqrt(rx_r_)
-  _popedE["s"] = ret;
-  return ret;
 }
 
 void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, int nend) {
@@ -346,26 +453,13 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
   iniSubjectE(id, 1, ind, op, rx, rxInner.update_inis);
   popedSolve(id);
   int kk, k=0;
-  double curT, lastTime;
-  lastTime = getTime(getIndIx(ind, 0), ind)-1;
+  double curT;
   bool isMT = false;
   for (int j = 0; j < getIndNallTimes(ind); ++j) {
     setIndIdx(ind, j);
     kk = getIndIx(ind, j);
     curT = getTime(kk, ind);
     isMT = getIndEvid(ind, kk) >= 10 && getIndEvid(ind, kk) <= 99;
-    if (isMT && isSameTime(curT, lastTime)) {
-      matMT(k, 0) = curT;
-      for (int i = 0; i < nend; ++i) {
-        matMT(k, i*2+1) = matMT(k-1, i*2+1);
-        matMT(k, i*2+2) = matMT(k-1, i*2+1);
-      }
-      k++;
-      if (k >= nrow) {
-        return; // vector has been created, break
-      }
-      continue;
-    }
     double *lhs = getIndLhs(ind);
     if (isDose(getIndEvid(ind, kk))) {
       rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
@@ -386,7 +480,6 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
       if (k >= nrow) {
         return; // vector has been created, break
       }
-      lastTime = curT;
     } else if (getIndEvid(ind, kk) == 0) {
       rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
       if (ISNA(lhs[0])) {
@@ -410,31 +503,42 @@ Rcpp::DataFrame popedSolveIdME(NumericVector &theta,
   arma::mat matMT(nrow, nend*2+1);
   List we(nend);
   for (int i = 0; i < nend; i++) {
-    we[i] = LogicalVector(totn);
+    LogicalVector curLV = LogicalVector(totn);
+    // assumes FALSE int the beginning
+    std::fill(curLV.begin(), curLV.end(), 0);
+    we[i] = curLV;
   }
 
   popedSolveFidMat(matMT, theta, id, nrow, nend);
-  // arma::uvec m = as<arma::uvec>(match(mt, t))-1;
-  // f = f(m);
-  // w = w(m);
-  for (int i = 0; i < totn; ++i) {
-    double curT = mt[i];
-    int curMS = ms[i];
-    // Create a logical vector for which endpoint (used in error per endpoint identification)
-    for (int j = 0; j < nend; j++) {
-      LogicalVector cur = we[j];
-      cur[i] = (curMS-1 == j);
-      we[j] = cur;
-    }
-    for (int j = 0; j < nrow; ++j) {
-      if (curT == matMT(j, 0)) {
-        f[i] = matMT(j, (curMS-1)*2+1);
-        w[i] = matMT(j, (curMS-1)*2+2);
-        break;
+  // this gets the information from:
+  // - the model time
+  // - the model_switch
+  // It will match the model switch being supplied
+  // and the time being supplied
+  //
+  // Hence for models sent to this routine, it should match what seems
+  // to be PopED's prefered way of handling the information
+  // that is: ordering by model_switch, then model time, for example:
+  // model_switch = 1, 1, 1, 2, 2, 2
+  // time         = 0, 1, 2, 0, 1, 2
+  //
+  // This is not how rxode2/nlmixr2 handles the information, but this
+  // routine should put it in whatever order is supplied to
+  // model_switch and time
+  size_t nId = globalTimeIndexer.getNid();
+  std::vector<double> ut = globalTimeIndexer.getUniqueTimes();
+  for (int i = 0; i < (int)ut.size(); ++i) {
+    double curT = matMT(i, 0);
+    const auto& infos= globalTimeIndexer.getTimeInfo(curT);
+    for (const auto& info : infos) {
+      if (info.id > (int)nId ||
+          info.id <= 0) {
+        Rcpp::stop("modelSwitch need to be sequential 1, 2, 3, ..., n");
       }
-      if (j == nrow-1) {
-        f[i] = NA_REAL;
-        w[i] = NA_REAL;
+      for (size_t cur = 0; cur < info.indices.size(); cur++) {
+        f[info.indices[cur]] = matMT(i, (info.id-1)*2+1);
+        w[info.indices[cur]] = matMT(i, (info.id-1)*2+2);
+        INTEGER(we[info.id-1])[info.indices[cur]] = 1;
       }
     }
   }
@@ -455,25 +559,12 @@ void popedSolveFidMat2(arma::mat &matMT, NumericVector &theta, int id, int nrow,
   iniSubjectE(id, 1, ind, op, rx, rxInner.update_inis);
   popedSolve(id);
   int kk, k=0;
-  double curT, lastTime;
-  lastTime = getTime(getIndIx(ind, 0), ind)-1;
+  double curT;
   for (int j = 0; j < getIndNallTimes(ind); ++j) {
     setIndIdx(ind, j);
     kk = getIndIx(ind, j);
     curT = getTime(kk, ind);
     double *lhs = getIndLhs(ind);
-    if (getIndEvid(ind, kk) == 0 && isSameTime(curT, lastTime)) {
-      matMT(k, 0) = curT;
-      for (int i = 0; i < nend; ++i) {
-        matMT(k, i*2+1) = matMT(k-1, i*2+1);
-        matMT(k, i*2+2) = matMT(k-1, i*2+1);
-      }
-      k++;
-      if (k >= nrow) {
-        return; // vector has been created, break
-      }
-      continue;
-    }
     if (isDose(getIndEvid(ind, kk))) {
       rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
       continue;
@@ -492,7 +583,6 @@ void popedSolveFidMat2(arma::mat &matMT, NumericVector &theta, int id, int nrow,
       if (k >= nrow) {
         return; // vector has been created, break
       }
-      lastTime = curT;
     }
   }
 }

@@ -58,8 +58,8 @@ for (n in row.names(bpop_vals_ed)) {
 
 # Now update the database to include these new values
 
-babel.db <- create.poped.database(babel.db, bpop=bpop_vals_ed,
-                                  ED_samp_size=20)
+babel.db <- babel.poped.database(babel.db, bpop=bpop_vals_ed,
+                                 ED_samp_size=20)
 
 
 

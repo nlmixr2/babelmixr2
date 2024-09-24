@@ -170,6 +170,7 @@ solvers](https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html
 -   take the model described and adapt it in two different `rxode2`
     model functions, the solved and ode cases (this is done by the
     `nlmixr()` call which creates a `PopED` database)
+
 -   compare these examples to the pharmacometric solvers in the PopED
     vignette (`mrgsolve` and `PKPDsim`)
 

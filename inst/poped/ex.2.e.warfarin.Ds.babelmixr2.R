@@ -49,7 +49,11 @@ babel.db <- nlmixr2(f, e, "poped",
 plot_model_prediction(babel.db)
 
 ##  create plot of model with variability
-plot_model_prediction(poped.db,IPRED=T,DV=T)
+plot_model_prediction(babel.db,IPRED=T,DV=T)
+
+## $rse
+##       CL          V         KA       d_CL        d_V       d_KA SIGMA[1,1] SIGMA[2,2]
+## 5.096246   3.031164  14.260384  29.761226  36.681388  26.748640  32.011719  25.637971
 
 ## evaluate initial design
 evaluate_design(babel.db)

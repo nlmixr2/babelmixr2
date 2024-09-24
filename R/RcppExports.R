@@ -5,20 +5,148 @@ convertDataBack <- function(id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, lin
     .Call(`_babelmixr2_convertDataBack`, id, time, amt, ii, evid, cmt, cmtDvid, dvidDvid, linNcmt, linKa, neq, replaceEvid, zeroDose2)
 }
 
+#' @title Get Multiple Endpoint Modeling Times
+#'
+#' @description
+#'
+#' This function takes a vector of times and a corresponding vector
+#'   of IDs, groups the times by their IDs, initializes an internal
+#'   C++ global TimeIndexer, that is used to efficiently lookup the
+#'   final output from the rxode2 solve and then returns the sorted
+#'   unique times.
+#'
+#' The `popedMultipleEndpointIndexDataFrame()` function can be used
+#'   to visualize the internal data structure inside R, but it does
+#'   not show all the indexes in the case of time ties for a given
+#'   ID.  Rather it shows one of the indexs and the total number of
+#'   indexes in the data.frame
+#'
+#' @param times A numeric vector of times.
+#'
+#' @param modelSwitch An integer vector of model switch indicator
+#'   corresponding to the times
+#'
+#' @param sorted A boolean indicating if the returned times should be sorted
+#'
+#' @param print boolean for `popedMultipleEndpointIndexDataFrame()`
+#'   when `TRUE` show each id/index per time even though it may not
+#'   reflect in the returned data.frame
+#'
+#' @return A numeric vector of unique times.
+#'
+#' @export
+#'
+#' @examples
+#'
+#'
+#' \donttest{
+#'
+#' times <- c(1.1, 1.2, 1.3, 2.1, 2.2, 3.1)
+#' modelSwitch <- c(1, 1, 1, 2, 2, 3)
+#' sortedTimes <- popedGetMultipleEndpointModelingTimes(times, modelSwitch, TRUE)
+#' print(sortedTimes)
+#'
+#' # now show the output of the data frame representing the model
+#' # switch to endpoint index
+#'
+#' popedMultipleEndpointIndexDataFrame()
+#'
+#' # now show a more complex example with overlaps etc.
+#'
+#' times <- c(1.1, 1.2, 1.3, 0.5, 2.2, 1.1, 0.75,0.75)
+#' modelSwitch <- c(1, 1, 1, 2, 2, 2, 3, 3)
+#' sortedTimes <- popedGetMultipleEndpointModelingTimes(times, modelSwitch, TRUE)
+#' print(sortedTimes)
+#'
+#' popedMultipleEndpointIndexDataFrame(TRUE) # Print to show individual matching
+#'
+#' }
+popedGetMultipleEndpointModelingTimes <- function(times, modelSwitch, sorted = FALSE) {
+    .Call(`_babelmixr2_popedGetMultipleEndpointModelingTimes`, times, modelSwitch, sorted)
+}
+
+#' @title Reset the Global Time Indexer for Multiple Endpoint Modeling
+#'
+#' @description
+#'
+#' This clears the memory and resets the global time indexer used for
+#'   multiple endpoint modeling.
+#'
+#' @return NULL, called for side effects
+#'
+#' @export
+#'
+#' @examples
+#'
+#' \donttest{
+#'
+#' popedMultipleEndpointResetTimeIndex()
+#'
+#' }
+popedMultipleEndpointResetTimeIndex <- function() {
+    .Call(`_babelmixr2_popedMultipleEndpointResetTimeIndex`)
+}
+
+#' @rdname popedGetMultipleEndpointModelingTimes
+#' @export
+popedMultipleEndpointIndexDataFrame <- function(print = FALSE) {
+    .Call(`_babelmixr2_popedMultipleEndpointIndexDataFrame`, print)
+}
+
+#' Populates Multiple Endpoint Parameters for internal solving
+#'
+#' This function populates a numeric vector with parameters and
+#' unique times and also populates the internal C++ global index
+#'
+#' @param p A numeric vector of parameters
+#'
+#' @param times A numeric vector of times
+#'
+#' @param modelSwitch An integer vector indicating model switches from PopED
+#'
+#' @param maxMT An integer specifying the maximum number of time
+#'   points in the mtimes model
+#'
+#' @return A numeric vector containing the parameters followed by
+#'   unique times, if the maximum number of times is greater than the
+#'   input this will append the maximum observed times in the
+#'   input. This assumes the first parameter is the id and is dropped
+#'   fro the output.
+#'
+#' @details
+#'
+#'  - This function first uses the input times and model switches to
+#'   a global time indexer.
+#'
+#'  - It then creates a new numeric vector
+#'    that combines the input parameters and unique times.  If the
+#'    number of times is less than `maxMT`, the remaining elements are
+#'    filled with the maximum time.
+#'
+#' @examples
+#'
+#' \donttest{
+#'
+#' p <- c(1.0, 2.0, 3.0)
+#' times <- c(0.5, 1.5, 2.5)
+#' modelSwitch <- c(1, 2, 3)
+#' maxMT <- 5
+#' popedMultipleEndpointParam(p, times, modelSwitch, maxMT)
+#'
+#' }
+#' @export
+#' @keywords internal
+#' @author Matthew L. Fidler
+popedMultipleEndpointParam <- function(p, times, modelSwitch, maxMT, optTime = TRUE) {
+    .Call(`_babelmixr2_popedMultipleEndpointParam`, p, times, modelSwitch, maxMT, optTime)
+}
+
 popedFree <- function() {
     .Call(`_babelmixr2_popedFree`)
 }
 
 popedSetup <- function(e, full) {
     .Call(`_babelmixr2_popedSetup`, e, full)
-}
-
-popedSolveIdN2 <- function(theta, mt, iid, totn) {
-    .Call(`_babelmixr2_popedSolveIdN2`, theta, mt, iid, totn)
-}
-
-popedSolveIdN <- function(theta, mt, iid, totn) {
-    .Call(`_babelmixr2_popedSolveIdN`, theta, mt, iid, totn)
 }
 
 popedSolveIdME <- function(theta, umt, mt, ms, nend, id, totn) {
