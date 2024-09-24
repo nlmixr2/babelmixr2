@@ -1689,7 +1689,7 @@ rxUiGet.popedOptsw <- function(x, ...) {
            if (is.null(.env$idSamples[[.id]])) {
              .curData <- .obs[.obs[[.wid]] == .id, ]
              .env$idSamples[[.id]] <- .curData[[.wtime]]
-             if (!is.na(.wdvid)) {
+             if (length(.wdvid) == 1L && !is.na(.wdvid)) {
                .env$idDvid[[.id]] <- .curData[[.wdvid]]
              }
              if (length(.env$idSamples[[.id]]) > .env$maxNumSamples) {
@@ -1730,7 +1730,7 @@ rxUiGet.popedOptsw <- function(x, ...) {
            .env$xtT <- c(.env$xtT,
                          paste0("xt[", i, ", ", deparse1(seq_along(.time)),
                                 "] <- ", paste(deparse(.time), collapse="\n")))
-           if (!is.na(.wdvid)) {
+           if (length(.wdvid) == 1L && !is.na(.wdvid)) {
              .env$model_switch[i, seq_along(.time)] <- .env$idDvid[[.id]]
              .env$model_switchT <- c(.env$model_switchT,
                                      paste0("model_switch[", i, ", ", deparse1(seq_along(.time)),
