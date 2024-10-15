@@ -622,5 +622,6 @@ if (requireNamespace("PopED", quietly=TRUE)) {
     p <- pheno()
 
     expect_equal(eval(.popedRxModel(p))$lhs, c("rx_pred_", "rx_r_"))
+
   })
 }

@@ -825,7 +825,10 @@ rxUiGet.popedRxmodelBase <- function(x, ...) {
                      logical(1), USE.NAMES = FALSE))
   .mod <- .mod[.w]
   .errDf <- .iniDf[!is.na(.iniDf$err), ,drop=FALSE]
-
+  # remove if/else so extra lhs statements are not hanging around
+  .mod <- str2lang(paste0("{", rxode2::.rxPrune(as.call(c(quote(`{`), .mod))), "}"))
+  .mod <- lapply(seq_along(.mod)[-1],
+                 function(i) { .mod[[i]]})
   .mod <- lapply(seq_along(.mod),
                  function(i) {
                    .cur <- .mod[[i]]
