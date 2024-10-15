@@ -2,6 +2,9 @@
 
 * Fix bug where `PopED` could error with certain `dvid` values
 
+* Fix bug where if/else clauses in the model could cause the model to
+  not predict the values correctly.
+
 # babelmixr2 0.1.4
 
 * Added experimental `PopED` integration
