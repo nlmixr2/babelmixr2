@@ -1,6 +1,5 @@
-rm(list=ls())
 library(PopED)
-library()
+library(babelmixr2)
 ## Introduction
 # Lets assume that we have a model with a covariate included in the model description.  
 # Here we define a one-compartment PK model that has weight on both clearance and volume of distribution. 
