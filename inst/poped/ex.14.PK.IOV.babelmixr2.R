@@ -2,6 +2,8 @@ library(babelmixr2)
 library(PopED)
 library(ggplot2)
 
+# Does not work for now. PopED has a special way to handle IOV. This feature will be added in the future
+
 # 
 # N = floor(Time/TAU)+1;
 # CL = CL_OCC_1;
