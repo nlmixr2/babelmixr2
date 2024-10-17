@@ -17,13 +17,13 @@
 #' This should not typically be called directly
 #'
 #' @param e environment with setup information for popEd
+#' @param eglobal global environment for poped info
 #' @param full setup the full model
 #' @return nothing, called for side effects
-#' @export
 #' @keywords internal
 #' @author Matthew L. Fidler
-.popedSetup <- function(e, full=FALSE) {
-  invisible(.Call(`_babelmixr2_popedSetup`, e, full))
+.popedSetup <- function(e, eglobal, full=FALSE) {
+  invisible(.Call(`_babelmixr2_popedSetup`, e, eglobal, full))
 }
 #' Solve poped problem for appropriate times with single/multiple endpoint models
 #'
@@ -289,6 +289,7 @@ rxUiGet.popedFgFun <- function(x, ...) {
 attr(rxUiGet.popedFgFun, "desc") <- "PopED parameter model (fg_fun)"
 
 .poped <- new.env(parent=emptyenv())
+.poped$curLib <- NULL
 .poped$s <- NULL
 .poped$modelNumber <- 1L
 .poped$curNumber <- -1L
@@ -418,7 +419,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   }
   if (.poped$setup != 1L) {
     rxode2::rxSolveFree()
-    .popedSetup(popedDb$babelmixr2, FALSE)
+    .popedSetup(popedDb$babelmixr2, .poped, FALSE)
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$setup <- 1L
     .poped$fullXt <- NULL
@@ -488,7 +489,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                 })))
     .et <- rxode2::etTrans(.dat, .e$modelF)
     .e$dataF <- .et
-    .popedSetup(.e, TRUE)
+    .popedSetup(.e, .poped, TRUE)
     .poped$fullXt <- length(xt)
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$setup <- 2L
@@ -554,7 +555,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
                                 })))
     .et <- rxode2::etTrans(.dat, .e$modelF)
     .e$dataF <- .et
-    .popedSetup(.e, TRUE)
+    .popedSetup(.e, .poped, TRUE)
     .poped$fullXt <- length(xt)
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$setup <- 2L

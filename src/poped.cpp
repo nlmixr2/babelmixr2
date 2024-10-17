@@ -23,6 +23,7 @@
 
 timeIndexer globalTimeIndexer;
 
+
 //' @title Get Multiple Endpoint Modeling Times
 //'
 //' @description
@@ -247,6 +248,9 @@ using namespace Rcpp;
 
 #define popedOde(id) ind_solve(rx, id, rxInner.dydt_liblsoda, rxInner.dydt_lsoda_dum, rxInner.jdum_lsoda, rxInner.dydt, rxInner.update_inis, rxInner.global_jt)
 
+Environment _popedE;
+Environment _popedEglobal;
+
 struct rxSolveF {
   //
   // std::string estStr;
@@ -338,12 +342,12 @@ RObject popedFree() {
   return R_NilValue;
 }
 
-Environment _popedE;
 
 //[[Rcpp::export]]
-RObject popedSetup(Environment e, bool full) {
+RObject popedSetup(Environment e, Environment eglobal, bool full) {
   popedFree();
   _popedE=e;
+  _popedEglobal=eglobal;
   List control = e["control"];
   List rxControl = as<List>(e["rxControl"]);
 
