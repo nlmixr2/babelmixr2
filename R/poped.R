@@ -336,15 +336,15 @@ rxUiGet.popedFfFun <- function(x, ...) {
     # be in the right order
     if (.lu <=  .(.poped$maxn)) {
       # only check for time reset if it is specified in the model
+      poped.db <- .popedRxRunSetup(poped.db)
       .p <- babelmixr2::popedMultipleEndpointParam(p, .u, model_switch,
                                                    .(.poped$maxn),
                                                    poped.db$babelmixr2$optTime)
-      .popedRxRunSetup(poped.db)
       .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
                               .id-1, .totn)
     } else if (.lu > .(.poped$maxn)) {
       .p <- p[-1]
-      .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
+      poped.db <- .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
       .ret <- .popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
                                .id-1, .totn)
     }
@@ -423,7 +423,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .poped$setup <- 1L
     .poped$fullXt <- NULL
   }
-  invisible()
+  invisible(popedDb)
 }
 #' Setup a full solve for a multiple-endpoint model
 #'
@@ -493,6 +493,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$setup <- 2L
   }
+  popedDb
 }
 #' Setup for a full solve with a single endpoint model
 #'
@@ -559,6 +560,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .poped$curNumber <- popedDb$babelmixr2$modelNumber
     .poped$setup <- 2L
   }
+  popedDb
 }
 
 #' This gets the epsi associated with the nlmixr2/rxode2 model specification

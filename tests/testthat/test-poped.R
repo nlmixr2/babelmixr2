@@ -324,14 +324,11 @@ if (requireNamespace("PopED", quietly=TRUE)) {
         tKa <- 0.25
         tCl <- 3.75
         tF <- fix(0.9)
-
         eta.v ~ 0.09
         eta.ka ~ 0.09
         eta.cl ~0.25^2
-
         prop.sd <- fix(sqrt(0.04))
         add.sd <- fix(sqrt(5e-6))
-
       })
       model({
         V<-tV*exp(eta.v)
@@ -343,7 +340,6 @@ if (requireNamespace("PopED", quietly=TRUE)) {
           (exp(-CL/V * (time - (N - 1) * TAU)) *
              (1 - exp(-N * CL/V * TAU))/(1 - exp(-CL/V * TAU)) -
              exp(-KA * (time - (N - 1) * TAU)) * (1 - exp(-N * KA * TAU))/(1 - exp(-KA * TAU)))
-
         y ~ prop(prop.sd) + add(add.sd)
       })
     }
