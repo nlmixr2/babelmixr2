@@ -94,14 +94,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // popedSetup
-RObject popedSetup(Environment e, bool full);
-RcppExport SEXP _babelmixr2_popedSetup(SEXP eSEXP, SEXP fullSEXP) {
+RObject popedSetup(Environment e, Environment eglobal, bool full);
+RcppExport SEXP _babelmixr2_popedSetup(SEXP eSEXP, SEXP eglobalSEXP, SEXP fullSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Environment >::type e(eSEXP);
+    Rcpp::traits::input_parameter< Environment >::type eglobal(eglobalSEXP);
     Rcpp::traits::input_parameter< bool >::type full(fullSEXP);
-    rcpp_result_gen = Rcpp::wrap(popedSetup(e, full));
+    rcpp_result_gen = Rcpp::wrap(popedSetup(e, eglobal, full));
     return rcpp_result_gen;
 END_RCPP
 }

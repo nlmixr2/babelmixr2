@@ -23,6 +23,7 @@
 
 timeIndexer globalTimeIndexer;
 
+
 //' @title Get Multiple Endpoint Modeling Times
 //'
 //' @description
@@ -247,6 +248,9 @@ using namespace Rcpp;
 
 #define popedOde(id) ind_solve(rx, id, rxInner.dydt_liblsoda, rxInner.dydt_lsoda_dum, rxInner.jdum_lsoda, rxInner.dydt, rxInner.update_inis, rxInner.global_jt)
 
+Environment _popedE;
+Environment _popedEglobal;
+
 struct rxSolveF {
   //
   // std::string estStr;
@@ -338,12 +342,12 @@ RObject popedFree() {
   return R_NilValue;
 }
 
-Environment _popedE;
 
 //[[Rcpp::export]]
-RObject popedSetup(Environment e, bool full) {
+RObject popedSetup(Environment e, Environment eglobal, bool full) {
   popedFree();
   _popedE=e;
+  _popedEglobal=eglobal;
   List control = e["control"];
   List rxControl = as<List>(e["rxControl"]);
 
@@ -364,7 +368,9 @@ RObject popedSetup(Environment e, bool full) {
   e["paramCache"]=p2;
   e["lid"] = NA_INTEGER;
   List mvp = rxode2::rxModelVars_(model);
-  rxUpdateFuns(as<SEXP>(mvp["trans"]), &rxInner);
+  CharacterVector trans =  mvp["trans"];
+  _popedEglobal["curTrans"] = trans;
+  rxUpdateFuns(as<SEXP>(trans), &rxInner);
 
   // initial value of parameters
   CharacterVector pars = mvp[RxMv_params];
@@ -447,6 +453,7 @@ static inline bool solveCached(NumericVector &theta, int &id) {
 }
 
 void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, int nend) {
+  rxUpdateFuns(_popedEglobal["curTrans"], &rxInner);
   // arma::vec ret(retD, nobs, false, true);
   rx_solving_options_ind *ind =  updateParamRetInd(theta, id);
   rx_solving_options *op = getSolvingOptions(rx);
@@ -455,12 +462,12 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
   int kk, k=0;
   double curT;
   bool isMT = false;
+  double *lhs = getIndLhs(ind);
   for (int j = 0; j < getIndNallTimes(ind); ++j) {
     setIndIdx(ind, j);
     kk = getIndIx(ind, j);
     curT = getTime(kk, ind);
     isMT = getIndEvid(ind, kk) >= 10 && getIndEvid(ind, kk) <= 99;
-    double *lhs = getIndLhs(ind);
     if (isDose(getIndEvid(ind, kk))) {
       rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
       continue;
@@ -496,6 +503,7 @@ Rcpp::DataFrame popedSolveIdME(NumericVector &theta,
                                NumericVector &mt, IntegerVector &ms,
                                int nend, int id, int totn) {
   if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
+  rxUpdateFuns(_popedEglobal["curTrans"], &rxInner);
   NumericVector t(totn);
   arma::vec f(totn);
   arma::vec w(totn);
@@ -508,7 +516,6 @@ Rcpp::DataFrame popedSolveIdME(NumericVector &theta,
     std::fill(curLV.begin(), curLV.end(), 0);
     we[i] = curLV;
   }
-
   popedSolveFidMat(matMT, theta, id, nrow, nend);
   // this gets the information from:
   // - the model time
