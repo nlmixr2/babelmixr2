@@ -47,20 +47,24 @@ f <- function() {
             delta <- exp(tdelta + eta.delta)
             c <- exp(tc + eta.c)
 
-            # # Apply the conditional logic
-            if ( (time - (floor(time / TAU) * TAU)) < TINF) {
-                  In <- DOSE / TINF  # Infusion rate
-            } else {
-                  In <- 0  # No infusion
-            }
+            # # Apply the conditional logic -
+            # # This does not work right now - could be addressed in the future
+            # if ( (time - (floor(time / TAU) * TAU)) < TINF) {
+            #       In <- DOSE / TINF  # Infusion rate
+            # } else {
+            #       In <- 0  # No infusion
+            # }
 
-            d/dt(depot)   = -KA*depot + In
+            d/dt(depot)   = -KA*depot #  + In
             d/dt(central) =  KA*depot - KE*central
             d/dt(TC) = s - TC*(e*VP+d)    # target cells (TC)
             d/dt(IC) = e*TC*VP-delta*IC # productively infected cells (IC)
             d/dt(VP) = p*(1-(pow(central/VD,n)/(pow(central/VD,n)+pow(EC50,n))))*IC-c*VP # viral particles (VP)
             
             # Initial conditions
+            dur(depot) = TINF
+            # depot(0) <- DOSE
+            
             TC(0) =c*delta/(p*e)
             IC(0) =(s*e*p-d*c*delta)/(p*delta*e)
             VP(0) = (s*e*p-d*c*delta)/(c*delta*e)
@@ -75,24 +79,28 @@ f <- function() {
 }
 
 rxClean()
-# time%%TAU
-# time = seq(0,30,0.1)
-
 f <- f()
 
-# Note that design point 240 is repeated
+TAU = 7
 e1 <- et(c( 0,0.25,0.5,1,2,3,4,7,10,14,21,28)) %>%
+      add.dosing(dose=180, nbr.doses=4, dosing.interval=TAU) %>% 
       as.data.frame() %>%
       dplyr::mutate(dvid=1)
 
-e2 <- e1 %>% dplyr::mutate(dvid=2)
+e2 <- et(c( 0,0.25,0.5,1,2,3,4,7,10,14,21,28)) %>%
+      add.dosing(dose=0, nbr.doses=4, dosing.interval=TAU) %>% 
+      as.data.frame() %>%
+      dplyr::mutate(dvid=2) %>% 
+      dplyr::filter(is.na(ii))
+
 e <- rbind(e1, e2)
 
 babel.db <- nlmixr2(f, e, "poped",
                     popedControl(
                           groupsize=30,
-                          a=list(c(DOSE=180,TINF=1,TAU=7))
-                    ))
+                          a=list(c(TINF=1))))
+                          # a=list(c(DOSE=180,TINF=1,TAU=7))
+                    # ))
 
 ##  create plot of model without variability 
 plot_model_prediction(babel.db, facet_scales = "free")
