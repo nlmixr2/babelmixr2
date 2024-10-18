@@ -5,6 +5,14 @@
 * Fix bug where if/else clauses in the model could cause the model to
   not predict the values correctly.
 
+* Fix bug so that `shrinkage()` calculation works
+
+* Fix bug so that you can mix 2 different `PopED` data bases in an
+  analysis without crashing R.  While this didn't occur with every
+  database clash, it more frequently occurred when you interleaved
+  `PopED` code between two different `PopED` databases, like in issue
+  #131.
+
 # babelmixr2 0.1.4
 
 * Added experimental `PopED` integration
