@@ -467,7 +467,9 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
     setIndIdx(ind, j);
     kk = getIndIx(ind, j);
     curT = getTime(kk, ind);
-    isMT = getIndEvid(ind, kk) >= 10 && getIndEvid(ind, kk) <= 99;
+    int evid = getIndEvid(ind, kk);
+    isMT = evid >= 10 && evid <= 99;
+    // REprintf("curT: %f; evid: %d; isMT: %d; kk: %d\n", curT, evid, isMT, kk);
     if (isDose(getIndEvid(ind, kk))) {
       rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
       continue;
