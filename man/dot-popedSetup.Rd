@@ -4,10 +4,12 @@
 \alias{.popedSetup}
 \title{Setup the PopED environment}
 \usage{
-.popedSetup(e, full = FALSE)
+.popedSetup(e, eglobal, full = FALSE)
 }
 \arguments{
 \item{e}{environment with setup information for popEd}
+
+\item{eglobal}{global environment for poped info}
 
 \item{full}{setup the full model}
 }
