@@ -23,6 +23,7 @@
 #' @keywords internal
 #' @author Matthew L. Fidler
 .popedSetup <- function(e, eglobal, full=FALSE) {
+  popedMultipleEndpointResetTimeIndex()
   invisible(.Call(`_babelmixr2_popedSetup`, e, eglobal, full))
 }
 #' Solve poped problem for appropriate times with single/multiple endpoint models
@@ -337,10 +338,10 @@ rxUiGet.popedFfFun <- function(x, ...) {
     # be in the right order
     if (.lu <=  .(.poped$maxn)) {
       # only check for time reset if it is specified in the model
+      .popedRxRunSetup(poped.db)
       .p <- babelmixr2::popedMultipleEndpointParam(p, .u, model_switch,
                                                    .(.poped$maxn),
                                                    poped.db$babelmixr2$optTime)
-      .popedRxRunSetup(poped.db)
       .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
                               .id-1, .totn)
     } else if (.lu > .(.poped$maxn)) {
