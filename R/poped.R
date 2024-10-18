@@ -3042,7 +3042,13 @@ babel.poped.database <- function(popedInput, ..., optTime=NA) {
   if (is.environment(popedInput$babelmixr2)) {
     .babelmixr2 <- popedInput$babelmixr2
     .db <- PopED::create.poped.database(popedInput=popedInput, ...)
-    .db$babelmixr2 <- .babelmixr2
+    .b2 <- new.env(parent=emptyenv())
+    for (v in ls(envir=.babelmixr2, all=TRUE)) {
+      assign(v, get(v, envir=.babelmixr2), envir=.b2)
+    }
+    .b2$modelNumber <- .poped$modelNumber
+    .poped$modelNumber <- .poped$modelNumber + 1
+    .db$babelmixr2 <- .b2
     if (is.logical(optTime) && length(optTime) == 1L &&
           !is.na(optTime)) {
       popedMultipleEndpointResetTimeIndex()
