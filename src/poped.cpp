@@ -218,6 +218,9 @@ Rcpp::NumericVector popedMultipleEndpointParam(Rcpp::NumericVector p,
                                                Rcpp::IntegerVector modelSwitch,
                                                int maxMT,
                                                bool optTime=true) {
+  if (optTime && globalTimeIndexer.isInitialized()) {
+    globalTimeIndexer.reset();
+  }
   globalTimeIndexer.initialize(modelSwitch, times, optTime);
   Rcpp::NumericVector ret(p.size()-1+maxMT);
   std::fill(ret.begin(), ret.end(), globalTimeIndexer.getMaxTime());
