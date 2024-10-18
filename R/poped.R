@@ -3042,7 +3042,13 @@ babel.poped.database <- function(popedInput, ..., optTime=NA) {
   if (is.environment(popedInput$babelmixr2)) {
     .babelmixr2 <- popedInput$babelmixr2
     .db <- PopED::create.poped.database(popedInput=popedInput, ...)
-    .db$babelmixr2 <- .babelmixr2
+    .b2 <- new.env(parent=emptyenv())
+    for (v in ls(envir=.babelmixr2, all=TRUE)) {
+      assign(v, get(v, envir=.babelmixr2), envir=.b2)
+    }
+    .b2$modelNumber <- .poped$modelNumber
+    .poped$modelNumber <- .poped$modelNumber + 1
+    .db$babelmixr2 <- .b2
     if (is.logical(optTime) && length(optTime) == 1L &&
           !is.na(optTime)) {
       popedMultipleEndpointResetTimeIndex()
@@ -3053,4 +3059,69 @@ babel.poped.database <- function(popedInput, ..., optTime=NA) {
     stop("this object is not a PopED database from babelmixr2",
          call.=FALSE)
   }
+}
+
+#' Get the bpop_idx by variable name for a poped database created by `babelmixr2`
+#'
+#' This may work for other poped databases if the population parameters are named.
+#'
+#' @param popedInput The babaelmixr2 created database
+#' @param var variable to query
+#' @return index of the variable
+#' @export
+#' @author Matthew L. Fidler
+#'
+#' @examples
+#'
+#' if (requireNamespace("PopED", quietly=TRUE)) {
+#'
+#' f <- function() {
+#'   ini({
+#'     tV <- 72.8
+#'     tKa <- 0.25
+#'     tCl <- 3.75
+#'     tF <- fix(0.9)
+#'     pedCL <- 0.8
+#'
+#'     eta.v ~ 0.09
+#'     eta.ka ~ 0.09
+#'     eta.cl ~0.25^2
+#'
+#'     prop.sd <- fix(sqrt(0.04))
+#'     add.sd <- fix(sqrt(5e-6))
+#'
+#'   })
+#'   model({
+#'     V<-tV*exp(eta.v)
+#'     KA<-tKa*exp(eta.ka) * (pedCL**isPediatric) # add covariate for pediatrics
+#'     CL<-tCl*exp(eta.cl)
+#'     Favail <- tF
+#'
+#'     N <-  floor(t/TAU)+1
+#'     y <- (DOSE*Favail/V)*(KA/(KA - CL/V)) *
+#'       (exp(-CL/V * (t - (N - 1) * TAU)) *
+#'          (1 - exp(-N * CL/V * TAU))/(1 - exp(-CL/V * TAU)) -
+#'          exp(-KA * (t - (N - 1) * TAU)) * (1 - exp(-N * KA * TAU))/(1 - exp(-KA * TAU)))
+#'
+#'     y ~ prop(prop.sd) + add(add.sd)
+#'   })
+#' }
+#'
+#' e <- et(c( 1,8,10,240,245))
+#'
+#' babel.db <- nlmixr2(f, e, "poped",
+#'                     popedControl(m = 2,
+#'                                  groupsize=20,
+#'                                  bUseGrouped_xt=TRUE,
+#'                                  a=list(c(DOSE=20,TAU=24,isPediatric = 0),
+#'                                         c(DOSE=40, TAU=24,isPediatric = 0))))
+#'
+#' babelBpopIdx(babel.db, "pedCL")
+#'
+#' }
+babelBpopIdx <- function(popedInput, var)  {
+  .w <- which(rownames(popedInput$parameters$bpop) == var)
+  if (length(.w) == 1L) return(.w)
+  stop("cannot find '", var, "' in the baelmixr2 poped model",
+       call.=FALSE)
 }
