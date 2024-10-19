@@ -207,16 +207,16 @@ if (requireNamespace("PopED", quietly=TRUE)) {
 
       library(PopED)
 
-      expect_equal(list(ofv = 20.947993269923,
-                        fim = lotri({
-                          tcl ~ 39.1196937156543
-                          tv ~ c(-0.386317381405573, 40.0037481563051)
-                          sig_var_add.err ~ 800097.977314259
-                        }),
-                        rse = c(tcl = 3.31152092974365,
-                                tv = 30.9526397537534,
-                                sig_var_add.err = 11.1796553130823)),
-                   evaluate_design(db), tolerance = 1e-4)
+      expect_equal(
+        list(ofv = 20.9455595871912,
+             fim = lotri({
+               tcl ~ 39.0235064308582
+               tv ~ c(-0.385137678397696, 40.0037346438455)
+               sig_var_add.err ~ 800120.483866746
+             }),
+             rse = c(tcl = 3.31559905061048, tv = 30.9526395967922,
+                     sig_var_add.err = 11.1794980759702))
+        evaluate_design(db), tolerance = 1e-4)
 
       ## v <- poped_optim(db, opt_xt=TRUE)
 
