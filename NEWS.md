@@ -13,7 +13,7 @@
   `PopED` code between two different `PopED` databases, like in issue
   #131.
 
-* Added a new function `popedBpopIdx(poped.db, "par")` which will get
+* Added a new function `babelBpopIdx(poped.db, "par")` which will get
   the poped index for a model generated from `babelmixr2`, which is
   useful when calculating the power (as in example 11).
 
