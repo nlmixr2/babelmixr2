@@ -207,16 +207,16 @@ if (requireNamespace("PopED", quietly=TRUE)) {
 
       library(PopED)
 
-      expect_equal(list(ofv = 20.947993269923,
-                        fim = lotri({
-                          tcl ~ 39.1196937156543
-                          tv ~ c(-0.386317381405573, 40.0037481563051)
-                          sig_var_add.err ~ 800097.977314259
-                        }),
-                        rse = c(tcl = 3.31152092974365,
-                                tv = 30.9526397537534,
-                                sig_var_add.err = 11.1796553130823)),
-                   evaluate_design(db), tolerance = 1e-4)
+      expect_equal(
+        list(ofv = 20.9455595871912,
+             fim = lotri({
+               tcl ~ 39.0235064308582
+               tv ~ c(-0.385137678397696, 40.0037346438455)
+               sig_var_add.err ~ 800120.483866746
+             }),
+             rse = c(tcl = 3.31559905061048, tv = 30.9526395967922,
+                     sig_var_add.err = 11.1794980759702)),
+        evaluate_design(db), tolerance = 1e-4)
 
       ## v <- poped_optim(db, opt_xt=TRUE)
 
@@ -379,27 +379,22 @@ if (requireNamespace("PopED", quietly=TRUE)) {
         tCl <- 3.75
         tF <- fix(0.9)
         pedCL <- 0.8
-
         eta.v ~ 0.09
         eta.ka ~ 0.09
         eta.cl ~0.25^2
-
         prop.sd <- fix(sqrt(0.04))
         add.sd <- fix(sqrt(5e-6))
-
       })
       model({
         V<-tV*exp(eta.v)
-        KA<-tKa*exp(eta.ka) * (pedCL**isPediatric) # add covariate for pediatrics
-        CL<-tCl*exp(eta.cl)
+        KA<-tKa*exp(eta.ka)
+        CL<-tCl*exp(eta.cl)  * (pedCL^isPediatric) # add covariate for pediatrics
         Favail <- tF
-
         N <-  floor(t/TAU)+1
         y <- (DOSE*Favail/V)*(KA/(KA - CL/V)) *
           (exp(-CL/V * (t - (N - 1) * TAU)) *
              (1 - exp(-N * CL/V * TAU))/(1 - exp(-CL/V * TAU)) -
              exp(-KA * (t - (N - 1) * TAU)) * (1 - exp(-N * KA * TAU))/(1 - exp(-KA * TAU)))
-
         y ~ prop(prop.sd) + add(add.sd)
       })
     }
@@ -436,6 +431,11 @@ if (requireNamespace("PopED", quietly=TRUE)) {
     vdiffr::expect_doppelganger("poped-ped-next",
                                 plot_model_prediction(babel.db.ped,
                                                       model_num_points = 300))
+
+    expect_equal(babelBpopIdx(babel.db.ped, "pedCL"), 4L)
+
+    expect_error(babelBpopIdx(babel.db, "matt"))
+
   })
 
   ##  The tests run interactively runs OK
