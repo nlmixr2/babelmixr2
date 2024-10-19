@@ -215,7 +215,7 @@ if (requireNamespace("PopED", quietly=TRUE)) {
                sig_var_add.err ~ 800120.483866746
              }),
              rse = c(tcl = 3.31559905061048, tv = 30.9526395967922,
-                     sig_var_add.err = 11.1794980759702))
+                     sig_var_add.err = 11.1794980759702)),
         evaluate_design(db), tolerance = 1e-4)
 
       ## v <- poped_optim(db, opt_xt=TRUE)
