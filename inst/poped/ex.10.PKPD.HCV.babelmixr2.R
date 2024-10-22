@@ -82,13 +82,14 @@ rxClean()
 f <- f()
 
 TAU = 7
+TINF = 1
 e1 <- et(c( 0,0.25,0.5,1,2,3,4,7,10,14,21,28)) %>%
-      add.dosing(dose=180, nbr.doses=4, dosing.interval=TAU) %>%
+      add.dosing(dose=180, nbr.doses=4, dosing.interval=TAU, rate = 180/TINF) %>%
       as.data.frame() %>%
       dplyr::mutate(dvid=1)
 
 e2 <- et(c( 0,0.25,0.5,1,2,3,4,7,10,14,21,28)) %>%
-      add.dosing(dose=0, nbr.doses=4, dosing.interval=TAU) %>%
+      add.dosing(dose=0, nbr.doses=4, dosing.interval=TAU, rate = 180/TINF) %>%
       as.data.frame() %>%
       dplyr::mutate(dvid=2) %>%
       dplyr::filter(is.na(ii))
@@ -102,7 +103,7 @@ babel.db <- nlmixr2(f, e, "poped",
                     ))
 
 ##  create plot of model without variability 
-plot_model_prediction(babel.db, facet_scales = "free")
+plot_model_prediction(babel.db, facet_scales = "free", model_num_points = 1000)
 evaluate_design(babel.db)
 shrinkage(babel.db)
 
