@@ -132,7 +132,7 @@ evaluate_design(babel.db.ped.2)
 # the variability in pediatrics cannot be estimated well.
 
 ## Add adult prior
-# Now we combined the two sutdies, where we assume that we only assess
+# Now we combined the two studies, where we assume that we only assess
 # a difference between adults and pediatrics in CL.  We can set the
 # prior FIM to the adult one: Note to setup babelmixr2 models
 # appropriately we need to use `babel.poped.database` instead of
