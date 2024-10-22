@@ -56,7 +56,7 @@ Babelmixr2 can help you by:
     (in conjunction with `nonmem2rx`)
 
   - Convert you [`Monolix` model to a nlmixr2
-    model](https://nlmixr2.github.io/nonmem2rx/articles/convert-nlmixr2.html)
+    model](https://nlmixr2.github.io/monolix2rx/articles/convert-nlmixr2.html)
     (in conjunction with `monolix2rx`)
 
   - Calculate scaling factors and automatically add initial conditions
