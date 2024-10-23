@@ -342,13 +342,23 @@ rxUiGet.popedFfFun <- function(x, ...) {
       .p <- babelmixr2::popedMultipleEndpointParam(p, .u, model_switch,
                                                    .(.poped$maxn),
                                                    poped.db$babelmixr2$optTime)
-      .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                              .id-1, .totn)
+      .ret <- try(.popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                                  .id-1, .totn), silent=TRUE)
+      if (inherits(.ret, "try-error")) {
+        rxode2::rxLoad(poped.db$babelmixr2$modelMT)
+        .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                                    .id-1, .totn)
+      }
     } else if (.lu > .(.poped$maxn)) {
       .p <- p[-1]
       poped.db <- .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
-      .ret <- .popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                               .id-1, .totn)
+      .ret <- try(.popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                                   .id-1, .totn), silent=TRUE)
+      if (inherits(.ret, "try-error")) {
+        rxode2::rxLoad(poped.db$babelmixr2$modelF)
+        .ret <- .popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
+                                 .id-1, .totn)
+      }
     }
     return(list(f=matrix(.ret$rx_pred_, ncol=1),
                 poped.db=poped.db))
@@ -1981,7 +1991,6 @@ rxUiGet.popedOptsw <- function(x, ...) {
 .setupPopEDdatabase <- function(ui, data, control) {
   # PopED environment needs:
   # - control - popedControl
-
   #
   # Data needs to match what PopED prefers, so order by id, dvid then time, not the typical ordering.  This only needs to be done in cases where there is a dvid.
   #
@@ -2930,8 +2939,6 @@ rxUiDeparse.popedControl <- function(object, var) {
   .w <- nlmixr2est::.deparseDifferent(.default, object, "genRxControl")
   nlmixr2est::.deparseFinal(.default, object, .w, var)
 }
-
-
 
 .popedFamilyControl <- function(env, ...) {
   .ui <- env$ui
