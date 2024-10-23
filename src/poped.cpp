@@ -276,7 +276,7 @@ struct rxSolveF {
 };
 
 rxSolveF rxInner;
-void rxUpdateFuns(SEXP trans, rxSolveF *inner){
+SEXP rxUpdateFuns(SEXP trans, rxSolveF *inner){
   const char *lib, *s_dydt, *s_calc_jac, *s_calc_lhs, *s_inis, *s_dydt_lsoda_dum, *s_dydt_jdum_lsoda,
     *s_ode_solver_solvedata, *s_ode_solver_get_solvedata, *s_dydt_liblsoda;
   lib = CHAR(STRING_ELT(trans, 0));
@@ -308,6 +308,7 @@ void rxUpdateFuns(SEXP trans, rxSolveF *inner){
   inner->set_solve = (t_set_solve)R_GetCCallable(lib, s_ode_solver_solvedata);
   inner->get_solve = (t_get_solve)R_GetCCallable(lib, s_ode_solver_get_solvedata);
   inner->dydt_liblsoda = (t_dydt_liblsoda)R_GetCCallable(lib, s_dydt_liblsoda);
+  return R_NilValue;
 }
 
 void rxClearFuns(rxSolveF *inner){
