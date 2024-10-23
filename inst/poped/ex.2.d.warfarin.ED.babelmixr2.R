@@ -43,7 +43,6 @@ babel.db <- nlmixr2(f, e, "poped",
                                  maxa=100))
 
 
-
 # Adding 10% Uncertainty to all fixed effects (not Favail)
 bpop_vals_ed <- babel.db$parameters$bpop
 for (n in row.names(bpop_vals_ed)) {
@@ -79,15 +78,14 @@ tic();evaluate_design(babel.db,d_switch=FALSE,ED_samp_size=20); toc()
 ## 4.991010   2.977982  14.014207  29.802546  36.711408  26.754059  31.477157  25.297312
 
 ## optimization with line search search
-output_ls <- poped_optim(babel.db, opt_xt=T, parallel=T, method = "LS", d_switch=F, ED_samp_size=20)
+## parallelization does not seem to work with babelmixr2 or example:
+output_ls <- poped_optim(babel.db, opt_xt=T, parallel=F, method = "LS", d_switch=F, ED_samp_size=20)
 
 ## laplace does not seem to work with babelmixr2 or example:
-## See
-
 ## ED: E(det(FIM)) using Laplace approximation
 ## deterministic calculation, relatively fast
 ## can be more stable for optimization
-## tic(); evaluate_design(babel.db,d_switch=FALSE,use_laplace=TRUE); toc()
+tic(); evaluate_design(babel.db,d_switch=FALSE,use_laplace=TRUE); toc()
 
 ## optimization with Laplace
-## output_ls <- poped_optim(babel.db, opt_xt=T, parallel=T, method = "LS", d_switch=F, use_laplace=T)
+output_ls <- poped_optim(babel.db, opt_xt=T, parallel=F, method = "LS", d_switch=F, use_laplace=T)
