@@ -276,7 +276,9 @@ struct rxSolveF {
 };
 
 rxSolveF rxInner;
-SEXP rxUpdateFuns(SEXP trans, rxSolveF *inner){
+
+SEXP rxUpdateFn(SEXP trans) {
+  rxSolveF *inner = &rxInner;
   const char *lib, *s_dydt, *s_calc_jac, *s_calc_lhs, *s_inis, *s_dydt_lsoda_dum, *s_dydt_jdum_lsoda,
     *s_ode_solver_solvedata, *s_ode_solver_get_solvedata, *s_dydt_liblsoda;
   lib = CHAR(STRING_ELT(trans, 0));
@@ -310,6 +312,7 @@ SEXP rxUpdateFuns(SEXP trans, rxSolveF *inner){
   inner->dydt_liblsoda = (t_dydt_liblsoda)R_GetCCallable(lib, s_dydt_liblsoda);
   return R_NilValue;
 }
+
 
 void rxClearFuns(rxSolveF *inner){
   inner->calc_lhs              = NULL;
@@ -374,7 +377,7 @@ RObject popedSetup(Environment e, Environment eglobal, bool full) {
   List mvp = rxode2::rxModelVars_(model);
   CharacterVector trans =  mvp["trans"];
   _popedEglobal["curTrans"] = trans;
-  rxUpdateFuns(as<SEXP>(trans), &rxInner);
+  rxUpdateFn(as<SEXP>(trans));
 
   // initial value of parameters
   CharacterVector pars = mvp[RxMv_params];
@@ -457,7 +460,7 @@ static inline bool solveCached(NumericVector &theta, int &id) {
 }
 
 void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, int nend) {
-  rxUpdateFuns(_popedEglobal["curTrans"], &rxInner);
+  rxUpdateFn(_popedEglobal["curTrans"]);
   // arma::vec ret(retD, nobs, false, true);
   rx_solving_options_ind *ind =  updateParamRetInd(theta, id);
   rx_solving_options *op = getSolvingOptions(rx);
@@ -509,7 +512,7 @@ Rcpp::DataFrame popedSolveIdME(NumericVector &theta,
                                NumericVector &mt, IntegerVector &ms,
                                int nend, int id, int totn) {
   if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
-  rxUpdateFuns(_popedEglobal["curTrans"], &rxInner);
+  rxUpdateFn(_popedEglobal["curTrans"]);
   NumericVector t(totn);
   arma::vec f(totn);
   arma::vec w(totn);
