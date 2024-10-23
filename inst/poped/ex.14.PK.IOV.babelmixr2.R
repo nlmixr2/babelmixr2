@@ -2,12 +2,7 @@ library(babelmixr2)
 library(PopED)
 library(ggplot2)
 
-# Does not work for now. PopED has a special way to handle IOV. This feature will be added in the future
-
-# 
-# N = floor(Time/TAU)+1;
-# CL = CL_OCC_1;
-# if(N>6) CL = CL_OCC_2;
+# Does not work properly for now. PopED has a special way to handle IOV. This feature will be added in the future
 
 ## define the ODE
 f <- function() {
@@ -22,12 +17,11 @@ f <- function() {
             eta.cl ~0.25^2
             
             # IOV
-            theta.iov.cl <- c(0.09)
+            theta.iov.cl <- sqrt(c(0.09))
             
             iov.cl1 <-  fix(1)
             # iov.cl2 <- fix(1)
             # iov.cl3 <- fix (1) #  as many as occasions as needed
-            
             
             prop.sd <- fix(sqrt(0.04))
             add.sd <- fix(sqrt(5e-6))
@@ -35,8 +29,8 @@ f <- function() {
       })
       model({
             # No of doses
-            N = floor(t/TAU)+1
-            OCC1 = ifelse(N>6, 1, 0)
+            N = floor(t/TAU) + 1
+            OCC1 = ifelse(N > 6, 1, 0)
             iov <- theta.iov.cl * (OCC1 * iov.cl1) 
             
             V<-tV*exp(eta.v)
@@ -59,7 +53,7 @@ e <- et(list(c(0, 10),
              c(0, 10),
              c(240, 248),
              c(240, 248))) %>%
-      et(amt=1/0.9, ii=24, until=248,cmt="depot") %>%
+      et(amt=1, ii=24, until=248,cmt="depot") %>%
       as.data.frame()
 #xt
 e$time <-  c(0, 1,2,8,240,245)
@@ -83,7 +77,7 @@ plot_model_prediction(babel.db, PRED=F,IPRED=F,
                       groupsize_sim = 1,
                       IPRED.lines = T, alpha.IPRED.lines=0.6,
                       sample.times = F
-) + geom_vline(xintercept = 24*6,color="red") + coord_cartesian(ylim = c(0, 0.75))
+) + geom_vline(xintercept = 24*6,color="red")
 
 ## evaluate initial design
 evaluate_design(babel.db)

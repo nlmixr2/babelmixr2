@@ -45,10 +45,10 @@ babel.db <- nlmixr2(f, e, "poped",
                           a=c(WT=70)))
 
 # We can create a plot of the model typical predictions:
-plot_model_prediction(poped_db)
+plot_model_prediction(babel.db)
 
 # And evaluate the initial design
-evaluate_design(poped_db)
+evaluate_design(babel.db)
 
 # We see that the covariate parameters can not be estimated 
 # according to this design calculation (RSE of bpop[3]=0 and bpop[4]=0).  
@@ -82,20 +82,15 @@ evaluate_design(babel.db.2)
 nsim <- 10
 rse_list <- c()
 for(i in 1:nsim){
-      poped_db_tmp <- create.poped.database(ff_fun=mod_1,
-                                            fg_fun=par_1,
-                                            fError_fun=feps.add.prop,
-                                            groupsize=1,
-                                            m=50,
-                                            sigma=c(0.015,0.0015),
-                                            notfixed_sigma = c(1,0),
-                                            bpop=c(CL=3.8,V=20,WT_CL=0.75,WT_V=1), 
-                                            d=c(CL=0.05,V=0.05), 
-                                            xt=c( 1,2,4,6,8,24),
-                                            minxt=0,
-                                            maxxt=24,
-                                            bUseGrouped_xt=1,
-                                            a=lapply(rnorm(50, mean = 70, sd = 10), function(x) c(WT=x))) 
+      poped_db_tmp <- nlmixr2(f, e, "poped",
+                            control=popedControl(
+                                  groupsize=1,
+                                  m=50,
+                                  minxt=0,
+                                  maxxt=24,
+                                  bUseGrouped_xt = T,
+                                  a = lapply(rnorm(50, mean = 70, sd = 10), function(x) c(WT=x)) ))
+      
       rse_tmp <- evaluate_design(poped_db_tmp)$rse
       rse_list <- rbind(rse_list,rse_tmp)
 }

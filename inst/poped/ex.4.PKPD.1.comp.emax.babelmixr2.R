@@ -46,9 +46,6 @@ f <- function() {
       })
 }
 
-# e <-  et(c(1,3,8)) %>%
-#       as.data.frame()
-
 event.table.optim.pk <- 
       # amt is a placeholder here
       et(amt = 1) %>% 
@@ -66,9 +63,6 @@ event.table.optim.pd <-
              dvid = 'effect')
 
 e <- event.table.optim.pk %>% bind_rows(event.table.optim.pd) %>% arrange(id, time)
-# event.table.optim2 <- event.table.optim %>% filter(id ==2)
-str(e)
-
 
 ## -- Define initial design  and design space
 babel.db <- nlmixr2(f, e, "poped",
@@ -91,8 +85,14 @@ evaluate_design(babel.db)
 shrinkage(babel.db)
 
 # Optimization of sample times and doses
-output <- poped_optim(babel.db, opt_xt = T, opt_a = T, parallel = T,method = c("LS"))
+output <- poped_optim(babel.db, opt_xt = T, opt_a = T, parallel = F,method = c("LS"))
 
-get_rse(output$FIM,output$babel.db)
+# Original
+# CL          V         E0       EMAX       EC50       d_CL        d_V       d_E0     d_EC50 SIGMA[1,1] 
+# 4.713022   4.830290   3.023423   2.471232   9.089469  23.842058  25.111412  20.772844  89.433096  12.217638 
+# SIGMA[2,2] 
+# 12.405893 
+
+get_rse(output$FIM,output$poped.db)
 plot_model_prediction(output$babel.db,facet_scales="free")
 
