@@ -1,8 +1,6 @@
 
 library(babelmixr2)
 
-devtools::load_all()
-
 library(PopED)
 
 ##-- Model: One comp first order absorption + inhibitory imax
@@ -82,7 +80,7 @@ babel.db <- nlmixr2(f, e, "poped",
 
 bpop_vals_ed <- babel.db$parameters$bpop
 
-bpop_vals_ed["tIC50",1] <- 1 # normal distrtibution
+bpop_vals_ed["tIC50",1] <- 1 # normal distribution
 bpop_vals_ed["tIC50",3] <- (bpop_vals_ed["tIC50",2]*0.1)^2
 bpop_vals_ed
 

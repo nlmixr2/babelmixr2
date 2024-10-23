@@ -114,9 +114,13 @@ evaluate_design(babel.db)
 shrinkage(babel.db)
 
 # Optimization
-output <- poped_optim(babel.db, opt_xt = T, parallel = T)
+output <- poped_optim(babel.db, opt_xt = T, parallel = F)
 
 summary(output)
+
+# Original:
+# V        KA        CL        E0      IMAX      IC50       d_V      d_KA      d_CL      d_E0 
+# 7.378959  9.224199  4.363698  4.923343  5.945328 24.169815 37.404330 58.360336 27.113994 22.005904 
 
 get_rse(output$FIM,output$poped.db)
 
