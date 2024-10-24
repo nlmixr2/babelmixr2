@@ -1241,12 +1241,6 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                           call.=FALSE)
                                    }))
                   })
-    if (length(.wg_xt) == 1L) {
-      .G_xt <- do.call(`c`,
-                       lapply(seq_along(.xt), function(i) {
-        .xt[[i]]$G_xt
-                       }))
-    }
   } else {
     .xt <- lapply(.poped$uid,
                   function(id) {
@@ -1256,6 +1250,14 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                     .env$mt <- max(c(.ret, .env$mt))
                     .ret
                   })
+  }
+  if (length(.wg_xt) == 1L) {
+    .G_xt <- do.call(`c`,
+                     lapply(seq_along(.xt), function(i) {
+                       .xt[[i]]$G_xt
+                     }))
+  } else {
+    .G_xt <- NULL
   }
   .single <- FALSE
   .modelSwitch <- NULL
