@@ -344,21 +344,11 @@ rxUiGet.popedFfFun <- function(x, ...) {
                                                    poped.db$babelmixr2$optTime)
       .ret <- try(.popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
                                   .id-1, .totn), silent=TRUE)
-      if (inherits(.ret, "try-error")) {
-        rxode2::rxLoad(poped.db$babelmixr2$modelMT)
-        .ret <- .popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                    .id-1, .totn)
-      }
     } else if (.lu > .(.poped$maxn)) {
       .p <- p[-1]
       poped.db <- .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
       .ret <- try(.popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
                                    .id-1, .totn), silent=TRUE)
-      if (inherits(.ret, "try-error")) {
-        rxode2::rxLoad(poped.db$babelmixr2$modelF)
-        .ret <- .popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                 .id-1, .totn)
-      }
     }
     return(list(f=matrix(.ret$rx_pred_, ncol=1),
                 poped.db=poped.db))
@@ -3131,4 +3121,17 @@ babelBpopIdx <- function(popedInput, var)  {
   if (length(.w) == 1L) return(.w)
   stop("cannot find '", var, "' in the baelmixr2 poped model",
        call.=FALSE)
+}
+
+#' Internal function to use with PopED to run PopED in parallel on Windows
+#'  
+#' @param babelmixr2 environment in poped environment
+#' @return nothing, called for side effects
+#' @export 
+#' @author Matthew L. Fidler
+#' @keywords internal
+.popedCluster <- function(babelmixr2) {
+  rxode2::rxLoad(babelmixr2$modelF)
+  rxode2::rxLoad(babelmixr2$modelMT)
+  invisible()
 }
