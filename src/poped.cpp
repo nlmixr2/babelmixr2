@@ -460,7 +460,6 @@ static inline bool solveCached(NumericVector &theta, int &id) {
 }
 
 void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, int nend) {
-  rxUpdateFn(_popedEglobal["curTrans"]);
   // arma::vec ret(retD, nobs, false, true);
   rx_solving_options_ind *ind =  updateParamRetInd(theta, id);
   rx_solving_options *op = getSolvingOptions(rx);
@@ -609,6 +608,7 @@ Rcpp::DataFrame popedSolveIdME2(NumericVector &theta,
                                 NumericVector &mt, IntegerVector &ms,
                                 int nend, int id, int totn) {
   if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
+  rxUpdateFn(_popedEglobal["curTrans"]);
   NumericVector t(totn);
   arma::vec f(totn);
   arma::vec w(totn);
