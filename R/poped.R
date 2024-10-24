@@ -1181,7 +1181,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
   .wid <- which(.nd == id)
   if (length(.wid) == 0L) {
     .data$id <- 1L
-    .nd <- names(.data)
+    .nd <- tolower(names(.data))
     .wid <- which(.nd == id)
   } else if (length(.wid) != 1L) {
     stop("duplicate ids found",
@@ -1216,7 +1216,8 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                        if (length(.wg_xt) == 1L) {
                                          .g_xt <- .data[[.wg_xt]]
                                          .g_xt <- .g_xt[.wd]
-                                         return(time=.time, dvid=i, G_xt=.g_xt)
+
+                                         return(data.frame(time=.time, dvid=i, G_xt=.g_xt))
                                        }
                                        return(data.frame(time=.time, dvid=i))
                                      }
@@ -1231,7 +1232,7 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                          if (length(.wg_xt) == 1L) {
                                            .g_xt <- .data[[.wg_xt]]
                                            .g_xt <- .g_xt[.wd]
-                                           return(time=.time, dvid=i, G_xt=.g_xt)
+                                           return(data.frame(time=.time, dvid=i, G_xt=.g_xt))
                                          }
                                          return(data.frame(time=.time, dvid=i))
                                        }
@@ -1241,7 +1242,10 @@ attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
                                    }))
                   })
     if (length(.wg_xt) == 1L) {
-      .G_xt <- .xt$G_xt
+      .G_xt <- do.call(`c`,
+                       lapply(seq_along(.xt), function(i) {
+        .xt[[i]]$G_xt
+                       }))
     }
   } else {
     .xt <- lapply(.poped$uid,
@@ -2043,7 +2047,6 @@ rxUiGet.popedOptsw <- function(x, ...) {
                                            discrete_a=.poped$discrete_a,
                                            optsw=.ui$popedOptsw,
                                            G_xt=.poped$G_xt)
-
     } else {
       .ln <- tolower(names(data))
       .w <- which(.ln == "id")
@@ -3124,10 +3127,10 @@ babelBpopIdx <- function(popedInput, var)  {
 }
 
 #' Internal function to use with PopED to run PopED in parallel on Windows
-#'  
+#'
 #' @param babelmixr2 environment in poped environment
 #' @return nothing, called for side effects
-#' @export 
+#' @export
 #' @author Matthew L. Fidler
 #' @keywords internal
 .popedCluster <- function(babelmixr2) {
