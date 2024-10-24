@@ -5,9 +5,9 @@
 \alias{.popedSolveIdME2}
 \title{Solve poped problem for appropriate times with single/multiple endpoint models}
 \usage{
-.popedSolveIdME(theta, umt, mt, ms, nend, id, totn)
+.popedSolveIdME(theta, umt, mt, ms, nend, id, totn, mn)
 
-.popedSolveIdME2(theta, umt, mt, ms, nend, id, totn)
+.popedSolveIdME2(theta, umt, mt, ms, nend, id, totn, mn)
 }
 \arguments{
 \item{theta}{parameters (includes covariates and modeling times)}
@@ -23,6 +23,8 @@
 \item{id}{this is the design identifier}
 
 \item{totn}{This is the total number of design points tested}
+
+\item{mn}{model number used to see if the c level model has been linked}
 }
 \value{
 a data frame with $f and $w corresponding to the function

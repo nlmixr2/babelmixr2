@@ -107,8 +107,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // popedSolveIdME
-Rcpp::DataFrame popedSolveIdME(NumericVector& theta, NumericVector& umt, NumericVector& mt, IntegerVector& ms, int nend, int id, int totn);
-RcppExport SEXP _babelmixr2_popedSolveIdME(SEXP thetaSEXP, SEXP umtSEXP, SEXP mtSEXP, SEXP msSEXP, SEXP nendSEXP, SEXP idSEXP, SEXP totnSEXP) {
+Rcpp::DataFrame popedSolveIdME(NumericVector& theta, NumericVector& umt, NumericVector& mt, IntegerVector& ms, int nend, int id, int totn, int mn);
+RcppExport SEXP _babelmixr2_popedSolveIdME(SEXP thetaSEXP, SEXP umtSEXP, SEXP mtSEXP, SEXP msSEXP, SEXP nendSEXP, SEXP idSEXP, SEXP totnSEXP, SEXP mnSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -119,13 +119,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type nend(nendSEXP);
     Rcpp::traits::input_parameter< int >::type id(idSEXP);
     Rcpp::traits::input_parameter< int >::type totn(totnSEXP);
-    rcpp_result_gen = Rcpp::wrap(popedSolveIdME(theta, umt, mt, ms, nend, id, totn));
+    Rcpp::traits::input_parameter< int >::type mn(mnSEXP);
+    rcpp_result_gen = Rcpp::wrap(popedSolveIdME(theta, umt, mt, ms, nend, id, totn, mn));
     return rcpp_result_gen;
 END_RCPP
 }
 // popedSolveIdME2
-Rcpp::DataFrame popedSolveIdME2(NumericVector& theta, NumericVector& umt, NumericVector& mt, IntegerVector& ms, int nend, int id, int totn);
-RcppExport SEXP _babelmixr2_popedSolveIdME2(SEXP thetaSEXP, SEXP umtSEXP, SEXP mtSEXP, SEXP msSEXP, SEXP nendSEXP, SEXP idSEXP, SEXP totnSEXP) {
+Rcpp::DataFrame popedSolveIdME2(NumericVector& theta, NumericVector& umt, NumericVector& mt, IntegerVector& ms, int nend, int id, int totn, int mn);
+RcppExport SEXP _babelmixr2_popedSolveIdME2(SEXP thetaSEXP, SEXP umtSEXP, SEXP mtSEXP, SEXP msSEXP, SEXP nendSEXP, SEXP idSEXP, SEXP totnSEXP, SEXP mnSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -136,7 +137,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type nend(nendSEXP);
     Rcpp::traits::input_parameter< int >::type id(idSEXP);
     Rcpp::traits::input_parameter< int >::type totn(totnSEXP);
-    rcpp_result_gen = Rcpp::wrap(popedSolveIdME2(theta, umt, mt, ms, nend, id, totn));
+    Rcpp::traits::input_parameter< int >::type mn(mnSEXP);
+    rcpp_result_gen = Rcpp::wrap(popedSolveIdME2(theta, umt, mt, ms, nend, id, totn, mn));
     return rcpp_result_gen;
 END_RCPP
 }

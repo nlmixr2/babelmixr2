@@ -249,12 +249,12 @@ using namespace Rcpp;
 #define _(String) (String)
 #endif
 
-#define popedOde(id) ind_solve(rx, id, rxInner.dydt_liblsoda, rxInner.dydt_lsoda_dum, rxInner.jdum_lsoda, rxInner.dydt, rxInner.update_inis, rxInner.global_jt)
+#define popedOde(id) ind_solve(rx, id, rxPoped.dydt_liblsoda, rxPoped.dydt_lsoda_dum, rxPoped.jdum_lsoda, rxPoped.dydt, rxPoped.update_inis, rxPoped.global_jt)
 
 Environment _popedE;
 Environment _popedEglobal;
 
-struct rxSolveF {
+struct rxPopedF {
   //
   // std::string estStr;
   // std::string gradStr;
@@ -273,12 +273,17 @@ struct rxSolveF {
   int global_mf = 22;
   int global_debug = 0;
   int neq = NA_INTEGER;
+  int full = 0;
+  int modelNum = 0;
 };
 
-rxSolveF rxInner;
+rxPopedF rxPoped;
 
-SEXP rxUpdateFn(SEXP trans) {
-  rxSolveF *inner = &rxInner;
+SEXP rxUpdateFn(SEXP trans, int f, int mn) {
+  rxPopedF *inner = &rxPoped;
+  if (f == inner->full && mn == inner->modelNum) {
+    return R_NilValue;
+  }
   const char *lib, *s_dydt, *s_calc_jac, *s_calc_lhs, *s_inis, *s_dydt_lsoda_dum, *s_dydt_jdum_lsoda,
     *s_ode_solver_solvedata, *s_ode_solver_get_solvedata, *s_dydt_liblsoda;
   lib = CHAR(STRING_ELT(trans, 0));
@@ -310,11 +315,13 @@ SEXP rxUpdateFn(SEXP trans) {
   inner->set_solve = (t_set_solve)R_GetCCallable(lib, s_ode_solver_solvedata);
   inner->get_solve = (t_get_solve)R_GetCCallable(lib, s_ode_solver_get_solvedata);
   inner->dydt_liblsoda = (t_dydt_liblsoda)R_GetCCallable(lib, s_dydt_liblsoda);
+  inner->full = f;
+  inner->modelNum = mn;
   return R_NilValue;
 }
 
 
-void rxClearFuns(rxSolveF *inner){
+void rxClearFuns(rxPopedF *inner){
   inner->calc_lhs              = NULL;
   inner->dydt                  = NULL;
   inner->calc_jac              = NULL;
@@ -324,6 +331,8 @@ void rxClearFuns(rxSolveF *inner){
   inner->set_solve             = NULL;
   inner->get_solve             = NULL;
   inner->dydt_liblsoda         = NULL;
+  inner->full = NA_INTEGER;
+  inner->modelNum = NA_INTEGER;
 }
 
 rx_solve *rx;
@@ -377,7 +386,7 @@ RObject popedSetup(Environment e, Environment eglobal, bool full) {
   List mvp = rxode2::rxModelVars_(model);
   CharacterVector trans =  mvp["trans"];
   _popedEglobal["curTrans"] = trans;
-  rxUpdateFn(as<SEXP>(trans));
+  rxUpdateFn(as<SEXP>(trans), (int) full, e["modelNumber"]);
 
   // initial value of parameters
   CharacterVector pars = mvp[RxMv_params];
@@ -459,12 +468,11 @@ static inline bool solveCached(NumericVector &theta, int &id) {
   return as<bool>(all(last == theta));
 }
 
-void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, int nend) {
-  rxUpdateFn(_popedEglobal["curTrans"]);
+void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, int nend, int mn) {
   // arma::vec ret(retD, nobs, false, true);
   rx_solving_options_ind *ind =  updateParamRetInd(theta, id);
   rx_solving_options *op = getSolvingOptions(rx);
-  iniSubjectE(id, 1, ind, op, rx, rxInner.update_inis);
+  iniSubjectE(id, 1, ind, op, rx, rxPoped.update_inis);
   popedSolve(id);
   int kk, k=0;
   double curT;
@@ -478,11 +486,11 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
     isMT = evid >= 10 && evid <= 99;
     // REprintf("curT: %f; evid: %d; isMT: %d; kk: %d\n", curT, evid, isMT, kk);
     if (isDose(getIndEvid(ind, kk))) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      rxPoped.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
       continue;
     } else if (isMT) {
       // mtimes to calculate information
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      rxPoped.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
       if (ISNA(lhs[0])) {
         popedOp.naZero=1;
         lhs[0] = 0.0;
@@ -497,7 +505,7 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
         return; // vector has been created, break
       }
     } else if (getIndEvid(ind, kk) == 0) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      rxPoped.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
       if (ISNA(lhs[0])) {
         popedOp.naZero=1;
         lhs[0] = 0.0;
@@ -510,9 +518,9 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
 Rcpp::DataFrame popedSolveIdME(NumericVector &theta,
                                NumericVector &umt,
                                NumericVector &mt, IntegerVector &ms,
-                               int nend, int id, int totn) {
+                               int nend, int id, int totn, int mn) {
   if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
-  rxUpdateFn(_popedEglobal["curTrans"]);
+  rxUpdateFn(_popedEglobal["curTrans"], 0, mn);
   NumericVector t(totn);
   arma::vec f(totn);
   arma::vec w(totn);
@@ -525,7 +533,7 @@ Rcpp::DataFrame popedSolveIdME(NumericVector &theta,
     std::fill(curLV.begin(), curLV.end(), 0);
     we[i] = curLV;
   }
-  popedSolveFidMat(matMT, theta, id, nrow, nend);
+  popedSolveFidMat(matMT, theta, id, nrow, nend, mn);
   // this gets the information from:
   // - the model time
   // - the model_switch
@@ -572,7 +580,7 @@ void popedSolveFidMat2(arma::mat &matMT, NumericVector &theta, int id, int nrow,
   // arma::vec ret(retD, nobs, false, true);
   rx_solving_options_ind *ind =  updateParamRetInd(theta, id);
   rx_solving_options *op = getSolvingOptions(rx);
-  iniSubjectE(id, 1, ind, op, rx, rxInner.update_inis);
+  iniSubjectE(id, 1, ind, op, rx, rxPoped.update_inis);
   popedSolve(id);
   int kk, k=0;
   double curT;
@@ -582,10 +590,10 @@ void popedSolveFidMat2(arma::mat &matMT, NumericVector &theta, int id, int nrow,
     curT = getTime(kk, ind);
     double *lhs = getIndLhs(ind);
     if (isDose(getIndEvid(ind, kk))) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      rxPoped.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
       continue;
     } else if (getIndEvid(ind, kk) == 0) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      rxPoped.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
       if (ISNA(lhs[0])) {
         popedOp.naZero=1;
         lhs[0] = 0.0;
@@ -607,8 +615,9 @@ void popedSolveFidMat2(arma::mat &matMT, NumericVector &theta, int id, int nrow,
 Rcpp::DataFrame popedSolveIdME2(NumericVector &theta,
                                 NumericVector &umt,
                                 NumericVector &mt, IntegerVector &ms,
-                                int nend, int id, int totn) {
+                                int nend, int id, int totn, int mn) {
   if (solveCached(theta, id)) return(as<Rcpp::DataFrame>(_popedE["s"]));
+  rxUpdateFn(_popedEglobal["curTrans"], 1, mn);
   NumericVector t(totn);
   arma::vec f(totn);
   arma::vec w(totn);

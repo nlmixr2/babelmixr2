@@ -149,12 +149,12 @@ popedSetup <- function(e, eglobal, full) {
     .Call(`_babelmixr2_popedSetup`, e, eglobal, full)
 }
 
-popedSolveIdME <- function(theta, umt, mt, ms, nend, id, totn) {
-    .Call(`_babelmixr2_popedSolveIdME`, theta, umt, mt, ms, nend, id, totn)
+popedSolveIdME <- function(theta, umt, mt, ms, nend, id, totn, mn) {
+    .Call(`_babelmixr2_popedSolveIdME`, theta, umt, mt, ms, nend, id, totn, mn)
 }
 
-popedSolveIdME2 <- function(theta, umt, mt, ms, nend, id, totn) {
-    .Call(`_babelmixr2_popedSolveIdME2`, theta, umt, mt, ms, nend, id, totn)
+popedSolveIdME2 <- function(theta, umt, mt, ms, nend, id, totn, mn) {
+    .Call(`_babelmixr2_popedSolveIdME2`, theta, umt, mt, ms, nend, id, totn, mn)
 }
 
 transDv <- function(inDv, inCmt, cmtTrans, lambda, yj, low, high) {

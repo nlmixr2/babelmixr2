@@ -38,19 +38,20 @@
 #' @param nend specifies the number of endpoints in this model
 #' @param id this is the design identifier
 #' @param totn This is the total number of design points tested
+#' @param mn model number used to see if the c level model has been linked
 #' @return a data frame with $f and $w corresponding to the function
 #'   value and standard deviation at the sampling point
 #' @export
 #' @author Matthew L. Fidler
 #' @keywords internal
-.popedSolveIdME <- function(theta, umt, mt, ms, nend, id, totn) {
-  .Call(`_babelmixr2_popedSolveIdME`, theta, umt, mt, ms, nend, id, totn)
+.popedSolveIdME <- function(theta, umt, mt, ms, nend, id, totn, mn) {
+  .Call(`_babelmixr2_popedSolveIdME`, theta, umt, mt, ms, nend, id, totn, mn)
 }
 
 #' @rdname dot-popedSolveIdME
 #' @export
-.popedSolveIdME2 <- function(theta, umt, mt, ms, nend, id, totn) {
-  .Call(`_babelmixr2_popedSolveIdME2`, theta, umt, mt, ms, nend, id, totn)
+.popedSolveIdME2 <- function(theta, umt, mt, ms, nend, id, totn, mn) {
+  .Call(`_babelmixr2_popedSolveIdME2`, theta, umt, mt, ms, nend, id, totn, mn)
 }
 
 .popedGetThetaDf <- function(ui) {
@@ -343,12 +344,12 @@ rxUiGet.popedFfFun <- function(x, ...) {
                                                    .(.poped$maxn),
                                                    poped.db$babelmixr2$optTime)
       .ret <- try(.popedSolveIdME(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                  .id-1, .totn), silent=TRUE)
+                                  .id-1, .totn, poped.db$babelmixr2$modelNumber), silent=TRUE)
     } else if (.lu > .(.poped$maxn)) {
       .p <- p[-1]
       poped.db <- .popedRxRunFullSetupMe(poped.db, .xt, model_switch)
       .ret <- try(.popedSolveIdME2(.p, .u, .xt, model_switch, .(length(.predDf$cond)),
-                                   .id-1, .totn), silent=TRUE)
+                                   .id-1, .totn, poped.db$babelmixr2$modelNumber), silent=TRUE)
     }
     return(list(f=matrix(.ret$rx_pred_, ncol=1),
                 poped.db=poped.db))
@@ -3124,10 +3125,10 @@ babelBpopIdx <- function(popedInput, var)  {
 }
 
 #' Internal function to use with PopED to run PopED in parallel on Windows
-#'  
+#'
 #' @param babelmixr2 environment in poped environment
 #' @return nothing, called for side effects
-#' @export 
+#' @export
 #' @author Matthew L. Fidler
 #' @keywords internal
 .popedCluster <- function(babelmixr2) {

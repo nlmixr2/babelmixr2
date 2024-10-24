@@ -48,12 +48,12 @@ e$time <-  c(1,2,8,240,245)
 
 
 babel.db <- nlmixr2(f, e, "poped",
-                        popedControl(groupsize=20,
-                                     bUseGrouped_xt=TRUE,
-                                     a=list(c(DOSE=20,TAU=24),
-                                            c(DOSE=40, TAU=24)),
-                                     maxa=c(DOSE=200,TAU=24),
-                                     mina=c(DOSE=0,TAU=24)))
+                    popedControl(groupsize=20,
+                                 bUseGrouped_xt=TRUE,
+                                 a=list(c(DOSE=20,TAU=24),
+                                        c(DOSE=40, TAU=24)),
+                                 maxa=c(DOSE=200,TAU=24),
+                                 mina=c(DOSE=0,TAU=24)))
 
 ##  create plot of model without variability
 plot_model_prediction(babel.db, model_num_points = 300)
