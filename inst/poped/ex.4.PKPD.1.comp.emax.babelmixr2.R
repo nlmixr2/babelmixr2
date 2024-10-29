@@ -85,7 +85,9 @@ evaluate_design(babel.db)
 shrinkage(babel.db)
 
 # Optimization of sample times and doses
-output <- poped_optim(babel.db, opt_xt = T, opt_a = T, parallel = F,method = c("LS"))
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
+output <- poped_optim(babel.db, opt_xt = T, opt_a = T, parallel = T,method = c("LS"))
 
 # Original
 # CL          V         E0       EMAX       EC50       d_CL        d_V       d_E0     d_EC50 SIGMA[1,1] 

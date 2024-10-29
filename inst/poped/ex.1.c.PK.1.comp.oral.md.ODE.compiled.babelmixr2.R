@@ -37,7 +37,7 @@ e <- et(list(c(0, 10),
              c(0, 10),
              c(240, 248),
              c(240, 248))) %>%
-  et(amt=1000, ii=24, until=248,cmt="depot") %>%
+  et(amt=1/0.9, ii=24, until=248,cmt="depot") %>%
   as.data.frame()
 
 #xt
@@ -64,7 +64,9 @@ evaluate_design(babel.db)
 shrinkage(babel.db)
 
 # Optimization of sample times
-output <- poped_optim(babel.db, opt_xt =TRUE)
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
+output <- poped_optim(babel.db, opt_xt =TRUE, parallel=TRUE, method = c("LS"))
 
 # Evaluate optimization results
 summary(output)
@@ -75,7 +77,9 @@ plot_model_prediction(output$poped.db)
 
 
 # Optimization of sample times and doses
-output_2 <- poped_optim(output$poped.db, opt_xt =TRUE, opt_a = TRUE)
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
+output_2 <- poped_optim(output$poped.db, opt_xt =TRUE, opt_a = TRUE, parallel=TRUE, method = c("LS"))
 
 summary(output_2)
 
@@ -88,7 +92,9 @@ plot_model_prediction(output_2$poped.db)
 # faster than continuous optimization in this case
 babel.db.discrete <- create.poped.database(babel.db,discrete_xt = list(0:248))
 
-output_discrete <- poped_optim(babel.db.discrete, opt_xt=T)
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
+output_discrete <- poped_optim(babel.db.discrete, opt_xt=T, parallel=TRUE, method = c("LS"))
 
 
 summary(output_discrete)

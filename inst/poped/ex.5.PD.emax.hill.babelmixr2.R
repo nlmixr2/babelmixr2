@@ -50,6 +50,8 @@ plot1 + xlab("Dose")
 evaluate_design(babel.db)
 
 # Optimization of doses
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
 output <- poped_optim(babel.db, opt_xt = T, parallel = T)
 
 summary(output)

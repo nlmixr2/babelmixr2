@@ -1,0 +1,229 @@
+PopED Results 
+
+        2024-10-24 00:44:14.791373
+
+==============================================================================
+Model description : PopED model 
+
+Model Sizes : 
+Number of individual model parameters                  g[j]    : Ng    = 10
+Number of population model fixed parameters            bpop[j] : Nbpop = 8
+Number of population model random effects parameters   b[j]    : Nb    = 8
+
+Typical Population Parameters:
+bpop[1]: 3.908 
+bpop[2]: -2.188 
+bpop[3]: 0.558 
+bpop[4]: -0.1864 
+bpop[5]: 2.261 
+bpop[6]: 0.2105 
+bpop[7]: 3.708 
+bpop[8]: -0.7089 
+
+Between Subject Variability matrix D (variance units) 
+0.0625 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
+0.0000 0.0625 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
+0.0000 0.0000 0.0625 0.0000 0.0000 0.0000 0.0000 0.0000
+0.0000 0.0000 0.0000 0.0625 0.0000 0.0000 0.0000 0.0000
+0.0000 0.0000 0.0000 0.0000 0.0625 0.0000 0.0000 0.0000
+0.0000 0.0000 0.0000 0.0000 0.0000 0.0625 0.0000 0.0000
+0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0625 0.0000
+0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0625
+
+Diagonal Elements of D [sqrt(param)]:
+D[1,1]: 0.0625 [ 0.25] 
+D[2,2]: 0.0625 [ 0.25] 
+D[3,3]: 0.0625 [ 0.25] 
+D[4,4]: 0.0625 [ 0.25] 
+D[5,5]: 0.0625 [ 0.25] 
+D[6,6]: 0.0625 [ 0.25] 
+D[7,7]: 0.0625 [ 0.25] 
+D[8,8]: 0.0625 [ 0.25] 
+
+Residual Unexplained Variability matrix SIGMA (variance units) : 
+0.00927944 0.00000000 0.00000000 0.00000000
+0.00000000 0.00100000 0.00000000 0.00000000
+0.00000000 0.00000000 0.02246920 0.00000000
+0.00000000 0.00000000 0.00000000 0.00100000
+
+Diagonal Elements of SIGMA [sqrt(param)]:
+SIGMA[1,1]: 0.009279 [0.09633] 
+SIGMA[2,2]: 0.001 [0.03162] 
+SIGMA[3,3]: 0.02247 [0.1499] 
+SIGMA[4,4]: 0.001 [0.03162] 
+
+==============================================================================
+Experiment description (design and design space)
+
+Number of individuals: 100
+Number of groups (individuals with same design): 2
+Number of individuals per group:
+     Group 1: 50
+     Group 2: 50
+Number of samples per group:
+ Number of discrete experimental variables: 0
+Number of model covariates: 2
+
+Initial Sampling Schedule
+Group 1: Model 1:   0.02   0.25      1      3     10
+Group 1: Model 2:   0.02   0.25      1      3     10
+Group 2: Model 1:      1      7     15     28     42
+Group 2: Model 2:      1      7     15     28     42
+
+Minimum allowed sampling values
+Group 1: Model 1:   0.02   0.25      1      3     10
+Group 1: Model 2:   0.02   0.25      1      3     10
+Group 2: Model 1:      1      7     15     28     42
+Group 2: Model 2:      1      7     15     28     42
+
+Maximum allowed sampling values
+Group 1: Model 1:   0.02   0.25      1      3     10
+Group 1: Model 2:   0.02   0.25      1      3     10
+Group 2: Model 1:      1      7     15     28     42
+Group 2: Model 2:      1      7     15     28     42
+
+Covariates:
+Group 1: 1 : 300
+Group 2: 2 : 10000
+
+===============================================================================
+Initial design evaluation
+
+Initial OFV = 138.56
+
+Efficiency criterion [usually defined as OFV^(1/npar)]  = 2203.41
+
+Initial design
+expected relative standard error
+(%RSE, rounded to nearest integer)
+      Parameter    Values   RSE_0
+            tvc      3.91       1
+           tk10     -2.19       2
+           tk12     0.558       8
+           tk21    -0.186      24
+            tvm      2.26       2
+           tkmc      0.21      48
+           tk03      3.71       1
+           tk30    -0.709       7
+       d_eta.vc    0.0625      17
+      d_eta.k10    0.0625      32
+      d_eta.k12    0.0625      28
+      d_eta.k21    0.0625      32
+       d_eta.vm    0.0625      25
+      d_eta.kmc    0.0625     102
+      d_eta.k03    0.0625      21
+      d_eta.k30    0.0625      32
+   sig_var_eps1   0.00928      11
+   sig_var_eps3    0.0225      18
+
+==============================================================================
+Criterion Specification
+
+OFV calculation for FIM: 4 
+  1=Determinant of FIM,
+  4=log determinant of FIM,
+  6=determinant of interesting part of FIM (Ds)
+
+Approximation method: 0
+  0=FO, 
+  1=FOCE, 
+  2=FOCEI, 
+  3=FOI
+
+Fisher Information Matrix type: 1
+  0=Full FIM,
+  1=Reduced FIM,
+  2=weighted models,
+  3=Loc models,
+  4=reduced FIM with derivative of SD of sigma as pfim,
+  5=FULL FIM parameterized with A,B,C matrices & derivative of variance,
+  6=Calculate one model switch at a time, good for large matrices,
+  7=Reduced FIM parameterized with A,B,C matrices & derivative of variance
+
+Design family: 1
+  D-family design (1) or 
+  ED-family design (0) 
+  (with or without parameter uncertainty)
+
+==============================================================================
+Optimization of design parameters
+
+* Optimize Sampling Schedule
+
+*******************************
+Initial Value
+ OFV(mf) = 138.56
+*******************************
+
+RS - It. : 5   OFV : 138.56
+RS - It. : 10   OFV : 138.56
+RS - It. : 15   OFV : 138.56
+RS - It. : 20   OFV : 138.56
+RS - It. : 25   OFV : 138.56
+RS - It. : 30   OFV : 138.56
+RS - It. : 35   OFV : 138.56
+RS - It. : 40   OFV : 138.56
+RS - It. : 45   OFV : 138.56
+RS - It. : 50   OFV : 138.56
+RS - It. : 55   OFV : 138.56
+RS - It. : 60   OFV : 138.56
+RS - It. : 65   OFV : 138.56
+RS - It. : 70   OFV : 138.56
+RS - It. : 75   OFV : 138.56
+RS - It. : 80   OFV : 138.56
+RS - It. : 85   OFV : 138.56
+RS - It. : 90   OFV : 138.56
+RS - It. : 95   OFV : 138.56
+RS - It. : 100   OFV : 138.56
+RS - It. : 105   OFV : 138.56
+RS - It. : 110   OFV : 138.56
+RS - It. : 115   OFV : 138.56
+RS - It. : 120   OFV : 138.56
+RS - It. : 125   OFV : 138.56
+RS - It. : 130   OFV : 138.56
+RS - It. : 135   OFV : 138.56
+RS - It. : 140   OFV : 138.56
+RS - It. : 145   OFV : 138.56
+RS - It. : 150   OFV : 138.56
+RS - It. : 155   OFV : 138.56
+RS - It. : 160   OFV : 138.56
+RS - It. : 165   OFV : 138.56
+RS - It. : 170   OFV : 138.56
+RS - It. : 175   OFV : 138.56
+RS - It. : 180   OFV : 138.56
+RS - It. : 185   OFV : 138.56
+RS - It. : 190   OFV : 138.56
+RS - It. : 195   OFV : 138.56
+RS - It. : 200   OFV : 138.56
+RS - It. : 205   OFV : 138.56
+RS - It. : 210   OFV : 138.56
+RS - It. : 215   OFV : 138.56
+RS - It. : 220   OFV : 138.56
+RS - It. : 225   OFV : 138.56
+RS - It. : 230   OFV : 138.56
+RS - It. : 235   OFV : 138.56
+RS - It. : 240   OFV : 138.56
+RS - It. : 245   OFV : 138.56
+RS - It. : 250   OFV : 138.56
+RS - It. : 255   OFV : 138.56
+RS - It. : 260   OFV : 138.56
+RS - It. : 265   OFV : 138.56
+RS - It. : 270   OFV : 138.56
+RS - It. : 275   OFV : 138.56
+RS - It. : 280   OFV : 138.56
+RS - It. : 285   OFV : 138.56
+RS - It. : 290   OFV : 138.56
+RS - It. : 295   OFV : 138.56
+RS - It. : 300   OFV : 138.56
+
+*******************************
+RS Results
+ OFV(mf) = 138.56
+
+Optimized Sampling Schedule
+Group 1: Model 1:   0.02   0.25      1      3     10
+Group 1: Model 2:   0.02   0.25      1      3     10
+Group 2: Model 1:      1      7     15     28     42
+Group 2: Model 2:      1      7     15     28     42
+*********************************
+

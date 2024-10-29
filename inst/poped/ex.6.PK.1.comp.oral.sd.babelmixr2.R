@@ -167,6 +167,8 @@ evaluate_design(babel.db.3)
 
 # Optimization of sample times
 # different results for different parameterizations
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
 output.1 <- poped_optim(poped.db.1,opt_xt=T,parallel=T)
 output.2 <- poped_optim(poped.db.2,opt_xt=T,parallel=T)
 

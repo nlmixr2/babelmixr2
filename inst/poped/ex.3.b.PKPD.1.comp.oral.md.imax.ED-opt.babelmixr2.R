@@ -96,6 +96,8 @@ output$E_fim
 
 
 ## optimization with line search
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
 output <- poped_optim(babel.db, opt_xt = T, parallel = T,
                       d_switch=F,ED_samp_size=20,
                       method = "LS")

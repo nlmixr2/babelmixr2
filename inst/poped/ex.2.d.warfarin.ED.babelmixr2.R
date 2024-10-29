@@ -78,8 +78,9 @@ tic();evaluate_design(babel.db,d_switch=FALSE,ED_samp_size=20); toc()
 ## 4.991010   2.977982  14.014207  29.802546  36.711408  26.754059  31.477157  25.297312
 
 ## optimization with line search search
-## parallelization does not seem to work with babelmixr2 or example:
-output_ls <- poped_optim(babel.db, opt_xt=T, parallel=F, method = "LS", d_switch=F, ED_samp_size=20)
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
+output_ls <- poped_optim(babel.db, opt_xt=T, parallel=T, method = "LS", d_switch=F, ED_samp_size=20)
 
 ## laplace does not seem to work with babelmixr2 or example:
 ## ED: E(det(FIM)) using Laplace approximation
@@ -88,4 +89,6 @@ output_ls <- poped_optim(babel.db, opt_xt=T, parallel=F, method = "LS", d_switch
 tic(); evaluate_design(babel.db,d_switch=FALSE,use_laplace=TRUE); toc()
 
 ## optimization with Laplace
-output_ls <- poped_optim(babel.db, opt_xt=T, parallel=F, method = "LS", d_switch=F, use_laplace=T)
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
+output_ls <- poped_optim(babel.db, opt_xt=T, parallel=T, method = "LS", d_switch=F, use_laplace=T)
