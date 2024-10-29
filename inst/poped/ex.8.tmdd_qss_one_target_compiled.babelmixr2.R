@@ -87,6 +87,50 @@ e <- rbind(e1, e2) %>%
 e <- rbind(e0, e)
 
 
+
+
+
+
+#################################################
+# for study 1 in gibiansky,JPKPD,2012 table 2 
+#################################################
+db.1 <- nlmixr2(f, e, "poped",
+              control=popedControl(
+                    groupsize=6,
+                    a=list(c(ID=1, DOSE=100, SC_FLAG=0),
+                           c(ID=1, DOSE=300, SC_FLAG=0),
+                           c(ID=1, DOSE=600, SC_FLAG=0),
+                           c(ID=1, DOSE=1000, SC_FLAG=1)),
+                    discrete_a = list(DOSE=seq(100,1000,by=100),
+                                      SC_FLAG=c(0,1)),
+              ))
+
+plot_model_prediction(db.1,facet_scales="free")
+
+tic(); eval <- evaluate_design(db.1); toc()
+
+
+# This is a longer running example, so the choice to check times for
+# changes each time may not be ideal.
+
+# For this first example, we will not check time differences, which
+# speeds up solving a bit
+
+db <- babel.poped.database(db, optTime=FALSE)
+
+tic();e1 <- evaluate_design(db);toc()
+
+# Original example:
+# $rse
+# CL         V1          Q         V2     FAVAIL         KA         R0       KSSS       KDEG       KINT       d_CL 
+# 7.125675   6.867018   7.408125  10.435998  11.471400  19.592490   8.408247  11.028650   8.175673   7.343506  32.695140 
+# d_V1        d_Q       d_V2   d_FAVAIL       d_KA       d_R0     d_KSSS     d_KDEG     d_KINT SIGMA[1,1] SIGMA[2,2] 
+# 33.548134  74.864908  84.903024  98.434131  78.750729  36.359732  49.607416  66.478853  49.674898   8.935624   9.676856 
+
+#################################################
+# for study 1 + 2 in gibiansky,JPKPD,2012 table 2 
+#################################################
+
 db <- nlmixr2(f, e, "poped",
               control=popedControl(
                 groupsize=rbind(6,6,6,6,100,100),
@@ -128,6 +172,16 @@ db <- babel.poped.database(db, optTime=TRUE)
 
 tic();e2 <- evaluate_design(db);toc()
 
+# now optimization in parallel for unix/mac
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
+output <- poped_optim(db,opt_xt = F, opt_a = T, parallel=T, method = c("LS")) 
+
+# optimization for windows
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
+# output <- poped_optim(poped.db.2,opt_xt = F, opt_a = T, parallel=T, method = c("LS"), dlls = c('tmdd_qss_one_target'))
+plot_model_prediction(output$poped.db,facet_scales="free")
 
 # You can see the differences between the two with microbenchmark.
 m1 <- microbenchmark::microbenchmark(compareTime=evaluate_design(db), times=25)
