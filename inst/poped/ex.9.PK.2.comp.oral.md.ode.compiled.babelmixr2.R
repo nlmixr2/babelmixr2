@@ -71,5 +71,7 @@ tic(); (eval_compiled <- evaluate_design(babel.db)); toc()
 #' but a large difference in computation time (8 times faster with the compiled code)
 (eval_compiled$ofv-eval$ofv)/eval$ofv
 
-#' making optimization times more resonable
+#' making optimization times more reasonable
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
 #output <- poped_optim(babel.db,opt_xt=T, opt_a=T, parallel=T)

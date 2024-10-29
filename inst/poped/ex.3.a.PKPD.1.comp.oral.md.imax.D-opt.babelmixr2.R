@@ -114,9 +114,15 @@ evaluate_design(babel.db)
 shrinkage(babel.db)
 
 # Optimization
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
 output <- poped_optim(babel.db, opt_xt = T, parallel = T)
 
 summary(output)
+
+# Original:
+# V        KA        CL        E0      IMAX      IC50       d_V      d_KA      d_CL      d_E0 
+# 7.378959  9.224199  4.363698  4.923343  5.945328 24.169815 37.404330 58.360336 27.113994 22.005904 
 
 get_rse(output$FIM,output$poped.db)
 

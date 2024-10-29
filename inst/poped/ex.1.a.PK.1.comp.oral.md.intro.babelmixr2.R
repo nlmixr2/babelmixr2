@@ -35,7 +35,6 @@ f <- function() {
   })
 }
 
-# minxt, maxxt
 e <- et(list(c(0, 10),
              c(0, 10),
              c(0, 10),
@@ -43,7 +42,7 @@ e <- et(list(c(0, 10),
              c(240, 248))) %>%
   as.data.frame()
 
-#xt
+# PopED xt equivalent
 e$time <-  c(1,2,8,240,245)
 
 
@@ -69,7 +68,6 @@ plot_model_prediction(babel.db, IPRED=T, DV=T, separate.groups=T, model_num_poin
 
 evaluate_design(babel.db)
 
-
 ## original: > shrinkage(poped.db)
 ## # A tibble: 9 × 5
 ##     d_V  d_KA   d_CL type       group
@@ -86,40 +84,49 @@ evaluate_design(babel.db)
 shrinkage(babel.db)
 
 # Optimization of sample times
-
-output <- poped_optim(babel.db, opt_xt =TRUE)
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
+output <- poped_optim(babel.db, opt_xt =TRUE, parallel=TRUE)
 
 # Evaluate optimization results
 summary(output)
 
+## From original
+# V        KA        CL       d_V      d_KA      d_CL 
+# 6.281944  7.726279  4.295908 32.416232 49.062880 26.363021 
 get_rse(output$FIM,output$poped.db)
 
 plot_model_prediction(output$poped.db)
 
-
 # Optimization of sample times and doses
-output_2 <- poped_optim(output$poped.db, opt_xt =TRUE, opt_a = TRUE)
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
+output_2 <- poped_optim(output$poped.db, opt_xt =TRUE, opt_a = TRUE, parallel = TRUE)
 
 summary(output_2)
 
+# From original
+# V        KA        CL       d_V      d_KA      d_CL 
+# 6.252332  7.547072  4.240929 32.205996 47.014629 25.684326 
 get_rse(output_2$FIM,output_2$poped.db)
 
 plot_model_prediction(output_2$poped.db)
-
 
 # Optimization of sample times with only integer time points in design space
 # faster than continuous optimization in this case
 babel.db.discrete <- create.poped.database(babel.db,discrete_xt = list(0:248))
 
-output_discrete <- poped_optim(babel.db.discrete, opt_xt=T)
-
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
+output_discrete <- poped_optim(babel.db.discrete, opt_xt=T, parallel = TRUE)
 
 summary(output_discrete)
 
+# V        KA        CL       d_V      d_KA      d_CL 
+# 6.331614  8.009220  4.297905 32.351741 51.795028 26.386514 
 get_rse(output_discrete$FIM,output_discrete$poped.db)
 
 plot_model_prediction(output_discrete$poped.db)
-
 
 # Efficiency of sampling windows
 plot_efficiency_of_windows(output_discrete$poped.db, xt_windows=1)

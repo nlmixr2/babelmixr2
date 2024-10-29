@@ -65,6 +65,8 @@ evaluate_design(babel.db)
 # below are a number of ways to optimize the problem
 
 # Optimization of sample times
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
 output <- poped_optim(babel.db, opt_xt = T, parallel = T)
 get_rse(output$FIM,output$poped.db)
 plot_model_prediction(output$poped.db)
@@ -74,6 +76,8 @@ plot_efficiency_of_windows(output$poped.db,xt_windows=0.5)
 
 
 # Optimization of DOSE and sampling times
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
 output_D_T <- poped_optim(babel.db, opt_xt = T, opt_a = T)
 
 summary(output_D_T)
@@ -107,7 +111,9 @@ babel.db.discrete <- nlmixr2(f, e, "poped",
                                           discrete_xt=list(0:120),
                                           discrete_a=list(seq(10, 100, 10))))
 
-output_discrete <- poped_optim(babel.db.discrete, opt_xt = T, opt_a = T)
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
+output_discrete <- poped_optim(babel.db.discrete, opt_xt = T, opt_a = T, parallel = T)
 
 get_rse(output_discrete$FIM,output_discrete$poped.db)
 
@@ -115,6 +121,8 @@ plot_model_prediction(output_discrete$poped.db)
 
 
 # Optimization using a genetic algorithm
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
 output_ga <- poped_optim(babel.db, opt_xt = T, parallel = T, method = "GA")
 
 summary(output_ga)

@@ -3,8 +3,8 @@
 ##   for population pharmacokinetics-pharmacodynamics studies",
 ##   Br. J. Clin. Pharm., 2014.
 
-## Optimization using an additive + proportional reidual error to
-##   avoid sample times at very low concentrations (time 0 or very late samoples).
+## Optimization using an additive + proportional residual error to
+##   avoid sample times at very low concentrations (time 0 or very late samples).
 
 library(babelmixr2)
 library(PopED)
@@ -51,6 +51,7 @@ plot_model_prediction(babel.db)
 ##  create plot of model with variability
 plot_model_prediction(babel.db,IPRED=T,DV=T)
 
+# Original RSEs
 ## $rse
 ##       CL          V         KA       d_CL        d_V       d_KA SIGMA[1,1] SIGMA[2,2]
 ## 5.096246   3.031164  14.260384  29.761226  36.681388  26.748640  32.011719  25.637971
@@ -59,6 +60,8 @@ plot_model_prediction(babel.db,IPRED=T,DV=T)
 evaluate_design(babel.db)
 
 # RS+SG+LS optimization of sample times
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
 output <- poped_optim(babel.db, opt_xt=T, parallel=T)
 
 summary(output)

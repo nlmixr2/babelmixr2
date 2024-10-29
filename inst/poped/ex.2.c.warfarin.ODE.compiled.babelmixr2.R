@@ -56,5 +56,7 @@ plot_model_prediction(babel.db,IPRED=T,DV=T)
 ## evaluate initial design (much faster than pure R solution)
 tic(); design_ode_compiled <- evaluate_design(babel.db); toc()
 
-## making optimization times more resonable
+## making optimization times more reasonable
+# Note: The parallel option does not work well with Windows machines at this moment. 
+# Please set parallel = FALSE if you are working on a Windows machine
 output <- poped_optim(babel.db, opt_xt =TRUE, parallel=TRUE, method = "LS")
