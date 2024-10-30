@@ -3045,7 +3045,7 @@ babel.poped.database <- function(popedInput, ..., optTime=NA) {
     .babelmixr2 <- popedInput$babelmixr2
     .db <- PopED::create.poped.database(popedInput=popedInput, ...)
     .b2 <- new.env(parent=emptyenv())
-    for (v in ls(envir=.babelmixr2, all=TRUE)) {
+    for (v in ls(envir=.babelmixr2, all.names=TRUE)) {
       assign(v, get(v, envir=.babelmixr2), envir=.b2)
     }
     .b2$modelNumber <- .poped$modelNumber
