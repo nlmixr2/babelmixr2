@@ -2,9 +2,9 @@ pandoc: 3.1.11
 pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
-  new-estimation: new-estimation.html
+  articles/new-estimation: new-estimation.html
   articles/PopED: PopED.html
   articles/running-monlix: running-monlix.html
   articles/running-nonmem: running-nonmem.html
-  running-pknca: running-pknca.html
-last_built: 2024-10-31T16:44Z
+  articles/running-pknca: running-pknca.html
+last_built: 2024-10-31T16:54Z
