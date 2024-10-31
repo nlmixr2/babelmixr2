@@ -22,7 +22,6 @@ Suggests:
     withr,
     lixoftConnectors,
     PKNCA (>= 0.10.0),
-    knitr,
     rmarkdown,
     spelling,
     PopED,
@@ -50,4 +49,3 @@ Config/testthat/edition: 3
 LinkingTo:
     Rcpp, rxode2, RcppArmadillo, RcppEigen
 Language: en-US
-VignetteBuilder: knitr
