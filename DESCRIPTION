@@ -31,19 +31,19 @@ Suggests:
     dplyr
 Depends:
     R (>= 3.5),
-    nlmixr2 (>= 2.0.8)
+    nlmixr2 (>= 3.0.1)
 Imports:
     checkmate,
     cli,
     digest,
     lotri,
-    nlmixr2est (>= 2.1.6),
+    nlmixr2est (>= 3.0.1),
     nonmem2rx (>= 0.1.3),
-    monolix2rx,
+    monolix2rx (>= 0.1.5),
     methods,
     qs,
     rex,
-    rxode2 (>= 3.0.0)
+    rxode2 (>= 3.0.2)
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 Config/testthat/edition: 3
