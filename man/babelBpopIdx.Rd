@@ -7,7 +7,7 @@
 babelBpopIdx(popedInput, var)
 }
 \arguments{
-\item{popedInput}{The babaelmixr2 created database}
+\item{popedInput}{The babelmixr2 created database}
 
 \item{var}{variable to query}
 }

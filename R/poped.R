@@ -3067,7 +3067,7 @@ babel.poped.database <- function(popedInput, ..., optTime=NA) {
 #'
 #' This may work for other poped databases if the population parameters are named.
 #'
-#' @param popedInput The babaelmixr2 created database
+#' @param popedInput The babelmixr2 created database
 #' @param var variable to query
 #' @return index of the variable
 #' @export
