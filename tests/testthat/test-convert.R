@@ -1,5 +1,5 @@
 test_that("nonmem amt=0 evid=1 conversion test", {
-
+  skip_on_cran()
   one.compartment <- function() {
     ini({
       tka <- 0.45 # Log Ka
@@ -32,6 +32,7 @@ test_that("nonmem amt=0 evid=1 conversion test", {
 
 
 test_that("pknca conversion keeps extra columns", {
+  skip_on_cran()
   one.compartment <- function() {
     ini({
       tka <- 0.45 # Log Ka
@@ -211,6 +212,7 @@ test_that("pknca conversion keeps extra columns", {
 })
 
 test_that("getStandardColNames", {
+  skip_on_cran()
   expect_equal(
     getStandardColNames(data.frame(ID=1, DV=2, Time=3, CmT=4)),
     c(id = "ID", time = "Time", amt = NA, rate = NA, dur = NA, evid = NA,
@@ -224,9 +226,9 @@ test_that("getStandardColNames", {
 })
 
 test_that("invalid nonmem conversion", {
-  
+  skip_on_cran()
   skip_if_not(file.exists("bad-nonmem-data-convert.qs"))
-  
+
   d <- qs::qread("bad-nonmem-data-convert.qs")
 
   f <-
@@ -285,5 +287,5 @@ test_that("invalid nonmem conversion", {
   d$tevent <- 0.5
 
   expect_error(bblDatToNonmem(f, d), NA)
-  
+
 })

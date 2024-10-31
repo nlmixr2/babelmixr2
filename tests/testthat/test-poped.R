@@ -1,4 +1,5 @@
-if (requireNamespace("PopED", quietly=TRUE)) {
+if (requireNamespace("PopED", quietly=TRUE) &&
+    identical(Sys.getenv("NOT_CRAN"), "true")) {
 
   pheno <- function() {
     ini({
