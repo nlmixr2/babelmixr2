@@ -4,6 +4,7 @@ Title: Use 'nlmixr2' to Interact with Open Source and Commercial Software
 Version: 0.1.5
 Authors@R: c(person("Matthew","Fidler", role = c("aut", "cre"), email = "matthew.fidler@gmail.com", comment=c(ORCID="0000-0001-8538-6691")),
            person("Bill", "Denney", email="wdenney@humanpredictions.com", role="aut", comment=c(ORCID="0000-0002-5759-428X")),
+           person("Theodoros", "Papathanasiou",  role="ctb"),
            person("Nook", "Fulloption", role="ctb", comment="goldfish art"))
 Description: Run other estimation and simulation software via the 'nlmixr2' (Fidler et al (2019)
   <doi:10.1002/psp4.12445>) interface including 'PKNCA', 'NONMEM' and 'Monolix'. While not required, you can
