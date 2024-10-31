@@ -1,5 +1,7 @@
 # babelmixr2 0.1.5
 
+* Reduced number of items run on CRAN (reduce running time)
+
 * Fix bug where `PopED` could error with certain `dvid` values
 
 * Fix bug where if/else clauses in the model could cause the model to
