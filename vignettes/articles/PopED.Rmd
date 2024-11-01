@@ -14,9 +14,13 @@ knitr::opts_chunk$set(
 # Setup the moodels from PopED's
 # https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html
 library(babelmixr2)
+
 library(PopED)
+
 library(mrgsolve)
+
 library(PKPDsim)
+
 library(rxode2)
 
 ff_analytic <- function(model_switch,xt,parameters,poped.db){
@@ -155,7 +159,6 @@ ff_ode_rx <- function(model_switch, xt, p, poped.db){
 poped_db_ode_rx <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_rx)
 
 poped_db_ode_pkpdsim <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_pkpdsim)
-
 ```
 
 ## Introduction -- using babelmixr2 with PopED
@@ -172,12 +175,17 @@ solvers](https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html
     `nlmixr()` call which creates a `PopED` database)
 
 -   compare these examples to the pharmacometric solvers in the PopED
-    vignette (`mrgsolve` and `PKPDsim`)
+    vignette (`mrgsolve`, original `rxode2` and `PKPDsim`)
 
 ## babelmixr2 ODE solution
 
-```{r babelmixr2_ode}
+The first step of a design using babelmixr2 is to tell babelmixr2
+about the design being optimized.  This is a bit different than what
+is done in `PopED` directly.  Below I am using the `et()` function to
+create the event table like a typical `rxode2` simulation, but it is
+used to specify the study design:
 
+```{r babelmixr2-events}
 library(babelmixr2)
 library(PopED)
 
@@ -189,6 +197,42 @@ e <- et(amt=1, ii=24, until=250) %>%
           c(240, 248))) %>%
   dplyr::mutate(time =c(0, 1,2,8,240,245))
 
+print(e)
+```
+
+Here note that `time` is the design times for the `PopED` designs,
+they can include dosing; only observations are considered the
+time-points.  They become the `xt` parameter in the `PopED` database
+(excluding the doses).
+
+We also build on the structure of the `rxode2` event table with
+simulations.  In simulations the sampling windows cause random times
+to be generated inside the sampling windows.  For this reason, the
+last line of code fixes the times to where we want to have the
+multiple endpoint design.
+
+Therefore, in this dataset the `low` becomes `minxt` and `high` becomes `maxxt`.
+
+We chose these because they build on what is already know from
+`nlmixr2` and used in and do not require any extra coding.
+
+Other things you may have to include in your `PopED` model data frame are:
+
+- `dvid` which gives the integer of the model endpoint measured (like
+  `rxode2` but has to be an integer).  This becomes `model_switch` in
+  the `PopED` dataset.
+
+- `G_xt` which is the `PopED` grouping variable; This will be put into
+  the `PopED` database as `G_xt`
+
+- `id` becomes an ID for a design (which you can use as a covariate to
+  pool different designs or different).
+
+
+Once the design is setup, we need to specify a model.  It is easy to
+specify the model using the `nlmixr2`/`rxode2` function/ui below:
+
+```{r babelmixr2-model}
 # model
 f <- function() {
   ini({
@@ -214,105 +258,155 @@ f <- function() {
   })
 }
 
-poped_db_ode_babelmixr2 <- nlmixr(f, e,
-                                  popedControl(a=list(c(DOSE=20),
-                                                      c(DOSE=40)),
-                                               maxa=c(DOSE=200),
-                                               mina=c(DOSE=0)))
-e <- et(amt=1, ii=24, until=250) %>%
-  et(list(c(0, 10),
-          c(0, 10),
-          c(0, 10),
-          c(240, 248),
-          c(240, 248))) %>%
-  dplyr::mutate(time =c(0, 1,2,8,240,245))
+f <- f() # compile/check nlmixr2/rxode2 model
 
-# model
-f <- function() {
-  ini({
-    tKA <- 0.25
-    tCL <- 3.75
-    tV <- 72.8
-    eta.ka ~ 0.09
-    eta.cl ~ 0.25 ^ 2
-    eta.v ~ 0.09
-    prop.sd <- sqrt(0.04)
-    add.sd <- sqrt(0.0025)
-  })
-  model({
-    ka <- tKA * exp(eta.ka)
-    v <- tV * exp(eta.v)
-    cl <- tCL * exp(eta.cl)
-    d/dt(depot) <- -ka * depot
-    d/dt(central) <- ka * depot - cl / v * central
-    cp <- central / v
-    f(depot) <- DOSE
-    cp ~ add(add.sd) + prop(prop.sd)
-  })
-}
 
-poped_db_ode_babelmixr2 <- nlmixr(f, e,
+# Create a PopED database for `nlmixr2`:
+poped_db_ode_babelmixr2 <- nlmixr(f, e, "poped",
                                   popedControl(a=list(c(DOSE=20),
                                                       c(DOSE=40)),
                                                maxa=c(DOSE=200),
                                                mina=c(DOSE=0)))
 ```
-## Linear compartment solution
 
-```{r lincmt}
-f2 <- function() {
-  ini({
-    tV <- 72.8
-    tKA <- 0.25
-    tCL <- 3.75
-    Favail <- fix(0.9)
-    eta.ka ~ 0.09
-    eta.cl ~ 0.25 ^ 2
-    eta.v ~ 0.09
-    prop.sd <- sqrt(0.04)
-    add.sd <- fix(sqrt(5e-6))
-  })
-  model({
-    ka <- tKA * exp(eta.ka)
-    v <- tV * exp(eta.v)
-    cl <- tCL * exp(eta.cl)
-    cp <- linCmt()
-    f(depot) <- DOSE
-    cp ~ add(add.sd) + prop(prop.sd)
-  })
-}
+Note when creating a `PopED` database with a model and a design event
+table, many of the `PopED` database components are generated for you.
 
-poped_db_analytic_babelmixr2 <- nlmixr(f, e,
-                                       popedControl(a=list(c(DOSE=20),
-                                                           c(DOSE=40)),
-                                                    maxa=c(DOSE=200),
-                                                    mina=c(DOSE=0)))
+These are not things that are hidden, but things you can access
+directly from the model or even from the compiled `ui`. Much of the
+other options for optimal design can be specified with the
+`popedControl()` function.
 
+This can help you understand what `babelmixr2` is doing, we will show
+what is being added:
+
+### PopED's `ff_fun` from babelmixr2
+
+This is the function that is run to generate the predictions:
+
+
+```{r}
+# This can be retrieved directly from the database as:
+# (Though it can also be viewed with f$popedFfFun)
+poped_db_ode_babelmixr2$ff_fun
 ```
+
+Some things to note in this function:
+
+- The model changes based on the number of time-points requested.  In
+  this case it is `5` since there were `5` design points in the design above.
+
+- There are some `babelmixr2` specific functions here:
+
+  - `babelmixr2::popedMultipleEndpointParam`, which indexes the time
+    input and model_input to make sure the input matches as requested
+    (in many PopED functions they use `match.time` and this is a bit
+    similar).
+
+  - `.popedRxRunSetup`/`.popedRxRunFullSetupMe` which runs the rxode2
+    setup including loading the data and model into memory (and is a
+    bit different depending on the number of time points you are
+    using)
+
+  - `.popedSolveIdME`/`.popedSolveIdME2` which solves the rxode2 model and uses the
+    indexes to give the solve used in the model.
+
+### rxode2 models generated from `babelmixr2`
+
+By describing this, you can also see that there are 2 `rxode2` models
+generated for the `PopED` database.  You can see these inside of the
+PopED database as well.
+
+The first model uses model times to solve for arbitrary times based on design:
+
+```{r showModelsMT}
+summary(poped_db_ode_babelmixr2$babelmixr2$modelMT)
+```
+
+You can also see the model used for solving scenarios with a number of
+time points greater than the design specification:
+
+
+```{r showModelsF}
+summary(poped_db_ode_babelmixr2$babelmixr2$modelF)
+```
+
+You can also see that the models are identical with the exception of
+requesting modeled times.  You can see the base/core `rxode2` model
+form the UI here:
+
+```{r baseModelForPop}
+f$popedRxmodelBase
+```
+
+### PopED's `fg_fun`
+
+`babelmixr2` also generates `PopED`s `fg_fun`, which translates
+covaraites and parameters into the parameters required in the `ff_fun`
+and used in solving the `rxode2` model.
+
+```{r fg_fun}
+# You can see the PopED fg_fun from the model UI with
+# f$popedFgFun:
+f$popedFgFun
+```
+
+### PopED's error function `fError_fun`
+
+You can see the `babelmixr2` generated error function as well with:
+
+```{r popedErr}
+f$popedFErrorFun
+```
+
+One really important note to keep in mind is that `PopED` works with
+variances instead of standard deviations (which is a key difference
+between `nlmixr2` and `PopED`).
+
+This means that the exported model from `babelmixr2` operates on
+variances instead of standard deviations and care must be taken in
+using these values to not mis-interpret the two.
+
+The export also tries to flag this to make it easier to remember.
+
+### Other parameters generated by `PopED`
+
+```{r others}
+f$popedBpop # PopED bpop
+f$popedNotfixedBpop # PopED notfixed_bpop
+f$popedD # PopED d
+f$popedNotfixedD # PopED notfixed_d
+f$popedCovd # PopED covd
+f$popedNotfixedCovd # PopED notfixed_covd
+f$popedSigma # PopED sigma
+f$popedNotfixedSigma # PopED notfixed_sigma
+```
+
+The rest of the parameters are generated in conjunction with the
+`popedControl()`.
 
 ## Comparing method to the speed of other methods
 
-```{r}
+```{r compare}
 library(ggplot2)
 library(microbenchmark)
 
 compare <- microbenchmark(
   evaluate_design(poped_db_analytic),
-  evaluate_design(poped_db_analytic_babelmixr2),
   evaluate_design(poped_db_ode_babelmixr2),
   evaluate_design(poped_db_ode_mrg),
   evaluate_design(poped_db_ode_pkpdsim),
   times = 100L)
 
-autoplot(compare) + theme_bw()
 
+autoplot(compare) + theme_bw()
 ```
 
-Note that the `babelmixr2` ode solver is the fastest ode solver in this
+Note that the `babelmixr2` ode solution is the fastest ode solver in this
 comparison. Among other things, this is because the model is loaded into
 memory and does not need to be setup each time. (As benchmarks, the
 `mrgsolve`, and `PKPDsim` implementations on the `PopED`'s
-website is included).
+website are included).
 
 Also to me, the speed of all the tools are reasonable. In my opinion,
 the benefit of the `babelmixr2` interface to `PopED` is the simplicity
@@ -329,3 +423,36 @@ controls to change estimation method options.
 applied to `PopED`. This should allow easy translation between the
 systems. With easier translation, hopefully optimal design in clinical
 trials will be easier to achieve.
+
+# Key notes to keep in mind
+
+- `babelmixr2` loads models into memory and needs to keep track of
+  which model is loaded. To help this you need to use
+  `babel.poped.database` in place of `create.poped.database` when
+  modifying babelmixr2 generated `PopED` databases.  If this isn't
+  done, there is a chance that the model loaded will not be the
+  expected loaded model and may either crash R or possibly give incorrect
+  results.
+
+- `babelmixr2` translates all error components to variances instead of
+  the standard deviations in the `nlmixr2`/`rxode2` model
+
+- When there are covariances in the `omega` specification, they will
+  be identified as `D[#,#]` in the `PopED` output. To see what these
+  numbers refer to it is helpful to see the name translations with
+  `$popedD`.
+
+- Depending on your options, `babelmixr2` may literally fix the model
+  components, which means indexes may be different than you
+  expect. The best way to get the correct index is use the
+  `babelmixr2` function `babelBpopIdx()` which is useful for using
+  `PopED`
+
+- `babelmixr2` uses model times in creating `PopED` databases;
+  therefore models with modeling times in them cannot be used in this translation
+
+- `babelmixr2` does not yet support inter-occasion variability models.
+
+## Where to find more examples
+
+The examples from `PopED` have been converted to work with `babelmixr2` and are availble in the package and on [github]()
