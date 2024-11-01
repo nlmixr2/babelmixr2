@@ -145,6 +145,10 @@ popedFree <- function() {
     .Call(`_babelmixr2_popedFree`)
 }
 
+popedGetLoadedInfo <- function() {
+    .Call(`_babelmixr2_popedGetLoadedInfo`)
+}
+
 popedSetup <- function(e, eglobal, full) {
     .Call(`_babelmixr2_popedSetup`, e, eglobal, full)
 }

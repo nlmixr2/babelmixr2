@@ -186,6 +186,7 @@ create the event table like a typical `rxode2` simulation, but it is
 used to specify the study design:
 
 ```{r babelmixr2-events}
+
 library(babelmixr2)
 library(PopED)
 
@@ -226,8 +227,7 @@ Other things you may have to include in your `PopED` model data frame are:
   the `PopED` database as `G_xt`
 
 - `id` becomes an ID for a design (which you can use as a covariate to
-  pool different designs or different).
-
+  pool different designs or different regimens for optimal design).
 
 Once the design is setup, we need to specify a model.  It is easy to
 specify the model using the `nlmixr2`/`rxode2` function/ui below:
@@ -284,11 +284,9 @@ what is being added:
 
 This is the function that is run to generate the predictions:
 
-
 ```{r}
-# This can be retrieved directly from the database as:
-# (Though it can also be viewed with f$popedFfFun)
-poped_db_ode_babelmixr2$ff_fun
+# The ff_fun can be retrieved from the ui with f$popedFfFun
+f$popedFfFun
 ```
 
 Some things to note in this function:
@@ -378,12 +376,48 @@ f$popedD # PopED d
 f$popedNotfixedD # PopED notfixed_d
 f$popedCovd # PopED covd
 f$popedNotfixedCovd # PopED notfixed_covd
-f$popedSigma # PopED sigma
+f$popedSigma # PopED sigma (not variance is exported, not SD)
 f$popedNotfixedSigma # PopED notfixed_sigma
 ```
 
 The rest of the parameters are generated in conjunction with the
 `popedControl()`.
+
+## linear comparment models in `babelmixr2`
+
+You can also specify the models using the `linCmt()` solutions as
+below:
+
+```{r lincmt}
+f2 <- function() {
+  ini({
+    tV <- 72.8
+    tKA <- 0.25
+    tCL <- 3.75
+    Favail <- fix(0.9)
+    eta.ka ~ 0.09
+    eta.cl ~ 0.25 ^ 2
+    eta.v ~ 0.09
+    prop.sd <- sqrt(0.04)
+    add.sd <- fix(sqrt(5e-6))
+  })
+  model({
+    ka <- tKA * exp(eta.ka)
+    v <- tV * exp(eta.v)
+    cl <- tCL * exp(eta.cl)
+    cp <- linCmt()
+    f(depot) <- DOSE
+    cp ~ add(add.sd) + prop(prop.sd)
+  })
+}
+
+poped_db_analytic_babelmixr2 <- nlmixr(f, e,
+                                       popedControl(a=list(c(DOSE=20),
+                                                           c(DOSE=40)),
+                                                    maxa=c(DOSE=200),
+                                                    mina=c(DOSE=0)))
+```
+
 
 ## Comparing method to the speed of other methods
 
@@ -393,9 +427,11 @@ library(microbenchmark)
 
 compare <- microbenchmark(
   evaluate_design(poped_db_analytic),
+  evaluate_design(poped_db_analytic_babelmixr2),
   evaluate_design(poped_db_ode_babelmixr2),
   evaluate_design(poped_db_ode_mrg),
   evaluate_design(poped_db_ode_pkpdsim),
+  evaluate_design(poped_db_ode_rx),
   times = 100L)
 
 
