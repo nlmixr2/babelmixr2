@@ -6,6 +6,7 @@
 #' @return nothing, called for side effects
 #'
 #' @export
+#'
 #' @author Matthew L. Fidler
 #' @keywords internal
 .popedFree <- function() {
@@ -418,6 +419,11 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
   } else if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
     .poped$setup <- 0L
   }
+  if (.poped$setup != 0L &&
+        !identical(.poped$loadInfo,
+                   popedGetLoadedInfo())) {
+    .poped$setup <- 0L
+  }
   if (.poped$setup != 1L) {
     rxode2::rxSolveFree()
     .popedSetup(popedDb$babelmixr2, .poped, FALSE)
@@ -445,6 +451,11 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .poped$lastEnv <- popedDb$babelmixr2
   }
   if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
+    .poped$setup <- 0L
+  }
+  if (.poped$setup != 0L &&
+        !identical(.poped$loadInfo,
+                   popedGetLoadedInfo())) {
     .poped$setup <- 0L
   }
   if (.poped$setup == 2L) {
@@ -516,6 +527,11 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .poped$lastEnv <- popedDb$babelmixr2
   }
   if (.poped$curNumber != popedDb$babelmixr2$modelNumber) {
+    .poped$setup <- 0L
+  }
+  if (.poped$setup != 0L &&
+        !identical(.poped$loadInfo,
+                   popedGetLoadedInfo())) {
     .poped$setup <- 0L
   }
   if (.poped$setup == 2L) {

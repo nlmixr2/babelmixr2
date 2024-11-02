@@ -30,4 +30,5 @@ rxode2.api <- names(rxode2::.rxode2ptrs())
   rxode2::.s3register("rxode2::rxUiDeparse", "pkncaControl")
   rxode2::.s3register("rxode2::rxUiDeparse", "popedControl")
   .iniRxode2Ptr()
+  .poped$loadInfo <- popedGetLoadedInfo()
 }

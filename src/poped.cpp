@@ -349,6 +349,50 @@ RObject popedFree() {
   return R_NilValue;
 }
 
+//[[Rcpp::export]]
+Rcpp::IntegerVector popedGetLoadedInfo() {
+  rx = getRxSolve_();
+  if (rx == NULL) {
+    return Rcpp::IntegerVector::create(_["nsub"]=0,
+                                       _["nall"]=0,
+                                       _["nobs"]=0,
+                                       _["nobs2"]=0,
+                                       _["neq"]=0,
+                                       _["nlhs"]=0,
+                                       _["stiff"]=0,
+                                       _["npars"]=0);
+  }
+  Rcpp::IntegerVector ret(8);
+  Rcpp::CharacterVector retN(8);
+  retN[0] = "nsub";
+  ret[0]  = getRxNsub(rx);
+
+  retN[1] = "nall";
+  ret[1]  = getRxNall(rx);
+
+  retN[2] = "nobs";
+  ret[2]  = getRxNobs(rx);
+
+  retN[3] = "nobs2";
+  ret[3] = getRxNobs2(rx);
+
+  rx_solving_options *op = getSolvingOptions(rx);
+
+  retN[4] = "neq";
+  ret[4] =  getOpNeq(op);
+
+  retN[5] = "nlhs";
+  ret[5] = getOpNlhs(op);
+
+  retN[6] = "stiff";
+  ret[6] = getOpStiff(op);
+
+  retN[7] = "npars";
+  ret[7] = getRxNpars(rx);
+  ret.attr("names") = retN;
+  return ret;
+}
+
 
 //[[Rcpp::export]]
 RObject popedSetup(Environment e, Environment eglobal, bool full) {
@@ -377,6 +421,7 @@ RObject popedSetup(Environment e, Environment eglobal, bool full) {
   List mvp = rxode2::rxModelVars_(model);
   CharacterVector trans =  mvp["trans"];
   _popedEglobal["curTrans"] = trans;
+
   rxUpdateFn(as<SEXP>(trans));
 
   // initial value of parameters
@@ -406,8 +451,10 @@ RObject popedSetup(Environment e, Environment eglobal, bool full) {
                    R_NilValue, // inits
                    1);//const int setupOnly = 0
   rx = getRxSolve_();
+  _popedEglobal["loadInfo"] = popedGetLoadedInfo();
   return R_NilValue;
 }
+
 
 void popedSolve(int &id) {
   rx_solving_options *op = getSolvingOptions(rx);
