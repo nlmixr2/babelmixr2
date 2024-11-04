@@ -387,8 +387,13 @@ Rcpp::IntegerVector popedGetLoadedInfo() {
   retN[6] = "stiff";
   ret[6] = getOpStiff(op);
 
+#if RXAPI > 48
   retN[7] = "npars";
   ret[7] = getRxNpars(rx);
+#else
+  retN[7] = "npars";
+  ret[7] = NA_INTEGER;
+#endif
   ret.attr("names") = retN;
   return ret;
 }
