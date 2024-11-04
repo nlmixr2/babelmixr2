@@ -43,7 +43,7 @@ Imports:
     methods,
     qs,
     rex,
-    rxode2 (> 3.0.2)
+    rxode2 (>= 3.0.2)
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 Config/testthat/edition: 3
