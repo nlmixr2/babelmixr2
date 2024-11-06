@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">babelmixr2</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.5.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,15 +70,15 @@
 Fidler</h4>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/nlmixr2/babelmixr2/blob/main/vignettes/articles/PopED.Rmd" class="external-link"><code>vignettes/articles/PopED.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/nlmixr2/babelmixr2/blob/v0.1.5/vignettes/articles/PopED.Rmd" class="external-link"><code>vignettes/articles/PopED.Rmd</code></a></small>
       <div class="d-none name"><code>PopED.Rmd</code></div>
     </div>
 
     
     
-<div class="section level3">
-<h3 id="introduction-using-babelmixr2-with-poped">Introduction – using babelmixr2 with PopED<a class="anchor" aria-label="anchor" href="#introduction-using-babelmixr2-with-poped"></a>
-</h3>
+<div class="section level2">
+<h2 id="introduction-using-babelmixr2-with-poped">Introduction – using babelmixr2 with PopED<a class="anchor" aria-label="anchor" href="#introduction-using-babelmixr2-with-poped"></a>
+</h2>
 <p><code>babelmixr2</code> now introduces a new method that takes
 <code>rxode2</code>/<code>nlmixr2</code> models converts them to a
 <code>PopED</code> database to help with optimal design.</p>
@@ -91,19 +91,12 @@ will:</p>
 done by the <code><a href="https://nlmixr2.github.io/nlmixr2est/reference/nlmixr2.html" class="external-link">nlmixr()</a></code> call which creates a
 <code>PopED</code> database)</p></li>
 <li><p>compare these examples to the pharmacometric solvers in the PopED
-vignette (<code>mrgsolve</code>, original <code>rxode2</code> and
-<code>PKPDsim</code>)</p></li>
+vignette (<code>mrgsolve</code> and <code>PKPDsim</code>)</p></li>
 </ul>
 </div>
-<div class="section level3">
-<h3 id="babelmixr2-ode-solution">babelmixr2 ODE solution<a class="anchor" aria-label="anchor" href="#babelmixr2-ode-solution"></a>
-</h3>
-<p>The first step of a design using babelmixr2 is to tell babelmixr2
-about the design being optimized. This is a bit different than what is
-done in <code>PopED</code> directly. Below I am using the
-<code><a href="https://nlmixr2.github.io/rxode2/reference/et.html" class="external-link">et()</a></code> function to create the event table like a typical
-<code>rxode2</code> simulation, but it is used to specify the study
-design:</p>
+<div class="section level2">
+<h2 id="babelmixr2-ode-solution">babelmixr2 ODE solution<a class="anchor" aria-label="anchor" href="#babelmixr2-ode-solution"></a>
+</h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://nlmixr2.github.io/babelmixr2/" class="external-link">babelmixr2</a></span><span class="op">)</span></span>
@@ -117,54 +110,7 @@ design:</p>
 <span>          <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">240</span>, <span class="fl">248</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>time <span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">8</span>,<span class="fl">240</span>,<span class="fl">245</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">e</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">── EventTable with 6 records ──</span></span></span>
-<span><span class="co">#&gt; 1 dosing records (see $<span style="color: #0000BB;">get.dosing</span>(); add with <span style="color: #0000BB;">add.dosing</span> or <span style="color: #0000BB;">et</span>)</span></span>
-<span><span class="co">#&gt; 5 observation times (see $<span style="color: #0000BB;">get.sampling</span>(); add with <span style="color: #0000BB;">add.sampling</span> or <span style="color: #0000BB;">et</span>)</span></span>
-<span><span class="co">#&gt; multiple doses in `addl` columns, expand with $<span style="color: #0000BB;">expand</span>(); or <span style="color: #0000BB;">etExpand</span>()</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">── First part of : ──</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
-<span><span class="co">#&gt;     low  time  high   amt    ii  addl evid         </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;evid&gt;</span>       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>    <span style="color: #BB0000;">NA</span>     0    <span style="color: #BB0000;">NA</span>     1    24    10 <span style="color: #0000BB; font-weight: bold;">1</span>:<span style="color: #BBBB00;">Dose (Add)</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>     0     1    10    <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #0000BB; font-weight: bold;">0</span>:<span style="color: #BBBBBB;">Observation</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>     0     2    10    <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #0000BB; font-weight: bold;">0</span>:<span style="color: #BBBBBB;">Observation</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>     0     8    10    <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #0000BB; font-weight: bold;">0</span>:<span style="color: #BBBBBB;">Observation</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>   240   240   248    <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #0000BB; font-weight: bold;">0</span>:<span style="color: #BBBBBB;">Observation</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>   240   245   248    <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> <span style="color: #0000BB; font-weight: bold;">0</span>:<span style="color: #BBBBBB;">Observation</span></span></span></code></pre></div>
-<p>Here note that <code>time</code> is the design times for the
-<code>PopED</code> designs, they can include dosing; only observations
-are considered the time-points. They become the <code>xt</code>
-parameter in the <code>PopED</code> database (excluding the doses).</p>
-<p>We also build on the structure of the <code>rxode2</code> event table
-with simulations. In simulations the sampling windows cause random times
-to be generated inside the sampling windows. For this reason, the last
-line of code fixes the times to where we want to have the multiple
-endpoint design.</p>
-<p>Therefore, in this dataset the <code>low</code> becomes
-<code>minxt</code> and <code>high</code> becomes <code>maxxt</code>.</p>
-<p>We chose these because they build on what is already know from
-<code>nlmixr2</code> and used in and do not require any extra
-coding.</p>
-<p>Other things you may have to include in your <code>PopED</code> model
-data frame are:</p>
-<ul>
-<li><p><code>dvid</code> which gives the integer of the model endpoint
-measured (like <code>rxode2</code> but has to be an integer). This
-becomes <code>model_switch</code> in the <code>PopED</code>
-dataset.</p></li>
-<li><p><code>G_xt</code> which is the <code>PopED</code> grouping
-variable; This will be put into the <code>PopED</code> database as
-<code>G_xt</code></p></li>
-<li><p><code>id</code> becomes an ID for a design (which you can use as
-a covariate to pool different designs or different regimens for optimal
-design).</p></li>
-</ul>
-<p>Once the design is setup, we need to specify a model. It is easy to
-specify the model using the <code>nlmixr2</code>/<code>rxode2</code>
-function/ui below:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># model</span></span>
+<span><span class="co"># model</span></span>
 <span><span class="va">f</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/ini.html" class="external-link">ini</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="va">tKA</span> <span class="op">&lt;-</span> <span class="fl">0.25</span></span>
@@ -189,303 +135,69 @@ function/ui below:</p>
 <span>  <span class="op">}</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
-<span><span class="va">f</span> <span class="op">&lt;-</span> <span class="fu">f</span><span class="op">(</span><span class="op">)</span> <span class="co"># compile/check nlmixr2/rxode2 model</span></span>
-<span></span>
-<span></span>
-<span><span class="co"># Create a PopED database for `nlmixr2`:</span></span>
-<span><span class="va">poped_db_ode_babelmixr2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/nlmixr2.html" class="external-link">nlmixr</a></span><span class="op">(</span><span class="va">f</span>, <span class="va">e</span>, <span class="st">"poped"</span>,</span>
+<span><span class="va">poped_db_ode_babelmixr2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/nlmixr2.html" class="external-link">nlmixr</a></span><span class="op">(</span><span class="va">f</span>, <span class="va">e</span>,</span>
 <span>                                  <span class="fu"><a href="../reference/popedControl.html">popedControl</a></span><span class="op">(</span>a<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>DOSE<span class="op">=</span><span class="fl">20</span><span class="op">)</span>,</span>
 <span>                                                      <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>DOSE<span class="op">=</span><span class="fl">40</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>                                               maxa<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>DOSE<span class="op">=</span><span class="fl">200</span><span class="op">)</span>,</span>
 <span>                                               mina<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>DOSE<span class="op">=</span><span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> parameter labels from comments are typically ignored in non-interactive mode</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Need to run with the source intact to parse comments</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> infer estimation `poped` from control</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> groupsize should be specified; but for now assuming 20</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> assuming group size m=2</span></span>
+<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0’</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0’</span></span>
+<span><span class="va">e</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/et.html" class="external-link">et</a></span><span class="op">(</span>amt<span class="op">=</span><span class="fl">1</span>, ii<span class="op">=</span><span class="fl">24</span>, until<span class="op">=</span><span class="fl">250</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/et.html" class="external-link">et</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span>,</span>
+<span>          <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span>,</span>
+<span>          <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span>,</span>
+<span>          <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">240</span>, <span class="fl">248</span><span class="op">)</span>,</span>
+<span>          <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">240</span>, <span class="fl">248</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>time <span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">8</span>,<span class="fl">240</span>,<span class="fl">245</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># model</span></span>
+<span><span class="va">f</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/ini.html" class="external-link">ini</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="va">tKA</span> <span class="op">&lt;-</span> <span class="fl">0.25</span></span>
+<span>    <span class="va">tCL</span> <span class="op">&lt;-</span> <span class="fl">3.75</span></span>
+<span>    <span class="va">tV</span> <span class="op">&lt;-</span> <span class="fl">72.8</span></span>
+<span>    <span class="va">eta.ka</span> <span class="op">~</span> <span class="fl">0.09</span></span>
+<span>    <span class="va">eta.cl</span> <span class="op">~</span> <span class="fl">0.25</span> <span class="op">^</span> <span class="fl">2</span></span>
+<span>    <span class="va">eta.v</span> <span class="op">~</span> <span class="fl">0.09</span></span>
+<span>    <span class="va">prop.sd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">0.04</span><span class="op">)</span></span>
+<span>    <span class="va">add.sd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">0.0025</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/model.html" class="external-link">model</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="va">ka</span> <span class="op">&lt;-</span> <span class="va">tKA</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">eta.ka</span><span class="op">)</span></span>
+<span>    <span class="va">v</span> <span class="op">&lt;-</span> <span class="va">tV</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">eta.v</span><span class="op">)</span></span>
+<span>    <span class="va">cl</span> <span class="op">&lt;-</span> <span class="va">tCL</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">eta.cl</span><span class="op">)</span></span>
+<span>    <span class="va">d</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">dt</a></span><span class="op">(</span><span class="va">depot</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="op">-</span><span class="va">ka</span> <span class="op">*</span> <span class="va">depot</span></span>
+<span>    <span class="va">d</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">dt</a></span><span class="op">(</span><span class="va">central</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">ka</span> <span class="op">*</span> <span class="va">depot</span> <span class="op">-</span> <span class="va">cl</span> <span class="op">/</span> <span class="va">v</span> <span class="op">*</span> <span class="va">central</span></span>
+<span>    <span class="va">cp</span> <span class="op">&lt;-</span> <span class="va">central</span> <span class="op">/</span> <span class="va">v</span></span>
+<span>    <span class="fu">f</span><span class="op">(</span><span class="va">depot</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">DOSE</span></span>
+<span>    <span class="va">cp</span> <span class="op">~</span> <span class="fu">add</span><span class="op">(</span><span class="va">add.sd</span><span class="op">)</span> <span class="op">+</span> <span class="fu">prop</span><span class="op">(</span><span class="va">prop.sd</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">poped_db_ode_babelmixr2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/nlmixr2.html" class="external-link">nlmixr</a></span><span class="op">(</span><span class="va">f</span>, <span class="va">e</span>,</span>
+<span>                                  <span class="fu"><a href="../reference/popedControl.html">popedControl</a></span><span class="op">(</span>a<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>DOSE<span class="op">=</span><span class="fl">20</span><span class="op">)</span>,</span>
+<span>                                                      <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>DOSE<span class="op">=</span><span class="fl">40</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                                               maxa<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>DOSE<span class="op">=</span><span class="fl">200</span><span class="op">)</span>,</span>
+<span>                                               mina<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>DOSE<span class="op">=</span><span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> parameter labels from comments are typically ignored in non-interactive mode</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Need to run with the source intact to parse comments</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> infer estimation `poped` from control</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> groupsize should be specified; but for now assuming 20</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> assuming group size m=2</span></span>
 <span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0’</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0’</span></span></code></pre></div>
-<p>Note when creating a <code>PopED</code> database with a model and a
-design event table, many of the <code>PopED</code> database components
-are generated for you.</p>
-<p>These are not things that are hidden, but things you can access
-directly from the model or even from the compiled <code>ui</code>. Much
-of the other options for optimal design can be specified with the
-<code><a href="../reference/popedControl.html">popedControl()</a></code> function.</p>
-<p>This can help you understand what <code>babelmixr2</code> is doing,
-we will show what is being added:</p>
-<div class="section level4">
-<h4 id="popeds-ff_fun-from-babelmixr2">PopED’s <code>ff_fun</code> from babelmixr2<a class="anchor" aria-label="anchor" href="#popeds-ff_fun-from-babelmixr2"></a>
-</h4>
-<p>This is the function that is run to generate the predictions:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># The ff_fun can be retrieved from the ui with f$popedFfFun</span></span>
-<span><span class="va">f</span><span class="op">$</span><span class="va">popedFfFun</span></span>
-<span><span class="co">#&gt; function (model_switch, xt, p, poped.db) </span></span>
-<span><span class="co">#&gt; {</span></span>
-<span><span class="co">#&gt;     .xt &lt;- drop(xt)</span></span>
-<span><span class="co">#&gt;     .id &lt;- p[1]</span></span>
-<span><span class="co">#&gt;     .u &lt;- .xt</span></span>
-<span><span class="co">#&gt;     .lu &lt;- length(.u)</span></span>
-<span><span class="co">#&gt;     .totn &lt;- length(.xt)</span></span>
-<span><span class="co">#&gt;     if (.lu &lt;= 5L) {</span></span>
-<span><span class="co">#&gt;         poped.db &lt;- .popedRxRunSetup(poped.db)</span></span>
-<span><span class="co">#&gt;         .p &lt;- babelmixr2::popedMultipleEndpointParam(p, .u, model_switch, </span></span>
-<span><span class="co">#&gt;             5L, poped.db$babelmixr2$optTime)</span></span>
-<span><span class="co">#&gt;         .ret &lt;- try(.popedSolveIdME(.p, .u, .xt, model_switch, </span></span>
-<span><span class="co">#&gt;             1L, .id - 1, .totn), silent = TRUE)</span></span>
-<span><span class="co">#&gt;     }</span></span>
-<span><span class="co">#&gt;     else if (.lu &gt; 5L) {</span></span>
-<span><span class="co">#&gt;         .p &lt;- p[-1]</span></span>
-<span><span class="co">#&gt;         poped.db &lt;- .popedRxRunFullSetupMe(poped.db, .xt, model_switch)</span></span>
-<span><span class="co">#&gt;         .ret &lt;- try(.popedSolveIdME2(.p, .u, .xt, model_switch, </span></span>
-<span><span class="co">#&gt;             1L, .id - 1, .totn), silent = TRUE)</span></span>
-<span><span class="co">#&gt;     }</span></span>
-<span><span class="co">#&gt;     return(list(f = matrix(.ret$rx_pred_, ncol = 1), poped.db = poped.db))</span></span>
-<span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x5609500ba760&gt;</span></span></code></pre></div>
-<p>Some things to note in this function:</p>
-<ul>
-<li><p>The model changes based on the number of time-points requested.
-In this case it is <code>5</code> since there were <code>5</code> design
-points in the design above.</p></li>
-<li>
-<p>There are some <code>babelmixr2</code> specific functions
-here:</p>
-<ul>
-<li><p><code><a href="../reference/popedMultipleEndpointParam.html">babelmixr2::popedMultipleEndpointParam</a></code>, which
-indexes the time input and model_input to make sure the input matches as
-requested (in many PopED functions they use <code>match.time</code> and
-this is a bit similar).</p></li>
-<li><p><code>.popedRxRunSetup</code>/<code>.popedRxRunFullSetupMe</code>
-which runs the rxode2 setup including loading the data and model into
-memory (and is a bit different depending on the number of time points
-you are using)</p></li>
-<li><p><code>.popedSolveIdME</code>/<code>.popedSolveIdME2</code> which
-solves the rxode2 model and uses the indexes to give the solve used in
-the model.</p></li>
-</ul>
-</li>
-</ul>
 </div>
-<div class="section level4">
-<h4 id="rxode2-models-generated-from-babelmixr2">rxode2 models generated from <code>babelmixr2</code><a class="anchor" aria-label="anchor" href="#rxode2-models-generated-from-babelmixr2"></a>
-</h4>
-<p>By describing this, you can also see that there are 2
-<code>rxode2</code> models generated for the <code>PopED</code>
-database. You can see these inside of the PopED database as well.</p>
-<p>The first model uses model times to solve for arbitrary times based
-on design:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">poped_db_ode_babelmixr2</span><span class="op">$</span><span class="va">babelmixr2</span><span class="op">$</span><span class="va">modelMT</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">rxode2 </span>3.0.2.9000 model named <span style="color: #BBBB00; font-weight: bold;">rx_f0a42621402650b3d89354ccbe2b4201</span> model (<span style="color: #00BB00;">✔</span> <span style="color: #00BB00; font-weight: bold;">ready</span>). </span></span>
-<span><span class="co">#&gt; DLL: /tmp/RtmppmRMqn/rxode2/rx_f0a42621402650b3d89354ccbe2b4201__.rxd/rx_f0a42621402650b3d89354ccbe2b4201_.so</span></span>
-<span><span class="co">#&gt; NULL</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Calculated Variables:</span></span>
-<span><span class="co">#&gt; [1] "rx_pred_" "rx_r_"   </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">── rxode2 Model Syntax ──</span></span></span>
-<span><span class="co">#&gt; rxode2({</span></span>
-<span><span class="co">#&gt;     param(rx__tKA, rx__tCL, rx__tV, rx__eta.ka, rx__eta.v, rx__eta.cl, </span></span>
-<span><span class="co">#&gt;         DOSE, rxXt_1, rxXt_2, rxXt_3, rxXt_4, rxXt_5)</span></span>
-<span><span class="co">#&gt;     ka ~ rx__tKA * exp(rx__eta.ka)</span></span>
-<span><span class="co">#&gt;     v ~ rx__tV * exp(rx__eta.v)</span></span>
-<span><span class="co">#&gt;     cl ~ rx__tCL * exp(rx__eta.cl)</span></span>
-<span><span class="co">#&gt;     d/dt(depot) = -ka * depot</span></span>
-<span><span class="co">#&gt;     d/dt(central) = ka * depot - cl/v * central</span></span>
-<span><span class="co">#&gt;     cp ~ central/v</span></span>
-<span><span class="co">#&gt;     f(depot) = DOSE * 0.9</span></span>
-<span><span class="co">#&gt;     rx_yj_ ~ 2</span></span>
-<span><span class="co">#&gt;     rx_lambda_ ~ 1</span></span>
-<span><span class="co">#&gt;     rx_low_ ~ 0</span></span>
-<span><span class="co">#&gt;     rx_hi_ ~ 1</span></span>
-<span><span class="co">#&gt;     rx_pred_f_ ~ cp</span></span>
-<span><span class="co">#&gt;     rx_pred_ = rx_pred_f_</span></span>
-<span><span class="co">#&gt;     rx_r_ = (0.05)^2 + (rx_pred_f_)^2 * (0.2)^2</span></span>
-<span><span class="co">#&gt;     mtime(rxXt_1_v) ~ rxXt_1</span></span>
-<span><span class="co">#&gt;     mtime(rxXt_2_v) ~ rxXt_2</span></span>
-<span><span class="co">#&gt;     mtime(rxXt_3_v) ~ rxXt_3</span></span>
-<span><span class="co">#&gt;     mtime(rxXt_4_v) ~ rxXt_4</span></span>
-<span><span class="co">#&gt;     mtime(rxXt_5_v) ~ rxXt_5</span></span>
-<span><span class="co">#&gt; })</span></span></code></pre></div>
-<p>You can also see the model used for solving scenarios with a number
-of time points greater than the design specification:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">poped_db_ode_babelmixr2</span><span class="op">$</span><span class="va">babelmixr2</span><span class="op">$</span><span class="va">modelF</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">rxode2 </span>3.0.2.9000 model named <span style="color: #BBBB00; font-weight: bold;">rx_8e643ff48ef66e69aba91fbca258baed</span> model (<span style="color: #00BB00;">✔</span> <span style="color: #00BB00; font-weight: bold;">ready</span>). </span></span>
-<span><span class="co">#&gt; DLL: /tmp/RtmppmRMqn/rxode2/rx_8e643ff48ef66e69aba91fbca258baed__.rxd/rx_8e643ff48ef66e69aba91fbca258baed_.so</span></span>
-<span><span class="co">#&gt; NULL</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Calculated Variables:</span></span>
-<span><span class="co">#&gt; [1] "rx_pred_" "rx_r_"   </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">── rxode2 Model Syntax ──</span></span></span>
-<span><span class="co">#&gt; rxode2({</span></span>
-<span><span class="co">#&gt;     param(rx__tKA, rx__tCL, rx__tV, rx__eta.ka, rx__eta.v, rx__eta.cl, </span></span>
-<span><span class="co">#&gt;         DOSE)</span></span>
-<span><span class="co">#&gt;     ka ~ rx__tKA * exp(rx__eta.ka)</span></span>
-<span><span class="co">#&gt;     v ~ rx__tV * exp(rx__eta.v)</span></span>
-<span><span class="co">#&gt;     cl ~ rx__tCL * exp(rx__eta.cl)</span></span>
-<span><span class="co">#&gt;     d/dt(depot) = -ka * depot</span></span>
-<span><span class="co">#&gt;     d/dt(central) = ka * depot - cl/v * central</span></span>
-<span><span class="co">#&gt;     cp ~ central/v</span></span>
-<span><span class="co">#&gt;     f(depot) = DOSE * 0.9</span></span>
-<span><span class="co">#&gt;     rx_yj_ ~ 2</span></span>
-<span><span class="co">#&gt;     rx_lambda_ ~ 1</span></span>
-<span><span class="co">#&gt;     rx_low_ ~ 0</span></span>
-<span><span class="co">#&gt;     rx_hi_ ~ 1</span></span>
-<span><span class="co">#&gt;     rx_pred_f_ ~ cp</span></span>
-<span><span class="co">#&gt;     rx_pred_ = rx_pred_f_</span></span>
-<span><span class="co">#&gt;     rx_r_ = (0.05)^2 + (rx_pred_f_)^2 * (0.2)^2</span></span>
-<span><span class="co">#&gt; })</span></span></code></pre></div>
-<p>You can also see that the models are identical with the exception of
-requesting modeled times. You can see the base/core <code>rxode2</code>
-model form the UI here:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">f</span><span class="op">$</span><span class="va">popedRxmodelBase</span></span>
-<span><span class="co">#&gt; [[1]]</span></span>
-<span><span class="co">#&gt; ka ~ rx__tKA * exp(rx__eta.ka)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]]</span></span>
-<span><span class="co">#&gt; v ~ rx__tV * exp(rx__eta.v)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[3]]</span></span>
-<span><span class="co">#&gt; cl ~ rx__tCL * exp(rx__eta.cl)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[4]]</span></span>
-<span><span class="co">#&gt; d/dt(depot) &lt;- -ka * depot</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[5]]</span></span>
-<span><span class="co">#&gt; d/dt(central) &lt;- ka * depot - cl/v * central</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[6]]</span></span>
-<span><span class="co">#&gt; cp ~ central/v</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[7]]</span></span>
-<span><span class="co">#&gt; f(depot) &lt;- DOSE * rx__Favail</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[8]]</span></span>
-<span><span class="co">#&gt; rx_yj_ ~ 2</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[9]]</span></span>
-<span><span class="co">#&gt; rx_lambda_ ~ 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[10]]</span></span>
-<span><span class="co">#&gt; rx_low_ ~ 0</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[11]]</span></span>
-<span><span class="co">#&gt; rx_hi_ ~ 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[12]]</span></span>
-<span><span class="co">#&gt; rx_pred_f_ ~ cp</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[13]]</span></span>
-<span><span class="co">#&gt; rx_pred_ &lt;- rx_pred_f_</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[14]]</span></span>
-<span><span class="co">#&gt; rx_r_ &lt;- (0.05)^2 + (rx_pred_f_)^2 * (0.2)^2</span></span></code></pre></div>
-</div>
-<div class="section level4">
-<h4 id="popeds-fg_fun">PopED’s <code>fg_fun</code><a class="anchor" aria-label="anchor" href="#popeds-fg_fun"></a>
-</h4>
-<p><code>babelmixr2</code> also generates <code>PopED</code>s
-<code>fg_fun</code>, which translates covaraites and parameters into the
-parameters required in the <code>ff_fun</code> and used in solving the
-<code>rxode2</code> model.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># You can see the PopED fg_fun from the model UI with</span></span>
-<span><span class="co"># f$popedFgFun:</span></span>
-<span><span class="va">f</span><span class="op">$</span><span class="va">popedFgFun</span></span>
-<span><span class="co">#&gt; function (rxPopedX, rxPopedA, bpop, b, rxPopedBocc) </span></span>
-<span><span class="co">#&gt; {</span></span>
-<span><span class="co">#&gt;     rxPopedDn &lt;- dimnames(rxPopedA)</span></span>
-<span><span class="co">#&gt;     rxPopedA &lt;- as.vector(rxPopedA)</span></span>
-<span><span class="co">#&gt;     if (length(rxPopedDn[[1]]) == length(rxPopedA)) {</span></span>
-<span><span class="co">#&gt;         names(rxPopedA) &lt;- rxPopedDn[[1]]</span></span>
-<span><span class="co">#&gt;     }</span></span>
-<span><span class="co">#&gt;     else if (length(rxPopedDn[[2]]) == length(rxPopedA)) {</span></span>
-<span><span class="co">#&gt;         names(rxPopedA) &lt;- rxPopedDn[[2]]</span></span>
-<span><span class="co">#&gt;     }</span></span>
-<span><span class="co">#&gt;     ID &lt;- setNames(rxPopedA[1], NULL)</span></span>
-<span><span class="co">#&gt;     DOSE &lt;- setNames(rxPopedA["DOSE"], NULL)</span></span>
-<span><span class="co">#&gt;     tKA &lt;- bpop[1]</span></span>
-<span><span class="co">#&gt;     tCL &lt;- bpop[2]</span></span>
-<span><span class="co">#&gt;     tV &lt;- bpop[3]</span></span>
-<span><span class="co">#&gt;     Favail &lt;- bpop[4]</span></span>
-<span><span class="co">#&gt;     eta.ka &lt;- b[1]</span></span>
-<span><span class="co">#&gt;     eta.v &lt;- b[3]</span></span>
-<span><span class="co">#&gt;     eta.cl &lt;- b[2]</span></span>
-<span><span class="co">#&gt;     rx__tKA &lt;- tKA</span></span>
-<span><span class="co">#&gt;     rx__tCL &lt;- tCL</span></span>
-<span><span class="co">#&gt;     rx__tV &lt;- tV</span></span>
-<span><span class="co">#&gt;     rx__Favail &lt;- Favail</span></span>
-<span><span class="co">#&gt;     rx__eta.ka &lt;- eta.ka</span></span>
-<span><span class="co">#&gt;     rx__eta.v &lt;- eta.v</span></span>
-<span><span class="co">#&gt;     rx__eta.cl &lt;- eta.cl</span></span>
-<span><span class="co">#&gt;     c(ID = ID, rx__tKA = setNames(rx__tKA, NULL), rx__tCL = setNames(rx__tCL, </span></span>
-<span><span class="co">#&gt;         NULL), rx__tV = setNames(rx__tV, NULL), rx__Favail = setNames(rx__Favail, </span></span>
-<span><span class="co">#&gt;         NULL), rx__eta.ka = setNames(rx__eta.ka, NULL), rx__eta.v = setNames(rx__eta.v, </span></span>
-<span><span class="co">#&gt;         NULL), rx__eta.cl = setNames(rx__eta.cl, NULL), DOSE = setNames(DOSE, </span></span>
-<span><span class="co">#&gt;         NULL))</span></span>
-<span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x56094e2c40a8&gt;</span></span></code></pre></div>
-</div>
-<div class="section level4">
-<h4 id="popeds-error-function-ferror_fun">PopED’s error function <code>fError_fun</code><a class="anchor" aria-label="anchor" href="#popeds-error-function-ferror_fun"></a>
-</h4>
-<p>You can see the <code>babelmixr2</code> generated error function as
-well with:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">f</span><span class="op">$</span><span class="va">popedFErrorFun</span></span>
-<span><span class="co">#&gt; function (model_switch, xt, parameters, epsi, poped.db) </span></span>
-<span><span class="co">#&gt; {</span></span>
-<span><span class="co">#&gt;     rxReturnArgs &lt;- do.call(poped.db$model$ff_pointer, list(model_switch, </span></span>
-<span><span class="co">#&gt;         xt, parameters, poped.db))</span></span>
-<span><span class="co">#&gt;     rxF &lt;- rxReturnArgs[[1]]</span></span>
-<span><span class="co">#&gt;     rxPoped.db &lt;- rxReturnArgs[[2]]</span></span>
-<span><span class="co">#&gt;     rxErr1 &lt;- rxF * (1 + epsi[, 1]) + epsi[, 2]</span></span>
-<span><span class="co">#&gt;     return(list(y = rxErr1, poped.db = rxPoped.db))</span></span>
-<span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x56094affb038&gt;</span></span></code></pre></div>
-<p>One really important note to keep in mind is that <code>PopED</code>
-works with variances instead of standard deviations (which is a key
-difference between <code>nlmixr2</code> and <code>PopED</code>).</p>
-<p>This means that the exported model from <code>babelmixr2</code>
-operates on variances instead of standard deviations and care must be
-taken in using these values to not mis-interpret the two.</p>
-<p>The export also tries to flag this to make it easier to remember.</p>
-</div>
-<div class="section level4">
-<h4 id="other-parameters-generated-by-poped">Other parameters generated by <code>PopED</code><a class="anchor" aria-label="anchor" href="#other-parameters-generated-by-poped"></a>
-</h4>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">f</span><span class="op">$</span><span class="va">popedBpop</span> <span class="co"># PopED bpop</span></span>
-<span><span class="co">#&gt;    tKA    tCL     tV Favail </span></span>
-<span><span class="co">#&gt;   0.25   3.75  72.80   0.90</span></span>
-<span><span class="va">f</span><span class="op">$</span><span class="va">popedNotfixedBpop</span> <span class="co"># PopED notfixed_bpop</span></span>
-<span><span class="co">#&gt; [1] 1 1 1 0</span></span>
-<span><span class="va">f</span><span class="op">$</span><span class="va">popedD</span> <span class="co"># PopED d</span></span>
-<span><span class="co">#&gt; eta.ka eta.cl  eta.v </span></span>
-<span><span class="co">#&gt; 0.0900 0.0625 0.0900</span></span>
-<span><span class="va">f</span><span class="op">$</span><span class="va">popedNotfixedD</span> <span class="co"># PopED notfixed_d</span></span>
-<span><span class="co">#&gt; NULL</span></span>
-<span><span class="va">f</span><span class="op">$</span><span class="va">popedCovd</span> <span class="co"># PopED covd</span></span>
-<span><span class="co">#&gt; NULL</span></span>
-<span><span class="va">f</span><span class="op">$</span><span class="va">popedNotfixedCovd</span> <span class="co"># PopED notfixed_covd</span></span>
-<span><span class="co">#&gt; NULL</span></span>
-<span><span class="va">f</span><span class="op">$</span><span class="va">popedSigma</span> <span class="co"># PopED sigma (not variance is exported, not SD)</span></span>
-<span><span class="co">#&gt; prop.var  add.var </span></span>
-<span><span class="co">#&gt;   0.0400   0.0025</span></span>
-<span><span class="va">f</span><span class="op">$</span><span class="va">popedNotfixedSigma</span> <span class="co"># PopED notfixed_sigma</span></span>
-<span><span class="co">#&gt; prop.var  add.var </span></span>
-<span><span class="co">#&gt;        1        1</span></span></code></pre></div>
-<p>The rest of the parameters are generated in conjunction with the
-<code><a href="../reference/popedControl.html">popedControl()</a></code>.</p>
-</div>
-</div>
-<div class="section level3">
-<h3 id="linear-comparment-models-in-babelmixr2">linear comparment models in <code>babelmixr2</code><a class="anchor" aria-label="anchor" href="#linear-comparment-models-in-babelmixr2"></a>
-</h3>
-<p>You can also specify the models using the <code>linCmt()</code>
-solutions as below:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="section level2">
+<h2 id="linear-compartment-solution">Linear compartment solution<a class="anchor" aria-label="anchor" href="#linear-compartment-solution"></a>
+</h2>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">f2</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/ini.html" class="external-link">ini</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="va">tV</span> <span class="op">&lt;-</span> <span class="fl">72.8</span></span>
@@ -513,14 +225,16 @@ solutions as below:</p>
 <span>                                                           <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>DOSE<span class="op">=</span><span class="fl">40</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>                                                    maxa<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>DOSE<span class="op">=</span><span class="fl">200</span><span class="op">)</span>,</span>
 <span>                                                    mina<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>DOSE<span class="op">=</span><span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> parameter labels from comments are typically ignored in non-interactive mode</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Need to run with the source intact to parse comments</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> infer estimation `poped` from control</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> groupsize should be specified; but for now assuming 20</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> assuming group size m=2</span></span></code></pre></div>
 </div>
-<div class="section level3">
-<h3 id="comparing-method-to-the-speed-of-other-methods">Comparing method to the speed of other methods<a class="anchor" aria-label="anchor" href="#comparing-method-to-the-speed-of-other-methods"></a>
-</h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="section level2">
+<h2 id="comparing-method-to-the-speed-of-other-methods">Comparing method to the speed of other methods<a class="anchor" aria-label="anchor" href="#comparing-method-to-the-speed-of-other-methods"></a>
+</h2>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshuaulrich/microbenchmark/" class="external-link">microbenchmark</a></span><span class="op">)</span></span>
 <span></span>
@@ -530,17 +244,15 @@ solutions as below:</p>
 <span>  <span class="fu"><a href="https://andrewhooker.github.io/PopED/reference/evaluate_design.html" class="external-link">evaluate_design</a></span><span class="op">(</span><span class="va">poped_db_ode_babelmixr2</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="https://andrewhooker.github.io/PopED/reference/evaluate_design.html" class="external-link">evaluate_design</a></span><span class="op">(</span><span class="va">poped_db_ode_mrg</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="https://andrewhooker.github.io/PopED/reference/evaluate_design.html" class="external-link">evaluate_design</a></span><span class="op">(</span><span class="va">poped_db_ode_pkpdsim</span><span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="https://andrewhooker.github.io/PopED/reference/evaluate_design.html" class="external-link">evaluate_design</a></span><span class="op">(</span><span class="va">poped_db_ode_rx</span><span class="op">)</span>,</span>
 <span>  times <span class="op">=</span> <span class="fl">100L</span><span class="op">)</span></span>
 <span></span>
-<span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">compare</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="PopED_files/figure-html/compare-1.png" width="700"></p>
-<p>Note that the <code>babelmixr2</code> ode solution is the fastest ode
+<p><img src="PopED_files/figure-html/unnamed-chunk-2-1.png" width="700"></p>
+<p>Note that the <code>babelmixr2</code> ode solver is the fastest ode
 solver in this comparison. Among other things, this is because the model
 is loaded into memory and does not need to be setup each time. (As
 benchmarks, the <code>mrgsolve</code>, and <code>PKPDsim</code>
-implementations on the <code>PopED</code>’s website are included).</p>
+implementations on the <code>PopED</code>’s website is included).</p>
 <p>Also to me, the speed of all the tools are reasonable. In my opinion,
 the benefit of the <code>babelmixr2</code> interface to
 <code>PopED</code> is the simplicity of using <code>nlmixr2</code> /
@@ -556,42 +268,6 @@ to change estimation method options.</p>
 control to be applied to <code>PopED</code>. This should allow easy
 translation between the systems. With easier translation, hopefully
 optimal design in clinical trials will be easier to achieve.</p>
-</div>
-<div class="section level2">
-<h2 id="key-notes-to-keep-in-mind">Key notes to keep in mind<a class="anchor" aria-label="anchor" href="#key-notes-to-keep-in-mind"></a>
-</h2>
-<ul>
-<li><p><code>babelmixr2</code> loads models into memory and needs to
-keep track of which model is loaded. To help this you need to use
-<code>babel.poped.database</code> in place of
-<code>create.poped.database</code> when modifying babelmixr2 generated
-<code>PopED</code> databases. If this isn’t done, there is a chance that
-the model loaded will not be the expected loaded model and may either
-crash R or possibly give incorrect results.</p></li>
-<li><p><code>babelmixr2</code> translates all error components to
-variances instead of the standard deviations in the
-<code>nlmixr2</code>/<code>rxode2</code> model</p></li>
-<li><p>When there are covariances in the <code>omega</code>
-specification, they will be identified as <code>D[#,#]</code> in the
-<code>PopED</code> output. To see what these numbers refer to it is
-helpful to see the name translations with <code>$popedD</code>.</p></li>
-<li><p>Depending on your options, <code>babelmixr2</code> may literally
-fix the model components, which means indexes may be different than you
-expect. The best way to get the correct index is use the
-<code>babelmixr2</code> function <code><a href="../reference/babelBpopIdx.html">babelBpopIdx()</a></code> which is
-useful for using <code>PopED</code></p></li>
-<li><p><code>babelmixr2</code> uses model times in creating
-<code>PopED</code> databases; therefore models with modeling times in
-them cannot be used in this translation</p></li>
-<li><p><code>babelmixr2</code> does not yet support inter-occasion
-variability models.</p></li>
-</ul>
-<div class="section level3">
-<h3 id="where-to-find-more-examples">Where to find more examples<a class="anchor" aria-label="anchor" href="#where-to-find-more-examples"></a>
-</h3>
-<p>The examples from <code>PopED</code> have been converted to work with
-<code>babelmixr2</code> and are availble in the package and on <a href="">github</a></p>
-</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
