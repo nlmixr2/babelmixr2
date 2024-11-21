@@ -14,8 +14,8 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.4.2/css/all.min.css" rel="stylesheet">
-<link href="../deps/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="PopED">
 </head>
 <body>
@@ -249,7 +249,7 @@ we will show what is being added:</p>
 <span><span class="co">#&gt;     }</span></span>
 <span><span class="co">#&gt;     return(list(f = matrix(.ret$rx_pred_, ncol = 1), poped.db = poped.db))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x564f14cf6498&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; &lt;environment: 0x556876b3dfd0&gt;</span></span></code></pre></div>
 <p>Some things to note in this function:</p>
 <ul>
 <li><p>The model changes based on the number of time-points requested.
@@ -284,8 +284,8 @@ database. You can see these inside of the PopED database as well.</p>
 on design:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">poped_db_ode_babelmixr2</span><span class="op">$</span><span class="va">babelmixr2</span><span class="op">$</span><span class="va">modelMT</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">rxode2 </span>3.0.2.9000 model named <span style="color: #BBBB00; font-weight: bold;">rx_f0a42621402650b3d89354ccbe2b4201</span> model (<span style="color: #00BB00;">✔</span> <span style="color: #00BB00; font-weight: bold;">ready</span>). </span></span>
-<span><span class="co">#&gt; DLL: /tmp/RtmpMGOfki/rxode2/rx_f0a42621402650b3d89354ccbe2b4201__.rxd/rx_f0a42621402650b3d89354ccbe2b4201_.so</span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">rxode2 </span>3.0.2.9000 model named <span style="color: #BBBB00; font-weight: bold;">rx_d89ebd3d07e7aa51c48bd940606a0f31</span> model (<span style="color: #00BB00;">✔</span> <span style="color: #00BB00; font-weight: bold;">ready</span>). </span></span>
+<span><span class="co">#&gt; DLL: /tmp/Rtmple0tLa/rxode2/rx_d89ebd3d07e7aa51c48bd940606a0f31__.rxd/rx_d89ebd3d07e7aa51c48bd940606a0f31_.so</span></span>
 <span><span class="co">#&gt; NULL</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Calculated Variables:</span></span>
@@ -318,8 +318,8 @@ on design:</p>
 of time points greater than the design specification:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">poped_db_ode_babelmixr2</span><span class="op">$</span><span class="va">babelmixr2</span><span class="op">$</span><span class="va">modelF</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">rxode2 </span>3.0.2.9000 model named <span style="color: #BBBB00; font-weight: bold;">rx_8e643ff48ef66e69aba91fbca258baed</span> model (<span style="color: #00BB00;">✔</span> <span style="color: #00BB00; font-weight: bold;">ready</span>). </span></span>
-<span><span class="co">#&gt; DLL: /tmp/RtmpMGOfki/rxode2/rx_8e643ff48ef66e69aba91fbca258baed__.rxd/rx_8e643ff48ef66e69aba91fbca258baed_.so</span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">rxode2 </span>3.0.2.9000 model named <span style="color: #BBBB00; font-weight: bold;">rx_cee4bad55bbabffe7a8346520c683554</span> model (<span style="color: #00BB00;">✔</span> <span style="color: #00BB00; font-weight: bold;">ready</span>). </span></span>
+<span><span class="co">#&gt; DLL: /tmp/Rtmple0tLa/rxode2/rx_cee4bad55bbabffe7a8346520c683554__.rxd/rx_cee4bad55bbabffe7a8346520c683554_.so</span></span>
 <span><span class="co">#&gt; NULL</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Calculated Variables:</span></span>
@@ -433,7 +433,7 @@ parameters required in the <code>ff_fun</code> and used in solving the
 <span><span class="co">#&gt;         NULL), rx__eta.cl = setNames(rx__eta.cl, NULL), DOSE = setNames(DOSE, </span></span>
 <span><span class="co">#&gt;         NULL))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x564f12f1a0b0&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; &lt;environment: 0x556874d596b0&gt;</span></span></code></pre></div>
 </div>
 <div class="section level5">
 <h5 id="popeds-error-function-ferror_fun">PopED’s error function <code>fError_fun</code><a class="anchor" aria-label="anchor" href="#popeds-error-function-ferror_fun"></a>
@@ -451,7 +451,7 @@ well with:</p>
 <span><span class="co">#&gt;     rxErr1 &lt;- rxF * (1 + epsi[, 1]) + epsi[, 2]</span></span>
 <span><span class="co">#&gt;     return(list(y = rxErr1, poped.db = rxPoped.db))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x564f0fc322a8&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; &lt;environment: 0x556871a854d8&gt;</span></span></code></pre></div>
 <p>One really important note to keep in mind is that <code>PopED</code>
 works with variances instead of standard deviations (which is a key
 difference between <code>nlmixr2</code> and <code>PopED</code>).</p>
