@@ -8,16 +8,19 @@ for (f in c("src/RcppExports.cpp")) {
     writeLines(l, f)
   }
 }
-
-if (.Platform$OS.type == "windows" && !file.exists("src/Makevars.win")
-    || (R.version$os == "linux-musl")) {
-  writeLines(gsub("@ISYSTEM@", "I",
-                  gsub("@CXX14STD@", "CXX14STD = -std=c++1y",
-                       suppressWarnings(readLines("src/Makevars.in")))),
-             "src/Makevars.win")
+.in <- suppressWarnings(readLines("src/Makevars.in"))
+if (.Platform$OS.type == "windows") {
+  .makevars <- file("src/Makevars.win", "wb")
+  .i <- "I"
 } else {
-  writeLines(gsub("@ISYSTEM@", "isystem",
-                  gsub("@CXX14STD@", "CXX14STD = -std=gnu++14",
-                       suppressWarnings(readLines("src/Makevars.in")))),
-             "src/Makevars")
+  .makevars <- file("src/Makevars", "wb")
+  if (any(grepl("Pop!_OS", utils::osVersion, fixed=TRUE))) {
+    .i <- "isystem"
+  } else {
+    .i <- "I"
+  }
 }
+
+writeLines(gsub("@ISYSTEM@", .i, .in),
+           .makevars)
+close(.makevars)
