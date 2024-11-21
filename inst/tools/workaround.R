@@ -9,7 +9,8 @@ for (f in c("src/RcppExports.cpp")) {
   }
 }
 
-if (.Platform$OS.type == "windows" && !file.exists("src/Makevars.win")) {
+if (.Platform$OS.type == "windows" && !file.exists("src/Makevars.win")
+    || (R.version$os == "linux-musl")) {
   writeLines(gsub("@ISYSTEM@", "I",
                   gsub("@CXX14STD@", "CXX14STD = -std=c++1y",
                        suppressWarnings(readLines("src/Makevars.in")))),
