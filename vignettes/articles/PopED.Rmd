@@ -380,7 +380,7 @@ f$popedD # PopED d
 f$popedNotfixedD # PopED notfixed_d
 f$popedCovd # PopED covd
 f$popedNotfixedCovd # PopED notfixed_covd
-f$popedSigma # PopED sigma (not variance is exported, not SD)
+f$popedSigma # PopED sigma (variance is exported, not SD)
 f$popedNotfixedSigma # PopED notfixed_sigma
 ```
 
