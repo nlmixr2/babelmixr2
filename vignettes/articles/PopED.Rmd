@@ -495,4 +495,4 @@ trials will be easier to achieve.
 
 ## Where to find more examples
 
-The examples from `PopED` have been converted to work with `babelmixr2` and are availble in the package and on [github]()
+The examples from `PopED` have been converted to work with `babelmixr2` and are availble in the package and on [github](https://github.com/nlmixr2/babelmixr2/tree/main/inst/poped)
