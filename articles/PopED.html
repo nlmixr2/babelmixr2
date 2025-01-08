@@ -249,7 +249,7 @@ we will show what is being added:</p>
 <span><span class="co">#&gt;     }</span></span>
 <span><span class="co">#&gt;     return(list(f = matrix(.ret$rx_pred_, ncol = 1), poped.db = poped.db))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x55737e75f7f8&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; &lt;environment: 0x558f180ed040&gt;</span></span></code></pre></div>
 <p>Some things to note in this function:</p>
 <ul>
 <li><p>The model changes based on the number of time-points requested.
@@ -285,7 +285,7 @@ on design:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">poped_db_ode_babelmixr2</span><span class="op">$</span><span class="va">babelmixr2</span><span class="op">$</span><span class="va">modelMT</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">rxode2 </span>3.0.3 model named <span style="color: #BBBB00; font-weight: bold;">rx_bf26f4321d9af0ac49f2144211d6d45e</span> model (<span style="color: #00BB00;">✔</span> <span style="color: #00BB00; font-weight: bold;">ready</span>). </span></span>
-<span><span class="co">#&gt; DLL: /tmp/Rtmpbh8luD/rxode2/rx_bf26f4321d9af0ac49f2144211d6d45e__.rxd/rx_bf26f4321d9af0ac49f2144211d6d45e_.so</span></span>
+<span><span class="co">#&gt; DLL: /tmp/RtmpzgQL7U/rxode2/rx_bf26f4321d9af0ac49f2144211d6d45e__.rxd/rx_bf26f4321d9af0ac49f2144211d6d45e_.so</span></span>
 <span><span class="co">#&gt; NULL</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Calculated Variables:</span></span>
@@ -319,7 +319,7 @@ of time points greater than the design specification:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">poped_db_ode_babelmixr2</span><span class="op">$</span><span class="va">babelmixr2</span><span class="op">$</span><span class="va">modelF</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">rxode2 </span>3.0.3 model named <span style="color: #BBBB00; font-weight: bold;">rx_258faf58213570cdbab5abee10d2f1d0</span> model (<span style="color: #00BB00;">✔</span> <span style="color: #00BB00; font-weight: bold;">ready</span>). </span></span>
-<span><span class="co">#&gt; DLL: /tmp/Rtmpbh8luD/rxode2/rx_258faf58213570cdbab5abee10d2f1d0__.rxd/rx_258faf58213570cdbab5abee10d2f1d0_.so</span></span>
+<span><span class="co">#&gt; DLL: /tmp/RtmpzgQL7U/rxode2/rx_258faf58213570cdbab5abee10d2f1d0__.rxd/rx_258faf58213570cdbab5abee10d2f1d0_.so</span></span>
 <span><span class="co">#&gt; NULL</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Calculated Variables:</span></span>
@@ -433,7 +433,7 @@ parameters required in the <code>ff_fun</code> and used in solving the
 <span><span class="co">#&gt;         NULL), rx__eta.cl = setNames(rx__eta.cl, NULL), DOSE = setNames(DOSE, </span></span>
 <span><span class="co">#&gt;         NULL))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x55737c9c80e8&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; &lt;environment: 0x558f1634d860&gt;</span></span></code></pre></div>
 </div>
 <div class="section level5">
 <h5 id="popeds-error-function-ferror_fun">PopED’s error function <code>fError_fun</code><a class="anchor" aria-label="anchor" href="#popeds-error-function-ferror_fun"></a>
@@ -451,7 +451,7 @@ well with:</p>
 <span><span class="co">#&gt;     rxErr1 &lt;- rxF * (1 + epsi[, 1]) + epsi[, 2]</span></span>
 <span><span class="co">#&gt;     return(list(y = rxErr1, poped.db = rxPoped.db))</span></span>
 <span><span class="co">#&gt; }</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x5573795527f0&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; &lt;environment: 0x558f12edc5a8&gt;</span></span></code></pre></div>
 <p>One really important note to keep in mind is that <code>PopED</code>
 works with variances instead of standard deviations (which is a key
 difference between <code>nlmixr2</code> and <code>PopED</code>).</p>
@@ -599,7 +599,7 @@ variability models.</p></li>
 <h3 id="where-to-find-more-examples">Where to find more examples<a class="anchor" aria-label="anchor" href="#where-to-find-more-examples"></a>
 </h3>
 <p>The examples from <code>PopED</code> have been converted to work with
-<code>babelmixr2</code> and are availble in the package and on <a href="">github</a></p>
+<code>babelmixr2</code> and are availble in the package and on <a href="https://github.com/nlmixr2/babelmixr2/tree/main/inst/poped" class="external-link">github</a></p>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
