@@ -723,8 +723,8 @@ rex::register_shortcuts("babelmixr2")
     list(
       f="f", # bioavailability
       F="f",
-      alag="lag", # lag time
-      lag="lag",
+      alag="alag", # lag time
+      lag="alag",
       rate="rate", # rate of infusion
       dur="dur" # duration of infusion
     )[[as.character(.lhs[[1]])]]
