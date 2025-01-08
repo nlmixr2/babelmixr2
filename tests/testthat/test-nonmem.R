@@ -1,4 +1,58 @@
 withr::with_tempdir({
+  test_that("alag vs lag in NONMEM translation",{
+
+    rx_fun = function() {
+      description <- "PK double absorption model with simultaneous zero order and first order absorptions"
+      ini({
+        tk01 <- 0.4
+        label("Zero order absorption rate from first site (K01)")
+        lka2 <- 0.45
+        label("First order Absorption rate (Ka)")
+        lcl <- 1
+        label("Clearance (CL)")
+        lvc <- 3
+        label("Central volume of distribution (V)")
+        propSd <- c(0, 0.5)
+        label("Proportional residual error (fraction)")
+        lgfdepot1 <- 1.38629436111989
+        lalag <- 2.19722457733622
+        TV_PAR <- 0.1
+        ETA.PAR ~ 1
+      })
+      model({
+        POP_PAR <- exp(TV_PAR + ETA.PAR)
+        k01 <- exp(tk01)
+        ka2 <- exp(lka2)
+        cl <- exp(lcl)
+        vc <- exp(lvc)
+        fdepot1 <- expit(lgfdepot1, 0, 1)
+        alag <- exp(lalag)
+        kel <- cl/vc
+        d/dt(depot1) <- -k01
+        f(depot1) <- fdepot1
+        d/dt(depot2) <- -ka2 * depot2
+        lag(depot2) <- alag
+        f(depot2) <- 1 - fdepot1
+        d/dt(central) <- k01 + ka2 * depot2 - kel * central
+        Cc <- central/vc
+        Cc ~ prop(propSd)
+      })
+    }
+
+    rx_obj <- rxode2::rxode2(rx_fun)
+
+    dataset = data.frame(
+      id = c(1L, 1L, 2L, 2L),
+      time = c(0, 1, 0, 1),
+      cmt = c("Cc", "Cc", "Cc", "Cc"),
+      evid = c(0L, 0L, 0L, 0L),
+      dv = c(0, 0, 0, 0))
+
+    expect_error(nlmixr2(rx_obj, dataset, "nonmem",
+                         nonmemControl(modelName="test_nm", runCommand=NA)),
+                 NA)
+
+  })
   withr::with_options(list(babelmixr2.protectZeros=FALSE), {
     test_that("NONMEM dsl, individual lines", {
 
