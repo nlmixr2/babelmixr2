@@ -1,5 +1,7 @@
 # babelmixr2 (development version)
 
+* Fix a bug where the NONMEM export isn't working well (#839)
+
 * Check loaded `rxode2` information and compare to what the loaded
   model information should be. This allows better checking of which
   model is loaded and even more robust stability.  It requires
