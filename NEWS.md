@@ -1,5 +1,7 @@
 # babelmixr2 (development version)
 
+* Use new nlmixr2est covariate selection enforcment for babelmixr2
+
 * Fix a bug where the NONMEM export isn't working well (#839)
 
 * Check loaded `rxode2` information and compare to what the loaded

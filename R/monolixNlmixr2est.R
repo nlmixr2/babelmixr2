@@ -365,3 +365,4 @@ nlmixr2Est.monolix <- function(env, ...) {
   }, add=TRUE)
   nlmixr2est::.uiFinalizeMu2(.monolixFamilyFit(env, ...), .model)
 }
+attr(nlmixr2Est.monolix, "covPresent") <- TRUE

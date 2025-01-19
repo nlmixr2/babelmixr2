@@ -311,3 +311,4 @@ nlmixr2Est.nonmem <- function(env, ...) {
   }, add=TRUE)
   nlmixr2est::.uiFinalizeMu2(.nonmemFamilyFit(env, ...), .model)
 }
+attr(nlmixr2Est.nonmem, "covPresent") <- TRUE
