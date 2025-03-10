@@ -103,7 +103,7 @@ modelUnitConversion <- function(dvu = NA_character_, amtu = NA_character_, timeu
     # default units for dvu with no conversion
     dvuBase <- simplifyUnit(numerator = amtu, denominator = volumeu)
     if (units::ud_are_convertible(from = dvuBase, to = dvu)) {
-      dvuConversion <- units::ud_convert(1, from = dvuBase, to = dvu)
+      dvuConversion <- units::ud_convert(dvuConversion, from = dvuBase, to = dvu)
     } else {
       dvuOrig <- dvu
       dvu <- simplifyUnit(numerator = dvu, denominator = dvuBase)
