@@ -7,4 +7,7 @@ articles:
   articles/running-monlix: running-monlix.html
   articles/running-nonmem: running-nonmem.html
   articles/running-pknca: running-pknca.html
-last_built: 2025-03-11T10:43Z
+last_built: 2025-03-11T11:17Z
+urls:
+  reference: https://nlmixr2.github.io/babelmixr2/reference
+  article: https://nlmixr2.github.io/babelmixr2/articles
