@@ -398,10 +398,14 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
   # Prepare for merging and merge
   oldDataPrep <- oldData[, setdiff(names(oldData), dropFromOld), drop=FALSE]
   newDataPrep <- newData[, setdiff(names(newData), dropFromNew), drop=FALSE]
-  stopifnot(intersect(names(oldDataPrep), names(newDataPrep)) == "nlmixrRowNums")
+  # This originally was to confirm that nothing was accidentally maintained.
+  # But, it doesn't handle covariates correctly.
+  columnOverlap <- c("nlmixrRowNums", model$covariates)
+  stopifnot(all(intersect(names(oldDataPrep), names(newDataPrep)) %in% columnOverlap))
+
   # Some data may be dropped by .bblDatToNonmem above, so only keep the rows
   # that are maintained for both datasets.
-  mergedData <- merge(oldDataPrep, newDataPrep, by = "nlmixrRowNums", all = FALSE)
+  mergedData <- merge(oldDataPrep, newDataPrep, by = columnOverlap, all = FALSE)
   cleanStdNames <- getStandardColNames(mergedData)
 
   # Extract out the observation and dosing data
@@ -415,8 +419,12 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
   }
   obsCmt <- unique(obsData[[cleanStdNames[["cmt"]]]])
   doseCmt <- unique(doseData[[cleanStdNames[["cmt"]]]])
-  stopifnot(length(obsCmt) == 1)
-  stopifnot(length(doseCmt) == 1)
+  if (length(obsCmt) != 1) {
+    cli::cli_warn("More than one observation compartment found, check results")
+  }
+  if (length(doseCmt) != 1) {
+    cli::cli_warn("More than one dose compartment found, check results")
+  }
 
   # Drop subjects using ADDL for dosing
   idWithAddl <- unique(doseData[[cleanStdNames["id"]]][doseData[[cleanStdNames["addl"]]] > 0])

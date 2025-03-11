@@ -231,7 +231,7 @@ test_that("pknca est works with if statements (#102)", {
       CMT = c(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2,
               2, 2, 2, 2, 2),
       DOSE = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
-      ROUTE = c(1, 1, 1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
+      ROUTE = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
     )
 
   modA <- function() {
@@ -262,4 +262,16 @@ test_that("pknca est works with if statements (#102)", {
       control = pkncaControl(ncaData = dat, concu = "mg/L", doseu = "mg/kg", timeu = "hr", volumeu = "L/kg")
     )
 
+  datImputeZero <- dat[dat$ROUTE == 1 & dat$EVID == 1, ]
+  datImputeZero$EVID <- 0
+  datImputeZero$AMT <- 0
+  datImputeZero$DV <- 0
+  datRoute1 <- rbind(datImputeZero, dat[dat$ROUTE == 1, ])
+  datRoute1 <- datRoute1[order(datRoute1$ID, datRoute1$TIME, datRoute1$EVID), ]
+  modPknca1cmt <-
+    nlmixr2(
+      modA,
+      data = dat, est = "pknca",
+      control = pkncaControl(ncaData = datRoute1, concu = "mg/L", doseu = "mg/kg", timeu = "hr", volumeu = "L/kg")
+    )
 })

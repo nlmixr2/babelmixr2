@@ -250,7 +250,8 @@ calcPknca <- function(env, pkncaUnits) {
   doseRoute <- ifelse(obsCmt == doseCmt, yes = "intravascular", no = "extravascular")
 
   oConc <- PKNCA::PKNCAconc(data = cleanData$obs, oConcFormula, sparse = control$sparse)
-  oDose <- PKNCA::PKNCAdose(data = cleanData$dose, oDoseFormula, route = doseRoute)
+  #oDose <- PKNCA::PKNCAdose(data = cleanData$dose, oDoseFormula, route = doseRoute)
+  oDose <- PKNCA::PKNCAdose(data = cleanData$dose, oDoseFormula)
 
   oData <- PKNCA::PKNCAdata(oConc, oDose, units = pkncaUnits)
   intervals <- oData$intervals
@@ -291,6 +292,8 @@ calcPkncaEst <- function(objectPknca) {
     naValues <- c(naValues, "cl.last")
   }
   if (length(naValues) > 0) {
+    browser()
+    stop()
     cli::cli_abort(paste(
       "All",
       paste(naValues, collapse = ", "),
