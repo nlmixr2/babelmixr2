@@ -91,9 +91,9 @@ modelUnitConversion <- function(dvu = NA_character_, amtu = NA_character_, timeu
     volumeuBase <- simplifyUnit(numerator=amtu, denominator=dvu)
     if (is.na(volumeu)) {
       # auto-generate the volumeu
-      if (units::ud_are_convertible(x = volumeuBase, y = "L")) {
+      if (units::ud_are_convertible(from = volumeuBase, to = "L")) {
         volumeu <- "L"
-      } else if (units::ud_are_convertible(x = volumeuBase, y = "mL/kg")) {
+      } else if (units::ud_are_convertible(from = volumeuBase, to = "mL/kg")) {
         volumeu <- "mL/kg"
       } else {
         volumeu <- volumeuBase
@@ -102,13 +102,8 @@ modelUnitConversion <- function(dvu = NA_character_, amtu = NA_character_, timeu
     }
     # default units for dvu with no conversion
     dvuBase <- simplifyUnit(numerator = amtu, denominator = volumeu)
-    if (units::ud_are_convertible(x = dvuBase, y = dvu)) {
-      dvuConversion <-
-        units::set_units(
-          units::as_units(x = dvuBase),
-          value = dvu,
-          mode = "standard"
-        )
+    if (units::ud_are_convertible(from = dvuBase, to = dvu)) {
+      dvuConversion <- units::ud_convert(dvuConversion, from = dvuBase, to = dvu)
     } else {
       dvuOrig <- dvu
       dvu <- simplifyUnit(numerator = dvu, denominator = dvuBase)
@@ -131,6 +126,6 @@ modelUnitConversion <- function(dvu = NA_character_, amtu = NA_character_, timeu
     timeu = timeu,
     dvu = dvu,
     cmtu = dvuBase,
-    dvConversion = as.numeric(dvuConversion)
+    dvConversion = dvuConversion
   )
 }

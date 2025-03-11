@@ -26,7 +26,7 @@ Suggests:
     rmarkdown,
     spelling,
     PopED,
-    units,
+    units (>= 0.8-6),
     vdiffr,
     dplyr
 Depends:
