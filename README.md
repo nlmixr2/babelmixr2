@@ -13,7 +13,7 @@ downloads](https://cranlogs.r-pkg.org/badges/grand-total/babelmixr2)](https://cr
 [![CRAN total
 downloads](https://cranlogs.r-pkg.org/badges/babelmixr2)](https://cran.r-project.org/package=babelmixr2)
 [![Codecov test
-coverage](https://codecov.io/gh/nlmixr2/babelmixr2/branch/main/graph/badge.svg)](https://app.codecov.io/gh/nlmixr2/babelmixr2?branch=main)
+coverage](https://codecov.io/gh/nlmixr2/babelmixr2/graph/badge.svg)](https://app.codecov.io/gh/nlmixr2/babelmixr2)
 [![CodeFactor](https://www.codefactor.io/repository/github/nlmixr2/babelmixr2/badge)](https://www.codefactor.io/repository/github/nlmixr2/babelmixr2)
 ![r-universe](https://nlmixr2.r-universe.dev/badges/babelmixr2)
 <!-- badges: end -->
@@ -46,23 +46,23 @@ Otherwise you can always install from GitHub:
 
 Babelmixr2 can help you by:
 
-  - Running your nlmixr2 model in a commercial nonlinear mixed effects
-    modeling tool like
-    [`NONMEM`](https://nlmixr2.github.io/babelmixr2/articles/running-nonmem.html)
-    or `Monolix`
+- Running your nlmixr2 model in a commercial nonlinear mixed effects
+  modeling tool like
+  [`NONMEM`](https://nlmixr2.github.io/babelmixr2/articles/running-nonmem.html)
+  or `Monolix`
 
-  - Convert your [`NONMEM` model to a nlmixr2
-    model](https://nlmixr2.github.io/nonmem2rx/articles/convert-nlmixr2.html)
-    (in conjunction with `nonmem2rx`)
+- Convert your [`NONMEM` model to a nlmixr2
+  model](https://nlmixr2.github.io/nonmem2rx/articles/convert-nlmixr2.html)
+  (in conjunction with `nonmem2rx`)
 
-  - Convert you [`Monolix` model to a nlmixr2
-    model](https://nlmixr2.github.io/monolix2rx/articles/convert-nlmixr2.html)
-    (in conjunction with `monolix2rx`)
+- Convert you [`Monolix` model to a nlmixr2
+  model](https://nlmixr2.github.io/monolix2rx/articles/convert-nlmixr2.html)
+  (in conjunction with `monolix2rx`)
 
-  - Calculate scaling factors and automatically add initial conditions
-    based on non-compartmental analysis (using `PKNCA`)
+- Calculate scaling factors and automatically add initial conditions
+  based on non-compartmental analysis (using `PKNCA`)
 
-  - Perform Optimal design using nlmixr2 as an interface to `PopED`
+- Perform Optimal design using nlmixr2 as an interface to `PopED`
 
 ## Monolix Setup
 

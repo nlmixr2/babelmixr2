@@ -11,3 +11,4 @@
 ^CRAN-SUBMISSION$
 ^Readme.Rmd$
 ^vignettes/articles$
+^_pkgdown\.yml$

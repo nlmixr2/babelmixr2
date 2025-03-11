@@ -2,7 +2,7 @@
 
 # babelmixr2 0.1.6
 
-* Use new nlmixr2est covariate selection enforcment for babelmixr2
+* Use new nlmixr2est covariate selection enforcement for babelmixr2
 
 * Fix a bug where the NONMEM export isn't working well (#839)
 
