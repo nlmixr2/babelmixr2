@@ -344,7 +344,7 @@ f$popedRxmodelBase
 #### PopED's `fg_fun`
 
 `babelmixr2` also generates `PopED`s `fg_fun`, which translates
-covaraites and parameters into the parameters required in the `ff_fun`
+covariates and parameters into the parameters required in the `ff_fun`
 and used in solving the `rxode2` model.
 
 ```{r fg_fun}
@@ -367,7 +367,7 @@ between `nlmixr2` and `PopED`).
 
 This means that the exported model from `babelmixr2` operates on
 variances instead of standard deviations and care must be taken in
-using these values to not mis-interpret the two.
+using these values to not misinterpret the two.
 
 The export also tries to flag this to make it easier to remember.
 
@@ -387,7 +387,7 @@ f$popedNotfixedSigma # PopED notfixed_sigma
 The rest of the parameters are generated in conjunction with the
 `popedControl()`.
 
-## linear comparment models in `babelmixr2`
+## linear compartment models in `babelmixr2`
 
 You can also specify the models using the `linCmt()` solutions as
 below:
@@ -495,4 +495,4 @@ trials will be easier to achieve.
 
 ## Where to find more examples
 
-The examples from `PopED` have been converted to work with `babelmixr2` and are availble in the package and on [github](https://github.com/nlmixr2/babelmixr2/tree/main/inst/poped)
+The examples from `PopED` have been converted to work with `babelmixr2` and are available in the package and on [GitHub](https://github.com/nlmixr2/babelmixr2/tree/main/inst/poped)
