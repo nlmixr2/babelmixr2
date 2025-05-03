@@ -34,12 +34,13 @@ nlmixr2Est.pknca <- function(env, ...) {
   rxode2::rxReq("PKNCA")
   rxode2::rxReq("units")
   control <- env$control[[1]]
-  # Get the units from the basic units (before unit conversion)
+  # Get the units from the basic units (before unit conversion); use default
+  # units of "unknown" to avoid errors for PKNCA v0.12 and greater
   dUnitsData <-
     PKNCA::pknca_units_table(
-      concu = control$concu,
-      doseu = control$doseu,
-      timeu = control$timeu
+      concu = na.omit(c(control$concu, "unknown"))[1],
+      doseu = na.omit(c(control$doseu, "unknown"))[1],
+      timeu = na.omit(c(control$timeu, "unknown"))[1]
     )
 
   if (is.null(control$ncaResults)) {
