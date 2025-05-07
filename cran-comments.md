@@ -1,3 +1,3 @@
-# babelmixr2 0.1.6
+# babelmixr2 0.1.7
 
-* General bug fixes
+* Prospective fixes for PKNCA
