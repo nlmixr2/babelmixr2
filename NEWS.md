@@ -1,4 +1,6 @@
-# babelmixr2 (development version)
+# babelmixr2 0.1.7
+
+* Maintenance fix for upcoming PKNCA
 
 # babelmixr2 0.1.6
 
