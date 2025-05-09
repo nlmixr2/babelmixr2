@@ -22,7 +22,7 @@ compartment scaling factor can be auto-generated based on units for dosing,
 concentration measurement, desired volume of distribution units, and time.
 
 You do not need to perform NCA analysis by hand; the `"pknca"` estimation method
-will perform NCA analysis using the [PKNCA](https://billdenney.github.io/pknca/)
+will perform NCA analysis using the [PKNCA](https://humanpred.github.io/pknca/)
 package automatically.
 
 The methods used for converting NCA calculations to parameter estimates are
