@@ -152,7 +152,7 @@ test_that("dvParam", {
     "pkncaEst"
   ))
   # modelBad is not okay if unit conversion is required
-  skip_if_not_installed("PKNCA", "0.10.0.9000") # this test will fail due to https://github.com/billdenney/pknca/pull/191
+  skip_if_not_installed("PKNCA", "0.10.0.9000") # this test will fail due to https://github.com/humanpred/pknca/pull/191
   suppressMessages(expect_error(
     nlmixr(
       object = modelBad, data = nlmixr2data::theo_sd,
