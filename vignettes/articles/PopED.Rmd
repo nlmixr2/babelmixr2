@@ -191,12 +191,11 @@ library(babelmixr2)
 library(PopED)
 
 e <- et(amt=1, ii=24, until=250) %>%
-  et(list(c(0, 10),
-          c(0, 10),
-          c(0, 10),
-          c(240, 248),
-          c(240, 248))) %>%
-  dplyr::mutate(time =c(0, 1,2,8,240,245))
+  et(time=c(1,2,8,240,245)) %>%
+  as.data.frame() %>%
+  dplyr::mutate(low=c(NA_real_, 0, 0, 0, 240, 240),
+                high=c(NA_real_, 10, 10, 10, 248, 248))
+
 
 print(e)
 ```
