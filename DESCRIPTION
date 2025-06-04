@@ -30,9 +30,9 @@ Suggests:
     vdiffr,
     dplyr
 Depends:
-    R (>= 3.5),
-    nlmixr2 (>= 3.0.1)
+    R (>= 3.5)
 Imports:
+    nlmixr2,
     checkmate,
     cli,
     digest,

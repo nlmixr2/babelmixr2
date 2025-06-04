@@ -474,11 +474,12 @@ getValidNlmixrCtl.pknca <- function(control) {
   orig
 }
 
+#' @export
 nlmixr2.pkncaEst <- function(object, data, est = NULL,
                              control = list(), table = nlmixr2est::tableControl(),
                              ..., save = NULL, envir = parent.frame()) {
   # Estimate using the ui part of the object
-  nlmixr2(
+  nlmixr2est::nlmixr2(
     object = object$ui,
     data = data,
     est = est,

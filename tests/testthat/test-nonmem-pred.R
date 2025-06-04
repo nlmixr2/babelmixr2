@@ -23,6 +23,6 @@ test_that("nonmem $pred model", {
   .path <- normalizePath("ipredWang2007.zip")
   withr::with_tempdir({
     unzip(.path)
-    expect_error(nlmixr(ipredWang2007, dat, "nonmem"), NA)
+    expect_error(nlmixr2est::nlmixr(ipredWang2007, dat, "nonmem"), NA)
   })
 })

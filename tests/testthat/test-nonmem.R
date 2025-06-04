@@ -203,7 +203,7 @@ withr::with_tempdir({
       }
 
       expect_message(
-          nlmixr(
+          nlmixr2est::nlmixr(
             one.cmt, data=nlmixr2data::Oral_1CPT, est="nonmem",
             control=nonmemControl(runCommand=NA)
           ),

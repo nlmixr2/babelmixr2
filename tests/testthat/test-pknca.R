@@ -18,7 +18,7 @@ test_that("est='pknca'", {
 
   # It works with no `control` argument
   suppressMessages(expect_s3_class(
-    nlmixr(object = modelGood, data = nlmixr2data::theo_sd, est = "pknca"),
+    nlmixr2est::nlmixr(object = modelGood, data = nlmixr2data::theo_sd, est = "pknca"),
     "pkncaEst"
   ))
 
