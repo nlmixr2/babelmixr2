@@ -64,7 +64,7 @@
 #' parsed/compiled rxode2 ui object with `ui$monolixModel` and `ui$mlxtran`
 #'
 #' @export
-#' @importFrom nlmixr2 nlmixr2
+#' @importFrom nlmixr2est nlmixr2
 #' @importFrom methods is
 #' @importFrom stats na.omit setNames
 #' @importFrom utils assignInMyNamespace read.csv write.csv

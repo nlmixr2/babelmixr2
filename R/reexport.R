@@ -65,3 +65,11 @@ monolix2rx::monolix2rx
 #' @importFrom monolix2rx mlxtran
 #' @export
 monolix2rx::mlxtran
+
+#' @importFrom nlmixr2est nlmixr2
+#' @export
+nlmixr2est::nlmixr2
+
+#' @importFrom rxode2 et
+#' @export
+rxode2::et
