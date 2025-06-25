@@ -1,4 +1,4 @@
-.nlmixr <- .nlmixr2 <- function(...) suppressWarnings(suppressMessages(nlmixr2::nlmixr(...)))
+.nlmixr <- .nlmixr2 <- function(...) suppressWarnings(suppressMessages(nlmixr2est::nlmixr(...)))
 
 test_that("warfarin NONMEM reading", {
 
@@ -78,7 +78,7 @@ test_that("warfarin NONMEM reading", {
 
     # Note this shouldn't have a covariance step so you can add it (at
     # least a nlmixr2 covariance step)
-    expect_error(getVarCov(f), NA)
+    expect_error(nlme::getVarCov(f), NA)
 
     # nlmixr2 is more generous in what constitutes a covariance
     # step, in this case it is |r|,|s| which should be regarded with
