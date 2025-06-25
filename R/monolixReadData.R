@@ -211,7 +211,7 @@ rxUiGet.monolixOmega <- function(x, ...) {
 #' @param x argument list (as in all rxUiGet.* functions) which has
 #'   x[[1]] be the ui object
 #' @param ... other arguments (currently ignored)
-#' @returnA named vector of the full theta values as needed for the UI object
+#' @return A named vector of the full theta values as needed for the UI object
 #' @export
 #' @author Matthew L. Fidler
 #' @keywords internal
