@@ -205,15 +205,13 @@ if (requireNamespace("PopED", quietly=TRUE) &&
       p <- phenoWt()
 
       e <- et(amt=25) %>%
-        et(list(c(0, .25, 0.5),
-                c(0.5, 1.2, 1.5),
-                c(1.5, 2, 2.5),
-                c(2.75, 4, 6),
-                c(8, 10, 14),
-                c(18, 20, 26))) %>%
+        et(c(0.25, 1.2, 2, 4, 10, 20)) %>%
         et(id=1:2) %>%
         as.data.frame() %>%
         merge(data.frame(id=1:2, WT=c(1.4, 1.5)))
+
+      e$low <- c(NA, 0, 0.5, 1.5, 2.75, 8, 18, NA, 0, 0.5, 1.5, 2.75, 8, 18)
+      e$high <- c(NA, 0.5, 1.5, 2.5, 6, 14, 26, NA, 0.5, 1.5, 2.5, 6, 14, 26)
 
       expect_error(.popedDataToDesignSpace(p, e, groupsize=20), NA)
 
@@ -256,12 +254,10 @@ if (requireNamespace("PopED", quietly=TRUE) &&
       set.seed(42)
 
       e <- et(amt=1, ii=24, until=250) %>%
-        et(list(c(0, 10),
-                c(0, 10),
-                c(0, 10),
-                c(240, 248),
-                c(240, 248))) %>%
-        dplyr::mutate(time =c(0, 1, 2, 8, 240, 245))
+        et(c(1, 2, 8, 240, 245)) %>%
+        as.data.frame() %>%
+      dplyr::mutate(low=c(NA, 0, 0, 0, 240, 240),
+                    high=c(NA, 10, 10, 10,  248, 248))
 
       # model
       f <- function() {
