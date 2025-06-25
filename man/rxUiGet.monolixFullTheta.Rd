@@ -13,6 +13,9 @@ x[\link{1}] be the ui object}
 
 \item{...}{other arguments (currently ignored)}
 }
+\value{
+A named vector of the full theta values as needed for the UI object
+}
 \description{
 This method allows rxUi objects to get the full theta values with
 \verb{$monolixFullTheta}

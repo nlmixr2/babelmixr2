@@ -28,10 +28,6 @@ Suggests:
     PopED,
     units (>= 0.8-6),
     vdiffr,
-    magrittr,
-    nlmixr2data,
-    nlmixr2extra,
-    nlmixr2plot,
     dplyr
 Depends:
     R (>= 3.5)
@@ -40,6 +36,10 @@ Imports:
     cli,
     digest,
     lotri,
+    nlmixr2data,
+    nlmixr2extra,
+    nlmixr2plot,
+    magrittr,
     nlmixr2est (>= 3.0.1),
     nonmem2rx (>= 0.1.5),
     monolix2rx (>= 0.0.3),
