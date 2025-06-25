@@ -592,7 +592,7 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #'   estimates to $sigmaEst.
 #' @noRd
 #' @author Matthew L. Fidler
-.getVarCnd <- function(ui, cnd, type) {
+.getVarCnd <- function(ui, cnd, type, pred1) {
   .iniDf <- ui$iniDf
   .w <- which(.iniDf$condition == cnd & .iniDf$err == type)
   if (length(.w) != 1L) stop("could not determine cnd: ", cnd, " type: ", type, " for error model")

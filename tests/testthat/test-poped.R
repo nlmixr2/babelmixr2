@@ -193,12 +193,12 @@ if (requireNamespace("PopED", quietly=TRUE) &&
       p <- phenoWt()
 
       e <- et(amt=25) %>%
-        et(list(c(0, 0.5),
-                c(0.5, 1.5),
-                c(1.5, 2.5),
-                c(2.75,6),
-                c(8, 14),
-                c(18, 26))) %>%
+        et(list(c(0, .25, 0.5),
+                c(0.5, 1.2, 1.5),
+                c(1.5, 2, 2.5),
+                c(2.75, 4, 6),
+                c(8, 10, 14),
+                c(18, 20, 26))) %>%
         et(id=1:2) %>%
         as.data.frame() %>%
         merge(data.frame(id=1:2, WT=c(1.4, 1.5)))
@@ -210,14 +210,14 @@ if (requireNamespace("PopED", quietly=TRUE) &&
       library(PopED)
 
       expect_equal(
-        list(ofv = 20.9455595871912,
-             fim = lotri({
-               tcl ~ 39.0235064308582
-               tv ~ c(-0.385137678397696, 40.0037346438455)
-               sig_var_add.err ~ 800120.483866746
+        list(ofv = 20.9329909188822,
+            fim = lotri({
+               tcl ~ 38.5287781777289
+               tv ~ c(-0.378676299928052, 40.0036518825547)
+               sig_var_add.err ~ 800272.653189197
              }),
-             rse = c(tcl = 3.31559905061048, tv = 30.9526395967922,
-                     sig_var_add.err = 11.1794980759702)),
+            rse = c(tcl = 3.33681479771409, tv = 30.9526409413885,
+                    sig_var_add.err = 11.1784351522799)),
         evaluate_design(db), tolerance = 1e-4)
 
       ## v <- poped_optim(db, opt_xt=TRUE)
@@ -347,15 +347,12 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     }
 
     # minxt, maxxt
-    e <- et(list(c(0, 10),
-                 c(0, 10),
-                 c(0, 10),
-                 c(240, 248),
-                 c(240, 248))) %>%
+    e <- et(list(c(0, 1, 10),
+                 c(0, 2, 10),
+                 c(0, 8, 10),
+                 c(240, 240, 248),
+                 c(240, 245, 248))) %>%
       as.data.frame()
-
-    #xt
-    e$time <-  c(1,2,8,240,245)
 
 
     babel.db <- nlmixr2(f, e, "poped",
