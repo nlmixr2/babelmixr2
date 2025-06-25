@@ -1,4 +1,4 @@
-.nlmixr <- .nlmixr2 <- function(...) suppressWarnings(suppressMessages(nlmixr2::nlmixr(...)))
+.nlmixr <- .nlmixr2 <- function(...) suppressWarnings(suppressMessages(nlmixr2est::nlmixr(...)))
 
 pk.turnover.emax3 <- function() {
   ini({
