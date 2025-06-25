@@ -28,6 +28,10 @@ Suggests:
     PopED,
     units (>= 0.8-6),
     vdiffr,
+    magrittr,
+    nlmixr2data,
+    nlmixr2extra,
+    nlmixr2plot,
     dplyr
 Depends:
     R (>= 3.5)
