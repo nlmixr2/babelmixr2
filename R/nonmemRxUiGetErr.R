@@ -40,7 +40,7 @@
                             .getErr("err-logitYeoJohnson.txt",  indent=indent)))))
     }
   }
-  return(.getErr("err.txt"))
+  .getErr("err.txt")
 }
 
 .repEndpoint <- function(var, dvid) {
