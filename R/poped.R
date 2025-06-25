@@ -604,6 +604,8 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
     .var <- pred1$variance
   }
   if (.var) {
+    .est <- c(.poped$epsiEst, setNames(.iniDf$est, .n))
+  } else {
     .n <- vapply(.n, function(n) {
       if (grepl("[_.]sd$", n)) {
         sub("([_.])sd$", "\\1var", n)
@@ -619,8 +621,6 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
         paste0("var_", n)
       }
     }, character(1), USE.NAMES=FALSE)
-    .est <- c(.poped$epsiEst, setNames(.iniDf$est, .n))
-  } else {
     .est <- c(.poped$epsiEst, setNames(c(.iniDf$est^2), .n))
   }
   .poped$epsiNotfixed <- c(.poped$epsiNotfixed,
