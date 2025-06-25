@@ -205,9 +205,20 @@ rxUiGet.monolixOmega <- function(x, ...) {
                 .par))
 }
 
+#' This method allows rxUi objects to get the full theta values with
+#' `$monolixFullTheta`
+#'
+#' @param x argument list (as in all rxUiGet.* functions) which has
+#'   x[[1]] be the ui object
+#' @param ... other arguments (currently ignored)
+#' @returnA named vector of the full theta values as needed for the UI object
 #' @export
+#' @author Matthew L. Fidler
+#' @keywords internal
 rxUiGet.monolixFullTheta <- function(x, ...) {
   .ui <- x[[1]]
+  .predDf <- .ui$predDf
+  .hasVar <- any(names(.predDf) == "variance")
   .full <- rxode2::rxGetControl(.ui, ".monolixFullTheta", NULL)
   if (!is.null(.full)) return(.full)
   .pop <- rxUiGet.monolixPopulationParameters(x, ...)
@@ -230,6 +241,28 @@ rxUiGet.monolixFullTheta <- function(x, ...) {
                                     .par <- eval(str2lang(paste0("rxToMonolix(", .n, ", ui=.ui)")))
                                     .w <- which(.pop$parameter == .par)
                                     if (length(.w) != 1) return(NA_real_)
+                                    if (.hasVar) {
+                                      ## Here it is the standard deviation,
+                                      ##
+                                      ## If it needs to be the variance
+                                      ## it should be changed
+                                      # First figure out the endpoint
+                                      .cond <- .theta$condition[i]
+                                      .w2 <- which(.predDf$cond == .cond)
+                                      if (length(.w2) == 1) {
+                                        # Now if the endpoint is a variance and
+                                        # one of the parameters that is of variance type
+                                        # return value^2
+                                        if (.predDf$variance[.w2] &&
+                                              .theta$err[i] %in% c("add", "prop", "propT",
+                                                                   "pow", "powT", "logn",
+                                                                   "dlogn", "lnorm",
+                                                                   "dlnorm", "logitNorm",
+                                                                   "probitNorm")) {
+                                          return(.pop$value[.w]^2)
+                                        }
+                                      }
+                                    }
                                     return(.pop$value[.w])
                                   }
                                   NA_real_
