@@ -37,7 +37,14 @@
   rxode2::rxAssignControlValue(ui, ".hasSs", any(.n == "SS"))
   .ret
 }
-
+#' This changes the oldUi into one with the proper estimates from monolix
+#'
+#' @param env environment to save new information into
+#' @param oldUi old ui environment
+#' @return the environment to save new information into (though since
+#'   it is an environment it is modified in place too)
+#' @noRd
+#' @author Matthew L. Fidler
 .monolixFinalizeEnv <- function(env, oldUi) {
   # The environment needs:
   .iniDf <- oldUi$monolixIniDf
@@ -235,7 +242,7 @@
   .runLock <- .ui$monolixRunLock
 
   .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
-if (checkmate::testFileExists(.qs)) {
+  if (checkmate::testFileExists(.qs)) {
     .minfo("load saved nlmixr2 object")
     .ret <- qs::qread(.qs)
     if (!exists("parHistData", .ret$env)) {
@@ -356,7 +363,7 @@ nlmixr2Est.monolix <- function(env, ...) {
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   .monolixFamilyControl(env, ...)
-    nlmixr2est::nmObjUiSetCompressed(FALSE)
+  nlmixr2est::nmObjUiSetCompressed(FALSE)
 
   on.exit({
     if (exists("control", envir=.ui)) {

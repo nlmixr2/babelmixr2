@@ -35,6 +35,7 @@ the `babelmixr2` library so that the `nlmixr()` function recognizes
 `est = "pknca"`.
 
 ```{r setup}
+library(nlmixr2)
 library(babelmixr2)
 one.compartment <- function() {
   ini({

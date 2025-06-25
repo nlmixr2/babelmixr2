@@ -1,4 +1,4 @@
-.nlmixr <- .nlmixr2 <- function(...) suppressWarnings(suppressMessages(nlmixr2::nlmixr(...)))
+.nlmixr <- .nlmixr2 <- function(...) suppressWarnings(suppressMessages(nlmixr2est::nlmixr(...)))
 
 pk.turnover.emax3 <- function() {
   ini({
@@ -54,7 +54,7 @@ pk.turnover.emax3 <- function() {
 }
 
 test_that("test monolix reading for 2019, 2020, and 2021", {
-  
+
   if (file.exists(test_path("pk.turnover.emax3-2019.zip"))) {
     .path <- normalizePath(test_path("pk.turnover.emax3-2019.zip"))
     withr::with_tempdir({
@@ -84,7 +84,7 @@ test_that("test monolix reading for 2019, 2020, and 2021", {
       expect_true(inherits(f, "nlmixr2FitData"))
     })
   }
-  
+
 })
 
 
@@ -152,7 +152,7 @@ test_that("test more nlmixr2/monolix features", {
                          control=monolixControl(modelName="pk.turnover.emax4"))
     expect_true(inherits(f, "nlmixr2FitData"))
   })
-  
+
 })
 
 test_that("test Monolix pheno", {
@@ -178,14 +178,38 @@ test_that("test Monolix pheno", {
   }
 
   skip_if_not(file.exists(test_path("pheno-2021.zip")))
+
   .path <- normalizePath(test_path("pheno-2021.zip"))
   withr::with_tempdir({
+
     unzip(.path)
+
     f <- .nlmixr(pheno, nlmixr2data::pheno_sd, "monolix",
-                         control=monolixControl(modelName="pheno"))
+                 control=monolixControl(modelName="pheno"))
+
     expect_true(inherits(f, "nlmixr2FitData"))
+
+    expect_equal(f$parFixedDf["add.err", "Estimate"],
+                 c(add.err = 2.72934726463066))
+
+    # Now spoof for + var()
+    unlink(file.path("pheno-monolix", "nlmixr.qs"))
+
+    unlink("pheno-monolix.md5")
+
+    pheno <- try(pheno %>% model({cp ~ add(add.err) + var() }), silent=TRUE)
+    if (inherits(pheno, "try-error")) {
+      skip("rxode2 does not support var()")
+    } else {
+      f <- .nlmixr(pheno, nlmixr2data::pheno_sd, "monolix",
+                   control=monolixControl(modelName="pheno"))
+      expect_equal(f$parFixedDf["add.err", "Estimate"],
+                   c(add.err = 2.72934726463066^2))
+    }
+
+
   })
-  
+
 })
 
 test_that("pbpk mavoglurant", {
@@ -299,11 +323,11 @@ test_that("pbpk mavoglurant", {
                          control=monolixControl(modelName="pbpk"))
     expect_true(inherits(f, "nlmixr2FitData"))
   })
-  
+
 })
 
 test_that("nimo test", {
-  
+
   nimo <- function() {
     ini({
       ## Note that the UI can take expressions
@@ -363,7 +387,7 @@ test_that("nimo test", {
                                            control=monolixControl(modelName="nimo")))
     expect_true(inherits(f, "nlmixr2FitData"))
   })
-  
+
 })
 
 # WBC Model tests ####
@@ -388,29 +412,29 @@ wbc <- function() {
     MTT =  exp(log_MTT + eta.MTT)
     SLOPU =  exp(log_SLOPU + eta.SLOPU)
     GAMMA = exp(log_GAMMA)
-    
+
     # PK parameters from input dataset
     CL = CLI;
     V1 = V1I;
     V2 = V2I;
     Q = 204;
-    
+
     CONC = A_centr/V1;
-    
+
     # PD parameters
     NN = 3;
     KTR = (NN + 1)/MTT;
     EDRUG = 1 - SLOPU * CONC;
     FDBK = (CIRC0 / A_circ)^GAMMA;
-    
+
     CIRC = A_circ;
-    
+
     A_prol(0) = CIRC0;
     A_tr1(0) = CIRC0;
     A_tr2(0) = CIRC0;
     A_tr3(0) = CIRC0;
     A_circ(0) = CIRC0;
-    
+
     d/dt(A_centr) = A_periph * Q/V2 - A_centr * (CL/V1 + Q/V1);
     d/dt(A_periph) = A_centr * Q/V1 - A_periph * Q/V2;
     d/dt(A_prol) = KTR * A_prol * EDRUG * FDBK - KTR * A_prol;
@@ -418,7 +442,7 @@ wbc <- function() {
     d/dt(A_tr2) = KTR * A_tr1 - KTR * A_tr2;
     d/dt(A_tr3) = KTR * A_tr2 - KTR * A_tr3;
     d/dt(A_circ) = KTR * A_tr3 - KTR * A_circ;
-    
+
     CIRC ~ prop(prop.err)
   })
 }
@@ -430,26 +454,26 @@ test_that("Monolix wbc", {
   .pathCharts <- normalizePath(test_path("wbc-charts-2021.zip"))
   withr::with_tempdir({
     unzip(.path)
-    
+
     f <- suppressWarnings(.nlmixr2(wbc, nlmixr2data::wbcSim, "monolix",
                                            control=monolixControl(modelName="wbc")))
     expect_true(inherits(f, "nlmixr2FitData"))
     expect_equal(f$env$parHistData, NULL)
-    
+
     unzip(.pathCharts)
-    
+
     f <- suppressWarnings(.nlmixr2(wbc, nlmixr2data::wbcSim, "monolix",
                                            control=monolixControl(modelName="wbc")))
     expect_true(inherits(f, "nlmixr2FitData"))
     expect_true(inherits(f$env$parHistData, "data.frame"))
-    
-    f <- suppressWarnings(.nlmixr2(wbc, nlmixr2data::wbcSim, "monolix", 
+
+    f <- suppressWarnings(.nlmixr2(wbc, nlmixr2data::wbcSim, "monolix",
                                            control=monolixControl(modelName="wbc")))
     expect_true(inherits(f, "nlmixr2FitData"))
     expect_true(inherits(f$env$parHistData, "data.frame"))
-    
+
   })
-  
+
   withr::with_tempdir({
     unzip(.path)
     unzip(.pathCharts)
@@ -470,14 +494,14 @@ test_that("Monolix wbc test 2", {
       ini(prop.err=15) %>%
       .nlmixr2(., nlmixr2data::wbcSim, "monolix",
               control=monolixControl(modelName="x"))
-    
+
     expect_true(inherits(p1, "nlmixr2FitData"))
-    
+
     p2 <-wbc %>%
       ini(prop.err=7) %>%
       .nlmixr2(., nlmixr2data::wbcSim, "monolix",
               control=monolixControl(modelName="x"))
-    
+
     expect_true(inherits(p2, "nlmixr2FitData"))
 
     expect_true(length(p2$parHistData[,1]) > 0)
