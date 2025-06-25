@@ -111,6 +111,18 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
     expect_equal(p$popedNotfixedCovd, 0L)
 
+    expect_equal(p$popedSigma,c(var_add.err=0.1^2))
+
+    p <- try(p %>%
+               model(cp ~ add(add.err) + var()),
+             silent=TRUE)      # define error model
+
+    if (inherits(p,"try-error")) {
+      skip("rxode2 does not support var()")
+    } else {
+      expect_equal(p$popedSigma, c(add.err=0.1))
+    }
+
   })
 
   test_that("modeled time behavior for models", {
