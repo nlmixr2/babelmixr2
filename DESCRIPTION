@@ -19,7 +19,6 @@ NeedsCompilation: yes
 Encoding: UTF-8
 Suggests:
     testthat,
-    nlmixr2data,
     withr,
     lixoftConnectors,
     PKNCA (>= 0.10.0),
@@ -28,7 +27,8 @@ Suggests:
     PopED,
     units (>= 0.8-6),
     vdiffr,
-    dplyr
+    dplyr,
+    devtools
 Depends:
     R (>= 3.5)
 Imports:
@@ -46,6 +46,7 @@ Imports:
     methods,
     qs,
     rex,
+    nlme,
     rxode2 (>= 3.0.2)
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
