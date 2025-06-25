@@ -205,16 +205,16 @@ rxUiGet.monolixOmega <- function(x, ...) {
                 .par))
 }
 
-#' This method allows rxUi objects to get the full theta values with
-#' `$monolixFullTheta`
-#'
-#' @param x argument list (as in all rxUiGet.* functions) which has
-#'   x[[1]] be the ui object
-#' @param ... other arguments (currently ignored)
-#' @return A named vector of the full theta values as needed for the UI object
+# This method allows rxUi objects to get the full theta values with
+# `$monolixFullTheta`
+#
+# @param x argument list (as in all rxUiGet.* functions) which has
+#   x[[1]] be the ui object
+# @param ... other arguments (currently ignored)
+# @return A named vector of the full theta values as needed for the UI object
+# @author Matthew L. Fidler
+# @keywords internal
 #' @export
-#' @author Matthew L. Fidler
-#' @keywords internal
 rxUiGet.monolixFullTheta <- function(x, ...) {
   .ui <- x[[1]]
   .predDf <- .ui$predDf

@@ -27,6 +27,7 @@ Suggests:
     PopED,
     units (>= 0.8-6),
     vdiffr,
+    nlme,
     dplyr,
     devtools
 Depends:
@@ -46,7 +47,6 @@ Imports:
     methods,
     qs,
     rex,
-    nlme,
     rxode2 (>= 3.0.2)
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
