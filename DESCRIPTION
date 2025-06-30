@@ -19,7 +19,6 @@ NeedsCompilation: yes
 Encoding: UTF-8
 Suggests:
     testthat,
-    nlmixr2data,
     withr,
     lixoftConnectors,
     PKNCA (>= 0.10.0),
@@ -28,7 +27,9 @@ Suggests:
     PopED,
     units (>= 0.8-6),
     vdiffr,
-    dplyr
+    nlme,
+    dplyr,
+    devtools
 Depends:
     R (>= 3.5)
 Imports:
@@ -36,6 +37,10 @@ Imports:
     cli,
     digest,
     lotri,
+    nlmixr2data,
+    nlmixr2extra,
+    nlmixr2plot,
+    magrittr,
     nlmixr2est (>= 3.0.1),
     nonmem2rx (>= 0.1.5),
     monolix2rx (>= 0.0.3),

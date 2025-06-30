@@ -40,7 +40,7 @@
                             .getErr("err-logitYeoJohnson.txt",  indent=indent)))))
     }
   }
-  return(.getErr("err.txt"))
+  .getErr("err.txt")
 }
 
 .repEndpoint <- function(var, dvid) {
@@ -68,6 +68,8 @@ rxUiGet.nonmemErrF <- function(x, ...) {
                      .ret <- .repEndpoint(.ret, .pred1$dvid)
                      .w <- str2lang(paste0("W", .pred1$dvid))
                      .var <- paste0("\n  RX_PRED_ = IPRED\n",
+                                    # This already considers + var(), so it doesn't need
+                                    # to change
                                     .rxToNonmem(bquote(.(.w) ~
                                                          sqrt(.(rxode2::.rxGetVarianceForErrorType(.ui, .pred1)))),
                                                 .ui))

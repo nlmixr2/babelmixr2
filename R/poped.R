@@ -592,29 +592,37 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #'   estimates to $sigmaEst.
 #' @noRd
 #' @author Matthew L. Fidler
-.getVarCnd <- function(ui, cnd, type) {
+.getVarCnd <- function(ui, cnd, type, pred1) {
   .iniDf <- ui$iniDf
   .w <- which(.iniDf$condition == cnd & .iniDf$err == type)
   if (length(.w) != 1L) stop("could not determine cnd: ", cnd, " type: ", type, " for error model")
   .iniDf <- .iniDf[.w, ]
   .eta <- .poped$epsi + 1
   .n <- .iniDf$name
-  .n <- vapply(.n, function(n) {
-    if (grepl("[_.]sd$", n)) {
-      sub("([_.])sd$", "\\1var", n)
-    } else if (grepl("[_.]sd$", n)) {
-      sub("^sd([_.])", "var\\1", n)
-    } else if (grepl("[a-z]Se$", n)) {
-      sub("([a-z])Se$", "\\1Var", n)
-    } else if (grepl("^Se[A-Z]", n)) {
-      sub("^Se([A-Z])", "Var\\1", n)
-    } else if (grepl("se[A-Z]$", n)) {
-      sub("^se([A-Z])", "var\\1", n)
-    } else {
-      paste0("var_", n)
-    }
-  }, character(1), USE.NAMES=FALSE)
-  .est <- c(.poped$epsiEst, setNames(c(.iniDf$est^2), .n))
+  .var <- FALSE
+  if (any(names(pred1) == "variance")) {
+    .var <- pred1$variance
+  }
+  if (.var) {
+    .est <- c(.poped$epsiEst, setNames(.iniDf$est, .n))
+  } else {
+    .n <- vapply(.n, function(n) {
+      if (grepl("[_.]sd$", n)) {
+        sub("([_.])sd$", "\\1var", n)
+      } else if (grepl("[_.]sd$", n)) {
+        sub("^sd([_.])", "var\\1", n)
+      } else if (grepl("[a-z]Se$", n)) {
+        sub("([a-z])Se$", "\\1Var", n)
+      } else if (grepl("^Se[A-Z]", n)) {
+        sub("^Se([A-Z])", "Var\\1", n)
+      } else if (grepl("se[A-Z]$", n)) {
+        sub("^se([A-Z])", "var\\1", n)
+      } else {
+        paste0("var_", n)
+      }
+    }, character(1), USE.NAMES=FALSE)
+    .est <- c(.poped$epsiEst, setNames(c(.iniDf$est^2), .n))
+  }
   .poped$epsiNotfixed <- c(.poped$epsiNotfixed,
                            setNames(1L - .iniDf$fix * 1L, .n))
   .poped$epsiEst <- .est
@@ -632,9 +640,10 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 .popedGetErrorModelAdd <- function(ui, pred1) {
   if (pred1$transform == "lnorm") {
     str2lang(paste0("rxErr", pred1$dvid, " <- log(rxF) + ",
-                    .getVarCnd(ui, pred1$cond, "lnorm")))
+                    .getVarCnd(ui, pred1$cond, "lnorm", pred1)))
   } else if (pred1$transform == "untransformed") {
-    str2lang(paste0("rxErr", pred1$dvid, " <- rxF + ", .getVarCnd(ui, pred1$cond, "add")))
+    str2lang(paste0("rxErr", pred1$dvid, " <- rxF + ",
+                    .getVarCnd(ui, pred1$cond, "add", pred1)))
   } else {
     stop("unsupported transformation: ", pred1$transform, call.=FALSE)
   }
@@ -649,7 +658,8 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #' @noRd
 #' @author Matthew L. Fidler
 .popedGetErrorModelProp <- function(ui, pred1) {
-  str2lang(paste0("rxErr", pred1$dvid, " <- rxF * (1 + ", .getVarCnd(ui, pred1$cond, "prop"), ")"))
+  str2lang(paste0("rxErr", pred1$dvid, " <- rxF * (1 + ",
+                  .getVarCnd(ui, pred1$cond, "prop", pred1), ")"))
 }
 
 #' Get power error
@@ -672,8 +682,10 @@ attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
 #' @noRd
 #' @author Matthew L. Fidler
 .popedGetErrorModelAddProp <- function(ui, pred1) {
-  str2lang(paste0("rxErr", pred1$dvid, " <- rxF*(1+", .getVarCnd(ui, pred1$cond, "prop"),
-                  ") + ", .getVarCnd(ui, pred1$cond, "add")))
+  str2lang(paste0("rxErr", pred1$dvid, " <- rxF*(1+",
+                  .getVarCnd(ui, pred1$cond, "prop", pred1),
+                  ") + ",
+                  .getVarCnd(ui, pred1$cond, "add", pred1)))
 }
 
 #' Get add+pow (type 2 error)
