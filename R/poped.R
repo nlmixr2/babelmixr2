@@ -286,9 +286,9 @@ rxUiGet.popedFgFun <- function(x, ...) {
   .body1 <- as.call(.body1)
   .f <- function(rxPopedX, rxPopedA, bpop, b, rxPopedBocc) {}
   body(.f) <- .body1
-  if (requireNamespace("memoise", quietly = TRUE)) {
-    .f <- memoise::memoise(.f)
-  }
+  ## if (requireNamespace("memoise", quietly = TRUE)) {
+  ##   .f <- memoise::memoise(.f)
+  ## }
   .f
 }
 attr(rxUiGet.popedFgFun, "desc") <- "PopED parameter model (fg_fun)"
@@ -325,9 +325,9 @@ rxUiGet.popedGetEventFun <- function(x, ...) {
   })
   .f <- function(id, xt){}
   body(.f) <- .body
-  if (requireNamespace("memoise", quietly = TRUE)) {
-    .f <- memoise::memoise(.f)
-  }
+  ## if (requireNamespace("memoise", quietly = TRUE)) {
+  ##   .f <- memoise::memoise(.f)
+  ## }
   .f
 }
 
@@ -781,9 +781,9 @@ rxUiGet.popedFErrorFun  <- function(x, ...) {
     }
     .ret <- as.call(.ret)
     body(.f) <- .ret
-    if (requireNamespace("memoise", quietly = TRUE)) {
-      .f <- memoise::memoise(.f)
-    }
+    ## if (requireNamespace("memoise", quietly = TRUE)) {
+    ##   .f <- memoise::memoise(.f)
+    ## }
     return(.f)
   }
 }
@@ -2617,6 +2617,7 @@ popedControl <- function(stickyRecalcN=4,
                          opt_x=FALSE,
                          opt_samps=FALSE,
                          optTime=TRUE,
+                         literalFixRes=FALSE,
                          ...) {
   rxode2::rxReq("PopED")
   .xtra <- list(...)
@@ -2963,7 +2964,9 @@ popedControl <- function(stickyRecalcN=4,
                opt_a=opt_a,
                opt_x=opt_x,
                opt_samps=opt_samps,
-               optTime=optTime)
+               optTime=optTime,
+               literalFix=literalFix,
+               literalFixRes=literalFixRes)
   popedMultipleEndpointResetTimeIndex()
   class(.ret) <- "popedControl"
   .ret
