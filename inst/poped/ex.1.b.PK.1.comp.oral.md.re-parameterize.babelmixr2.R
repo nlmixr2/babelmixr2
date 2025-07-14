@@ -34,15 +34,12 @@ f <- function() {
 }
 
 # minxt, maxxt
-e <- et(list(c(0, 10),
-             c(0, 10),
-             c(0, 10),
-             c(240, 248),
-             c(240, 248))) %>%
+e <- et(list(c(0, 1, 10),
+             c(0, 2, 10),
+             c(0, 8, 10),
+             c(240, 240, 248),
+             c(240, 245, 248))) %>%
   as.data.frame()
-
-#xt
-e$time <-  c(1,2,8,240,245)
 
 
 babel.db <- nlmixr2(f, e, "poped",
@@ -66,7 +63,7 @@ evaluate_design(babel.db)
 shrinkage(babel.db)
 
 # Optimization of sample times
-# Note: The parallel option does not work well with Windows machines at this moment. 
+# Note: The parallel option does not work well with Windows machines at this moment.
 # Please set parallel = FALSE if you are working on a Windows machine
 output <- poped_optim(babel.db, opt_xt =TRUE, parallel=TRUE)
 
@@ -74,14 +71,14 @@ output <- poped_optim(babel.db, opt_xt =TRUE, parallel=TRUE)
 summary(output)
 
 # from original
-# V        KA        KE       d_V      d_KA      d_KE 
+# V        KA        KE       d_V      d_KA      d_KE
 # 6.303480  7.899813  5.750915 29.156362 43.794939 33.388714
 get_rse(output$FIM,output$poped.db)
 
 plot_model_prediction(output$poped.db)
 
 # Optimization of sample times, doses and dose intervals
-# Note: The parallel option does not work well with Windows machines at this moment. 
+# Note: The parallel option does not work well with Windows machines at this moment.
 # Please set parallel = FALSE if you are working on a Windows machine
 output_2 <- poped_optim(output$poped.db, opt_xt =TRUE, opt_a = TRUE, parallel=TRUE)
 
@@ -93,15 +90,15 @@ plot_model_prediction(output_2$poped.db)
 # faster than continuous optimization in this case
 babel.db.discrete <- create.poped.database(babel.db,discrete_xt = list(0:248))
 
-# Note: The parallel option does not work well with Windows machines at this moment. 
+# Note: The parallel option does not work well with Windows machines at this moment.
 # Please set parallel = FALSE if you are working on a Windows machine
 output_discrete <- poped_optim(babel.db.discrete, opt_xt=T, parallel=TRUE)
 
 summary(output_discrete)
 
 # from original
-# V        KA        KE       d_V      d_KA      d_KE 
-# 6.367801  8.230615  5.835965 29.067957 45.786136 33.418356 
+# V        KA        KE       d_V      d_KA      d_KE
+# 6.367801  8.230615  5.835965 29.067957 45.786136 33.418356
 get_rse(output_discrete$FIM,output_discrete$poped.db)
 
 plot_model_prediction(output_discrete$poped.db)

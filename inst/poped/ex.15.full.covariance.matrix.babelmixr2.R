@@ -1,7 +1,7 @@
 ## Warfarin example from software comparison in:
-## Nyberg et al., "Methods and software tools for design evaluation 
-##   for population pharmacokinetics-pharmacodynamics studies", 
-##   Br. J. Clin. Pharm., 2014. 
+## Nyberg et al., "Methods and software tools for design evaluation
+##   for population pharmacokinetics-pharmacodynamics studies",
+##   Br. J. Clin. Pharm., 2014.
 
 library(PopED)
 # library(deSolve)
@@ -15,25 +15,25 @@ f_without <- function() {
             tKa <- 1
             tCl <- 0.15
             tF <- fix(1)
-            
+
             eta.v ~ 0.02
             eta.ka ~ 0.6
             eta.cl ~0.07
-            
+
             prop.sd <- sqrt(0.01)
-            
+
       })
       model({
             V<-tV*exp(eta.v)
             KA<-tKa*exp(eta.ka)
             CL<-tCl*exp(eta.cl)
-            
+
             KE=CL/V
             xt=t # set xt as time
             Favail <- tF
-            
+
             y <- (DOSE*Favail*KA/(V*(KA-KE)))*(exp(-KE*xt)-exp(-KA*xt))
-            
+
             y ~ prop(prop.sd)
       })
 }
@@ -44,7 +44,7 @@ f_with <- function() {
             tKa <- 1
             tCl <- 0.15
             tF <- fix(1)
-            
+
             ## For correlated parameters, you specify the names of each
             ## correlated parameter separated by a addition operator `+`
             ## and the left handed side specifies the lower triangular
@@ -52,38 +52,36 @@ f_with <- function() {
             eta.cl + eta.v + eta.ka ~ c(0.07,
                                        0.03, 0.02,
                                        0.1,  0.09, 0.6)
-            
+
             prop.sd <- sqrt(0.01)
-            
+
       })
       model({
             V<-tV*exp(eta.v)
             KA<-tKa*exp(eta.ka)
             CL<-tCl*exp(eta.cl)
-            
+
             KE=CL/V
             xt=t # set xt as time
             Favail <- tF
-            
+
             y <- (DOSE*Favail*KA/(V*(KA-KE)))*(exp(-KE*xt)-exp(-KA*xt))
-            
+
             y ~ prop(prop.sd)
       })
 }
 
 # minxt, maxxt
-e <- et(list(c(0, 120),
-             c(0, 120),
-             c(0, 120),
-             c(0, 120),
-             c(0, 120),
-             c(0, 120),
-             c(0, 120),
-             c(0, 120))) %>%
+e <- et(list(c(0, 0.5, 120),
+             c(0, 1, 120),
+             c(0, 2, 120),
+             c(0, 6, 120),
+             c(0, 24, 120),
+             c(0, 36, 120),
+             c(0, 72, 120),
+             c(0, 120, 120))) %>%
       as.data.frame()
 
-#xt
-e$time <-  c(0.5,1,2,6,24,36,72,120)
 
 babel.db.without <- nlmixr2(f_without, e, "poped",
                             popedControl(groupsize=32,
@@ -104,7 +102,7 @@ babel.db.with <- nlmixr2(f_with, e, "poped",
 (IIV <- babel.db.with$parameters$param.pt.val$d)
 cov2cor(IIV)
 
-##  create plot of model with variability 
+##  create plot of model with variability
 library(ggplot2)
 p1 <- plot_model_prediction(babel.db.without,IPRED=T)+ylim(0,12)
 p2 <- plot_model_prediction(babel.db.with,IPRED=T) +ylim(0,12)
@@ -117,4 +115,3 @@ evaluate_design(babel.db.with)
 ## Evaluate with full FIM
 evaluate_design(babel.db.without, fim.calc.type=0)
 evaluate_design(babel.db.with, fim.calc.type=0)
-

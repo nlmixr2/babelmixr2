@@ -9,26 +9,26 @@ f1 <- function() {
             tKa <- 1
             tCl <- 0.15
             tF <- fix(1)
-            
+
             eta.v ~ 0.02
             eta.ka ~ 0.6
             eta.cl ~0.07
-            
+
             prop.sd <- sqrt(0.01)
             add.sd <- sqrt(0.25)
-            
+
       })
       model({
             V<-tV*exp(eta.v)
             KA<-tKa*exp(eta.ka)
             CL<-tCl*exp(eta.cl)
-            
+
             KE=CL/V
             xt=t # set xt as time
             Favail <- tF
-            
+
             y <- (DOSE*Favail*KA/(V*(KA-KE)))*(exp(-KE*xt)-exp(-KA*xt))
-            
+
             y ~ prop(prop.sd) + add(add.sd)
       })
 }
@@ -41,25 +41,25 @@ f2 <- function() {
             tKa <- 1
             tKe <- 0.15/8
             tF <- fix(1)
-            
+
             eta.v ~ 0.02
             eta.ka ~ 0.6
             eta.ke ~0.07
-            
+
             prop.sd <- sqrt(0.01)
             add.sd <- sqrt(0.25)
-            
+
       })
       model({
             V<-tV*exp(eta.v)
             KA<-tKa*exp(eta.ka)
             KE=tKe*exp(eta.ke)
-            
+
             Favail <- tF
             xt=t # set xt as time
-            
+
             y <- (DOSE*Favail*KA/(V*(KA-KE)))*(exp(-KE*xt)-exp(-KA*xt))
-            
+
             y ~ prop(prop.sd) + add(add.sd)
       })
 }
@@ -71,14 +71,14 @@ f3 <- function() {
             tKa <- 1
             tCl <- 0.15
             tF <- fix(1)
-            
+
             eta.v ~ 0.02
             eta.ka ~ 0.6
             eta.cl ~0.07
-            
+
             prop.sd <- sqrt(0.01)
             add.sd <- sqrt(0.25)
-            
+
       })
       model({
             V<-tV*exp(eta.v)
@@ -94,20 +94,17 @@ f3 <- function() {
 }
 
 # minxt, maxxt
-e <- et(list(c(0, 25),
-             c(0, 25),
-             c(0, 25),
-             c(0, 120),
-             c(0, 120),
-             c(0, 120),
-             c(0, 120),
-             c(0, 120))) %>%
+e <- et(list(c(0, 1, 25),
+             c(0, 2, 25),
+             c(0, 3, 25),
+             c(0, 6, 120),
+             c(0, 24, 120),
+             c(0, 36, 120),
+             c(0, 72, 120),
+             c(0, 120, 120))) %>%
       # users must be careful to not add a dosing record
       # et(amt=70, cmt="depot") %>%
       as.data.frame()
-
-#xt
-e$time <-  c(1,2,3,6,24,36,72,120)
 
 babel.db.1 <- nlmixr2(f1, e, "poped",
                       popedControl(groupsize=32,
@@ -163,11 +160,11 @@ grid.arrange(plot1,plot2)
 evaluate_design(babel.db.1)
 evaluate_design(babel.db.2)
 evaluate_design(babel.db.3)
-  
+
 
 # Optimization of sample times
 # different results for different parameterizations
-# Note: The parallel option does not work well with Windows machines at this moment. 
+# Note: The parallel option does not work well with Windows machines at this moment.
 # Please set parallel = FALSE if you are working on a Windows machine
 output.1 <- poped_optim(poped.db.1,opt_xt=T,parallel=T)
 output.2 <- poped_optim(poped.db.2,opt_xt=T,parallel=T)

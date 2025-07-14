@@ -32,17 +32,13 @@ f <- function() {
 }
 
 # minxt, maxxt
-e <- et(list(c(0, 10),
-             c(0, 10),
-             c(0, 10),
-             c(240, 248),
-             c(240, 248))) %>%
+e <- et(list(c(0, 0, 10),
+             c(0, 2, 10),
+             c(0, 8, 10),
+             c(240, 240, 248),
+             c(240, 245, 248))) %>%
   et(amt=1/0.9, ii=24, until=248,cmt="depot") %>%
   as.data.frame()
-
-#xt
-e$time <-  c(0, 1,2,8,240,245)
-
 
 babel.db <- nlmixr2(f, e, "poped",
                     popedControl(groupsize=20,
@@ -64,7 +60,7 @@ evaluate_design(babel.db)
 shrinkage(babel.db)
 
 # Optimization of sample times
-# Note: The parallel option does not work well with Windows machines at this moment. 
+# Note: The parallel option does not work well with Windows machines at this moment.
 # Please set parallel = FALSE if you are working on a Windows machine
 output <- poped_optim(babel.db, opt_xt =TRUE, parallel=TRUE, method = c("LS"))
 
@@ -77,7 +73,7 @@ plot_model_prediction(output$poped.db)
 
 
 # Optimization of sample times and doses
-# Note: The parallel option does not work well with Windows machines at this moment. 
+# Note: The parallel option does not work well with Windows machines at this moment.
 # Please set parallel = FALSE if you are working on a Windows machine
 output_2 <- poped_optim(output$poped.db, opt_xt =TRUE, opt_a = TRUE, parallel=TRUE, method = c("LS"))
 
@@ -92,7 +88,7 @@ plot_model_prediction(output_2$poped.db)
 # faster than continuous optimization in this case
 babel.db.discrete <- create.poped.database(babel.db,discrete_xt = list(0:248))
 
-# Note: The parallel option does not work well with Windows machines at this moment. 
+# Note: The parallel option does not work well with Windows machines at this moment.
 # Please set parallel = FALSE if you are working on a Windows machine
 output_discrete <- poped_optim(babel.db.discrete, opt_xt=T, parallel=TRUE, method = c("LS"))
 
