@@ -1,3 +1,7 @@
+# babelmixr2 0.1.8
+
+* Maintenance fix for upcoming nlmixr2est and rxode2
+
 # babelmixr2 0.1.7
 
 * Maintenance fix for upcoming PKNCA
