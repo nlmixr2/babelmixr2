@@ -328,6 +328,8 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
   test_that("shrinkage", {
 
+
+
     f <- function() {
       ini({
         tV <- 72.8
@@ -355,12 +357,15 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     }
 
     # minxt, maxxt
-    e <- et(list(c(0, 1, 10),
+    e <- try(et(list(c(0, 1, 10),
                  c(0, 2, 10),
                  c(0, 8, 10),
                  c(240, 240, 248),
                  c(240, 245, 248))) %>%
-      as.data.frame()
+               as.data.frame())
+
+    skip_if(inherits(e, "try-error"),
+                 "et() does not support 3 element list input, skipping test")
 
 
     babel.db <- nlmixr2(f, e, "poped",
