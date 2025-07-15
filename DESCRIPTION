@@ -29,7 +29,8 @@ Suggests:
     vdiffr,
     nlme,
     dplyr,
-    devtools
+    devtools,
+    memoise
 Depends:
     R (>= 3.5)
 Imports:
