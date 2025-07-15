@@ -145,6 +145,7 @@ popedControl(
   opt_x = FALSE,
   opt_samps = FALSE,
   optTime = TRUE,
+  literalFixRes = FALSE,
   ...
 )
 }
@@ -590,6 +591,10 @@ run times and possibly slightly different results.  When
 PopED rxode2 is setup for a problem or when a poped dataset is
 created.  You can manually reset with
 \code{popedMultipleEndpointResetTimeIndex()}}
+
+\item{literalFixRes}{boolean, substitute fixed population values as
+literals and re-adjust ui and parameter estimates after
+optimization; Default is `TRUE`.}
 
 \item{...}{other parameters for PopED control}
 }
