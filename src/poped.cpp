@@ -241,13 +241,7 @@ extern "C" {
 using namespace arma;
 using namespace Rcpp;
 
-#ifdef ENABLE_NLS
-#include <libintl.h>
-#define _(String) dgettext ("babelmixr2", String)
-/* replace pkg as appropriate */
-#else
 #define _(String) (String)
-#endif
 
 #define popedOde(id) ind_solve(rx, id, rxInner.dydt_liblsoda, rxInner.dydt_lsoda_dum, rxInner.jdum_lsoda, rxInner.dydt, rxInner.update_inis, rxInner.global_jt)
 
