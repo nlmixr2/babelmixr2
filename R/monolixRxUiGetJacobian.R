@@ -48,3 +48,4 @@ rxUiGet.monolixJacobian <- function(x, ...) {
   dimnames(.ret) <- list(.name, .name)
   .ret
 }
+attr(rxUiGet.monolixJacobian, "rstudio") <- "monolixJacobian"

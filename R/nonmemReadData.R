@@ -17,6 +17,7 @@ rxUiGet.nonmemOutputLst <- function(x, ...) {
   rxode2::rxAssignControlValue(.ui, ".lstInfo", .info)
   .info
 }
+attr(rxUiGet.nonmemOutputLst, "rstudio") <- "nonmemOutputLst"
 
 #' @export
 rxUiGet.nonmemOutputVersion <- function(x, ...) {
@@ -24,6 +25,7 @@ rxUiGet.nonmemOutputVersion <- function(x, ...) {
   if (is.null(.info)) return(NULL)
   .info$nonmem
 }
+attr(rxUiGet.nonmemOutputVersion, "rstudio") <- ""
 
 #' @export
 rxUiGet.nonmemOutputExt <- function(x, ...) {
@@ -38,6 +40,7 @@ rxUiGet.nonmemOutputExt <- function(x, ...) {
   rxode2::rxAssignControlValue(.ui, ".ext", .ext)
   .ext
 }
+attr(rxUiGet.nonmemOutputExt, "rstudio") <- "nonmemOutputExt"
 
 .getThetaNames <- function(ui) {
   if (exists("file", envir=ui)) {
@@ -75,6 +78,7 @@ rxUiGet.nonmemFullTheta <- function(x, ...) {
   }
   .ret
 }
+attr(rxUiGet.nonmemFullTheta, "rstudio") <- NA
 
 #' @export
 rxUiGet.nonmemThetaDf <- function(x, ...) {
@@ -88,6 +92,7 @@ rxUiGet.nonmemThetaDf <- function(x, ...) {
              fixed=.theta$fix, upper=.theta$upper,
              row.names=.n)
 }
+attr(rxUiGet.nonmemThetaDf, "rstudio") <- NA
 
 .getEtaNames <- function(ui) {
   if (exists("file", ui)) {
@@ -129,6 +134,7 @@ rxUiGet.nonmemOutputOmega <- function(x, ...) {
   }
   .omega
 }
+attr(rxUiGet.nonmemOutputOmega, "rstudio") <- NA
 
 #' @export
 rxUiGet.nonmemIniDf <- function(x, ...) {
@@ -137,6 +143,7 @@ rxUiGet.nonmemIniDf <- function(x, ...) {
   .ui <- x[[1]]
   .bblIniDf(.theta, .omega, .ui)
 }
+attr(rxUiGet.nonmemIniDf, "rstudio") <- NA
 
 #' @export
 rxUiGet.nonmemEtaObf <- function(x, ...) {
@@ -164,6 +171,7 @@ rxUiGet.nonmemEtaObf <- function(x, ...) {
     .ret
   }
 }
+attr(rxUiGet.nonmemEtaObf, "rstudio") <- NA
 
 .getNonmemOrderNames <- function(ui) {
   .t <- .getThetaNames(ui)
@@ -204,12 +212,14 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
     .ret[.t, .t]
   }
 }
+attr(rxUiGet.nonmemCovariance, "rstudio") <- lotri::lotri(a~0.1)
 
 #' @export
 rxUiGet.nonmemObjf <- function(x, ...) {
   .ret <- rxUiGet.nonmemOutputLst(x, ...)
   .ret$objf
 }
+attr(rxUiGet.nonmemObjf, "rstudio") <- 0.1
 
 #' @export
 rxUiGet.nonmemParHistory <- function(x, ...) {
@@ -227,6 +237,7 @@ rxUiGet.nonmemParHistory <- function(x, ...) {
   .ret$type <- "Unscaled"
   .ret
 }
+attr(rxUiGet.nonmemParHistory, "rstudio") <- NA
 
 #' @export
 rxUiGet.nonmemObjfType <- function(x, ...) {
@@ -245,6 +256,7 @@ rxUiGet.nonmemObjfType <- function(x, ...) {
     stop("unknown objective type", call.=FALSE)
   }
 }
+attr(rxUiGet.nonmemObjfType, "rstudio") <- "nonmemObjfType"
 
 #' @export
 rxUiGet.nonmemRunTime <- function(x, ...) {
@@ -291,9 +303,10 @@ rxUiGet.nonmemPreds <- function(x, ...) {
     .ret <- .ret[.ret$NMREP ==1, names(.ret) != "NMREP"]
     setNames(.ret,
              c("ID", "TIME", "nonmemIPRED", "nonmemPRED", "RXROW"))
-
   }
 }
+attr(rxUiGet.nonmemPreds, "rstudio") <- NA
+
 
 #' @export
 rxUiGet.nonmemTransMessage <- function(x, ...) {
@@ -301,6 +314,7 @@ rxUiGet.nonmemTransMessage <- function(x, ...) {
   if (is.null(.lst)) return(NULL)
   .lst$nmtran
 }
+attr(rxUiGet.nonmemTransMessage, "rstudio") <- "nonmemTransMessage"
 
 #' @export
 rxUiGet.nonmemTermMessage <- function(x, ...) {
@@ -308,18 +322,21 @@ rxUiGet.nonmemTermMessage <- function(x, ...) {
   if (is.null(.lst)) return(NULL)
   .lst$termInfo
 }
+attr(rxUiGet.nonmemTermMessage, "rstudio") <- "nonmemTermMessage"
 
 #' @export
 rxUiGet.nonmemSuccessful <- function(x, ...) {
   .term <- rxUiGet.nonmemTermMessage(x, ...)
   (regexpr("0MINIMIZATION SUCCESSFUL", .term) != -1)
 }
+attr(rxUiGet.nonmemSuccessful, "rstudio") <- "nonmemSuccessful"
 
 #' @export
 rxUiGet.nonmemRoundingErrors <- function(x, ...) {
   .term <- rxUiGet.nonmemTermMessage(x, ...)
   (regexpr("DUE TO ROUNDING ERRORS", .term) != -1)
 }
+attr(rxUiGet.nonmemRoundingErrors, "rstudio") <- "nonmemRoundingErrors"
 
 .nonmemMergePredsAndCalcRelativeErr <- function(fit) {
   .np <- fit$ui$nonmemPreds

@@ -26,6 +26,7 @@ rxUiGet.monolixOutputVersion <- function(x, ...) {
   }
   NULL
 }
+attr(rxUiGet.monolixOutputVersion, "rstudio") <- ""
 
 #' @export
 rxUiGet.monolixHasChartData <- function(x, ...) {
@@ -43,6 +44,7 @@ rxUiGet.monolixHasChartData <- function(x, ...) {
   .minfo("done")
   file.exists(.chart)
 }
+attr(rxUiGet.monolixHasChartData, "rstudio" <- TRUE
 
 #' @export
 rxUiGet.monolixParHistoryRaw <- function(x, ...) {
@@ -172,6 +174,7 @@ rxUiGet.monolixOmega <- function(x, ...) {
   rxode2::rxAssignControlValue(.ui, ".monolixOmega", .omega)
   .omega
 }
+attr(rxUiGet.monolixOmega, "rstudio") <- lotri::lotri(a~0.1)
 
 .monolixGetPopParValue <- function(name, muRefCurEval, muRef, covDataFrame, pop) {
   .w <- which(covDataFrame$covariateParameter == name)
@@ -271,6 +274,7 @@ rxUiGet.monolixFullTheta <- function(x, ...) {
   rxode2::rxAssignControlValue(.ui, ".monolixFullTheta", .fullTheta)
   .fullTheta
 }
+attr(rxUiGet.monolixFullTheta, "rstudio") <- c(a=1)
 
 .bblIniDf <- function(theta, omega, ui) {
   .iniDf <- ui$iniDf
@@ -292,6 +296,8 @@ rxUiGet.monolixIniDf <- function(x, ...) {
   .ui <- x[[1]]
   .bblIniDf(.theta, .omega, .ui)
 }
+attr(rxUiGet.monolixIniDf, "rstudio") <- NA
+
 
 #' @export
 rxUiGet.monolixTheta <- function(x, ...) {
@@ -305,8 +311,7 @@ rxUiGet.monolixTheta <- function(x, ...) {
              fixed=.theta$fix, upper=.theta$upper,
              row.names=.n)
 }
-
-
+attr(rxUiGet.monolixTheta, "rstudio") <- NA
 
 #' @export
 rxUiGet.monolixIndividualParameters <- function(x, ...) {
@@ -316,6 +321,7 @@ rxUiGet.monolixIndividualParameters <- function(x, ...) {
   .monolixWaitForFile(.individualParameters)
   read.csv(.individualParameters)
 }
+# attr(rxUiGet.monolixIndividualParameters, "rstudio") <-
 
 #' @export
 rxUiGet.monolixIndividualLL <- function(x, ...) {
@@ -568,3 +574,4 @@ rxUiGet.monolixPreds <- function(x, ...) {
        individualAbs=.qai, popAbs=.qap,
        message=.msg)
 }
+# already list

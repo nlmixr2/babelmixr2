@@ -65,6 +65,7 @@ rxUiGet.nonmemThetaRep <- function(x, ...) {
                        paste0("ETA(",substr(.ret$mu,4, 10),")"))
   .ret
 }
+attr(rxUiGet.nonmemThetaRep, "rstudio") <- "nonmemThetaRep"
 
 #'@export
 rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
@@ -180,3 +181,4 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
          ifelse(.isPred, "\n", "\n\n$ERROR\n  ;Redefine LHS in $DES by prefixing with on RXE_ for $ERROR\n"),
          .err)
 }
+attr(rxUiGet.nonmemPkDesErr0, "rstudio") <- "nonmemPkDesErr0"

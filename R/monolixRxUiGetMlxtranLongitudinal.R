@@ -73,3 +73,4 @@ rxUiGet.mlxtranModelLongitudinal <- function(x, ...) {
        paste(paste0("rx_prd_", .predDf$var, "={distribution = ", .dist, ", prediction = rx_pred_", .predDf$var, ", errorModel=", .err, "}"),
              collapse='\n'))
 }
+attr(rxUiGet.mlxtranModelLongitudinal,"rstudio") <- "character"

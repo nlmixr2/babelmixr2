@@ -77,3 +77,4 @@ rxUiGet.nonmemTheta <- function(x, ...) {
              paste0(t0, " (", t1, t2, t3, ") ; ", t4, " - ", t5)),
         collapse="\n")
 }
+attr(rxUiGet.nonmemTheta, "rstudio") <- "nonmemTheta"

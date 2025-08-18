@@ -18,3 +18,4 @@ rxUiGet.nonmemSub <- function(x, ...) {
   }
   .ret
 }
+attr(rxUiGet.nonmemSub, "rstudio") <- "nonmemSub"
