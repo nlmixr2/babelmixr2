@@ -8,12 +8,12 @@
     .tmp <- as.character(.iniDf$name)
     .tmp <- eval(str2lang(paste0("rxToMonolix(", .tmp, ", ui=ui)")))
     if (input) return(.tmp)
-    return(paste0("constant(", .tmp, ")"))
+    paste0("constant(", .tmp, ")")
   } else if (.errType == 2L) { # prop
     .tmp <- as.character(.iniDf$name)
     .tmp <- eval(str2lang(paste0("rxToMonolix(", .tmp, ", ui=ui)")))
     if (input) return(.tmp)
-    return(paste0("proportional(", .tmp, ")"))
+    paste0("proportional(", .tmp, ")")
   } else if (.errType == 3L) { # pow
     stop("residual type 'pow' is not supported in the nlmixr2 monolix conversion yet",
          call.=FALSE)
@@ -27,7 +27,7 @@
     .prop <- .iniDf[.iniDf$err == "prop", "name"]
     .prop <- eval(str2lang(paste0("rxToMonolix(", .prop, ", ui=ui)")))
     if (input) return(c(.add, .prop))
-    return(paste0(.addProp, "(", .add, ",", .prop, ")"))
+    paste0(.addProp, "(", .add, ",", .prop, ")")
   } else if (.errType == 5L) { #  add + pow
     stop("residual type 'add+pow' is not supported in the nlmixr2 monolix conversion yet",
          call.=FALSE)
