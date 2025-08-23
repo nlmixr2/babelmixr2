@@ -1073,7 +1073,7 @@ rxUiGet.popedNotfixedSigma <- function(x, ...) {
   }
 }
 attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
-attr(rxUiGet.popedNotFixedSigma, "rstudio") <- 0L
+attr(rxUiGet.popedNotfixedSigma, "rstudio") <- 0L
 
 .deparsePopedList <- function(lst, space="  ") {
   vapply(seq_along(lst),

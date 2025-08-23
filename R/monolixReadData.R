@@ -44,7 +44,7 @@ rxUiGet.monolixHasChartData <- function(x, ...) {
   .minfo("done")
   file.exists(.chart)
 }
-attr(rxUiGet.monolixHasChartData, "rstudio" <- TRUE
+attr(rxUiGet.monolixHasChartData, "rstudio") <- TRUE
 
 #' @export
 rxUiGet.monolixParHistoryRaw <- function(x, ...) {

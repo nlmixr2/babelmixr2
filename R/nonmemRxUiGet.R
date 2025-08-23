@@ -64,7 +64,7 @@ rxUiGet.nonmemCcontraName <- function(x, ...) {
   .ui <- x[[1]]
   paste0(rxUiGet.nonmemModelName(x, ...), ".ccontra")
 }
-attr(rxUiGet.nonmemCcontraName, "") <- ""
+attr(rxUiGet.nonmemCcontraName, "rstudio") <- ""
 
 #' @export
 rxUiGet.nonmemCsv <- function(x, ...) {
