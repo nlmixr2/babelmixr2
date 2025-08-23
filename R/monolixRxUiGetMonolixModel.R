@@ -102,3 +102,4 @@ rxUiGet.monolixModel <- function(x, ...) {
          "\n\nOUTPUT:\noutput={",
          paste(.monolixResponses, collapse=", "), "}\n")
 }
+attr(rxUiGet.monolixModel, "rstudio") <- ""

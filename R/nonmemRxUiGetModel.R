@@ -12,6 +12,7 @@ rxUiGet.nonmemMod <- function(x, ...) {
                }, character(1), USE.NAMES=FALSE)),
         collapse="\n")
 }
+attr(rxUiGet.nonmemMod, "rstudio") <- "nonmemMod"
 
 .nonmemResetUi <- function(ui, extra="") {
   rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf",
@@ -55,3 +56,4 @@ rxUiGet.nonmemModel <- function(x, ...) {
   .ret <- gsub("^ *$", "", .ret)
   .ret
 }
+attr(rxUiGet.nonmemModel, "rstudio") <- "nonmemModel"

@@ -40,3 +40,4 @@ rxUiGet.nonmemEst <- function(x, ...) {
          call.=FALSE)
   }
 }
+attr(rxUiGet.nonmemEst, "rstudio") <- "nonmemEst"

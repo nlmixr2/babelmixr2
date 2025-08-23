@@ -36,3 +36,4 @@ rxUiGet.nonmemOmega <- function(x, ...) {
            .nonmemHandleOneOmega(.lst[[m]], .ui)
          }, character(1), USE.NAMES=FALSE), collapse="")
 }
+attr(rxUiGet.nonmemOmega, "rstudio") <- lotri::lotri(a~1)

@@ -8,3 +8,4 @@ rxUiGet.nonmemTable <- function(x, ...) {
           rxUiGet.nonmemSdTableName(x, ...),"\n"
           ), collapse="")
 }
+attr(rxUiGet.nonmemTable, "rstudio") <- "nonmemTable"

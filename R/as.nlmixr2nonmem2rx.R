@@ -37,6 +37,12 @@ as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxCon
   # The environment needs:
   env <- new.env(parent=emptyenv())
   x <- rxode2::rxUiDecompress(x)
+  if (is.null(x$predDf)) {
+    stop("The input model does not have a endpoint specified in nlmixr2 format.",
+         " Please adjust manually and then use `as.nonmem2rx(new, old)` to update",
+         " and adjust and re-verify the manual model translation",
+         call.=FALSE)
+  }
   nlmixr2est::nlmixrWithTiming("as.nlmixr2", {
     .ui <- new.env(parent=emptyenv())
     .oldUi <- x

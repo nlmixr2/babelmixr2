@@ -12,6 +12,8 @@ rxUiGet.monolixModelName <- function(x, ...) {
   }
   "x"
 }
+attr(rxUiGet.monolixModelName, "rstudio") <- "character"
+
 #' @export
 rxUiGet.monolixExportPath <- function(x, ...) {
   .ui <- x[[1]]
@@ -37,40 +39,49 @@ rxUiGet.monolixExportPath <- function(x, ...) {
     file.path(.base)
   }
 }
+attr(rxUiGet.monolixExportPath, "rstudio") <- "character"
 
 #' @export
 rxUiGet.monolixModelHashFileName <- function(x, ...) {
   paste0(rxUiGet.monolixExportPath(x, ...), ".md5")
 }
+attr(rxUiGet.monolixModelHashFileName, "rstudio") <- "character"
 
 #' @export
 rxUiGet.monolixModelFileName <- function(x, ...) {
   paste0(rxUiGet.monolixExportPath(x, ...), ".txt")
 }
+attr(rxUiGet.monolixModelFileName,"rstudio") <- "character"
+
 #' @export
 rxUiGet.monolixDataFile <- function(x, ...) {
   paste0(rxUiGet.monolixExportPath(x, ...), ".csv")
 }
+attr(rxUiGet.monolixDataFile, "rstudio") <- "character"
 
 #' @export
 rxUiGet.monolixQs <- function(x, ...) {
   file.path(rxUiGet.monolixExportPath(x, ...), "nlmixr.qs")
 }
+attr(rxUiGet.monolixQs, "rstudio") <- "character"
 
 #' @export
 rxUiGet.monolixCvParam <- function(x, ...) {
   file.path(rxUiGet.monolixExportPath(x, ...), "ChartsData", "Saem", "CvParam.txt")
 }
+attr(rxUiGet.monolixCvParam, "rstudio") <- ""
 
 #' @export
 rxUiGet.monolixRunLock <- function(x, ...) {
   paste0(rxUiGet.monolixExportPath(x, ...), ".run-lock")
 }
+attr(rxUiGet.monolixRunLock, "rstudio") <- ""
 
 #' @export
 rxUiGet.monolixMlxtranFile <- function(x, ...) {
   paste0(rxUiGet.monolixExportPath(x, ...), ".mlxtran")
 }
+attr(rxUiGet.monolixMlxtranFile, "rstudio") <- ""
 
 #' @export
 rxUiGet.mlxtranModel <- function(x, ...) {
@@ -81,6 +92,7 @@ rxUiGet.mlxtranModel <- function(x, ...) {
          rxUiGet.mlxtranModelIndividual(x, ...),"\n\n",
          rxUiGet.mlxtranModelLongitudinal(x, ...))
 }
+attr(rxUiGet.mlxtranModel, "rstudio") <- ""
 
 #' @export
 rxUiGet.mlxtran <- function(x, ...) {
@@ -91,3 +103,4 @@ rxUiGet.mlxtran <- function(x, ...) {
           rxUiGet.mlxtranMonolix(x, ...)),
         collapse="\n")
 }
+attr(rxUiGet.mlxtran, "rstudio") <- ""

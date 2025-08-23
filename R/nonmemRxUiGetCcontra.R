@@ -8,6 +8,7 @@ rxUiGet.nonmemContra <- function(x, ...) {
   return(paste(readLines(file.path(system.file(package="babelmixr2"), "contr.txt")),
                collapse="\n"))
 }
+attr(rxUiGet.nonmemContra, "rstudio") <- "nonmemContra"
 
 #'@export
 rxUiGet.nonmemCcontra <- function(x, ...) {
@@ -58,4 +59,4 @@ rxUiGet.nonmemCcontra <- function(x, ...) {
   }
   NULL
 }
-
+attr(rxUiGet.nonmemCcontra, "rstudio") <- "nonmemCcontra"

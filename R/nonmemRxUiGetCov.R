@@ -12,3 +12,4 @@ rxUiGet.nonmemCov <- function(x, ...) {
     return("$COVARIANCE MATRIX=S")
   }
 }
+attr(rxUiGet.nonmemCov, "rstudio") <- ""

@@ -10,3 +10,4 @@ rxUiGet.mlxtranFit <- function(x, ...) {
   .model <- paste0("model={", paste(paste0("rx_prd_", .predDf$var), collapse=", "), "}")
   paste(c("<FIT>", .data, .model), collapse="\n")
 }
+attr(rxUiGet.mlxtranFit, "rstudio") <- "character"

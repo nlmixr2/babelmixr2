@@ -117,3 +117,4 @@ rxUiGet.nonmemErrF <- function(x, ...) {
                       .ipred,
                       .y), collapse="\n")), "\n")
 }
+attr(rxUiGet.nonmemErrF, "rstudio") <- ""

@@ -111,3 +111,5 @@ rxUiGet.mlxtranParameter <- function(x, ...) {
     }
   }, character(1), USE.NAMES=FALSE), collapse="\n"))
 }
+
+attr(rxUiGet.mlxtranParameter, "rstudio") <- "mlxtranParameter"

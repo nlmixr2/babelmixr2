@@ -5,7 +5,7 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .mlxTranCurEvalToDistribution <- function(curEval) {
-  .ret <- switch(ifelse(curEval %in% c("", "*", "**", "/", "^", "+", "-"), 
+  .ret <- switch(ifelse(curEval %in% c("", "*", "**", "/", "^", "+", "-"),
                         "add", curEval),
                  exp="logNormal",
                  expit="logitNormal",
@@ -191,3 +191,4 @@ rxUiGet.mlxtranModelIndividual <- function(x, ...) {
          .def
          )
 }
+attr(rxUiGet.mlxtranModelIndividual, "rstudio") <- "character"

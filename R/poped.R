@@ -129,6 +129,7 @@ rxUiGet.popedBpopRep <- function(x, ...) {
   .ret
 }
 attr(rxUiGet.popedBpopRep, "desc") <- "PopED data frame for replacements used in $popedFgFun"
+attr(rxUiGet.popedBpopRep, "rstudio") <- NA # passthrough
 
 #' Replace Names in PopED naming/translation function
 #'
@@ -292,6 +293,7 @@ rxUiGet.popedFgFun <- function(x, ...) {
   .f
 }
 attr(rxUiGet.popedFgFun, "desc") <- "PopED parameter model (fg_fun)"
+attr(rxUiGet.popedFgFun, "rstudio") <- function() {}
 
 .poped <- new.env(parent=emptyenv())
 .poped$curLib <- NULL
@@ -330,6 +332,8 @@ rxUiGet.popedGetEventFun <- function(x, ...) {
   ## }
   .f
 }
+#attr(rxUiGet.popedGetEventFun, "desc") <- "PopED event function"
+attr(rxUiGet.popedGetEventFun, "rstudio") <- function() {}
 
 #' @export
 rxUiGet.popedFfFun <- function(x, ...) {
@@ -368,6 +372,7 @@ rxUiGet.popedFfFun <- function(x, ...) {
   .f
 }
 attr(rxUiGet.popedFfFun, "desc") <- "PopED parameter model (ff_fun)"
+attr(rxUiGet.popedFfFun, "rstudio") <- function() {}
 ## @export
 ## rxUiGet.popedModel <- function(x, ...) {
 ##   ui <- x[[1]]
@@ -894,6 +899,8 @@ rxUiGet.popedRxmodelBase <- function(x, ...) {
   .mod
 }
 attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for PopED"
+
+
 #' Get PopEd's rxode2 model (unevaluated)
 #'
 #' This is an internal function and really shouldn't be called directly
@@ -967,6 +974,7 @@ rxUiGet.popedFullRxModel <- function(x, ...) {
   .popedRxModel(x[[1]], maxNumTime=0L)
 }
 
+
 #' @export
 rxUiGet.popedBpop <- function(x, ...) {
   .ui <- x[[1]]
@@ -974,6 +982,7 @@ rxUiGet.popedBpop <- function(x, ...) {
   setNames(.bpop$est, .bpop$name)
 }
 attr(rxUiGet.popedBpop, "desc") <- "Get PopED's $bpop"
+attr(rxUiGet.popedBpop, "rstudio") <- "char"
 
 #' @export
 rxUiGet.popedNotfixedBpop <- function(x, ...) {
@@ -986,6 +995,7 @@ rxUiGet.popedNotfixedBpop <- function(x, ...) {
   .ret
 }
 attr(rxUiGet.popedNotfixedBpop, "desc") <- "Get PopED's $notfixed_bpop"
+attr(rxUiGet.popedNotfixedBpop, "rstudio") <- 1
 
 ## Omega matrix specification
 #' @export
@@ -996,6 +1006,7 @@ rxUiGet.popedD <- function(x, ...) {
   diag(.omega)
 }
 attr(rxUiGet.popedD, "desc") <- "Get PopED's $d parameter"
+attr(rxUiGet.popedD, "rstudio") <- lotri::lotri(a~1)
 
 #' @export
 rxUiGet.popedCovd <- function(x, ...) {
@@ -1007,6 +1018,7 @@ rxUiGet.popedCovd <- function(x, ...) {
   .ret
 }
 attr(rxUiGet.popedCovd, "desc") <- "Get PopED's $covd parameter"
+attr(rxUiGet.popedCovd, "rstudio") <- 1
 
 #' @export
 rxUiGet.popedNotfixedD <- function(x, ...) {
@@ -1018,6 +1030,7 @@ rxUiGet.popedNotfixedD <- function(x, ...) {
   .ret
 }
 attr(rxUiGet.popedNotfixedD, "desc") <- "Get PopED's $notfixed_d"
+attr(rxUiGet.popedNotfixedD, "rstudio") <- 1
 
 #' @export
 rxUiGet.popedNotfixedCovd <- function(x, ...) {
@@ -1034,6 +1047,7 @@ rxUiGet.popedNotfixedCovd <- function(x, ...) {
   1 - .ret * 1
 }
 attr(rxUiGet.popedNotfixedCovd, "desc") <- "Get PopED's $notfixed_covd"
+attr(rxUiGet.popedNotfixedCovd, "rstudio") <- 1
 
 #' @export
 rxUiGet.popedSigma <- function(x, ...) {
@@ -1046,6 +1060,7 @@ rxUiGet.popedSigma <- function(x, ...) {
   }
 }
 attr(rxUiGet.popedSigma, "desc") <- "PopED database $sigma"
+attr(rxUiGet.popedSigma, "rstudio") <- 1
 
 #' @export
 rxUiGet.popedNotfixedSigma <- function(x, ...) {
@@ -1058,6 +1073,7 @@ rxUiGet.popedNotfixedSigma <- function(x, ...) {
   }
 }
 attr(rxUiGet.popedNotfixedSigma, "desc") <- "PopED database $notfixed_sigma"
+attr(rxUiGet.popedNotfixedSigma, "rstudio") <- 0L
 
 .deparsePopedList <- function(lst, space="  ") {
   vapply(seq_along(lst),
@@ -1547,6 +1563,9 @@ rxUiGet.popedSettings <- function(x, ...) {
       )
   }
 }
+# attr(rxUiGet.popedSettings, "desc") <- "PopED settings"
+attr(rxUiGet.popedSettings, "rstudio") <- "char"
+
 
 #' Does the PopED control imply different sampling schedules/designs
 #'
@@ -1677,6 +1696,7 @@ rxUiGet.popedOptsw <- function(x, ...) {
     rxode2::rxGetControl(.ui, "opt_inds", FALSE)*1 #5
     )
 }
+attr(rxUiGet.popedOptsw, "rstudio") <- 1
 
 .popedCreateSeparateSamplingDatabase <- function(ui, data, .ctl, .err) {
   .a <- rxode2::rxGetControl(ui, "a", list())
@@ -1977,7 +1997,6 @@ rxUiGet.popedOptsw <- function(x, ...) {
       return(.toScript)
     }
   }
-
 }
 #' Creates an environment with the currently calculated PopED properties
 #'
@@ -2277,6 +2296,7 @@ rxUiGet.popedParameters <- function(x, ...) {
   }
 }
 attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
+attr(rxUiGet.popedParameters, "rstudio") <- ""
 
 #' Control for a PopED design task
 #'

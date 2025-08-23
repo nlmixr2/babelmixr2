@@ -8,3 +8,4 @@ rxUiGet.mlxtranModelCovariate <- function(x, ...) {
   }
   ""
 }
+attr(rxUiGet.mlxtranModelCovariate,"rstudio") <- "character"
