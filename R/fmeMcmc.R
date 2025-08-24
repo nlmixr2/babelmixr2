@@ -39,7 +39,17 @@
 #'
 #' # you can also get the FME modMCMC output with
 #'
-#' fit2$fmeMcmc
+#' # fit2$fmeMcmc
+#'
+#' # And use it in the summaries from FME, i.e.
+#'
+#' summary(fit2$fmeMcmc)
+#'
+#' pairs(fit2$fmeMcmc)
+#'
+#' # and you can also use the coda package with `as.mcmc()`
+#' coda::raftery.diag(coda::as.mcmc(fit2))
+#'
 #'
 #' # The nlm control has been modified slightly to include
 #' # extra components and name the parameters
@@ -67,7 +77,7 @@ fmeMcmcControl <- function(jump=NULL,
                            print = 1L, #
 
                            normType = c("rescale2", "mean", "rescale", "std", "len", "constant"), #
-                           scaleType = c("nlmixr2", "norm", "mult", "multAdd"), #
+                           scaleType = c("none", "nlmixr2", "norm", "mult", "multAdd"), #
                            scaleCmax = 1e5, #
                            scaleCmin = 1e-5, #
                            scaleC=NULL,
@@ -79,7 +89,7 @@ fmeMcmcControl <- function(jump=NULL,
                            literalFixRes=TRUE,
                            addProp = c("combined2", "combined1"),
                            calcTables=TRUE, compress=TRUE,
-                           covMethod=c("r", ""),
+                           covMethod=c("mcmc", "r", ""),
                            adjObf=TRUE, ci=0.95, sigdig=4, sigdigTable=NULL, ...) {
 
 
@@ -136,10 +146,11 @@ fmeMcmcControl <- function(jump=NULL,
   checkmate::assertLogical(useColor, any.missing=FALSE, len=1)
   checkmate::assertIntegerish(print, len=1, lower=0, any.missing=FALSE)
   checkmate::assertIntegerish(printNcol, len=1, lower=0, any.missing=FALSE)
-  if (checkmate::testIntegerish(scaleType, len=1, lower=1, upper=4, any.missing=FALSE)) {
+  if (checkmate::testIntegerish(scaleType, len=1, lower=1, upper=5, any.missing=FALSE)) {
     scaleType <- as.integer(scaleType)
   } else {
-    .scaleTypeIdx <- c("norm" = 1L, "nlmixr2" = 2L, "mult" = 3L, "multAdd" = 4L)
+    .scaleTypeIdx <- c("norm" = 1L, "nlmixr2" = 2L, "mult" = 3L, "multAdd" = 4L,
+                       "none"= 5L)
     scaleType <- setNames(.scaleTypeIdx[match.arg(scaleType)], NULL)
   }
 
@@ -320,8 +331,19 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
     drscale=.(.ctl$drscale),
     verbose=.(.ctl$verbose)))
   .ret <- eval(.ret)
-  nlmixr2est::.nlmFinalizeList(.env, .ret, par="bestpar", printLine=TRUE,
-                               hessianCov=TRUE)
+  if (.ctl$covMethod == "mcmc") {
+    .ret$cov.unscaled <- cov(.ret$pars)
+    .ret$cov <- nlmixr2est::.nlmAdjustCov(.ret$cov.unscaled, .ret$bestpar)
+  }
+  .ret <- nlmixr2est::.nlmFinalizeList(.env, .ret, par="bestpar", printLine=TRUE,
+                                       hessianCov=(.ctl$covMethod == "r"))
+  if (.ctl$covMethod == "mcmc") {
+    .n <- names(.ret$bestpar)
+    dimnames(.ret$cov) <- list(.n, .n)
+    dimnames(.ret$cov.unscaled) <- list(.n, .n)
+    .ret$covMethod <- "mcmc"
+  }
+  .ret
 }
 
 #' Get the full theta for nlm methods
@@ -419,17 +441,9 @@ nlmixr2Est.fmeMcmc <- function(env, ...) {
 }
 attr(nlmixr2Est.fmeMcmc, "covPresent") <- TRUE
 
-#minqa::bobyqa()
-
-## modMCMC(f, p, ..., jump = NULL,  lower = -Inf, upper = +Inf,
-##         prior = NULL, var0 = NULL, wvar0 = NULL, n0 = NULL,
-##         niter = 1000, outputlength = niter, burninlength = 0,
-##         updatecov = niter, covscale = 2.4^2/length(p),
-##         ntrydr = 1, drscale = NULL, verbose = TRUE)
-
 as.mcmc.nlmixr2.fmeMcmc <- function(x, ...) {
   if (!inherits(x, "nlmixr2.fmeMcmc")) {
     stop("x must be a nlmixr2.fmeMcmc object", call.=FALSE)
   }
-  as.mcmc(x$fmeMcmc, ...)
+  coda::as.mcmc(x$fmeMcmc, ...)
 }

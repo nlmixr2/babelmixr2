@@ -23,7 +23,7 @@ fmeMcmcControl(
   printNcol = floor((getOption("width") - 23)/12),
   print = 1L,
   normType = c("rescale2", "mean", "rescale", "std", "len", "constant"),
-  scaleType = c("nlmixr2", "norm", "mult", "multAdd"),
+  scaleType = c("none", "nlmixr2", "norm", "mult", "multAdd"),
   scaleCmax = 1e+05,
   scaleCmin = 1e-05,
   scaleC = NULL,
@@ -36,7 +36,7 @@ fmeMcmcControl(
   addProp = c("combined2", "combined1"),
   calcTables = TRUE,
   compress = TRUE,
-  covMethod = c("r", ""),
+  covMethod = c("mcmc", "r", ""),
   adjObf = TRUE,
   ci = 0.95,
   sigdig = 4,
@@ -396,7 +396,17 @@ print(fit2)
 
 # you can also get the FME modMCMC output with
 
-fit2$fmeMcmc
+# fit2$fmeMcmc
+
+# And use it in the summaries from FME, i.e.
+
+summary(fit2$fmeMcmc)
+
+pairs(fit2$fmeMcmc)
+
+# and you can also use the coda package with `as.mcmc()`
+coda::raftery.diag(coda::as.mcmc(fit2))
+
 
 # The nlm control has been modified slightly to include
 # extra components and name the parameters
