@@ -30,7 +30,9 @@ Suggests:
     nlme,
     dplyr,
     devtools,
-    memoise
+    memoise,
+    FME,
+    coda
 Depends:
     R (>= 3.5)
 Imports:
