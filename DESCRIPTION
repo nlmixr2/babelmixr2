@@ -32,7 +32,8 @@ Suggests:
     devtools,
     memoise,
     FME,
-    coda
+    coda,
+    crayon
 Depends:
     R (>= 3.5)
 Imports:
