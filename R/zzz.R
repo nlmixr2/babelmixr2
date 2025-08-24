@@ -21,6 +21,12 @@ rxode2.api <- names(rxode2::.rxode2ptrs())
 
 
 .onLoad <- function(libname, pkgname) {
+
+  rxode2::.s3register("nlmixr2est::nmObjHandleControlObject", "bayesianToolsControl")
+  rxode2::.s3register("nlmixr2est::getValidNlmixrCtl", "bayesianTools")
+  rxode2::.s3register("nlmixr2est::nmObjGetControl", "bayesianTools")
+  rxode2::.s3register("nlmixr2est::nlmixr2Est", "bayesianTools")
+
   rxode2::.s3register("nlmixr2est::nlmixr2Est", "monolix")
   rxode2::.s3register("nlmixr2est::getValidNlmixrCtl", "monolix")
   rxode2::.s3register("nlmixr2est::nmObjGetFoceiControl", "monolix")
