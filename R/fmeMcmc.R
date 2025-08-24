@@ -50,9 +50,6 @@
 #' # and you can also use the coda package with `as.mcmc()`
 #' coda::raftery.diag(coda::as.mcmc(fit2))
 #'
-#'
-#' # The nlm control has been modified slightly to include
-#' # extra components and name the parameters
 #' }
 fmeMcmcControl <- function(jump=NULL,
                            prior = NULL,
@@ -104,7 +101,7 @@ fmeMcmcControl <- function(jump=NULL,
 
   .xtra <- list(...)
   .bad <- names(.xtra)
-  .bad <- .bad[!(.bad %in% c("genRxControl"))]
+  .bad <- .bad[!(.bad == "genRxControl")]
   if (length(.bad) > 0) {
     stop("unused argument: ", paste
     (paste0("'", .bad, "'", sep=""), collapse=", "),

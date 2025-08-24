@@ -88,8 +88,8 @@ fmeMcmcControl(
     \code{NULL}, it is assumed to be \code{c(0.2,0.25, 0.333, 0.333,
     ...)}  }
 
-\item{verbose}{if \code{TRUE} or \code{1}: prints extra output, if 
-    numeric value \code{i > 1}, prints status information every 
+\item{verbose}{if \code{TRUE} or \code{1}: prints extra output, if
+    numeric value \code{i > 1}, prints status information every
 	\code{i} iterations.
   }
 
@@ -373,6 +373,7 @@ Control for fmeMcmc estimation method in nlmixr2
 \donttest{
 # A logit regression example with emax model
 
+library(babelmixr2)
 dsn <- data.frame(i=1:1000)
 dsn$time <- exp(rnorm(1000))
 dsn$DV=rbinom(1000,1,exp(-1+dsn$time)/(1+exp(-1+dsn$time)))
@@ -390,7 +391,7 @@ mod <- function() {
  })
 }
 
-fit2 <- nlmixr(mod, dsn, est="fmeMcmc")
+fit2 <- nlmixr(mod, dsn, est="fmeMcmc", control=fmeMcmcControl(niter=3500, print=0))
 
 print(fit2)
 
@@ -407,9 +408,6 @@ pairs(fit2$fmeMcmc)
 # and you can also use the coda package with `as.mcmc()`
 coda::raftery.diag(coda::as.mcmc(fit2))
 
-
-# The nlm control has been modified slightly to include
-# extra components and name the parameters
 }
 }
 \author{
