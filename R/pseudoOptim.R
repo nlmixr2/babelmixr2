@@ -405,15 +405,13 @@ nlmixr2Est.pseudoOptim <- function(env, ...) {
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'pseudoOptim'", .var.name=.ui$modelName)
   .ctl <- env$control
   .iniDf <- .ui$iniDf
-  if (.ctl$literalFixRes) {
-    # Drop fixed parameters; they do not need boundaries
-    .iniDf <- .iniDf[!is.na(.iniDf$err) & .iniDf$fix, , drop=FALSE]
+  .w <- which(.iniDf$fix)
+  .iniDf <- .iniDf[-w, , drop=FALSE]
+  if (!all(is.finite(.iniDf$lower))) {
+    stop("pseudoOptim requires all parameters to have finite lower and upper bounds",
+         call.=FALSE)
   }
-  if (.ctl$literalFix) {
-    .iniDf <- .iniDf[is.na(.iniDf$err) & .iniDf$fix, , drop=FALSE]
-  }
-  if (!all(is.finite(.iniDf$lower)) ||
-      !all(is.finite(.iniDf$upper))) {
+  if (!all(is.finite(.iniDf$upper))) {
     stop("pseudoOptim requires all parameters to have finite lower and upper bounds",
          call.=FALSE)
   }
