@@ -405,17 +405,23 @@ nlmixr2Est.pseudoOptim <- function(env, ...) {
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'pseudoOptim'", .var.name=.ui$modelName)
   .ctl <- env$control
   .iniDf <- .ui$iniDf
-  .w <- which(.iniDf$fix)
-  .iniDf <- .iniDf[-w, , drop=FALSE]
-  if (!all(is.finite(.iniDf$lower))) {
+  if (.ctl$literalFix & .ctl$literalFixRes) {
+    .w <- which(.iniDf$fix)
+  } else if (.ctl$literalFix) {
+    .w <- which(.iniDf$fix & is.na(.iniDf$err))
+  } else if (.ctl$literalFixRes) {
+    .w <- which(.iniDf$fix & !is.na(.iniDf$err))
+  } else {
+    .w <- integer(0)
+  }
+  if (length(.w) > 0) {
+    .iniDf <- .iniDf[-.w, , drop=FALSE]
+  }
+  if (any(!is.finite(.iniDf$lower)) ||
+        any(!is.finite(.iniDf$upper))) {
     stop("pseudoOptim requires all parameters to have finite lower and upper bounds",
          call.=FALSE)
   }
-  if (!all(is.finite(.iniDf$upper))) {
-    stop("pseudoOptim requires all parameters to have finite lower and upper bounds",
-         call.=FALSE)
-  }
-  if (.ctl$literalFix)
   .pseudoOptimFamilyControl(env, ...)
   on.exit({if (exists("control", envir=.ui)) rm("control", envir=.ui)}, add=TRUE)
   .pseudoOptimFamilyFit(env,  ...)
