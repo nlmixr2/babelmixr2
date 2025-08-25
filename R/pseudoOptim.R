@@ -37,10 +37,12 @@
 #'
 #' mod <- function() {
 #'  ini({
-#'    E0 <- 0.5
-#'    Em <- 0.5
-#'    E50 <- 2
-#'    g <- fix(2)
+#'    # This estimation method requires all parameters
+#'    # to be bounded:
+#'    E0 <- c(-100, 0.5, 100)
+#'    Em <- c(0, 0.5, 10)
+#'    E50 <- c(0, 2, 20)
+#'    g <- fix(c(0.1, 2, 10))
 #'  })
 #'  model({
 #'    v <- E0+Em*time^g/(E50^g+time^g)
@@ -401,6 +403,21 @@ nlmixr2Est.pseudoOptim <- function(env, ...) {
   .ui <- env$ui
   rxode2::assertRxUiPopulationOnly(.ui, " for the estimation routine 'pseudoOptim', try 'focei'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'pseudoOptim'", .var.name=.ui$modelName)
+  .ctl <- env$control
+  .iniDf <- .ui$iniDf
+  if (.ctl$literalFixRes) {
+    # Drop fixed parameters; they do not need boundaries
+    .iniDf <- .iniDf[!is.na(.iniDf$err) & .iniDf$fix, , drop=FALSE]
+  }
+  if (.ctl$literalFix) {
+    .iniDf <- .iniDf[is.na(.iniDf$err) & .iniDf$fix, , drop=FALSE]
+  }
+  if (!all(is.finite(.iniDf$lower)) ||
+      !all(is.finite(.iniDf$upper))) {
+    stop("pseudoOptim requires all parameters to have finite lower and upper bounds",
+         call.=FALSE)
+  }
+  if (.ctl$literalFix)
   .pseudoOptimFamilyControl(env, ...)
   on.exit({if (exists("control", envir=.ui)) rm("control", envir=.ui)}, add=TRUE)
   .pseudoOptimFamilyFit(env,  ...)

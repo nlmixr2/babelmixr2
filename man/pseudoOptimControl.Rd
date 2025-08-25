@@ -343,10 +343,12 @@ dsn$DV=rbinom(1000,1,exp(-1+dsn$time)/(1+exp(-1+dsn$time)))
 
 mod <- function() {
  ini({
-   E0 <- 0.5
-   Em <- 0.5
-   E50 <- 2
-   g <- fix(2)
+   # This estimation method requires all parameters
+   # to be bounded:
+   E0 <- c(-100, 0.5, 100)
+   Em <- c(0, 0.5, 10)
+   E50 <- c(0, 2, 20)
+   g <- fix(c(0.1, 2, 10))
  })
  model({
    v <- E0+Em*time^g/(E50^g+time^g)
