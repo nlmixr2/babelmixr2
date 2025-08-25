@@ -17,11 +17,6 @@
 #' @param varleft relative variation remaining; if below this value,
 #'   the algorithm stops.  Defaults to 1e-8.
 #'
-#' @param infiniteFactor If the lower/upper is infinite, this changes
-#'   the initial estimate by this factor (`lower = initial/factor`,
-#'   upper=`initial*factor`) to ensure that the initial estimate is
-#'   not infinite (like required by the algorithm)
-#'
 #' @param verbose If TRUE, print information about the optimization
 #'   from `FME::pseudoOptim`.  Default is FALSE.
 #'
@@ -64,7 +59,6 @@ pseudoOptimControl <- function(npop=NULL, # Number of elements in the pouplation
                                centroid=3, # Centroid for the population
                                varleft=1e-8,
                                verbose=FALSE,
-                               infiniteFactor=10000,
                            returnPseudoOptim=FALSE,
 
                            # rxode2/nlmixr2est options
@@ -174,7 +168,6 @@ pseudoOptimControl <- function(npop=NULL, # Number of elements in the pouplation
     centroid= as.integer(centroid),
     varleft = as.double(varleft),
     verbose = as.logical(verbose),
-    infiniteFactor=as.double(infiniteFactor),
     covMethod=match.arg(covMethod),
     optExpression=optExpression,
     literalFix=literalFix,
@@ -297,40 +290,15 @@ getValidNlmixrCtl.pseudoOptim <- function(control) {
   # Use nlmEnv and function for DRY principle
   rxode2::rxReq("FME")
   .ctl <- ui$control
-
-  ## .keep <- c("npt", "rhobeg", "rhoend", "iprint", "maxfun")
-  ## .keep <- .keep[vapply(.keep, function(opt) {
-  ##   !is.null(.ctl[[opt]])
-  ## }, logical(1), USE.NAMES = FALSE)]
-
-  ## .oCtl <- setNames(lapply(.keep, function(x) {.ctl[[x]]}), .keep)
-  ## class(.ctl) <- NULL
   .p <- setNames(ui$nlmParIni, ui$nlmParName)
   .mi <-  ui$nlmRxModel
   .env <- nlmixr2est::.nlmSetupEnv(.p, ui, dataSav, .mi, .ctl,
-                                   lower=ui$optimParLower, upper=ui$optimParUpper)
+                                   lower=ui$optimParLower,
+                                   upper=ui$optimParUpper)
   on.exit({nlmixr2est::.nlmFreeEnv()})
   if (is.null(.ctl$npop)) {
-    .ctl$npop <- max(5*length(.ctl$npop),50)
+    .ctl$npop <- max(5*length(.env$par.ini),50)
   }
-  .env$warnLimit <- FALSE
-  .env$lower <- stats::setNames(vapply(seq_along(.env$lower),
-                                       function(i) {
-                                         if (is.finite(.env$lower[i])) {
-                                           .env$lower[i]
-                                         } else {
-                                           .env$par.ini[i]/ .ctl$infiniteFactor
-                                         }
-                                       }, double(1), USE.NAMES=FALSE), names(.env$lower))
-
-  .env$upper <- stats::setNames(vapply(seq_along(.env$upper),
-                                       function(i) {
-                                         if (is.finite(.env$upper[i])) {
-                                           .env$upper[i]
-                                         } else {
-                                           .env$par.ini[i] * .ctl$infiniteFactor
-                                         }
-                                       }, double(1), USE.NAMES=FALSE), names(.env$upper))
   .control <- list(npop=.ctl$npop,
                    numiter=.ctl$numiter,
                    centroid=.ctl$centroid,
@@ -344,7 +312,7 @@ getValidNlmixrCtl.pseudoOptim <- function(control) {
     control=.(.control)))
   .ret <- eval(.ret)
   nlmixr2est::.nlmFinalizeList(.env, .ret, par="par", printLine=TRUE,
-                                       hessianCov=TRUE)
+                               hessianCov=TRUE)
 }
 
 #' Get the full theta for nlm methods
@@ -409,9 +377,6 @@ getValidNlmixrCtl.pseudoOptim <- function(control) {
   .ret$fullTheta <- .pseudoOptimGetTheta(.ret$pseudoOptim, .ui)
   .ret$cov <- .ret$pseudoOptim$cov
   .ret$covMethod <- .ret$pseudoOptim$covMethod
-  #.ret$etaMat <- NULL
-  #.ret$etaObf <- NULL
-  #.ret$omega <- NULL
   .ret$control <- .control
   .ret$extra <- ""
   nlmixr2est::.nlmixr2FitUpdateParams(.ret)
