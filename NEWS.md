@@ -5,6 +5,9 @@
   `as.mcmc(fit)` and then run coda tools like
   `coda::raftery.diag(coda::as.mcmc(fit2))`.
 
+* Added estimation method `pseudoOptim` which runs
+  `FME::pseudoOptim()`. This estimation method requires all parameters
+  to be bound.
 
 # babelmixr2 0.1.8
 
