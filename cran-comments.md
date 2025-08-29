@@ -1,3 +1,6 @@
-# babelmixr2 0.1.8
+# babelmixr2 0.1.6
 
-* Prospective fixes for rxode2 and nlmixr2est 4.0
+* Fixes for new rstudio completion
+
+* Added 2 new estimation methods interfacing with FME, `fmeMcmc` and
+  `psuedoOptim`
