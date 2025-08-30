@@ -45,13 +45,13 @@ Imports:
     nlmixr2extra,
     nlmixr2plot,
     magrittr,
-    nlmixr2est (>= 3.0.1),
+    nlmixr2est (>= 4.1.0),
     nonmem2rx (>= 0.1.5),
     monolix2rx (>= 0.0.3),
     methods,
     qs,
     rex,
-    rxode2 (>= 3.0.2)
+    rxode2 (>= 4.1.0)
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 Config/testthat/edition: 3
