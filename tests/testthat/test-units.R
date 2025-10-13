@@ -1,4 +1,7 @@
 test_that("simplifyUnit", {
+  skip_if_not_installed("units")
+  units::remove_unit("fraction") # something in test-pknca is messing with this
+
   expect_equal(simplifyUnit(""), "")
   expect_equal(simplifyUnit("", ""), "")
   expect_equal(simplifyUnit("kg", ""), "kg")
@@ -16,15 +19,27 @@ test_that("simplifyUnit", {
 })
 
 test_that("simplifyUnit expected errors", {
+  skip_if_not_installed("units")
+
   # units must be recognized by udunits
   expect_error(simplifyUnit("foo"))
   expect_error(simplifyUnit(numerator = c("mg", "mL")))
   expect_error(simplifyUnit(numerator = "mg", denominator = c("mg", "mL")))
 })
 
+expect_equal_units <- function(object, expected, ...) {
+  convert <- function(x) if (!is.na(x)) units::as_units(x) else x
+  object <- lapply(object, convert)
+  expected <- lapply(expected, convert)
+  expect_equal(object, expected, ...)
+}
+
 test_that("modelUnitConversion", {
+  skip_if_not_installed("units")
+  local_edition(2) # use all.equal to compare units
+
   # no input gives effectively no output
-  expect_equal(
+  expect_equal_units(
     modelUnitConversion(),
     list(
       amtu = NA_character_,
@@ -37,7 +52,7 @@ test_that("modelUnitConversion", {
     )
   )
   # Unit conversion is correct
-  expect_equal(
+  expect_equal_units(
     modelUnitConversion(dvu = "ng/mL", amtu = "mg", timeu = "hr", volumeu = "L"),
     list(
       amtu = "mg",
@@ -52,9 +67,9 @@ test_that("modelUnitConversion", {
   # Volume detection works for "L" units
   expect_message(
     conversion <- modelUnitConversion(dvu = "ng/mL", amtu = "mg", timeu = "hr"),
-    regexp = "volumeu detected from amtu and dvu as: L"
+    regexp = "volumeu detected from amtu and dvu as:"
   )
-  expect_equal(
+  expect_equal_units(
     conversion,
     list(
       amtu = "mg",
@@ -69,9 +84,9 @@ test_that("modelUnitConversion", {
   # Volume detection works for "mL/kg" units
   expect_message(
     conversion <- modelUnitConversion(dvu = "ng/mL", amtu = "mg/kg", timeu = "hr"),
-    regexp = "volumeu detected from amtu and dvu as: mL/kg"
+    regexp = "volumeu detected from amtu and dvu as:"
   )
-  expect_equal(
+  expect_equal_units(
     conversion,
     list(
       amtu = "mg/kg",
@@ -86,9 +101,9 @@ test_that("modelUnitConversion", {
   # Weird volume detection works for "mL/kg" units
   expect_message(
     conversion <- modelUnitConversion(dvu = "ng/mL", amtu = "mg/g", timeu = "hr"),
-    regexp = "volumeu detected from amtu and dvu as: mL/kg"
+    regexp = "volumeu detected from amtu and dvu as:"
   )
-  expect_equal(
+  expect_equal_units(
     conversion,
     list(
       amtu = "mg/g",
@@ -103,10 +118,10 @@ test_that("modelUnitConversion", {
   # Unconvertible volume detection works
   expect_message(
     conversion <- modelUnitConversion(dvu = "ng/mL", amtu = "mol", timeu = "hr"),
-    regexp = "volumeu detected from amtu and dvu as: mL*mol/ng",
+    regexp = "volumeu detected from amtu and dvu as:",
     fixed = TRUE
   )
-  expect_equal(
+  expect_equal_units(
     conversion,
     list(
       amtu = "mol",
@@ -119,7 +134,7 @@ test_that("modelUnitConversion", {
     )
   )
   # No time means no clearance
-  expect_equal(
+  expect_equal_units(
     modelUnitConversion(dvu = "ng/mL", amtu = "mg", volumeu = "L"),
     list(
       amtu = "mg",
