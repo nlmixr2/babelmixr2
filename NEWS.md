@@ -1,3 +1,7 @@
+# babelmixr2 0.1.10
+
+* Bug fix for the new version of `units` (#179)
+
 # babelmixr2 0.1.9
 
 * Added estimation method `fmeMcmc` which runs `FME::modMCMC()`.  It
