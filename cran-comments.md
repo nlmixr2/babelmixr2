@@ -1,6 +1,3 @@
-# babelmixr2 0.1.6
+# babelmixr2 0.1.10
 
-* Fixes for new rstudio completion
-
-* Added 2 new estimation methods interfacing with FME, `fmeMcmc` and
-  `psuedoOptim`
+* Updated to fix `units`
