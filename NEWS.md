@@ -1,3 +1,7 @@
+# babelmixr2 0.1.11
+
+* Remove `qs` since it will be archived and replace with `qs2`.
+
 # babelmixr2 0.1.10
 
 * Bug fix for the new version of `units` (#179)
