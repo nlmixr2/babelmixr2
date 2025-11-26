@@ -49,7 +49,7 @@ Imports:
     nonmem2rx (>= 0.1.5),
     monolix2rx (>= 0.0.3),
     methods,
-    qs,
+    qs2,
     rex,
     rxode2 (>= 4.1.0)
 RoxygenNote: 7.3.2
