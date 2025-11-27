@@ -15,11 +15,11 @@ knitr::opts_chunk$set(
 if (!dir.exists("pk.turnover.emax3-nonmem")) {
   stop("not setup correctly")
 }
-if (file.exists("pk.turnover.emax3-nonmem/pk.turnover.emax3-rounding.qs")) {
-  unlink("pk.turnover.emax3-nonmem/pk.turnover.emax3-rounding.qs")
+if (file.exists("pk.turnover.emax3-nonmem/pk.turnover.emax3-rounding.qs2")) {
+  unlink("pk.turnover.emax3-nonmem/pk.turnover.emax3-rounding.qs2")
 }
-if (file.exists("pk.turnover.emax4-nonmem/pk.turnover.emax4.qs")) {
-  unlink("pk.turnover.emax4-nonmem/pk.turnover.emax4.qs")
+if (file.exists("pk.turnover.emax4-nonmem/pk.turnover.emax4.qs2")) {
+  unlink("pk.turnover.emax4-nonmem/pk.turnover.emax4.qs2")
 }
 ```
 
@@ -153,7 +153,7 @@ This means that you can compare the `IPRED` and `PRED` values of
 
 This is similar to the procedure Kyle Baron advocates for validating a
 NONMEM model against a `mrgsolve` model (see
-https://mrgsolve.org/blog/posts/2022-05-validate-translation/ and https://mrgsolve.org/blog/posts/2023-update-validation.html), 
+https://mrgsolve.org/blog/posts/2022-05-validate-translation/ and https://mrgsolve.org/blog/posts/2023-update-validation.html),
 
 The advantage of this method is that you need to simply write one model to
 get a validated `roxde2`/`nlmixr2` model.
