@@ -239,11 +239,11 @@ test_that("convertDataBack reports correct boolean flags", {
 test_that("transDv applies Box-Cox transformation (lambda=1 is identity)", {
   inDv    <- c(1.0, 2.0, 3.0)
   inCmt   <- c(1L, 1L, 1L)
-  cmtTrans <- c(1L)
-  lambda   <- c(1.0)
-  yj       <- c(1L)
-  low      <- c(-Inf)
-  high     <- c(Inf)
+  cmtTrans <- 1L
+  lambda   <- 1.0
+  yj       <- 1L
+  low      <- -Inf
+  high     <- Inf
 
   result <- transDv(
     inDv = inDv, inCmt = inCmt,
@@ -263,11 +263,11 @@ test_that("transDv applies Box-Cox transformation (lambda=1 is identity)", {
 test_that("transDv returns NA for compartments not in cmtTrans", {
   inDv     <- c(1.0, 2.0)
   inCmt    <- c(99L, 99L)
-  cmtTrans <- c(1L)
-  lambda   <- c(1.0)
-  yj       <- c(1L)
-  low      <- c(-Inf)
-  high     <- c(Inf)
+  cmtTrans <- 1L
+  lambda   <- 1.0
+  yj       <- 1L
+  low      <- -Inf
+  high     <- Inf
 
   result <- transDv(
     inDv = inDv, inCmt = inCmt,
@@ -284,8 +284,8 @@ test_that("transDv returns NA for compartments not in cmtTrans", {
 test_that("transDv handles empty input gracefully", {
   result <- transDv(
     inDv = numeric(0), inCmt = integer(0),
-    cmtTrans = c(1L), lambda = c(1.0),
-    yj = c(1L), low = c(-Inf), high = c(Inf)
+    cmtTrans = 1L, lambda = 1.0,
+    yj = 1L, low = -Inf, high = Inf
   )
 
   expect_length(result$dv, 0L)
