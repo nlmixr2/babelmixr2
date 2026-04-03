@@ -1,4 +1,17 @@
-# babelmixr2 0.1.11
+# babelmixr2 0.1.11.9000
+
+* Fix integer type safety in C++ source: loop variables and size variables now
+  use `R_xlen_t` (signed) or `size_t` (unsigned) instead of `int`/`unsigned
+  int` where appropriate, preventing potential integer overflow and segfaults
+  for vectors with more than 2^31 elements.  The specific crash: in
+  `getDvid()`, `int j = cmtDvid.size()` when `cmtDvid.size()` ≥ 2^31 wraps to
+  `INT_MIN`, the subsequent decrement jumps to `INT_MAX`, and
+  `cmtDvid[INT_MAX]` accesses memory far out of bounds.
+
+* Add bounds check in `popedSolveIdME()` and `popedSolveIdME2()` to verify
+  that `modelSwitch` values are within the allocated matrix column dimensions
+  (`nend`), in addition to the existing check against the number of unique IDs
+  in the global time indexer.
 
 * Remove `qs` since it will be archived and replace with `qs2`.
 
