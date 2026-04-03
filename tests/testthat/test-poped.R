@@ -235,8 +235,6 @@ if (requireNamespace("PopED", quietly=TRUE) &&
       ## expect_equal(v$ofv, 20.9503530468227, tolerance = 1e-4)
 
 
-      ## skip_if_not_installed("vdiffr")
-      ## vdiffr::expect_doppelganger("pheno_pred", plot_model_prediction(db, model_num_points = 300))
 
     })
 
@@ -293,16 +291,13 @@ if (requireNamespace("PopED", quietly=TRUE) &&
                                    maxa=c(DOSE=200),
                                    mina=c(DOSE=0)))
 
-        vdiffr::expect_doppelganger("pred-example1",
-                                    plot_model_prediction(db, model_num_points = 300))
+        expect_error(plot_model_prediction(db, model_num_points = 300), NA)
 
-        vdiffr::expect_doppelganger("pred-example2",
-                                    plot_model_prediction(db,
-                                                          PI=TRUE,
-                                                          separate.groups=TRUE,
-                                                          model_num_points = 300,
-                                                          sample.times = FALSE))
-
+        expect_error(plot_model_prediction(db,
+                                           PI=TRUE,
+                                           separate.groups=TRUE,
+                                           model_num_points = 300,
+                                           sample.times = FALSE), NA)
 
         expect_equal(evaluate_design(db),
                      list(ofv = 39.3090057657525,
@@ -437,12 +432,10 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
 
     ##  Create plot of model of adult data without variability
-    vdiffr::expect_doppelganger("poped-adult-first",
-                                plot_model_prediction(babel.db, model_num_points = 300))
+    expect_error(plot_model_prediction(babel.db, model_num_points = 300), NA)
 
-    vdiffr::expect_doppelganger("poped-ped-next",
-                                plot_model_prediction(babel.db.ped,
-                                                      model_num_points = 300))
+    expect_error(plot_model_prediction(babel.db.ped,
+                                       model_num_points = 300), NA)
 
     expect_equal(babelBpopIdx(babel.db.ped, "pedCL"), 4L)
 

@@ -1,4 +1,4 @@
-# babelmixr2 0.1.11
+# babelmixr2 0.1.11.9000
 
 * Fix integer type safety in C++ source: loop variables and size variables now
   use `R_xlen_t` (signed) or `size_t` (unsigned) instead of `int`/`unsigned
@@ -12,6 +12,8 @@
   that `modelSwitch` values are within the allocated matrix column dimensions
   (`nend`), in addition to the existing check against the number of unique IDs
   in the global time indexer.
+
+* Remove `qs` since it will be archived and replace with `qs2`.
 
 # babelmixr2 0.1.10
 
