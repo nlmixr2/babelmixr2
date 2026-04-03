@@ -14,8 +14,8 @@ knitr::opts_chunk$set(
 if (!dir.exists("pk.turnover.emax3-monolix")) {
   stop("not setup correctly")
 } else {
-  if (file.exists("pk.turnover.emax3-monolix/nlmixr.qs")) {
-    unlink("pk.turnover.emax3-monolix/nlmixr.qs")
+  if (file.exists("pk.turnover.emax3-monolix/nlmixr.qs2")) {
+    unlink("pk.turnover.emax3-monolix/nlmixr.qs2")
   }
 }
 library(rxode2)
@@ -111,7 +111,7 @@ This fit issues an informational tidbit -
 
 This will automatically be generated as well when `lixoftConnectors`
 package is generated and you have a recent version of Monolix.  If you
-don't have that information then the important parameter history plots will 
+don't have that information then the important parameter history plots will
 not be imported and you cannot see those plots.
 
 Just like with the NONMEM translation, the `monolixControl()` has
@@ -176,21 +176,20 @@ v2s
 The input dataset expected to be compatible with `rxode2` or
 `nlmixr2`.  This dataset is then converted to Monolix format:
 
-- The combination of `CMT` and Dose type creates a unique `ADM` variable. 
+- The combination of `CMT` and Dose type creates a unique `ADM` variable.
 
-- The `ADM` definition is saved in the monolix model file 
+- The `ADM` definition is saved in the monolix model file
 
 - `babelmixr2` creates a macro describing the compartment, ie `compartment(cmt=#, amount=stateName)`
 
 - `babelmixr2` also creates a macro for each type of dosing:
 
    - Bolus/infusion uses `depot()` and adds modeled lag time (`Tlag`) or bioavailability (`p`) if specified
-   
+
    - Modeled rate uses `depot()` with `Tk0=amtDose/rate`. `babelmixr2`
      also adds modeled lag time (`Tlag`) or bioavailability (`p`) if
      specified
-   
+
    - Modeled duration uses `depot()` with `Tk0=dur`, also add adds
      modeled lag time (`Tlag`) or bioavailability (`p`) if specified
      Turning off a compartment uses empty macro
-   

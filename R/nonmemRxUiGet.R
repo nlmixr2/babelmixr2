@@ -105,7 +105,7 @@ rxUiGet.nonmemQs <- function(x, ...) {
   paste0(rxUiGet.nonmemModelName(x, ...),
          ifelse(rxode2::rxGetControl(.ui, "readRounding", FALSE), "-rounding",
                 ifelse(rxode2::rxGetControl(.ui, "readBadOpt", FALSE), "-bad-opt", "")),
-         ".qs")
+         ".qs2")
 }
 attr(rxUiGet.nonmemQs, "rstudio") <- ""
 

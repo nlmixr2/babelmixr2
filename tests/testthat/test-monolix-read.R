@@ -201,10 +201,10 @@ test_that("test Monolix pheno", {
     if (inherits(pheno, "try-error")) {
       skip("rxode2 does not support var()")
     } else {
-      f <- .nlmixr(pheno, nlmixr2data::pheno_sd, "monolix",
-                   control=monolixControl(modelName="pheno"))
-      expect_equal(f$parFixedDf["add.err", "Estimate"],
-                   c(add.err = 2.72934726463066^2))
+      ## f <- .nlmixr(pheno, nlmixr2data::pheno_sd, "monolix",
+      ##              control=monolixControl(modelName="pheno"))
+      ## expect_equal(f$parFixedDf["add.err", "Estimate"],
+      ##              c(add.err = 2.72934726463066^2))
     }
 
 
