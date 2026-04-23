@@ -227,9 +227,9 @@ test_that("getStandardColNames", {
 
 test_that("invalid nonmem conversion", {
   skip_on_cran()
-  skip_if_not(file.exists("bad-nonmem-data-convert.qs"))
+  skip_if_not(file.exists("bad-nonmem-data-convert.qs2"))
 
-  d <- qs::qread("bad-nonmem-data-convert.qs")
+  d <- qs2::qs_read("bad-nonmem-data-convert.qs2")
 
   f <-
     function() {

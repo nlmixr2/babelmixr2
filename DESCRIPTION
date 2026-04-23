@@ -1,7 +1,7 @@
 Package: babelmixr2
 Type: Package
 Title: Use 'nlmixr2' to Interact with Open Source and Commercial Software
-Version: 0.1.10
+Version: 0.1.11.9000
 Authors@R: c(person("Matthew","Fidler", role = c("aut", "cre"), email = "matthew.fidler@gmail.com", comment=c(ORCID="0000-0001-8538-6691")),
            person("Bill", "Denney", email="wdenney@humanpredictions.com", role="aut", comment=c(ORCID="0000-0002-5759-428X")),
            person("Theodoros", "Papathanasiou",  role="ctb"),
@@ -26,7 +26,6 @@ Suggests:
     spelling,
     PopED,
     units (>= 0.8-6),
-    vdiffr,
     nlme,
     dplyr,
     devtools,
@@ -49,7 +48,7 @@ Imports:
     nonmem2rx (>= 0.1.5),
     monolix2rx (>= 0.0.3),
     methods,
-    qs,
+    qs2,
     rex,
     rxode2 (>= 4.1.0)
 RoxygenNote: 7.3.2

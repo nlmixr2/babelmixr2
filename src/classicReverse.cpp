@@ -103,7 +103,7 @@ static inline int getSs(int wh0, bool &hasSs, bool &hasSs2, bool &hasSsRate) {
 using namespace Rcpp;
 
 static inline int getDvid(int &cmt, IntegerVector &dvidDvid, IntegerVector &cmtDvid) {
-  for (int j=cmtDvid.size(); j--;) {
+  for (R_xlen_t j=cmtDvid.size(); j--;) {
     if (cmtDvid[j] == cmt) {
       return(dvidDvid[j]);
     }
@@ -119,13 +119,13 @@ static inline int getDvid(int &cmt, IntegerVector &dvidDvid, IntegerVector &cmtD
 
 static inline int getAdm(int cmt, int type, std::vector<int> &admIds) {
   int id = cmt*10+type;
-  for (unsigned int i = 0; i < admIds.size(); ++i) {
+  for (size_t i = 0; i < admIds.size(); ++i) {
     if (admIds[i] == id) {
-      return i+1;
+      return (int)(i+1);
     }
   }
   admIds.push_back(id);
-  return admIds.size();
+  return (int)admIds.size();
 }
 
 static inline DataFrame createAdm(std::vector<int> &admIds) {
@@ -133,8 +133,8 @@ static inline DataFrame createAdm(std::vector<int> &admIds) {
   IntegerVector cmt(admIds.size());
   IntegerVector type(admIds.size());
   int c=0, t=0;
-  for (unsigned int i = 0; i < admIds.size(); ++i) {
-    adm[i] = i+1;
+  for (size_t i = 0; i < admIds.size(); ++i) {
+    adm[i] = (int)(i+1);
     c =admIds[i]/10;
     t = admIds[i] - c*10;
     cmt[i] = c;
@@ -175,7 +175,7 @@ List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, Nu
   bool hasSs2=false;
   bool hasSsRate=false;
   double curAmt=0.0;
-  for (unsigned int i = 0; i < evid.size(); ++i) {
+  for (R_xlen_t i = 0; i < evid.size(); ++i) {
     int curEvid = evid[i];
     // put in defaults
     newEvid[i] = evid[i];
@@ -251,7 +251,7 @@ List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, Nu
             bool foundOff=false;
             double t2=0;
             int curId = id[i];
-            for (int j=i; j < evid.size(); j++){
+            for (R_xlen_t j=i; j < evid.size(); j++){
               if (id[j] != curId) {
                 break;
               }

@@ -21,7 +21,7 @@ static inline void getDv(double dv, int cmt,
                          IntegerVector& yj, NumericVector& low, NumericVector& high,
                          double& llikAdj,
                          double &out, int &dvid, int &cmtOut) {
-  for (unsigned int i = cmtTrans.size(); i--;) {
+  for (R_xlen_t i = cmtTrans.size(); i--;) {
     if (cmt == cmtTrans[i]) {
       llikAdj += _powerL(dv, lambda[i], yj[i], low[i], high[i]);
       out = _powerD(dv, lambda[i], yj[i], low[i], high[i]);
@@ -49,7 +49,7 @@ List transDv(NumericVector &inDv, IntegerVector &inCmt,
   double dvOut = 0.0;
   int dvidOut = 0;
   int cmtOut = 0;
-  for (unsigned int i = inDv.size(); i--;) {
+  for (R_xlen_t i = inDv.size(); i--;) {
     getDv(inDv[i], inCmt[i], cmtTrans, nCmt, lambda, yj, low, high, llikAdj,
           dvOut, dvidOut, cmtOut);
     out[i] = dvOut;

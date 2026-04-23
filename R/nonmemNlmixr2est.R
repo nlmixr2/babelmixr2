@@ -192,7 +192,7 @@
 
   if (file.exists(.qs)) {
     .minfo("load saved nlmixr2 object")
-    .ret <- qs::qread(.qs)
+    .ret <- qs2::qs_read(.qs)
     return(.ret)
   } else if (!file.exists(.nmctlFile)) {
     .minfo("writing nonmem files")
@@ -262,7 +262,7 @@
     }
     .msg$message <- c(.msg$message, paste0("nonmem model: '", .nmctlFile, "'"))
     assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
-    qs::qsave(.ret, .qs)
+    qs2::qs_save(.ret, .qs)
   }
   .ret
 }
