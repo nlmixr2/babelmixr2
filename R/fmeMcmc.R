@@ -437,6 +437,7 @@ nlmixr2Est.fmeMcmc <- function(env, ...) {
   .fmeMcmcFamilyFit(env,  ...)
 }
 attr(nlmixr2Est.fmeMcmc, "covPresent") <- TRUE
+attr(nlmixr2Est.fmeMcmc, "unbounded") <- TRUE
 
 as.mcmc.nlmixr2.fmeMcmc <- function(x, ...) {
   if (!inherits(x, "nlmixr2.fmeMcmc")) {

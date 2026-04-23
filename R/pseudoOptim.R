@@ -427,3 +427,4 @@ nlmixr2Est.pseudoOptim <- function(env, ...) {
   .pseudoOptimFamilyFit(env,  ...)
 }
 attr(nlmixr2Est.pseudoOptim, "covPresent") <- TRUE
+attr(nlmixr2Est.pseudoOptim, "unbounded") <- TRUE
