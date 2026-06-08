@@ -141,10 +141,10 @@ pseudoOptimControl <- function(npop=NULL, # Number of elements in the pouplation
   }
   checkmate::assertIntegerish(sigdigTable, lower=1, len=1, any.missing=FALSE)
 
-  .iterPrintControl <- .absorbIterPrintControl(print = print,
-                                               printNcol = printNcol,
-                                               useColor = useColor,
-                                               iterPrintControl = .xtra$iterPrintControl)
+  .iterPrintControl <- nlmixr2est::.absorbIterPrintControl(print = print,
+                                                           printNcol = printNcol,
+                                                           useColor = useColor,
+                                                           iterPrintControl = .xtra$iterPrintControl)
   if (checkmate::testIntegerish(scaleType, len=1, lower=1, upper=5, any.missing=FALSE)) {
     scaleType <- as.integer(scaleType)
   } else {
