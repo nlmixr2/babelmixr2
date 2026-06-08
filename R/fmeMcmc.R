@@ -1,5 +1,6 @@
 #' Control for fmeMcmc estimation method in nlmixr2
 #'
+#' @inheritParams nlmixr2est::iterPrintParams
 #' @inheritParams nlmixr2est::foceiControl
 #' @inheritParams nlmixr2est::saemControl
 #'
@@ -69,8 +70,8 @@ fmeMcmcControl <- function(jump=NULL,
                            maxOdeRecalc=5,
                            odeRecalcFactor=10^(0.5),
 
-                           useColor = crayon::has_color(),
-                           printNcol = floor((getOption("width") - 23) / 12), #
+                           useColor = NULL,
+                           printNcol = NULL, #
                            print = 1L, #
 
                            normType = c("rescale2", "mean", "rescale", "std", "len", "constant"), #
@@ -101,7 +102,7 @@ fmeMcmcControl <- function(jump=NULL,
 
   .xtra <- list(...)
   .bad <- names(.xtra)
-  .bad <- .bad[!(.bad == "genRxControl")]
+  .bad <- .bad[!(.bad %in% c("genRxControl", "iterPrintControl"))]
   if (length(.bad) > 0) {
     stop("unused argument: ", paste
     (paste0("'", .bad, "'", sep=""), collapse=", "),
@@ -140,9 +141,10 @@ fmeMcmcControl <- function(jump=NULL,
   }
   checkmate::assertIntegerish(sigdigTable, lower=1, len=1, any.missing=FALSE)
 
-  checkmate::assertLogical(useColor, any.missing=FALSE, len=1)
-  checkmate::assertIntegerish(print, len=1, lower=0, any.missing=FALSE)
-  checkmate::assertIntegerish(printNcol, len=1, lower=0, any.missing=FALSE)
+  .iterPrintControl <- .absorbIterPrintControl(print = print,
+                                               printNcol = printNcol,
+                                               useColor = useColor,
+                                               iterPrintControl = .xtra$iterPrintControl)
   if (checkmate::testIntegerish(scaleType, len=1, lower=1, upper=5, any.missing=FALSE)) {
     scaleType <- as.integer(scaleType)
   } else {
@@ -187,9 +189,7 @@ fmeMcmcControl <- function(jump=NULL,
     maxOdeRecalc=as.integer(maxOdeRecalc),
     odeRecalcFactor=odeRecalcFactor,
 
-    useColor=useColor,
-    print=print,
-    printNcol=printNcol,
+    iterPrintControl=.iterPrintControl,
     scaleType=scaleType,
     normType=normType,
 
