@@ -77,6 +77,10 @@ nlmixr2Est.saemix <- function(env, ...) {
     }
   }
 
+  # Precompute row indices and counts per ID for fast rebuilding of ev_expanded inside .saemixModelFunction
+  .ret$rows_by_id <- split(seq_len(nrow(.ret$dataSav)), .ret$dataSav$ID)
+  .ret$subject_row_count <- sapply(.ret$rows_by_id, length)
+
   # Check if likelihood model
   .isLikelihood <- any(.ui$predDf$distribution == "LL")
   .modeltype <- if (.isLikelihood) "likelihood" else "structural"
@@ -145,100 +149,122 @@ nlmixr2Est.saemix <- function(env, ...) {
     }
   }
 
-  # Build predictors list
-  .saemix_predictors <- c("orig_row", "TIME")
-
+  .saemixPredictors <- c("orig_row", "TIME")
+  .etaNamesUi <- .ui$muRefTable$eta
+  if (is.null(.etaNamesUi)) .etaNamesUi <- character(0)
+ 
   .saemixModelFunction <- function(psi, id, xidep) {
-
-    if (is.null(dim(psi))) {
-      psi <- matrix(psi, nrow = 1)
-      colnames(psi) <- .theta_names
-    }
-    M <- nrow(psi)
-
-    # Reconstruct original row indices and IDs
-    orig_row_col <- xidep[, 1]
-
-    sim_orig_ids <- numeric(M)
-    for (i in 1:M) {
-      obs_idx <- which(id == i)[1]
-      sim_orig_ids[i] <- .ret$dataSav$ID[orig_row_col[obs_idx]]
-    }
-
-    # Pre-split dataSav by ID
-    data_by_id <- split(.ret$dataSav, .ret$dataSav$ID)
-
-    # Rebuild ev_expanded
-    ev_list <- lapply(1:M, function(i) {
-      df_subj <- data_by_id[[as.character(sim_orig_ids[i])]]
-      df_subj$ID <- i
-      df_subj$sim_id <- i
-      df_subj
-    })
-    ev_expanded <- do.call(rbind, ev_list)
-
-    # Construct params for rxSolve
-    params <- as.data.frame(psi)
-    colnames(params) <- .theta_names
-    params$ID <- 1:M
-
-    # Set all model etas to 0
-    .eta_names_ui <- .ui$muRefTable$eta
-    for (eta_name in .eta_names_ui) {
-      params[[eta_name]] <- 0
-    }
-
-    # Run the ODE solver
-    res <- rxode2::rxSolve(.ui, events = ev_expanded, params = params, keep = "orig_row")
-
-    # Match the rows
-    res_id <- if ("id" %in% names(res)) as.integer(res$id) else rep(1L, length(res$time))
-    key_res <- paste(res_id, res$orig_row, sep = "_")
-    key_xidep <- paste(id, orig_row_col, sep = "_")
-    matched_idx <- match(key_xidep, key_res)
-
-    pred_cols <- .ui$predDf$cond
-    if (.isLikelihood) {
-      pred_cols <- rep("pred", length(pred_cols))
-    }
-
-    if (length(pred_cols) == 1) {
-      predictions <- res[[pred_cols]][matched_idx]
-    } else {
-      # Locate ytype column in .ret$dataSav using orig_row_col mapping
-      ytype_col <- if ("YTYPE" %in% colnames(.ret$dataSav)) "YTYPE" else "ytype"
-      ytype_vec <- .ret$dataSav[[ytype_col]][orig_row_col]
-
-      predictions <- numeric(nrow(xidep))
-      for (y_val in unique(ytype_vec)) {
-        rows <- which(ytype_vec == y_val)
-        pred_col <- pred_cols[y_val]
-        predictions[rows] <- res[[pred_col]][matched_idx[rows]]
+    .oldSeed <- rxode2::.rxGetSeed()
+    on.exit(rxode2::.rxSetSeed(.oldSeed))
+    tryCatch({
+      if (is.null(dim(psi))) {
+        psi <- matrix(psi, nrow = 1)
+        colnames(psi) <- .theta_names
       }
-    }
-    return(predictions)
+      M <- nrow(psi)
+ 
+      # Reconstruct original row indices and IDs
+      origRowCol <- xidep[, 1]
+      simOrigIds <- .ret$dataSav$ID[origRowCol[match(1:M, id)]]
+ 
+      # Check if cached version of evExpanded exists and is identical
+      hit <- FALSE
+      if (!is.null(.ret$cachedSimOrigIds) &&
+          length(.ret$cachedSimOrigIds) == length(simOrigIds) &&
+          all(.ret$cachedSimOrigIds == simOrigIds)) {
+        evExpanded <- .ret$cachedEvExpanded
+        hit <- TRUE
+      } else {
+        # Rebuild evExpanded using precomputed indices
+        indices <- unlist(.ret$rows_by_id[as.character(simOrigIds)], use.names = FALSE)
+        evExpanded <- .ret$dataSav[indices, ]
+ 
+        repCounts <- .ret$subject_row_count[as.character(simOrigIds)]
+        evExpanded$ID <- rep(1:M, times = repCounts)
+        evExpanded$sim_id <- evExpanded$ID
+ 
+        # Save to cache
+        .ret$cachedSimOrigIds <- simOrigIds
+        .ret$cachedEvExpanded <- evExpanded
+      }
+ 
+      # Construct params template data frame
+      if (!is.null(.ret$cachedM) && .ret$cachedM == M) {
+        params <- .ret$cachedParamsTemplate
+      } else {
+        params <- as.data.frame(matrix(0, nrow = M, ncol = length(.theta_names) + length(.etaNamesUi)))
+        colnames(params) <- c(.theta_names, .etaNamesUi)
+        params$ID <- 1:M
+        .ret$cachedM <- M
+        .ret$cachedParamsTemplate <- params
+      }
+      params[, .theta_names] <- psi
+ 
+      # Run the ODE solver
+      res <- rxode2::rxSolve(.ui, events = evExpanded, params = params, keep = "orig_row", addDosing = TRUE)
+ 
+      # Get or compute matchedIdx
+      if (hit && !is.null(.ret$cachedMatchedIdx)) {
+        matchedIdx <- .ret$cachedMatchedIdx
+      } else {
+        # Match the rows
+        res_id <- if ("id" %in% names(res)) as.integer(res$id) else rep(1L, length(res$time))
+        keyRes <- paste(res_id, res$orig_row, sep = "_")
+        keyXidep <- paste(id, origRowCol, sep = "_")
+        matchedIdx <- match(keyXidep, keyRes)
+ 
+        # Save to cache
+        .ret$cachedMatchedIdx <- matchedIdx
+      }
+ 
+      predCols <- .ui$predDf$cond
+      if (.isLikelihood) {
+        predCols <- rep("pred", length(predCols))
+      }
+ 
+      if (length(predCols) == 1) {
+        predictions <- res[[predCols]][matchedIdx]
+      } else {
+        # Locate ytype column in .ret$dataSav$orig_row mapping
+        ytypeCol <- if ("YTYPE" %in% colnames(.ret$dataSav)) "YTYPE" else "ytype"
+        ytypeVec <- .ret$dataSav[[ytypeCol]][origRowCol]
+ 
+        predictions <- numeric(nrow(xidep))
+        for (yVal in unique(ytypeVec)) {
+          rows <- which(ytypeVec == yVal)
+          predCol <- predCols[yVal]
+          predictions[rows] <- res[[predCol]][matchedIdx[rows]]
+        }
+      }
+ 
+      return(predictions)
+    }, error = function(e) {
+      cat("ERROR IN .saemixModelFunction:\n")
+      print(e)
+      stop(e)
+    })
   }
-
+ 
+ 
   # Build SaemixData
-  .saemix_covariates <- .ui$allCovs
-  if (length(.saemix_covariates) == 0) {
-    .saemix_covariates <- NULL
+  .dataForSaemix <- .ret$dataSav[.ret$dataSav$mdv == 0, ]
+  .saemixCovariates <- setdiff(.ui$allCovs, "DV")
+  if (length(.saemixCovariates) == 0) {
+    .saemixCovariates <- NULL
   }
-  if (is.null(.saemix_covariates)) {
-    saemix.data <- saemix::saemixData(name.data = .ret$dataSav,
+  if (is.null(.saemixCovariates)) {
+    saemix.data <- saemix::saemixData(name.data = .dataForSaemix,
                                       name.group = "ID",
-                                      name.predictors = .saemix_predictors,
+                                      name.predictors = .saemixPredictors,
                                       name.response = "DV",
-                                      name.mdv = "mdv",
                                       name.X = "TIME",
                                       verbose = .control$warnings)
   } else {
-    saemix.data <- saemix::saemixData(name.data = .ret$dataSav,
+    saemix.data <- saemix::saemixData(name.data = .dataForSaemix,
                                       name.group = "ID",
-                                      name.predictors = .saemix_predictors,
+                                      name.predictors = .saemixPredictors,
                                       name.response = "DV",
-                                      name.mdv = "mdv",
-                                      name.covariates = .saemix_covariates,
+                                      name.covariates = .saemixCovariates,
                                       name.X = "TIME",
                                       verbose = .control$warnings)
   }
@@ -293,7 +319,17 @@ nlmixr2Est.saemix <- function(env, ...) {
   }
 
   # Run saemix
-  fit <- saemix::saemix(saemix.model, saemix.data, saemix.options)
+  fit <- withCallingHandlers({
+    saemix::saemix(saemix.model, saemix.data, saemix.options)
+  }, error = function(e) {
+    cat("\n=== INNER ERROR IN SAEMIX ===\n")
+    print(e)
+    calls <- sys.calls()
+    for (i in seq_along(calls)) {
+      cat(sprintf("[%2d] %s\n", i, paste(deparse(calls[[i]]), collapse = "\n")))
+    }
+    stop(e)
+  })
 
   # Convert results back
   .ret$ui <- .ui
@@ -391,6 +427,7 @@ nlmixr2Est.saemix <- function(env, ...) {
 
   # Generate output
   .saemixControlToFoceiControl(.ret)
+  .ret$theta <- .ret$ui$saemThetaDataFrame
   .ret <- nlmixr2est::nlmixr2CreateOutputFromUi(.ret$ui, data = .ret$origData, control = .ret$control, table = .ret$table, env = .ret, est = "saemix")
 
   .env <- .ret$env

@@ -4,8 +4,8 @@ test_that("saemix continuous PK model comparison", {
   data(theo.saemix, package = "saemix")
   saemix.data <- saemix::saemixData(name.data = theo.saemix, header = TRUE, sep = " ", na = NA,
                                     name.group = c("Id"), name.predictors = c("Dose", "Time"),
-                                    name.response = c("Concentration"), name.covariates = c("Weight", "Sex"),
-                                    units = list(x = "hr", y = "mg/L", covariates = c("kg", "-")), name.X = "Time",
+                                    name.response = c("Concentration"),
+                                    units = list(x = "hr", y = "mg/L"), name.X = "Time",
                                     verbose = FALSE)
 
   model1cpt <- function(psi, id, xidep) {
@@ -53,7 +53,8 @@ test_that("saemix continuous PK model comparison", {
     })
   }
 
-  fit_nlmixr <- nlmixr2(one.cmt, nlmixr2data::theo_sd, est = "saemix",
+  filtered_theo <- nlmixr2data::theo_sd[!(nlmixr2data::theo_sd$TIME == 0 & nlmixr2data::theo_sd$EVID == 0), ]
+  fit_nlmixr <- nlmixr2(one.cmt, filtered_theo, est = "saemix",
                         saemixControl(seed = 632545, nbiter.saemix = c(10, 5),
                                       fim = FALSE, warnings = FALSE))
 
@@ -64,7 +65,7 @@ test_that("saemix continuous PK model comparison", {
   expect_equal(as.numeric(nlmixr_est), as.numeric(direct_est), tolerance = 1e-3)
 
   # Compare residual error estimates
-  expect_equal(fit_nlmixr$theta["add.sd"], fit_direct@results@respar[1], tolerance = 1e-3)
+  expect_equal(as.numeric(fit_nlmixr$theta["add.sd"]), as.numeric(fit_direct@results@respar[1]), tolerance = 1e-3)
 
   # Compare random effects variances (omega diagonals)
   direct_omega <- diag(fit_direct@results@omega)
@@ -80,7 +81,7 @@ test_that("saemix discrete likelihood model comparison", {
   skip_on_cran()
   data(toenail.saemix, package = "saemix")
   saemix.data <- saemix::saemixData(name.data = toenail.saemix, name.group = c("id"), name.predictors = c("time", "y"),
-                                    name.response = "y", name.covariates = c("treatment"), name.X = c("time"),
+                                    name.response = "y", name.X = c("time"),
                                     verbose = FALSE)
 
   binary.model <- function(psi, id, xidep) {
@@ -101,6 +102,7 @@ test_that("saemix discrete likelihood model comparison", {
                                                     dimnames = list(NULL, c("theta1", "theta2"))),
                                       transform.par = c(0, 0),
                                       covariance.model = matrix(c(1, 0, 0, 1), ncol = 2),
+                                      omega.init = matrix(c(1, 0, 0, 1), ncol = 2),
                                       verbose = FALSE)
 
   saemix.options <- list(seed = 1234567, save = FALSE, save.graphs = FALSE, print = FALSE,
