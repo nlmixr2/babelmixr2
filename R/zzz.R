@@ -1,3 +1,6 @@
+# Package-level mutable environment for nlmer fit state (subject data, surrogate model)
+.nlmerGlobal <- new.env(parent = emptyenv())
+
 # This will be saved when compiled
 rxode2.api <- names(rxode2::.rxode2ptrs())
 
@@ -51,6 +54,13 @@ rxode2.api <- names(rxode2::.rxode2ptrs())
   rxode2::.s3register("nlmixr2est::nmObjGetControl", "saemix")
   rxode2::.s3register("nlmixr2est::nmObjHandleControlObject", "saemixControl")
   rxode2::.s3register("rxode2::rxUiDeparse", "saemixControl")
+
+  rxode2::.s3register("nlmixr2est::nlmixr2Est", "nlmer")
+  rxode2::.s3register("nlmixr2est::getValidNlmixrCtl", "nlmer")
+  rxode2::.s3register("nlmixr2est::nmObjGetControl", "nlmer")
+  rxode2::.s3register("nlmixr2est::nmObjHandleControlObject", "nlmerControl")
+  rxode2::.s3register("rxode2::rxUiDeparse", "nlmerControl")
+  rxode2::.s3register("nlmixr2est::nmObjGetFoceiControl", "nlmer")
   .iniRxode2Ptr()
   .poped$loadInfo <- popedGetLoadedInfo()
 }
