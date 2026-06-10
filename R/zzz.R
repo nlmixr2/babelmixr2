@@ -45,6 +45,12 @@ rxode2.api <- names(rxode2::.rxode2ptrs())
   rxode2::.s3register("rxode2::rxUiDeparse", "nonmemControl")
   rxode2::.s3register("rxode2::rxUiDeparse", "pkncaControl")
   rxode2::.s3register("rxode2::rxUiDeparse", "popedControl")
+
+  rxode2::.s3register("nlmixr2est::nlmixr2Est", "saemix")
+  rxode2::.s3register("nlmixr2est::getValidNlmixrCtl", "saemix")
+  rxode2::.s3register("nlmixr2est::nmObjGetControl", "saemix")
+  rxode2::.s3register("nlmixr2est::nmObjHandleControlObject", "saemixControl")
+  rxode2::.s3register("rxode2::rxUiDeparse", "saemixControl")
   .iniRxode2Ptr()
   .poped$loadInfo <- popedGetLoadedInfo()
 }

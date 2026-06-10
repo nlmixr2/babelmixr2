@@ -29,7 +29,7 @@ Unit conversion for pharmacokinetic models
 modelUnitConversion(dvu = "ng/mL", amtu = "mg", timeu = "hr", volumeu = "L")
 }
 \seealso{
-Other Unit conversion: 
-\code{\link{simplifyUnit}()}
+Other Unit conversion:
+\code{\link[=simplifyUnit]{simplifyUnit()}}
 }
 \concept{Unit conversion}

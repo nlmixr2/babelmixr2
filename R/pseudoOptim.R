@@ -289,7 +289,6 @@ getValidNlmixrCtl.pseudoOptim <- function(control) {
 }
 
 .pseudoOptimFitModel <- function(ui, dataSav) {
-  # Use nlmEnv and function for DRY principle
   rxode2::rxReq("FME")
   .ctl <- ui$control
   .p <- setNames(ui$nlmParIni, ui$nlmParName)
@@ -417,8 +416,7 @@ nlmixr2Est.pseudoOptim <- function(env, ...) {
   if (length(.w) > 0) {
     .iniDf <- .iniDf[-.w, , drop=FALSE]
   }
-  if (any(!is.finite(.iniDf$lower)) ||
-        any(!is.finite(.iniDf$upper))) {
+  if (any(!is.finite(.iniDf$lower)) || any(!is.finite(.iniDf$upper))) {
     stop("pseudoOptim requires all parameters to have finite lower and upper bounds",
          call.=FALSE)
   }
@@ -427,4 +425,4 @@ nlmixr2Est.pseudoOptim <- function(env, ...) {
   .pseudoOptimFamilyFit(env,  ...)
 }
 attr(nlmixr2Est.pseudoOptim, "covPresent") <- TRUE
-attr(nlmixr2Est.pseudoOptim, "unbounded") <- TRUE
+attr(nlmixr2Est.pseudoOptim, "unbounded") <- FALSE
