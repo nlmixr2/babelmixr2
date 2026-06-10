@@ -152,7 +152,7 @@ nlmixr2Est.saemix <- function(env, ...) {
   .saemixPredictors <- c("origRow", "TIME")
   .etaNamesUi <- .ui$muRefTable$eta
   if (is.null(.etaNamesUi)) .etaNamesUi <- character(0)
- 
+
   .saemixModelFunction <- function(psi, id, xidep) {
     .oldSeed <- rxode2::.rxGetSeed()
     on.exit(rxode2::.rxSetSeed(.oldSeed))
@@ -162,11 +162,11 @@ nlmixr2Est.saemix <- function(env, ...) {
         colnames(psi) <- .thetaNames
       }
       M <- nrow(psi)
- 
+
       # Reconstruct original row indices and IDs
       origRowCol <- xidep[, 1]
       simOrigIds <- .ret$dataSav$ID[origRowCol[match(1:M, id)]]
- 
+
       # Check if cached version of evExpanded exists and is identical
       hit <- FALSE
       if (!is.null(.ret$cachedSimOrigIds) &&
@@ -178,16 +178,16 @@ nlmixr2Est.saemix <- function(env, ...) {
         # Rebuild evExpanded using precomputed indices
         indices <- unlist(.ret$rowsById[as.character(simOrigIds)], use.names = FALSE)
         evExpanded <- .ret$dataSav[indices, ]
- 
+
         repCounts <- .ret$subjectRowCount[as.character(simOrigIds)]
         evExpanded$ID <- rep(1:M, times = repCounts)
         evExpanded$sim_id <- evExpanded$ID
- 
+
         # Save to cache
         .ret$cachedSimOrigIds <- simOrigIds
         .ret$cachedEvExpanded <- evExpanded
       }
- 
+
       # Construct params template data frame
       if (!is.null(.ret$cachedM) && .ret$cachedM == M) {
         params <- .ret$cachedParamsTemplate
@@ -199,10 +199,10 @@ nlmixr2Est.saemix <- function(env, ...) {
         .ret$cachedParamsTemplate <- params
       }
       params[, .thetaNames] <- psi
- 
+
       # Run the ODE solver
       res <- rxode2::rxSolve(.ui, events = evExpanded, params = params, keep = "origRow", addDosing = TRUE)
- 
+
       # Get or compute matchedIdx
       if (hit && !is.null(.ret$cachedMatchedIdx)) {
         matchedIdx <- .ret$cachedMatchedIdx
@@ -212,23 +212,23 @@ nlmixr2Est.saemix <- function(env, ...) {
         keyRes <- paste(resId, res$origRow, sep = "_")
         keyXidep <- paste(id, origRowCol, sep = "_")
         matchedIdx <- match(keyXidep, keyRes)
- 
+
         # Save to cache
         .ret$cachedMatchedIdx <- matchedIdx
       }
- 
+
       predCols <- .ui$predDf$cond
       if (.isLikelihood) {
         predCols <- rep("pred", length(predCols))
       }
- 
+
       if (length(predCols) == 1) {
         predictions <- res[[predCols]][matchedIdx]
       } else {
         # Locate ytype column in .ret$dataSav$origRow mapping
         ytypeCol <- if ("YTYPE" %in% colnames(.ret$dataSav)) "YTYPE" else "ytype"
         ytypeVec <- .ret$dataSav[[ytypeCol]][origRowCol]
- 
+
         predictions <- numeric(nrow(xidep))
         for (yVal in unique(ytypeVec)) {
           rows <- which(ytypeVec == yVal)
@@ -236,7 +236,7 @@ nlmixr2Est.saemix <- function(env, ...) {
           predictions[rows] <- res[[predCol]][matchedIdx[rows]]
         }
       }
- 
+
       return(predictions)
     }, error = function(e) {
       cat("ERROR IN .saemixModelFunction:\n")
@@ -244,8 +244,8 @@ nlmixr2Est.saemix <- function(env, ...) {
       stop(e)
     })
   }
- 
- 
+
+
   # Build SaemixData
   .dataForSaemix <- .ret$dataSav[.ret$dataSav$mdv == 0, ]
   .saemixCovariates <- setdiff(.ui$allCovs, "DV")
