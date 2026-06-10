@@ -194,19 +194,33 @@ rxUiGet.nlmerHdTheta <- function(x, ...) {
   on.exit(rxode2::rxProgressAbort())
   .any.zero <- FALSE
   .all.zero <- TRUE
-  .ret <- apply(.grd, 1, function(x) {
-    .l <- x["calc"]
-    .l <- eval(parse(text = .l))
-    .ret <- paste0(x["dfe"], "=", rxode2::rxFromSE(.l))
+  # Parse the calc expressions once and cache in the symengine env to avoid
+  # repeated parse/eval overhead on large problems.
+  .calcVec <- .grd[, "calc"]
+  if (!is.null(.s$..parsedHdTheta) && identical(names(.s$..parsedHdTheta), .calcVec)) {
+    .parsed <- .s$..parsedHdTheta$exprs
+  } else {
+    # Parse all calc expressions into a single expression vector
+    .parsed <- parse(text = paste(.calcVec, collapse = "\n"))
+    .s$..parsedHdTheta <- list(names = .calcVec, exprs = .parsed)
+  }
+  # Evaluate parsed expressions in the symengine environment; these expressions
+  # are expected to perform assignments into .s (so we can get the named values).
+  for (.e in .parsed) eval(.e, envir = .s)
+
+  # Build returned strings mapping dfe to expression textual form
+  .ret <- vector("character", nrow(.grd))
+  for (.i in seq_len(nrow(.grd))) {
+    x <- .grd[.i, , drop = TRUE]
+    .ret[.i] <- paste0(x["dfe"], "=", rxode2::rxFromSE(get(x["dfe"], envir = .s)))
     .zErr <- suppressWarnings(try(as.numeric(get(x["dfe"], .s)), silent = TRUE))
     if (identical(.zErr, 0)) {
-      .any.zero <<- TRUE
+      .any.zero <- TRUE
     } else if (.all.zero) {
-      .all.zero <<- FALSE
+      .all.zero <- FALSE
     }
     rxode2::rxTick()
-    .ret
-  })
+  }
   if (.all.zero) {
     stop("none of the predictions depend on 'THETA'", call. = FALSE)
   }

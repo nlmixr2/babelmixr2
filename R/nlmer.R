@@ -36,17 +36,32 @@
       paste0("THETA[", seq_len(.nPar), "]")
     )
     .evData <- .env$subjEvData[[as.character(.sid)]]
-    .sol <- do.call(
-      rxode2::rxSolve,
-      c(list(object = .sensModel$thetaGrad,
-             params = .theta,
-             events = .evData),
-        .rxCtrl)
+    .sol <- tryCatch(
+      do.call(
+        rxode2::rxSolve,
+        c(list(object = .sensModel$thetaGrad,
+               params = .theta,
+               events = .evData),
+          .rxCtrl)
+      ),
+      error = function(e) {
+        warning(sprintf("rxSolve failed for subject %s: %s", .sid, conditionMessage(e)), call. = FALSE)
+        # Create a placeholder solution with NA predictions and sensitivities
+        .nRows <- nrow(.evData)
+        .cols <- c("rx_pred_", paste0("rx__sens_rx_pred__BY_THETA_", seq_len(.nPar), "___"))
+        .df <- as.data.frame(matrix(NA_real_, nrow = .nRows, ncol = length(.cols)))
+        colnames(.df) <- .cols
+        .df
+      }
     )
     .pred[.idx] <- .sol$rx_pred_
     for (.j in seq_len(.nPar)) {
       .sn <- paste0("rx__sens_rx_pred__BY_THETA_", .j, "___")
-      .grad[.idx, .j] <- .sol[[.sn]]
+      if (.sn %in% colnames(.sol)) {
+        .grad[.idx, .j] <- .sol[[.sn]]
+      } else {
+        .grad[.idx, .j] <- 0
+      }
     }
   }
   attr(.pred, "gradient") <- .grad
@@ -280,6 +295,9 @@
 #' @export
 nlmixr2Est.nlmer <- function(env, ...) {
   .ui <- env$ui
+  if (!requireNamespace("lme4", quietly = TRUE)) {
+    stop("estimation 'nlmer' requires the 'lme4' package", call. = FALSE)
+  }
   rxode2::assertRxUiMixedOnly(
     .ui, " for the estimation routine 'nlmer', try 'focei'",
     .var.name = .ui$modelName
