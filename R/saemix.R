@@ -65,8 +65,8 @@ nlmixr2Est.saemix <- function(env, ...) {
   # Pre-process data
   nlmixr2est::.foceiPreProcessData(.data, .ret, .ui, .control$rxControl)
   # dataSav has ID, TIME, DV, AMT, EVID, CMT, II
-  # Add orig_row tracking column
-  .ret$dataSav$orig_row <- seq_len(nrow(.ret$dataSav))
+  # Add origRow tracking column
+  .ret$dataSav$origRow <- seq_len(nrow(.ret$dataSav))
   # Add mdv column (dosing rows have EVID != 0 or missing DV)
   .ret$dataSav$mdv <- ifelse(is.na(.ret$dataSav$DV), 1, 0)
 
@@ -77,48 +77,48 @@ nlmixr2Est.saemix <- function(env, ...) {
     }
   }
 
-  # Precompute row indices and counts per ID for fast rebuilding of ev_expanded inside .saemixModelFunction
-  .ret$rows_by_id <- split(seq_len(nrow(.ret$dataSav)), .ret$dataSav$ID)
-  .ret$subject_row_count <- sapply(.ret$rows_by_id, length)
+  # Precompute row indices and counts per ID for fast rebuilding of evExpanded inside .saemixModelFunction
+  .ret$rowsById <- split(seq_len(nrow(.ret$dataSav)), .ret$dataSav$ID)
+  .ret$subjectRowCount <- sapply(.ret$rowsById, length)
 
   # Check if likelihood model
   .isLikelihood <- any(.ui$predDf$distribution == "LL")
-  .modeltype <- if (.isLikelihood) "likelihood" else "structural"
+  .modelType <- if (.isLikelihood) "likelihood" else "structural"
 
   # Extract structural parameters (thetas)
   # These are thetas not associated with residual error
-  .structural_thetas <- .ui$iniDf[is.na(.ui$iniDf$neta1) & is.na(.ui$iniDf$err), ]
-  .theta_names <- .structural_thetas$name
+  .structuralThetas <- .ui$iniDf[is.na(.ui$iniDf$neta1) & is.na(.ui$iniDf$err), ]
+  .thetaNames <- .structuralThetas$name
 
   # Initial estimates (psi0)
-  .psi0_vec <- .structural_thetas$est
-  names(.psi0_vec) <- .theta_names
+  .psi0Vec <- .structuralThetas$est
+  names(.psi0Vec) <- .thetaNames
 
   # Fixed parameter indicator (1=estimated, 0=fixed)
-  .fixed.estim <- ifelse(.structural_thetas$fix, 0, 1)
+  .fixedEstim <- ifelse(.structuralThetas$fix, 0, 1)
 
   # Check which parameters have etas (mixed-effect parameters)
-  .has_eta <- .theta_names %in% .ui$muRefTable$theta
+  .hasEta <- .thetaNames %in% .ui$muRefTable$theta
 
   # Covariance model (matrix of 1/0 for estimation/correlation of random effects)
-  .cov_matrix <- matrix(0, nrow = length(.theta_names), ncol = length(.theta_names))
-  dimnames(.cov_matrix) <- list(.theta_names, .theta_names)
-  .omega_init <- matrix(0, nrow = length(.theta_names), ncol = length(.theta_names))
-  dimnames(.omega_init) <- list(.theta_names, .theta_names)
+  .covMatrix <- matrix(0, nrow = length(.thetaNames), ncol = length(.thetaNames))
+  dimnames(.covMatrix) <- list(.thetaNames, .thetaNames)
+  .omegaInit <- matrix(0, nrow = length(.thetaNames), ncol = length(.thetaNames))
+  dimnames(.omegaInit) <- list(.thetaNames, .thetaNames)
 
-  for (i in seq_along(.theta_names)) {
-    p_i <- .theta_names[i]
-    if (.has_eta[i]) {
-      eta_i <- .ui$muRefTable$eta[.ui$muRefTable$theta == p_i]
-      for (j in seq_along(.theta_names)) {
-        p_j <- .theta_names[j]
-        if (.has_eta[j]) {
-          eta_j <- .ui$muRefTable$eta[.ui$muRefTable$theta == p_j]
+  for (i in seq_along(.thetaNames)) {
+    pI <- .thetaNames[i]
+    if (.hasEta[i]) {
+      etaI <- .ui$muRefTable$eta[.ui$muRefTable$theta == pI]
+      for (j in seq_along(.thetaNames)) {
+        pJ <- .thetaNames[j]
+        if (.hasEta[j]) {
+          etaJ <- .ui$muRefTable$eta[.ui$muRefTable$theta == pJ]
           # Look up covariance in ui$omega
-          val <- .ui$omega[eta_i, eta_j]
-          .omega_init[i, j] <- val
+          val <- .ui$omega[etaI, etaJ]
+          .omegaInit[i, j] <- val
           if (val != 0) {
-            .cov_matrix[i, j] <- 1
+            .covMatrix[i, j] <- 1
           }
         }
       }
@@ -126,30 +126,30 @@ nlmixr2Est.saemix <- function(env, ...) {
   }
 
   # Error model setup (only for structural models)
-  .error.model <- NULL
-  .error.init <- NULL
-  if (.modeltype == "structural") {
+  .errorModel <- NULL
+  .errorInit <- NULL
+  if (.modelType == "structural") {
     .errType <- .ui$predDf$errType[1]
     if (.errType == "add") {
-      .error.model <- "constant"
-      .err_rows <- .ui$iniDf[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "add", ]
-      .error.init <- c(.err_rows$est[1], 0)
+      .errorModel <- "constant"
+      .errRows <- .ui$iniDf[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "add", ]
+      .errorInit <- c(.errRows$est[1], 0)
     } else if (.errType == "prop") {
-      .error.model <- "proportional"
-      .err_rows <- .ui$iniDf[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "prop", ]
-      .error.init <- c(0, .err_rows$est[1])
+      .errorModel <- "proportional"
+      .errRows <- .ui$iniDf[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "prop", ]
+      .errorInit <- c(0, .errRows$est[1])
     } else if (.errType %in% c("add + prop", "combined", "combined2", "combined1")) {
-      .error.model <- "combined"
-      .add_rows <- .ui$iniDf[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "add", ]
-      .prop_rows <- .ui$iniDf[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "prop", ]
-      .error.init <- c(.add_rows$est[1], .prop_rows$est[1])
+      .errorModel <- "combined"
+      .addRows <- .ui$iniDf[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "add", ]
+      .propRows <- .ui$iniDf[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "prop", ]
+      .errorInit <- c(.addRows$est[1], .propRows$est[1])
     } else {
-      .error.model <- "constant"
-      .error.init <- c(1, 0)
+      .errorModel <- "constant"
+      .errorInit <- c(1, 0)
     }
   }
 
-  .saemixPredictors <- c("orig_row", "TIME")
+  .saemixPredictors <- c("origRow", "TIME")
   .etaNamesUi <- .ui$muRefTable$eta
   if (is.null(.etaNamesUi)) .etaNamesUi <- character(0)
  
@@ -159,7 +159,7 @@ nlmixr2Est.saemix <- function(env, ...) {
     tryCatch({
       if (is.null(dim(psi))) {
         psi <- matrix(psi, nrow = 1)
-        colnames(psi) <- .theta_names
+        colnames(psi) <- .thetaNames
       }
       M <- nrow(psi)
  
@@ -176,10 +176,10 @@ nlmixr2Est.saemix <- function(env, ...) {
         hit <- TRUE
       } else {
         # Rebuild evExpanded using precomputed indices
-        indices <- unlist(.ret$rows_by_id[as.character(simOrigIds)], use.names = FALSE)
+        indices <- unlist(.ret$rowsById[as.character(simOrigIds)], use.names = FALSE)
         evExpanded <- .ret$dataSav[indices, ]
  
-        repCounts <- .ret$subject_row_count[as.character(simOrigIds)]
+        repCounts <- .ret$subjectRowCount[as.character(simOrigIds)]
         evExpanded$ID <- rep(1:M, times = repCounts)
         evExpanded$sim_id <- evExpanded$ID
  
@@ -192,24 +192,24 @@ nlmixr2Est.saemix <- function(env, ...) {
       if (!is.null(.ret$cachedM) && .ret$cachedM == M) {
         params <- .ret$cachedParamsTemplate
       } else {
-        params <- as.data.frame(matrix(0, nrow = M, ncol = length(.theta_names) + length(.etaNamesUi)))
-        colnames(params) <- c(.theta_names, .etaNamesUi)
+        params <- as.data.frame(matrix(0, nrow = M, ncol = length(.thetaNames) + length(.etaNamesUi)))
+        colnames(params) <- c(.thetaNames, .etaNamesUi)
         params$ID <- 1:M
         .ret$cachedM <- M
         .ret$cachedParamsTemplate <- params
       }
-      params[, .theta_names] <- psi
+      params[, .thetaNames] <- psi
  
       # Run the ODE solver
-      res <- rxode2::rxSolve(.ui, events = evExpanded, params = params, keep = "orig_row", addDosing = TRUE)
+      res <- rxode2::rxSolve(.ui, events = evExpanded, params = params, keep = "origRow", addDosing = TRUE)
  
       # Get or compute matchedIdx
       if (hit && !is.null(.ret$cachedMatchedIdx)) {
         matchedIdx <- .ret$cachedMatchedIdx
       } else {
         # Match the rows
-        res_id <- if ("id" %in% names(res)) as.integer(res$id) else rep(1L, length(res$time))
-        keyRes <- paste(res_id, res$orig_row, sep = "_")
+        resId <- if ("id" %in% names(res)) as.integer(res$id) else rep(1L, length(res$time))
+        keyRes <- paste(resId, res$origRow, sep = "_")
         keyXidep <- paste(id, origRowCol, sep = "_")
         matchedIdx <- match(keyXidep, keyRes)
  
@@ -225,7 +225,7 @@ nlmixr2Est.saemix <- function(env, ...) {
       if (length(predCols) == 1) {
         predictions <- res[[predCols]][matchedIdx]
       } else {
-        # Locate ytype column in .ret$dataSav$orig_row mapping
+        # Locate ytype column in .ret$dataSav$origRow mapping
         ytypeCol <- if ("YTYPE" %in% colnames(.ret$dataSav)) "YTYPE" else "ytype"
         ytypeVec <- .ret$dataSav[[ytypeCol]][origRowCol]
  
@@ -253,36 +253,36 @@ nlmixr2Est.saemix <- function(env, ...) {
     .saemixCovariates <- NULL
   }
   if (is.null(.saemixCovariates)) {
-    saemix.data <- saemix::saemixData(name.data = .dataForSaemix,
-                                      name.group = "ID",
-                                      name.predictors = .saemixPredictors,
-                                      name.response = "DV",
-                                      name.X = "TIME",
-                                      verbose = .control$warnings)
+    saemixData <- saemix::saemixData(name.data = .dataForSaemix,
+                                     name.group = "ID",
+                                     name.predictors = .saemixPredictors,
+                                     name.response = "DV",
+                                     name.X = "TIME",
+                                     verbose = .control$warnings)
   } else {
-    saemix.data <- saemix::saemixData(name.data = .dataForSaemix,
-                                      name.group = "ID",
-                                      name.predictors = .saemixPredictors,
-                                      name.response = "DV",
-                                      name.covariates = .saemixCovariates,
-                                      name.X = "TIME",
-                                      verbose = .control$warnings)
+    saemixData <- saemix::saemixData(name.data = .dataForSaemix,
+                                     name.group = "ID",
+                                     name.predictors = .saemixPredictors,
+                                     name.response = "DV",
+                                     name.covariates = .saemixCovariates,
+                                     name.X = "TIME",
+                                     verbose = .control$warnings)
   }
 
   # Build SaemixModel
-  saemix.model <- saemix::saemixModel(model = .saemixModelFunction,
-                                      modeltype = .modeltype,
-                                      psi0 = .psi0_vec,
-                                      transform.par = rep(0, length(.theta_names)),
-                                      fixed.estim = .fixed.estim,
-                                      covariance.model = .cov_matrix,
-                                      omega.init = .omega_init,
-                                      error.model = .error.model,
-                                      error.init = .error.init,
-                                      verbose = .control$warnings)
+  saemixModel <- saemix::saemixModel(model = .saemixModelFunction,
+                                     modeltype = .modelType,
+                                     psi0 = .psi0Vec,
+                                     transform.par = rep(0, length(.thetaNames)),
+                                     fixed.estim = .fixedEstim,
+                                     covariance.model = .covMatrix,
+                                     omega.init = .omegaInit,
+                                     error.model = .errorModel,
+                                     error.init = .errorInit,
+                                     verbose = .control$warnings)
 
   # Build SaemixOptions
-  saemix.options <- list(map = .control$map,
+  saemixOptions <- list(map = .control$map,
                          fim = .control$fim,
                          ll.is = .control$ll.is,
                          ll.gq = .control$ll.gq,
@@ -315,12 +315,16 @@ nlmixr2Est.saemix <- function(env, ...) {
                          ipar.rmcmc = .control$ipar.rmcmc)
 
   if (!is.na(.control$nbiter.sa)) {
-    saemix.options$nbiter.sa <- .control$nbiter.sa
+    saemixOptions$nbiter.sa <- .control$nbiter.sa
   }
 
   # Run saemix
   fit <- withCallingHandlers({
-    saemix::saemix(saemix.model, saemix.data, saemix.options)
+    .fit <- NULL
+    utils::capture.output({
+      .fit <- saemix::saemix(saemixModel, saemixData, saemixOptions)
+    })
+    .fit
   }, error = function(e) {
     cat("\n=== INNER ERROR IN SAEMIX ===\n")
     print(e)
@@ -339,55 +343,55 @@ nlmixr2Est.saemix <- function(env, ...) {
   # Initialize with all thetas from UI
   .fullTheta <- stats::setNames(.ui$iniDf$est[is.na(.ui$iniDf$neta1)], .ui$iniDf$name[is.na(.ui$iniDf$neta1)])
   # Update estimated/fixed structural parameters
-  for (i in seq_along(.theta_names)) {
-    p_name <- .theta_names[i]
-    .fullTheta[p_name] <- fit@results@fixed.effects[i]
+  for (i in seq_along(.thetaNames)) {
+    pName <- .thetaNames[i]
+    .fullTheta[pName] <- fit@results@fixed.effects[i]
   }
   # Update residual parameters
-  if (.modeltype == "structural") {
+  if (.modelType == "structural") {
     .errType <- .ui$predDf$errType[1]
     if (.errType == "add") {
-      err_name <- .ui$iniDf$name[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "add"]
-      .fullTheta[err_name] <- fit@results@respar[1]
+      errName <- .ui$iniDf$name[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "add"]
+      .fullTheta[errName] <- fit@results@respar[1]
     } else if (.errType == "prop") {
-      err_name <- .ui$iniDf$name[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "prop"]
-      .fullTheta[err_name] <- fit@results@respar[2]
+      errName <- .ui$iniDf$name[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "prop"]
+      .fullTheta[errName] <- fit@results@respar[2]
     } else if (.errType %in% c("add + prop", "combined", "combined2", "combined1")) {
-      add_name <- .ui$iniDf$name[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "add"]
-      prop_name <- .ui$iniDf$name[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "prop"]
-      .fullTheta[add_name] <- fit@results@respar[1]
-      .fullTheta[prop_name] <- fit@results@respar[2]
+      addName <- .ui$iniDf$name[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "add"]
+      propName <- .ui$iniDf$name[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "prop"]
+      .fullTheta[addName] <- fit@results@respar[1]
+      .fullTheta[propName] <- fit@results@respar[2]
     }
   }
   .ret$fullTheta <- .fullTheta
 
   # 2. etaObf
-  eta_names_fit <- colnames(fit@results@map.eta)
-  eta_names_ui <- sapply(eta_names_fit, function(name) {
-    theta_name <- sub("^eta\\.", "", name)
-    .ui$muRefTable$eta[.ui$muRefTable$theta == theta_name]
+  etaNamesFit <- colnames(fit@results@map.eta)
+  etaNamesUi <- sapply(etaNamesFit, function(name) {
+    thetaName <- sub("^eta\\.", "", name)
+    .ui$muRefTable$eta[.ui$muRefTable$theta == thetaName]
   })
   etaObf <- as.data.frame(fit@results@map.eta)
-  colnames(etaObf) <- eta_names_ui
+  colnames(etaObf) <- etaNamesUi
   etaObf$ID <- unique(.ret$dataSav$ID)
-  etaObf <- etaObf[, c("ID", eta_names_ui), drop = FALSE]
+  etaObf <- etaObf[, c("ID", etaNamesUi), drop = FALSE]
   etaObf$OBJI <- NA_real_
   .ret$etaObf <- etaObf
 
   # 3. omega
   # Extract omega matrix corresponding to UI eta names
-  .eta_names_ui_all <- .ui$iniDf$name[!is.na(.ui$iniDf$neta1)]
-  .omega <- matrix(0, nrow = length(.eta_names_ui_all), ncol = length(.eta_names_ui_all))
-  dimnames(.omega) <- list(.eta_names_ui_all, .eta_names_ui_all)
-  for (i in seq_along(.eta_names_ui_all)) {
-    eta_i <- .eta_names_ui_all[i]
-    theta_i <- .ui$muRefTable$theta[.ui$muRefTable$eta == eta_i]
-    if (length(theta_i) == 1) {
-      for (j in seq_along(.eta_names_ui_all)) {
-        eta_j <- .eta_names_ui_all[j]
-        theta_j <- .ui$muRefTable$theta[.ui$muRefTable$eta == eta_j]
-        if (length(theta_j) == 1) {
-          .omega[eta_i, eta_j] <- fit@results@omega[theta_i, theta_j]
+  .etaNamesUiAll <- .ui$iniDf$name[!is.na(.ui$iniDf$neta1)]
+  .omega <- matrix(0, nrow = length(.etaNamesUiAll), ncol = length(.etaNamesUiAll))
+  dimnames(.omega) <- list(.etaNamesUiAll, .etaNamesUiAll)
+  for (i in seq_along(.etaNamesUiAll)) {
+    etaI <- .etaNamesUiAll[i]
+    thetaI <- .ui$muRefTable$theta[.ui$muRefTable$eta == etaI]
+    if (length(thetaI) == 1) {
+      for (j in seq_along(.etaNamesUiAll)) {
+        etaJ <- .etaNamesUiAll[j]
+        thetaJ <- .ui$muRefTable$theta[.ui$muRefTable$eta == etaJ]
+        if (length(thetaJ) == 1) {
+          .omega[etaI, etaJ] <- fit@results@omega[thetaI, thetaJ]
         }
       }
     }
@@ -395,11 +399,11 @@ nlmixr2Est.saemix <- function(env, ...) {
   .ret$omega <- .omega
 
   # 4. covariance matrix
-  est_theta_names <- .theta_names[!.structural_thetas$fix]
-  cov_matrix <- fit@results@MCOV
-  if (!is.null(cov_matrix) && nrow(cov_matrix) == length(est_theta_names)) {
-    dimnames(cov_matrix) <- list(est_theta_names, est_theta_names)
-    .ret$cov <- cov_matrix
+  estThetaNames <- .thetaNames[!.structuralThetas$fix]
+  covMatrix <- fit@results@MCOV
+  if (!is.null(covMatrix) && nrow(covMatrix) == length(estThetaNames)) {
+    dimnames(covMatrix) <- list(estThetaNames, estThetaNames)
+    .ret$cov <- covMatrix
   }
 
   # 5. objective
