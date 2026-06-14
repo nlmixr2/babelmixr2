@@ -130,7 +130,7 @@ rxUiGet.nonmemOutputOmega <- function(x, ...) {
     .iniDf <- .ui$iniDf
     .iniDf <- .iniDf[is.na(.iniDf$ntheta), ]
     .iniDf <- .iniDf[.iniDf$neta1 == .iniDf$neta2, ]
-    .omega <- .omega[.iniDf$name,.iniDf$name]
+    .omega <- .omega[.iniDf$name,.iniDf$name, drop = FALSE]
   }
   .omega
 }
@@ -199,7 +199,7 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
   if (exists("thetaMat", envir=.ui)) {
     .iniDf <- .ui$iniDf
     .n <- .iniDf$name[!is.na(.iniDf$ntheta)]
-    .ui$thetaMat[.n, .n]
+    .ui$thetaMat[.n, .n, drop = FALSE]
   } else {
     .exportPath <- rxUiGet.nonmemExportPath(x, ...)
     .covFile <- rxUiGet.nonmemCovFile(x, ...)
@@ -209,7 +209,7 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
     .d <- .getNonmemOrderNames(.ui)
     dimnames(.ret) <- list(.d, .d)
     .t <- .getThetaNames(.ui)
-    .ret[.t, .t]
+    .ret[.t, .t, drop = FALSE]
   }
 }
 attr(rxUiGet.nonmemCovariance, "rstudio") <- lotri::lotri(a~0.1)

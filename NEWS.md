@@ -1,5 +1,9 @@
 # babelmixr2 0.1.11.9000
 
+* Defensive `drop = FALSE` on omega/thetaMat covariance subsetting when
+  importing NONMEM/Monolix results, so a single-parameter or single-random-effect
+  model keeps a 1x1 matrix instead of collapsing to a scalar.
+
 * Fix integer type safety in C++ source: loop variables and size variables now
   use `R_xlen_t` (signed) or `size_t` (unsigned) instead of `int`/`unsigned
   int` where appropriate, preventing potential integer overflow and segfaults

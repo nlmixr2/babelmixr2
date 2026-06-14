@@ -458,7 +458,7 @@ rxUiGet.monolixCovariance <- function(x, ...) {
   .n <- vapply(dimnames(.j)[[1]], function(n){
     paste0(.muRef[n], "_pop")
   }, character(1), USE.NAMES=FALSE)
-  .cov <- .cov[.n, .n]
+  .cov <- .cov[.n, .n, drop = FALSE]
   .ui <- x[[1]]
   rxode2::rxAssignControlValue(.ui, ".covMethod", ifelse(.sa, "MonolixSA", "MonolixLin"))
   if (.monolixCovarianceNeedsConversion(x, .sa)) {
