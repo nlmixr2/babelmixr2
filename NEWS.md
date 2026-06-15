@@ -1,5 +1,14 @@
 # babelmixr2 0.1.11.9000
 
+* The `pseudoOptimControl()` and `fmeMcmcControl()` functions now
+  accept either the legacy scalar `print` / `printNcol` / `useColor`
+  arguments or a pre-built `nlmixr2est::iterPrintControl()` object via
+  `print`.  Internally the control list stores a single
+  `iterPrintControl` sub-list (matching the upstream `nlmixr2est`
+  unification in `nlmixr2est` PR #651), so iteration output from these
+  estimators uses the same shared C++ formatter as every other
+  `nlmixr2est` estimator.  Requires `nlmixr2est (>= 6.0.1)`.
+
 * Fix integer type safety in C++ source: loop variables and size variables now
   use `R_xlen_t` (signed) or `size_t` (unsigned) instead of `int`/`unsigned
   int` where appropriate, preventing potential integer overflow and segfaults
