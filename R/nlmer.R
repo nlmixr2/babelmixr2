@@ -4,11 +4,18 @@
 
 #' Surrogate gradient function for lme4::nlmer
 #'
-#' Computes predictions and analytical gradient using rxode2 sensitivity
-#' equations. Parameters come in positional order matching
-#' `.nlmerGlobal$nlmerEnv$paramNames`.
+#' Computes predictions and the analytical gradient for every observation
+#' using the nlm C machinery (a single multithreaded [nlmixr2est::nlmerSolveGrad()]
+#' call against the model kept resident by [nlmixr2est::.nlmSetupEnv()]).
+#' Parameters arrive in positional order matching
+#' `.nlmerGlobal$nlmerEnv$paramNames` (THETA[i] order).
 #'
-#' @param TIME Observation times vector
+#' lme4 passes one value per observation for each nonlinear parameter; within a
+#' subject these are constant (phi = beta + b), so the per-subject parameter
+#' vector is read from each subject's first observation row.
+#'
+#' @param TIME Observation times vector (unused; kept for formula
+#'   compatibility -- the solver uses the resident per-subject event data)
 #' @param ... Individual-level parameter vectors (one per param in
 #'   `saemParamsToEstimate`)
 #' @return Numeric vector of predictions with `"gradient"` attribute
@@ -16,94 +23,90 @@
 .nlmerNlmerFun <- function(TIME, ...) {
   .env <- .nlmerGlobal$nlmerEnv
   .paramsList <- list(...)
-  .nPar <- length(.paramsList)
-  .nObs <- length(TIME)
+  .nPar <- .env$nPar
+  .nSub <- .env$nSub
+  .nObs <- .env$nObs
   .pNames <- .env$paramNames
-  names(.paramsList) <- .pNames
-  .obsSubjId <- .env$obsSubjId
-  .uniqueSubjs <- unique(.obsSubjId)
+  .obsIdxBySid <- .env$obsIdxBySid
+
+  # Per-subject theta matrix in solver (first-appearance subject) order
+  .thetaMat <- matrix(0.0, .nSub, .nPar)
+  for (.i in seq_len(.nSub)) {
+    .fi <- .obsIdxBySid[[.i]][1L]
+    for (.j in seq_len(.nPar)) {
+      .thetaMat[.i, .j] <- .paramsList[[.j]][.fi]
+    }
+  }
+
+  # Single C solve: nObsTot x (nPar + 1); col 1 = rx_pred_, cols 2.. =
+  # d(pred)/d(THETA[j]).  Rows are stacked per subject in solver block order.
+  .mat <- nlmixr2est::nlmerSolveGrad(.thetaMat)
+
   .pred <- numeric(.nObs)
   .grad <- matrix(0.0, .nObs, .nPar)
   colnames(.grad) <- .pNames
-  .rxCtrl <- .env$rxControl
-  .sensModel <- .env$sensModel
-
-  for (.sid in .uniqueSubjs) {
-    .idx <- which(.obsSubjId == .sid)
-    .firstIdx <- .idx[1]
-    .theta <- setNames(
-      vapply(seq_len(.nPar), function(.j) .paramsList[[.j]][.firstIdx], double(1)),
-      paste0("THETA[", seq_len(.nPar), "]")
-    )
-    .evData <- .env$subjEvData[[as.character(.sid)]]
-    .sol <- tryCatch(
-      do.call(
-        rxode2::rxSolve,
-        c(list(object = .sensModel$thetaGrad,
-               params = .theta,
-               events = .evData),
-          .rxCtrl)
-      ),
-      error = function(e) {
-        warning(sprintf("rxSolve failed for subject %s: %s", .sid, conditionMessage(e)), call. = FALSE)
-        # Create a placeholder solution with NA predictions and sensitivities
-        .nRows <- nrow(.evData)
-        .cols <- c("rx_pred_", paste0("rx__sens_rx_pred__BY_THETA_", seq_len(.nPar), "___"))
-        .df <- as.data.frame(matrix(NA_real_, nrow = .nRows, ncol = length(.cols)))
-        colnames(.df) <- .cols
-        .df
-      }
-    )
-    .pred[.idx] <- .sol$rx_pred_
-    for (.j in seq_len(.nPar)) {
-      .sn <- paste0("rx__sens_rx_pred__BY_THETA_", .j, "___")
-      if (.sn %in% colnames(.sol)) {
-        .grad[.idx, .j] <- .sol[[.sn]]
-      } else {
-        .grad[.idx, .j] <- 0
-      }
-    }
+  .row <- 0L
+  for (.i in seq_len(.nSub)) {
+    .idx <- .obsIdxBySid[[.i]]
+    .rng <- .row + seq_along(.idx)
+    .pred[.idx] <- .mat[.rng, 1L]
+    .grad[.idx, ] <- .mat[.rng, -1L, drop = FALSE]
+    .row <- .row + length(.idx)
   }
   attr(.pred, "gradient") <- .grad
   .pred
 }
 
 # -----------------------------------------------------------------------
-# Data setup
+# Solve control: derive the nlm-engine solving control from nlmerControl
 # -----------------------------------------------------------------------
 
-#' Set up per-subject event data and obs-subject mapping for nlmer
+#' Build the nlm-machinery solving control for nlmer
 #'
-#' @param dataSav Pre-processed data from `.foceiPreProcessData`
-#' @return Observation-only data frame (EVID == 0 rows)
+#' The nlmer engine drives optimization with `lme4::nlmer`, but the inner
+#' per-subject prediction + analytic gradient is computed by the nlm C
+#' machinery.  `lme4` passes raw per-subject phi (= beta + b), so the nlm
+#' scaling must be neutralized (`scaleType = 5L`, "none") to feed those values
+#' through unchanged.
+#'
+#' @param control nlmerControl object
+#' @param np number of estimated structural parameters (THETA count)
+#' @return A plain list usable as the `control` arg of
+#'   [nlmixr2est::.nlmSetupEnv()]
 #' @noRd
-.nlmerFitDataSetup <- function(dataSav) {
-  .dsAll <- dataSav[dataSav$EVID != 2, ]
-  .ids <- unique(.dsAll$ID)
-  .subjEvData <- setNames(
-    lapply(as.character(.ids), function(.id) {
-      .dsAll[.dsAll$ID == as.integer(.id), ]
-    }),
-    as.character(.ids)
+.nlmerSolveControl <- function(control, np) {
+  .sc <- nlmixr2est::nlmControl(
+    rxControl       = control$rxControl,
+    eventSens       = control$eventSens,
+    eventType       = control$eventType,
+    shiErr          = control$shiErr,
+    shi21maxFD      = control$shi21maxFD,
+    stickyRecalcN   = control$stickyRecalcN,
+    maxOdeRecalc    = control$maxOdeRecalc,
+    odeRecalcFactor = control$odeRecalcFactor,
+    optExpression   = control$optExpression,
+    sumProd         = control$sumProd,
+    solveType       = "grad",
+    print           = 0L
   )
-  .obsData <- .dsAll[.dsAll$EVID == 0, ]
-  .nlmerGlobal$nlmerEnv$subjEvData <- .subjEvData
-  .nlmerGlobal$nlmerEnv$obsSubjId <- .obsData$ID
-  .obsData
+  .sc <- unclass(.sc)
+  .sc$scaleType <- 5L                # 'none' -> identity (raw phi from lme4)
+  .sc$scaleC <- rep(1.0, np)
+  .sc
 }
 
 # -----------------------------------------------------------------------
 # Fit model
 # -----------------------------------------------------------------------
 
-.nlmerFitModel <- function(ui, dataSav) {
-  .obsData <- .nlmerFitDataSetup(dataSav)
+.nlmerFitModel <- function(ui, obsData) {
   .ctl <- ui$control
   .lme4Ctl <- lme4::nlmerControl(
     optimizer = .ctl$optimizer,
     tolPwrss  = .ctl$tolPwrss,
     optCtrl   = .ctl$optCtrl
   )
+  .obsData <- obsData
   .obsData$ID <- factor(.obsData$ID)
   .start <- ui$nlmerStart
   # lme4::nlmer captures match.call()$formula and re-evaluates it deep in its
@@ -209,12 +212,37 @@
 
   nlmixr2est::.foceiPreProcessData(.data, .ret, .ui, .control$rxControl)
 
-  # Compile sensitivity model and populate the per-solve global env
-  .nlmerGlobal$nlmerEnv <- new.env(parent = emptyenv())
+  # Compile the nlmer sensitivity model and load it (with its event data) into
+  # the nlm C machinery, keeping it resident for every lme4 PWRSS evaluation.
+  # nlmerSolveGrad() then services each evaluation with a single multithreaded
+  # C solve (per-subject prediction + analytic gradient + jump sensitivities).
   .sm <- .ui$nlmerSensModel
-  .nlmerGlobal$nlmerEnv$sensModel <- .sm
+  .modelInfo <- list(
+    predOnly   = .sm$predOnly,
+    thetaGrad  = .sm$thetaGrad,
+    eventTheta = .sm$eventTheta
+  )
+  .start <- .ui$nlmerStart
+  .np <- length(.start)
+  .solveCtl <- .nlmerSolveControl(.control, .np)
+  nlmixr2est::.nlmSetupEnv(.start, .ui, .ret$dataSav, .modelInfo, .solveCtl)
+  on.exit(nlmixr2est::.nlmFreeEnv(), add = TRUE)
+
+  # Observation-row map for scattering the solver output back to lme4's data
+  # order.  The solver stacks subjects in first-appearance order (== rxode2's
+  # internal id order) and, within a subject, in solve order -- the same
+  # within-subject order as the obs frame passed to lme4.
+  .dsAll <- .ret$dataSav[.ret$dataSav$EVID != 2, ]
+  .obsData <- .dsAll[.dsAll$EVID == 0, ]
+  .sidOrder <- unique(.dsAll$ID)
+  .obsIdxBySid <- lapply(.sidOrder, function(.s) which(.obsData$ID == .s))
+
+  .nlmerGlobal$nlmerEnv <- new.env(parent = emptyenv())
   .nlmerGlobal$nlmerEnv$paramNames <- .sm$paramNames
-  .nlmerGlobal$nlmerEnv$rxControl <- as.list(.control$rxControl)
+  .nlmerGlobal$nlmerEnv$nPar <- .np
+  .nlmerGlobal$nlmerEnv$nSub <- length(.sidOrder)
+  .nlmerGlobal$nlmerEnv$nObs <- nrow(.obsData)
+  .nlmerGlobal$nlmerEnv$obsIdxBySid <- .obsIdxBySid
   on.exit(
     {
       .nlmerGlobal$nlmerEnv <- NULL
@@ -222,7 +250,7 @@
     add = TRUE
   )
 
-  .nlmer <- nlmixr2est::.collectWarn(.nlmerFitModel(.ui, .ret$dataSav), lst = TRUE)
+  .nlmer <- nlmixr2est::.collectWarn(.nlmerFitModel(.ui, .obsData), lst = TRUE)
   .ret$nlmer <- .nlmer[[1]]
 
   .ret$message <- NULL

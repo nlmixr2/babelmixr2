@@ -194,33 +194,19 @@ rxUiGet.nlmerHdTheta <- function(x, ...) {
   on.exit(rxode2::rxProgressAbort())
   .any.zero <- FALSE
   .all.zero <- TRUE
-  # Parse the calc expressions once and cache in the symengine env to avoid
-  # repeated parse/eval overhead on large problems.
-  .calcVec <- .grd[, "calc"]
-  if (!is.null(.s$..parsedHdTheta) && identical(names(.s$..parsedHdTheta), .calcVec)) {
-    .parsed <- .s$..parsedHdTheta$exprs
-  } else {
-    # Parse all calc expressions into a single expression vector
-    .parsed <- parse(text = paste(.calcVec, collapse = "\n"))
-    .s$..parsedHdTheta <- list(names = .calcVec, exprs = .parsed)
-  }
-  # Evaluate parsed expressions in the symengine environment; these expressions
-  # are expected to perform assignments into .s (so we can get the named values).
-  for (.e in .parsed) eval(.e, envir = .s)
-
-  # Build returned strings mapping dfe to expression textual form
-  .ret <- vector("character", nrow(.grd))
-  for (.i in seq_len(nrow(.grd))) {
-    x <- .grd[.i, , drop = TRUE]
-    .ret[.i] <- paste0(x["dfe"], "=", rxode2::rxFromSE(get(x["dfe"], envir = .s)))
+  .ret <- apply(.grd, 1, function(x) {
+    .l <- x["calc"]
+    .l <- eval(parse(text = .l))
+    .ret <- paste0(x["dfe"], "=", rxode2::rxFromSE(.l))
     .zErr <- suppressWarnings(try(as.numeric(get(x["dfe"], .s)), silent = TRUE))
     if (identical(.zErr, 0)) {
-      .any.zero <- TRUE
+      .any.zero <<- TRUE
     } else if (.all.zero) {
-      .all.zero <- FALSE
+      .all.zero <<- FALSE
     }
     rxode2::rxTick()
-  }
+    .ret
+  })
   if (.all.zero) {
     stop("none of the predictions depend on 'THETA'", call. = FALSE)
   }
@@ -326,6 +312,33 @@ rxUiGet.nlmerEnv <- function(x, ...) {
   .optExpression <- rxode2::rxGetControl(x[[1]], "optExpression", TRUE)
   .rxFinalizeNlmer(.s, .sumProd, .optExpression)
   .s$..outer <- NULL
+  # `eventTheta` flags the structural parameters that enter a dosing
+  # expression (alag/F/rate/dur).  Under eventSens="jump" rxode2 injects the
+  # analytic event jump into those sensitivity states, so the analytic
+  # gradient is correct and the flag is left at 0 (analytic gradient is used).
+  # Under "fd" the augmented sensitivity ODE misses the jump, so the parameter
+  # is flagged and the nlm engine overrides its gradient column with a Shi2021
+  # finite difference.
+  if (exists("..maxTheta", .s)) {
+    .eventTheta <- rep(0L, .s$..maxTheta)
+  } else {
+    .eventTheta <- integer(0)
+  }
+  .eventSens <- rxode2::rxGetControl(x[[1]], "eventSens", "jump")
+  if (!identical(.eventSens, "jump")) {
+    .reg <- "^THETA\\[([0-9]+)\\]$"
+    for (.v in .s$..eventVars) {
+      .vars <- as.character(get(.v, envir = .s))
+      .vars <- rxode2::rxGetModel(paste0("rx_lhs=", rxode2::rxFromSE(.vars)))$params
+      for (.v2 in .vars) {
+        if (regexpr(.reg, .v2) != -1) {
+          .num <- as.numeric(sub(.reg, "\\1", .v2))
+          .eventTheta[.num] <- 1L
+        }
+      }
+    }
+  }
+  .s$.eventTheta <- .eventTheta
   .s
 }
 attr(rxUiGet.nlmerEnv, "rstudio") <- emptyenv()
@@ -334,17 +347,26 @@ attr(rxUiGet.nlmerEnv, "rstudio") <- emptyenv()
 #'
 #' Returns a list with:
 #' - `thetaGrad`: compiled rxode2 model computing rx_pred_ and
-#'   rx__sens_rx_pred__BY_THETA_i___ for each estimated parameter
+#'   rx__sens_rx_pred__BY_THETA_i___ for each estimated parameter.  When
+#'   `eventSens = "jump"` this model carries rxode2's analytic event-jump
+#'   sensitivities (loaded/activated by [nlmixr2est::.nlmSetupEnv()]).
 #' - `predOnly`: compiled rxode2 model for prediction only
+#' - `eventTheta`: integer vector flagging THETA[i] that need Shi2021 finite
+#'   differences for dosing parameters (all 0 under `eventSens = "jump"`)
 #' - `paramNames`: character vector of parameter names in THETA[i] order
+#'
+#' The list follows the `modelInfo` contract of [nlmixr2est::.nlmSetupEnv()]
+#' so the nlm C machinery can load it once and keep it resident.
 #'
 #' @param x rxUiGet list(ui)
 #' @export
 rxUiGet.nlmerSensModel <- function(x, ...) {
   .s <- rxUiGet.nlmerEnv(x, ...)
+  .eventSens <- rxode2::rxGetControl(x[[1]], "eventSens", "jump")
   list(
-    thetaGrad  = rxode2::rxode2(.s$..nlmerS),
+    thetaGrad  = rxode2::rxode2(.s$..nlmerS, eventSens = .eventSens),
     predOnly   = rxode2::rxode2(.s$..pred.nolhs),
+    eventTheta = .s$.eventTheta,
     paramNames = rxUiGet.nlmerThetas(x, ...)
   )
 }

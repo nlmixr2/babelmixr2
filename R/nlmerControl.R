@@ -14,6 +14,22 @@
 #'   object instead of the nlmixr2 fit
 #' @param muRefCovAlg logical; when `TRUE` apply mu2 covariate
 #'   referencing algebraic transformation (same as saem)
+#' @param eventSens method used for the dosing-parameter (alag/F/rate/dur)
+#'   sensitivities in the analytic gradient model: `"jump"` routes them
+#'   through rxode2's analytic event jumps; `"fd"` falls back to Shi2021
+#'   finite differences.  See [nlmixr2est::nlmControl()].
+#' @param eventType finite-difference type (`"central"` or `"forward"`)
+#'   used for event-related parameters when `eventSens = "fd"`
+#' @param shiErr epsilon used when optimizing the ideal finite-difference
+#'   step size with the Shi2021 method
+#' @param shi21maxFD maximum number of Shi2021 step-size optimization
+#'   iterations for the gradient
+#' @param stickyRecalcN number of bad ODE solves tolerated before the
+#'   per-subject tolerance is stickily relaxed
+#' @param maxOdeRecalc maximum number of times to retry a bad ODE solve
+#'   with a relaxed tolerance
+#' @param odeRecalcFactor factor by which atol/rtol are relaxed on an ODE
+#'   solve retry
 #'
 #' @return nlmer control structure
 #' @export
@@ -26,6 +42,16 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
                                 optCtrl = list(),
                                 returnNlmer = FALSE,
                                 muRefCovAlg = TRUE,
+                                # nlm-machinery solving options (per-subject
+                                # prediction + analytic gradient are computed in
+                                # C via the nlm engine; see .nlmerSolveControl)
+                                eventSens = c("jump", "fd"),
+                                eventType = c("central", "forward"),
+                                shiErr = (.Machine$double.eps)^(1 / 3),
+                                shi21maxFD = 20L,
+                                stickyRecalcN = 4,
+                                maxOdeRecalc = 5,
+                                odeRecalcFactor = 10^(0.5),
                                 # nlmixr2 standard options
                                 optExpression = TRUE,
                                 literalFix = TRUE,
@@ -49,7 +75,14 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
   checkmate::assertLogical(adjObf, len = 1, any.missing = TRUE)
   checkmate::assertNumeric(tolPwrss, len = 1, any.missing = FALSE, lower = 0)
   checkmate::assertNumeric(ci, lower = 0, upper = 1, any.missing = FALSE, len = 1)
+  checkmate::assertNumeric(shiErr, lower = 0, any.missing = FALSE, len = 1)
+  checkmate::assertIntegerish(shi21maxFD, lower = 1, any.missing = FALSE, len = 1)
+  checkmate::assertIntegerish(stickyRecalcN, lower = 0, any.missing = FALSE, len = 1)
+  checkmate::assertIntegerish(maxOdeRecalc, any.missing = FALSE, len = 1)
+  checkmate::assertNumeric(odeRecalcFactor, lower = 1, any.missing = FALSE, len = 1)
 
+  eventSens <- match.arg(eventSens)
+  eventType <- match.arg(eventType)
   addProp <- match.arg(addProp)
 
   .xtra <- list(...)
@@ -97,6 +130,13 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
     optCtrl = optCtrl,
     returnNlmer = returnNlmer,
     muRefCovAlg = muRefCovAlg,
+    eventSens = eventSens,
+    eventType = eventType,
+    shiErr = shiErr,
+    shi21maxFD = as.integer(shi21maxFD),
+    stickyRecalcN = as.integer(stickyRecalcN),
+    maxOdeRecalc = as.integer(maxOdeRecalc),
+    odeRecalcFactor = odeRecalcFactor,
     optExpression = optExpression,
     literalFix = literalFix,
     sumProd = sumProd,
