@@ -33,7 +33,8 @@ Suggests:
     FME,
     coda,
     crayon,
-    saemix
+    saemix,
+    lme4
 Depends:
     R (>= 3.5)
 Imports:

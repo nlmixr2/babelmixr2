@@ -1,5 +1,11 @@
 # babelmixr2 0.1.11.9000
 
+* Added `nlmer` estimation method: fits nlmixr2 models via `lme4::nlmer` using
+  analytical gradients from rxode2 sensitivity equations. Supports
+  mu-referenced and non-mu-referenced random-effects models. Access via
+  `nlmixr(model, data, est = "nlmer")`. The underlying lme4 fit is stored as
+  `fit$nlmer`.
+
 * Fix integer type safety in C++ source: loop variables and size variables now
   use `R_xlen_t` (signed) or `size_t` (unsigned) instead of `int`/`unsigned
   int` where appropriate, preventing potential integer overflow and segfaults
