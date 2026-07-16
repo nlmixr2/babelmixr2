@@ -5,6 +5,10 @@
   but never emitted the corresponding `ALAG<n>=` statement, so NONMEM fit the
   model without any lag.  The lag value is now assigned to `ALAG<n>` in `$PK`.
 
+* NONMEM export now announces when a model variable is renamed because it
+  collides with a NONMEM reserved name (e.g. a variable named `alag` becomes
+  `RXR1`).  The rename was previously silent (#190).
+
 * Added `nlmer` estimation method: fits nlmixr2 models via `lme4::nlmer` using
   analytical gradients from rxode2 sensitivity equations. Supports
   mu-referenced and non-mu-referenced random-effects models. Access via
