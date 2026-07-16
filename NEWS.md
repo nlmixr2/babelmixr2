@@ -9,6 +9,16 @@
   estimators uses the same shared C++ formatter as every other
   `nlmixr2est` estimator.  Requires `nlmixr2est (>= 6.0.1)`.
 
+* The `iterPrintControl` unification now also covers `nlmerControl()`
+  and `saemixControl()`.  `nlmerControl()` gains the standard `print` /
+  `printNcol` / `useColor` arguments (or a pre-built
+  `nlmixr2est::iterPrintControl()` object) and feeds the resulting
+  `iterPrintControl` sub-list to the nlm C solving engine instead of a
+  hard-coded `print = 0L`.  `saemixControl()` absorbs its legacy
+  `print` (logical), `printNcol` and `useColor` arguments into the same
+  `iterPrintControl` sub-list; a nonzero `every` enables the `saemix`
+  progress output.
+
 * Added `nlmer` estimation method: fits nlmixr2 models via `lme4::nlmer` using
   analytical gradients from rxode2 sensitivity equations. Supports
   mu-referenced and non-mu-referenced random-effects models. Access via

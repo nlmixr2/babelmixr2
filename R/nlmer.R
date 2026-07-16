@@ -87,7 +87,7 @@
     optExpression   = control$optExpression,
     sumProd         = control$sumProd,
     solveType       = "grad",
-    print           = 0L
+    print           = control$iterPrintControl
   )
   .sc <- unclass(.sc)
   .sc$scaleType <- 5L                # 'none' -> identity (raw phi from lme4)

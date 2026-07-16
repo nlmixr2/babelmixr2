@@ -1,5 +1,6 @@
 #' Control for nlmer estimation method in nlmixr2
 #'
+#' @inheritParams nlmixr2est::iterPrintParams
 #' @inheritParams nlmixr2est::foceiControl
 #' @inheritParams nlmixr2est::saemControl
 #' @inheritParams nlmixr2est::nlmeControl
@@ -52,6 +53,9 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
                                 stickyRecalcN = 4,
                                 maxOdeRecalc = 5,
                                 odeRecalcFactor = 10^(0.5),
+                                useColor = NULL,
+                                printNcol = NULL,
+                                print = 0L,
                                 # nlmixr2 standard options
                                 optExpression = TRUE,
                                 literalFix = TRUE,
@@ -87,12 +91,17 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
 
   .xtra <- list(...)
   .bad <- names(.xtra)
-  .bad <- .bad[!(.bad %in% c("genRxControl"))]
+  .bad <- .bad[!(.bad %in% c("genRxControl", "iterPrintControl"))]
   if (length(.bad) > 0) {
     stop("unused argument: ",
          paste(paste0("'", .bad, "'"), collapse = ", "),
          call. = FALSE)
   }
+
+  .iterPrintControl <- nlmixr2est::.absorbIterPrintControl(print = print,
+                                                           printNcol = printNcol,
+                                                           useColor = useColor,
+                                                           iterPrintControl = .xtra$iterPrintControl)
 
   .genRxControl <- FALSE
   if (!is.null(.xtra$genRxControl)) {
@@ -137,6 +146,7 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
     stickyRecalcN = as.integer(stickyRecalcN),
     maxOdeRecalc = as.integer(maxOdeRecalc),
     odeRecalcFactor = odeRecalcFactor,
+    iterPrintControl = .iterPrintControl,
     optExpression = optExpression,
     literalFix = literalFix,
     sumProd = sumProd,
@@ -158,7 +168,6 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
 #' @export
 nlmerControl <- nlmixr2NlmerControl
 
-#' @export
 rxUiDeparse.nlmerControl <- function(object, var) {
   .default <- nlmerControl()
   .w <- nlmixr2est::.deparseDifferent(.default, object, "genRxControl")
