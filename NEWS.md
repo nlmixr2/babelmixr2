@@ -1,5 +1,10 @@
 # babelmixr2 0.1.11.9000
 
+* Fix NONMEM export silently dropping the absorption lag (#190).  A
+  `lag(depot)`/`alag(depot)` assignment computed the lag parameter in `$PK`
+  but never emitted the corresponding `ALAG<n>=` statement, so NONMEM fit the
+  model without any lag.  The lag value is now assigned to `ALAG<n>` in `$PK`.
+
 * Added `nlmer` estimation method: fits nlmixr2 models via `lme4::nlmer` using
   analytical gradients from rxode2 sensitivity equations. Supports
   mu-referenced and non-mu-referenced random-effects models. Access via
