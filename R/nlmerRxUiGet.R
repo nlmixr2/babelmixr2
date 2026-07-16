@@ -149,7 +149,7 @@ attr(rxUiGet.nlmerModel0, "rstudio") <- quote(rxModelVars({}))
 #' @param x rxUiGet list(ui)
 #' @export
 rxUiGet.loadPruneNlmer <- function(x, ...) {
-  nlmixr2est:::.loadSymengine(.nlmerPrune(x), promoteLinSens = FALSE)
+  nlmixr2est::.loadSymengine(.nlmerPrune(x), promoteLinSens = FALSE)
 }
 attr(rxUiGet.loadPruneNlmer, "rstudio") <- emptyenv()
 
@@ -158,7 +158,7 @@ attr(rxUiGet.loadPruneNlmer, "rstudio") <- emptyenv()
 #' @param x rxUiGet list(ui)
 #' @export
 rxUiGet.loadPruneNlmerSens <- function(x, ...) {
-  nlmixr2est:::.loadSymengine(.nlmerPrune(x), promoteLinSens = TRUE)
+  nlmixr2est::.loadSymengine(.nlmerPrune(x), promoteLinSens = TRUE)
 }
 attr(rxUiGet.loadPruneNlmerSens, "rstudio") <- emptyenv()
 
@@ -168,7 +168,7 @@ attr(rxUiGet.loadPruneNlmerSens, "rstudio") <- emptyenv()
 #' @export
 rxUiGet.nlmerThetaS <- function(x, ...) {
   .s <- rxUiGet.loadPruneNlmerSens(x, ...)
-  nlmixr2est:::.sensEtaOrTheta(.s, theta = TRUE)
+  nlmixr2est::.sensEtaOrTheta(.s, theta = TRUE)
 }
 attr(rxUiGet.nlmerThetaS, "rstudio") <- emptyenv()
 
@@ -178,7 +178,7 @@ attr(rxUiGet.nlmerThetaS, "rstudio") <- emptyenv()
 #' @export
 rxUiGet.nlmerHdTheta <- function(x, ...) {
   .s <- rxUiGet.nlmerThetaS(x)
-  .stateVars <- nlmixr2est:::rxode2stateOde(.s)
+  .stateVars <- nlmixr2est::rxode2stateOde(.s)
   .predMinusDv <- rxode2::rxGetControl(x[[1]], "predMinusDv", TRUE)
   .grd <- rxode2::rxExpandFEta_(
     .stateVars, .s$..maxTheta,

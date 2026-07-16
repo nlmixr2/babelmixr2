@@ -190,7 +190,7 @@ getValidNlmixrCtl.nlmer <- function(control) {
   if (is.null(.ctl)) .ctl <- nlmerControl()
   if (is.null(attr(.ctl, "class")) && is(.ctl, "list")) .ctl <- do.call("nlmerControl", .ctl)
   if (!inherits(.ctl, "nlmerControl")) {
-    nlmixr2est::.minfo("invalid control for `est=\"nlmer\"`, using default")
+    rxode2::.minfo("invalid control for `est=\"nlmer\"`, using default")
     .ctl <- nlmerControl()
   } else {
     .ctl <- do.call(nlmerControl, .ctl)
@@ -199,15 +199,7 @@ getValidNlmixrCtl.nlmer <- function(control) {
 }
 
 .nlmerFamilyControl <- function(env, ...) {
-  .ui <- env$ui
-  .control <- env$control
-  if (is.null(.control)) {
-    .control <- nlmerControl()
-  }
-  if (!inherits(.control, "nlmerControl")) {
-    .control <- do.call(nlmerControl, .control)
-  }
-  assign("control", .control, envir = .ui)
+  nlmixr2est::.nlmFamilyControlGeneric(env, nlmerControl, "nlmerControl")
 }
 
 .nlmerControlToFoceiControl <- function(env, assign = TRUE) {

@@ -99,16 +99,47 @@
 # Fit model
 # -----------------------------------------------------------------------
 
-.nlmerFitModel <- function(ui, obsData) {
+.nlmerFitModel <- function(ui, dataSav) {
   .ctl <- ui$control
+  # Compile the nlmer sensitivity model and load it (with its event data) into
+  # the nlm C machinery, keeping it resident for every lme4 PWRSS evaluation.
+  # nlmerSolveGrad() then services each evaluation with a single multithreaded
+  # C solve (per-subject prediction + analytic gradient + jump sensitivities).
+  .sm <- ui$nlmerSensModel
+  .modelInfo <- list(
+    predOnly   = .sm$predOnly,
+    thetaGrad  = .sm$thetaGrad,
+    eventTheta = .sm$eventTheta
+  )
+  .start <- ui$nlmerStart
+  .np <- length(.start)
+  .solveCtl <- .nlmerSolveControl(.ctl, .np)
+  nlmixr2est::.nlmSetupEnv(.start, ui, dataSav, .modelInfo, .solveCtl)
+  on.exit(nlmixr2est::.nlmFreeEnv(), add = TRUE)
+
+  # Observation-row map for scattering the solver output back to lme4's data
+  # order.  The solver stacks subjects in first-appearance order (== rxode2's
+  # internal id order) and, within a subject, in solve order -- the same
+  # within-subject order as the obs frame passed to lme4.
+  .dsAll <- dataSav[dataSav$EVID != 2, ]
+  .obsData <- .dsAll[.dsAll$EVID == 0, ]
+  .sidOrder <- unique(.dsAll$ID)
+  .obsIdxBySid <- lapply(.sidOrder, function(.s) which(.obsData$ID == .s))
+
+  .nlmerGlobal$nlmerEnv <- new.env(parent = emptyenv())
+  .nlmerGlobal$nlmerEnv$paramNames <- .sm$paramNames
+  .nlmerGlobal$nlmerEnv$nPar <- .np
+  .nlmerGlobal$nlmerEnv$nSub <- length(.sidOrder)
+  .nlmerGlobal$nlmerEnv$nObs <- nrow(.obsData)
+  .nlmerGlobal$nlmerEnv$obsIdxBySid <- .obsIdxBySid
+  on.exit(.nlmerGlobal$nlmerEnv <- NULL, add = TRUE)
+
   .lme4Ctl <- lme4::nlmerControl(
     optimizer = .ctl$optimizer,
     tolPwrss  = .ctl$tolPwrss,
     optCtrl   = .ctl$optCtrl
   )
-  .obsData <- obsData
   .obsData$ID <- factor(.obsData$ID)
-  .start <- ui$nlmerStart
   # lme4::nlmer captures match.call()$formula and re-evaluates it deep in its
   # call stack (where `ui` is not in scope). Storing the formula in the
   # package-level .nlmerGlobal environment and referencing it via :: makes it
@@ -161,7 +192,7 @@
   .re <- lme4::ranef(nlmerMod)$ID
   if (is.null(.re)) return(matrix(nrow = 0, ncol = 0))
   .re <- .re[order(as.numeric(row.names(.re))), , drop = FALSE]
-  names(.re) <- nlmixr2est:::.nlmeGetNonMuRefNames(names(.re), ui)
+  names(.re) <- nlmixr2est::.nlmeGetNonMuRefNames(names(.re), ui)
   row.names(.re) <- NULL
   as.matrix(.re)
 }
@@ -184,7 +215,7 @@
   # matrix %*% propagates rownames only from left; use corr's names directly
   .pnames <- colnames(.corr)
   if (is.null(.pnames)) .pnames <- names(.sdv)
-  .name <- nlmixr2est:::.nlmeGetNonMuRefNames(.pnames, ui)
+  .name <- nlmixr2est::.nlmeGetNonMuRefNames(.pnames, ui)
   dimnames(.ome) <- list(.name, .name)
   # Return only the estimated random effects block (may be a subset of omega)
   .ome
@@ -204,113 +235,43 @@
 # -----------------------------------------------------------------------
 
 .nlmerFamilyFit <- function(env, ...) {
-  .ui <- env$ui
-  .control <- .ui$control
-  .data <- env$data
-  .ret <- new.env(parent = emptyenv())
-  .ret$table <- env$table
-
-  nlmixr2est::.foceiPreProcessData(.data, .ret, .ui, .control$rxControl)
-
-  # Compile the nlmer sensitivity model and load it (with its event data) into
-  # the nlm C machinery, keeping it resident for every lme4 PWRSS evaluation.
-  # nlmerSolveGrad() then services each evaluation with a single multithreaded
-  # C solve (per-subject prediction + analytic gradient + jump sensitivities).
-  .sm <- .ui$nlmerSensModel
-  .modelInfo <- list(
-    predOnly   = .sm$predOnly,
-    thetaGrad  = .sm$thetaGrad,
-    eventTheta = .sm$eventTheta
-  )
-  .start <- .ui$nlmerStart
-  .np <- length(.start)
-  .solveCtl <- .nlmerSolveControl(.control, .np)
-  nlmixr2est::.nlmSetupEnv(.start, .ui, .ret$dataSav, .modelInfo, .solveCtl)
-  on.exit(nlmixr2est::.nlmFreeEnv(), add = TRUE)
-
-  # Observation-row map for scattering the solver output back to lme4's data
-  # order.  The solver stacks subjects in first-appearance order (== rxode2's
-  # internal id order) and, within a subject, in solve order -- the same
-  # within-subject order as the obs frame passed to lme4.
-  .dsAll <- .ret$dataSav[.ret$dataSav$EVID != 2, ]
-  .obsData <- .dsAll[.dsAll$EVID == 0, ]
-  .sidOrder <- unique(.dsAll$ID)
-  .obsIdxBySid <- lapply(.sidOrder, function(.s) which(.obsData$ID == .s))
-
-  .nlmerGlobal$nlmerEnv <- new.env(parent = emptyenv())
-  .nlmerGlobal$nlmerEnv$paramNames <- .sm$paramNames
-  .nlmerGlobal$nlmerEnv$nPar <- .np
-  .nlmerGlobal$nlmerEnv$nSub <- length(.sidOrder)
-  .nlmerGlobal$nlmerEnv$nObs <- nrow(.obsData)
-  .nlmerGlobal$nlmerEnv$obsIdxBySid <- .obsIdxBySid
-  on.exit(
-    {
-      .nlmerGlobal$nlmerEnv <- NULL
+  nlmixr2est::.nlmFamilyFitGeneric(
+    env, "nlmer", .nlmerFitModel, .nlmerGetTheta,
+    controlToFocei = .nlmerControlToFoceiControl,
+    returnFlag = "returnNlmer",
+    objective = function(.fit) -2.0 * as.numeric(logLik(.fit)),
+    emitFitWarnings = TRUE,
+    extra = paste0(" by ", crayon::bold$yellow("maximum likelihood (lme4::nlmer)")),
+    # merMod is S4 (no `$` access); cov/covMethod are set in postSetup instead
+    adjustOutput = FALSE,
+    message = function(.fit) {
+      # stashed by postSetup from the warnings .collectWarn gathered
+      .msg <- .nlmerGlobal$fitMessage
+      .nlmerGlobal$fitMessage <- NULL
+      if (is.null(.msg)) "" else .msg
     },
-    add = TRUE
-  )
-
-  .nlmer <- nlmixr2est::.collectWarn(.nlmerFitModel(.ui, .obsData), lst = TRUE)
-  .ret$nlmer <- .nlmer[[1]]
-
-  .ret$message <- NULL
-  lapply(.nlmer[[2]], function(.w) {
-    warning(.w, call. = FALSE)
-    if (grepl("fail|did not converge", .w, ignore.case = TRUE)) {
-      .ret$message <- c(.ret$message, paste0(.w, " (carefully review results)"))
-    }
-  })
-  if (is.null(.ret$message)) {
-    .ret$message <- ""
-  } else {
-    .ret$message <- paste(.ret$message, collapse = "\n")
-  }
-
-  if (rxode2::rxGetControl(.ui, "returnNlmer", FALSE)) {
-    return(.ret$nlmer)
-  }
-
-  .ret$ui <- .ui
-  .ret$adjObf <- rxode2::rxGetControl(.ui, "adjObf", TRUE)
-  .ret$fullTheta <- .nlmerGetTheta(.ret$nlmer, .ui)
-  .ret$cov <- .nlmerGetCov(.ret$nlmer)
-  .ret$covMethod <- "nlmer"
-  .ret$etaMat <- .nlmerGetEtaMat(.ret$nlmer, .ui)
-  if (nrow(.ret$etaMat) > 0) {
-    .ret$etaObf <- data.frame(
-      ID   = seq_len(nrow(.ret$etaMat)),
-      as.data.frame(.ret$etaMat),
-      OBJI = NA_real_
-    )
-  } else {
-    .ret$etaObf <- data.frame(ID = integer(0), OBJI = numeric(0))
-  }
-  .ret$omega <- .nlmerGetOmega(.ret$nlmer, .ui)
-  .ret$control <- .control
-  .ret$extra <- paste0(" by ", crayon::bold$yellow("maximum likelihood (lme4::nlmer)"))
-
-  nlmixr2est::.nlmixr2FitUpdateParams(.ret)
-  nlmixr2est::nmObjHandleControlObject(.ret$control, .ret)
-  if (exists("control", .ui)) rm(list = "control", envir = .ui)
-
-  .ret$est <- "nlmer"
-  .ret$objective <- -2.0 * as.numeric(logLik(.ret$nlmer))
-  .ret$model <- .ui$ebe
-  .ret$ofvType <- "nlmer"
-  .nlmerControlToFoceiControl(.ret)
-  .ret$theta <- .ret$ui$saemThetaDataFrame
-
-  .ret <- nlmixr2est::nlmixr2CreateOutputFromUi(
-    .ret$ui,
-    data    = .ret$origData,
-    control = .ret$control,
-    table   = .ret$table,
-    env     = .ret,
-    est     = "nlmer"
-  )
-  .env <- .ret$env
-  .env$method <- "nlmer"
-  .ret
+    postSetup = function(.ret, .ui, .fit) {
+      .nlmerGlobal$fitMessage <- NULL
+      .msg <- .fit[[2]][grepl("fail|did not converge", .fit[[2]], ignore.case = TRUE)]
+      if (length(.msg) > 0) {
+        .nlmerGlobal$fitMessage <-
+          paste(paste0(.msg, " (carefully review results)"), collapse = "\n")
+      }
+      .ret$cov <- .nlmerGetCov(.ret$nlmer)
+      .ret$covMethod <- "nlmer"
+      .ret$etaMat <- .nlmerGetEtaMat(.ret$nlmer, .ui)
+      if (nrow(.ret$etaMat) > 0) {
+        .ret$etaObf <- data.frame(
+          ID   = seq_len(nrow(.ret$etaMat)),
+          as.data.frame(.ret$etaMat),
+          OBJI = NA_real_
+        )
+      } else {
+        .ret$etaObf <- data.frame(ID = integer(0), OBJI = numeric(0))
+      }
+      .ret$omega <- .nlmerGetOmega(.ret$nlmer, .ui)
+      .ret
+    })
 }
 
 # -----------------------------------------------------------------------
