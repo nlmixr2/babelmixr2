@@ -29,7 +29,7 @@ simplifyUnit("kg", "kg/mL")
 simplifyUnit("kg", "g/mL")
 }
 \seealso{
-Other Unit conversion: 
-\code{\link{modelUnitConversion}()}
+Other Unit conversion:
+\code{\link[=modelUnitConversion]{modelUnitConversion()}}
 }
 \concept{Unit conversion}
