@@ -1,6 +1,5 @@
 #' @export
 nlmixr2Est.saemix <- function(env, ...) {
-  .model <- nlmixr2est::.uiApplyMu2(env)
   .ui <- env$ui
 
   # Decompress UI object if compressed
@@ -23,7 +22,7 @@ nlmixr2Est.saemix <- function(env, ...) {
     }
   }, add = TRUE)
 
-  nlmixr2est::.uiFinalizeMu2(.saemixFamilyFit(env, ...), .model)
+  .saemixFamilyFit(env, ...)
 }
 
 .saemixFamilyControl <- function(env, ...) {
