@@ -171,6 +171,8 @@ rex::register_shortcuts("babelmixr2")
     rxode2::rxAssignControlValue(ui, ".nmVarResNum", .num + 1)
     .reserved <- rbind(.reserved, data.frame(var=var, nm=.newVar))
     rxode2::rxAssignControlValue(ui, ".nmGetVarReservedDf", .reserved)
+    rxode2::.minfo(paste0("renamed model variable '", var, "' to '", .newVar,
+                          "' because '", .uvar, "' collides with a NONMEM reserved name"))
     var <- .newVar
   }
   .uvar <- gsub(".", "_", toupper(var), fixed=TRUE)
