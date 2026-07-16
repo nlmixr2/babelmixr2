@@ -2,13 +2,15 @@
 % Please edit documentation in R/nlmerRxUiGet.R
 \name{rxUiGet.nlmerThetaS}
 \alias{rxUiGet.nlmerThetaS}
-\title{Compute d(state)/d(THETA\link{i}) sensitivities for nlmer}
+\title{Compute d(state)/d(\code{THETA[i]}) sensitivities for nlmer}
 \usage{
 \method{rxUiGet}{nlmerThetaS}(x, ...)
 }
 \arguments{
 \item{x}{rxUiGet list(ui)}
+
+\item{...}{additional arguments (currently ignored)}
 }
 \description{
-Compute d(state)/d(THETA\link{i}) sensitivities for nlmer
+Compute d(state)/d(\code{THETA[i]}) sensitivities for nlmer
 }

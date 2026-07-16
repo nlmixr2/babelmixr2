@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{x}{rxUiGet list(ui)}
+
+\item{...}{additional arguments (currently ignored)}
 }
 \value{
 Formula: param1 + param2 + ... + (rand1 + rand2 | ID)

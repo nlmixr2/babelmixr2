@@ -2,13 +2,15 @@
 % Please edit documentation in R/nlmerRxUiGet.R
 \name{rxUiGet.nlmerModel0}
 \alias{rxUiGet.nlmerModel0}
-\title{nlmer base model (saem-dropped etas, THETA\link{i} prefix, nlme error lines)}
+\title{nlmer base model (saem-dropped etas, \code{THETA[i]} prefix, nlme error lines)}
 \usage{
 \method{rxUiGet}{nlmerModel0}(x, ...)
 }
 \arguments{
 \item{x}{rxUiGet list(ui)}
+
+\item{...}{additional arguments (currently ignored)}
 }
 \description{
-nlmer base model (saem-dropped etas, THETA\link{i} prefix, nlme error lines)
+nlmer base model (saem-dropped etas, \code{THETA[i]} prefix, nlme error lines)
 }

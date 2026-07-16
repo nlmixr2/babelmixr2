@@ -6,11 +6,10 @@
 #' @inheritParams nlmixr2est::nlmeControl
 #'
 #' @param optimizer passed to [lme4::nlmerControl()]: optimizer to use
-#' @param restart_edge passed to [lme4::nlmerControl()]
-#' @param boundary.tol passed to [lme4::nlmerControl()]
-#' @param calc.derivs passed to [lme4::nlmerControl()]
-#' @param use.last.params passed to [lme4::nlmerControl()]
-#' @param sparseX passed to [lme4::nlmerControl()]
+#' @param tolPwrss passed to [lme4::nlmerControl()]: tolerance for the
+#'   penalized, weighted residual sum-of-squares (PWRSS) inner iterations
+#' @param optCtrl a `list` of additional control parameters passed to the
+#'   nonlinear optimizer via [lme4::nlmerControl()]
 #' @param returnNlmer logical; when `TRUE` return the raw lme4 nlmerMod
 #'   object instead of the nlmixr2 fit
 #' @param muRefCovAlg logical; when `TRUE` apply mu2 covariate

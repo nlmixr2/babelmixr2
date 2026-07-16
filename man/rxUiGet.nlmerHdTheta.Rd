@@ -2,13 +2,15 @@
 % Please edit documentation in R/nlmerRxUiGet.R
 \name{rxUiGet.nlmerHdTheta}
 \alias{rxUiGet.nlmerHdTheta}
-\title{Compute d(f)/d(THETA\link{i}) for all nlmer parameters}
+\title{Compute d(f)/d(\code{THETA[i]}) for all nlmer parameters}
 \usage{
 \method{rxUiGet}{nlmerHdTheta}(x, ...)
 }
 \arguments{
 \item{x}{rxUiGet list(ui)}
+
+\item{...}{additional arguments (currently ignored)}
 }
 \description{
-Compute d(f)/d(THETA\link{i}) for all nlmer parameters
+Compute d(f)/d(\code{THETA[i]}) for all nlmer parameters
 }

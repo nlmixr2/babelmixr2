@@ -2,13 +2,15 @@
 % Please edit documentation in R/nlmerRxUiGet.R
 \name{rxUiGet.nlmerParams}
 \alias{rxUiGet.nlmerParams}
-\title{params() string for the nlmer THETA\link{i}-indexed model}
+\title{params() string for the nlmer \code{THETA[i]}-indexed model}
 \usage{
 \method{rxUiGet}{nlmerParams}(x, ...)
 }
 \arguments{
 \item{x}{rxUiGet list(ui)}
+
+\item{...}{additional arguments (currently ignored)}
 }
 \description{
-params() string for the nlmer THETA\link{i}-indexed model
+params() string for the nlmer \code{THETA[i]}-indexed model
 }

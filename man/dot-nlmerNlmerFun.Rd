@@ -21,7 +21,7 @@ Computes predictions and the analytical gradient for every observation
 using the nlm C machinery (a single multithreaded \code{\link[nlmixr2est:nlmerSolveGrad]{nlmixr2est::nlmerSolveGrad()}}
 call against the model kept resident by \code{\link[nlmixr2est:.nlmSetupEnv]{nlmixr2est::.nlmSetupEnv()}}).
 Parameters arrive in positional order matching
-\code{.nlmerGlobal$nlmerEnv$paramNames} (THETA\link{i} order).
+\code{.nlmerGlobal$nlmerEnv$paramNames} (\code{THETA[i]} order).
 }
 \details{
 lme4 passes one value per observation for each nonlinear parameter; within a

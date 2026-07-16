@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{x}{rxUiGet list(ui)}
+
+\item{...}{additional arguments (currently ignored)}
 }
 \value{
 Character vector of parameter names (mu-ref thetas + nonMuEtas)

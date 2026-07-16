@@ -95,7 +95,7 @@
 
 #' @import nlmixr2data
 #' @import nlmixr2plot
-#' @importFrom stats predict logLik na.fail pchisq approxfun cov cov2cor dlnorm median na.omit qchisq qnorm
+#' @importFrom stats predict logLik na.fail pchisq approxfun cov cov2cor dlnorm median na.omit qchisq qnorm as.formula sigma vcov
 #' @noRd
 .genHardReExport <- function(fun) { # nocov start
   message("Writing hard reexport: ", fun)

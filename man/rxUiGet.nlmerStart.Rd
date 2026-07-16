@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{x}{rxUiGet list(ui)}
+
+\item{...}{additional arguments (currently ignored)}
 }
 \value{
 Named numeric vector: iniDf estimates for thetas, 0 for nonMuEtas

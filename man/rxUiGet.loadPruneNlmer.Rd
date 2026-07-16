@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{x}{rxUiGet list(ui)}
+
+\item{...}{additional arguments (currently ignored)}
 }
 \description{
 Load pruned nlmer model into symengine (no sensitivity promotion)

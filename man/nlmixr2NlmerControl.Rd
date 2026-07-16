@@ -68,6 +68,12 @@ nlmerControl(
 \arguments{
 \item{optimizer}{passed to \code{\link[lme4:nlmerControl]{lme4::nlmerControl()}}: optimizer to use}
 
+\item{tolPwrss}{passed to \code{\link[lme4:nlmerControl]{lme4::nlmerControl()}}: tolerance for the
+penalized, weighted residual sum-of-squares (PWRSS) inner iterations}
+
+\item{optCtrl}{a \code{list} of additional control parameters passed to the
+nonlinear optimizer via \code{\link[lme4:nlmerControl]{lme4::nlmerControl()}}}
+
 \item{returnNlmer}{logical; when \code{TRUE} return the raw lme4 nlmerMod
 object instead of the nlmixr2 fit}
 
@@ -153,16 +159,6 @@ Here y = observed, f = predicted, a = additive sd, b = proportional/power
 sd, c = power exponent (1 in the proportional case).}
 
 \item{...}{Ignored parameters}
-
-\item{restart_edge}{passed to \code{\link[lme4:nlmerControl]{lme4::nlmerControl()}}}
-
-\item{boundary.tol}{passed to \code{\link[lme4:nlmerControl]{lme4::nlmerControl()}}}
-
-\item{calc.derivs}{passed to \code{\link[lme4:nlmerControl]{lme4::nlmerControl()}}}
-
-\item{use.last.params}{passed to \code{\link[lme4:nlmerControl]{lme4::nlmerControl()}}}
-
-\item{sparseX}{passed to \code{\link[lme4:nlmerControl]{lme4::nlmerControl()}}}
 }
 \value{
 nlmer control structure

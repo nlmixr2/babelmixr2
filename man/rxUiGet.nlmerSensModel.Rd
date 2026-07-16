@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{x}{rxUiGet list(ui)}
+
+\item{...}{additional arguments (currently ignored)}
 }
 \description{
 Returns a list with:
@@ -17,9 +19,9 @@ rx__sens_rx_pred__BY_THETA_i___ for each estimated parameter.  When
 \code{eventSens = "jump"} this model carries rxode2's analytic event-jump
 sensitivities (loaded/activated by \code{\link[nlmixr2est:.nlmSetupEnv]{nlmixr2est::.nlmSetupEnv()}}).
 \item \code{predOnly}: compiled rxode2 model for prediction only
-\item \code{eventTheta}: integer vector flagging THETA\link{i} that need Shi2021 finite
+\item \code{eventTheta}: integer vector flagging \code{THETA[i]} that need Shi2021 finite
 differences for dosing parameters (all 0 under \code{eventSens = "jump"})
-\item \code{paramNames}: character vector of parameter names in THETA\link{i} order
+\item \code{paramNames}: character vector of parameter names in \code{THETA[i]} order
 }
 }
 \details{

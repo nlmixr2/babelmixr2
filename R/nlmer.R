@@ -8,7 +8,7 @@
 #' using the nlm C machinery (a single multithreaded [nlmixr2est::nlmerSolveGrad()]
 #' call against the model kept resident by [nlmixr2est::.nlmSetupEnv()]).
 #' Parameters arrive in positional order matching
-#' `.nlmerGlobal$nlmerEnv$paramNames` (THETA[i] order).
+#' `.nlmerGlobal$nlmerEnv$paramNames` (`THETA[i]` order).
 #'
 #' lme4 passes one value per observation for each nonlinear parameter; within a
 #' subject these are constant (phi = beta + b), so the per-subject parameter
