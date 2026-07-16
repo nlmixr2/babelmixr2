@@ -438,6 +438,8 @@ nlmixr2Est.fmeMcmc <- function(env, ...) {
 }
 attr(nlmixr2Est.fmeMcmc, "covPresent") <- TRUE
 attr(nlmixr2Est.fmeMcmc, "unbounded") <- TRUE
+attr(nlmixr2Est.fmeMcmc, "type") <- "External"
+attr(nlmixr2Est.fmeMcmc, "description") <- "FME MCMC (Bayesian)"
 
 as.mcmc.nlmixr2.fmeMcmc <- function(x, ...) {
   if (!inherits(x, "nlmixr2.fmeMcmc")) {

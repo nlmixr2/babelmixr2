@@ -25,6 +25,8 @@ nlmixr2Est.saemix <- function(env, ...) {
 
   nlmixr2est::.uiFinalizeMu2(.saemixFamilyFit(env, ...), .model)
 }
+attr(nlmixr2Est.saemix, "type") <- "Stochastic EM"
+attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
 
 .saemixFamilyControl <- function(env, ...) {
   .ui <- env$ui

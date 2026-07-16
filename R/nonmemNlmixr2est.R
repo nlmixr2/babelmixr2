@@ -312,3 +312,5 @@ nlmixr2Est.nonmem <- function(env, ...) {
   nlmixr2est::.uiFinalizeMu2(.nonmemFamilyFit(env, ...), .model)
 }
 attr(nlmixr2Est.nonmem, "covPresent") <- TRUE
+attr(nlmixr2Est.nonmem, "type") <- "External"
+attr(nlmixr2Est.nonmem, "description") <- "NONMEM (external software)"

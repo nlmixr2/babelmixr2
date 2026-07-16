@@ -373,3 +373,5 @@ nlmixr2Est.monolix <- function(env, ...) {
   nlmixr2est::.uiFinalizeMu2(.monolixFamilyFit(env, ...), .model)
 }
 attr(nlmixr2Est.monolix, "covPresent") <- TRUE
+attr(nlmixr2Est.monolix, "type") <- "External"
+attr(nlmixr2Est.monolix, "description") <- "Monolix (external software, SAEM)"
