@@ -40,7 +40,10 @@
 
   # Single C solve: nObsTot x (nPar + 1); col 1 = rx_pred_, cols 2.. =
   # d(pred)/d(THETA[j]).  Rows are stacked per subject in solver block order.
-  .mat <- nlmixr2est::nlmerSolveGrad(.thetaMat)
+  # record=TRUE logs this evaluation's population estimate (per-subject mean of
+  # the phi columns) into the nlm parameter history, so the nlm machinery --
+  # not lme4 -- drives the iteration print and the recovered parHistData.
+  .mat <- nlmixr2est::nlmerSolveGrad(.thetaMat, record = TRUE)
 
   .pred <- numeric(.nObs)
   .grad <- matrix(0.0, .nObs, .nPar)
@@ -92,6 +95,10 @@
   .sc <- unclass(.sc)
   .sc$scaleType <- 5L                # 'none' -> identity (raw phi from lme4)
   .sc$scaleC <- rep(1.0, np)
+  # lme4 owns the deviance, so there is no per-iteration objective to show;
+  # showOfv=0 drops the "Function Val." column from the header + rows, leaving a
+  # parameter-only iteration print/history (see nlmerSolveGrad(record=)).
+  .sc$showOfv <- 0L
   .sc
 }
 
@@ -146,7 +153,7 @@
   # resolvable from any evaluation context.
   .nlmerGlobal$currentFormula <- ui$nlmerFormula
   on.exit(.nlmerGlobal$currentFormula <- NULL, add = TRUE)
-  eval(
+  .mod <- eval(
     quote(lme4::nlmer(
       formula = babelmixr2:::.nlmerGlobal$currentFormula,
       data    = .obsData,
@@ -155,6 +162,11 @@
     )),
     envir = environment()
   )
+  # Recover the nlm-accumulated parameter history (one row per iterType per
+  # recorded nlmerSolveGrad() call) *before* the on.exit .nlmFreeEnv() frees the
+  # resident scale.  Stash it for .nlmerFamilyFit()'s postSetup to attach.
+  .nlmerGlobal$parHistData <- nlmixr2est::nlmGetParHist(FALSE)
+  .mod
 }
 
 # -----------------------------------------------------------------------
@@ -270,6 +282,10 @@
         .ret$etaObf <- data.frame(ID = integer(0), OBJI = numeric(0))
       }
       .ret$omega <- .nlmerGetOmega(.ret$nlmer, .ui)
+      # Attach the nlm-recovered parameter history captured in .nlmerFitModel;
+      # nlmixr2CreateOutputFromUi() propagates .ret$parHistData onto the fit.
+      .ret$parHistData <- .nlmerGlobal$parHistData
+      .nlmerGlobal$parHistData <- NULL
       .ret
     })
 }

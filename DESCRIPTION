@@ -46,7 +46,7 @@ Imports:
     nlmixr2extra,
     nlmixr2plot,
     magrittr,
-    nlmixr2est (>= 6.0.1),
+    nlmixr2est (>= 6.2.0),
     nonmem2rx (>= 0.1.5),
     monolix2rx (>= 0.0.3),
     methods,

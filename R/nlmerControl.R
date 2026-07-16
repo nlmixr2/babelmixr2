@@ -55,7 +55,7 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
                                 odeRecalcFactor = 10^(0.5),
                                 useColor = NULL,
                                 printNcol = NULL,
-                                print = 0L,
+                                print = 1L,
                                 # nlmixr2 standard options
                                 optExpression = TRUE,
                                 literalFix = TRUE,

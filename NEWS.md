@@ -1,5 +1,15 @@
 # babelmixr2 0.1.11.9000
 
+* The `nlmer` estimation method now prints its iterations during the
+  `lme4::nlmer` optimization and records a parameter history, both driven
+  by the shared `nlmixr2est` nlm machinery (not lme4).  Each recorded
+  `nlmerSolveGrad()` evaluation logs the population parameter estimate
+  (per-subject mean of the `phi` columns) into the resident nlm scale;
+  the accumulated history is recovered via `nlmixr2est::nlmGetParHist()`
+  and stored on the fit as `parHistData`.  No objective column is shown
+  (lme4 owns the deviance).  Iteration printing defaults on
+  (`nlmerControl(print = 1L)`).  Requires `nlmixr2est (>= 6.2.0)`.
+
 * The `pseudoOptimControl()` and `fmeMcmcControl()` functions now
   accept either the legacy scalar `print` / `printNcol` / `useColor`
   arguments or a pre-built `nlmixr2est::iterPrintControl()` object via
