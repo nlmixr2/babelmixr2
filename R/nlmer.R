@@ -60,6 +60,23 @@
   .pred
 }
 
+#' Accessor for the nlmer formula currently being fit
+#'
+#' `lme4::nlmer()` captures `match.call()$formula` and re-evaluates it deep in
+#' its own call stack, where the babelmixr2 fit locals are not in scope, so the
+#' formula must be referenced through an exported, namespace-qualified call
+#' rather than a `:::` reference to the package's internal `.nlmerGlobal`
+#' (which CRAN disallows).  This returns the 3-part formula stashed by
+#' `.nlmerFitModel()` for the in-progress fit.
+#'
+#' @return The 3-part nlmer formula for the active fit, or `NULL` when no fit
+#'   is in progress.
+#' @export
+#' @keywords internal
+.nlmerCurrentFormula <- function() {
+  .nlmerGlobal$currentFormula
+}
+
 # -----------------------------------------------------------------------
 # Solve control: derive the nlm-engine solving control from nlmerControl
 # -----------------------------------------------------------------------
@@ -148,14 +165,16 @@
   )
   .obsData$ID <- factor(.obsData$ID)
   # lme4::nlmer captures match.call()$formula and re-evaluates it deep in its
-  # call stack (where `ui` is not in scope). Storing the formula in the
-  # package-level .nlmerGlobal environment and referencing it via :: makes it
-  # resolvable from any evaluation context.
+  # call stack (where `ui` is not in scope). Stash the formula in the
+  # package-level .nlmerGlobal environment and reference it through the
+  # exported accessor .nlmerCurrentFormula(), which resolves from any
+  # evaluation context (an exported `::` call -- CRAN disallows a `:::` call to
+  # the package's own namespace).
   .nlmerGlobal$currentFormula <- ui$nlmerFormula
   on.exit(.nlmerGlobal$currentFormula <- NULL, add = TRUE)
   .mod <- eval(
     quote(lme4::nlmer(
-      formula = babelmixr2:::.nlmerGlobal$currentFormula,
+      formula = babelmixr2::.nlmerCurrentFormula(),
       data    = .obsData,
       start   = .start,
       control = .lme4Ctl
