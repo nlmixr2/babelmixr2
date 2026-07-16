@@ -311,3 +311,6 @@ nlmixr2Est.nonmem <- function(env, ...) {
   .nonmemFamilyFit(env, ...)
 }
 attr(nlmixr2Est.nonmem, "covPresent") <- TRUE
+attr(nlmixr2Est.nonmem, "mu") <- function(control) {
+  isTRUE(control$muRefCovAlg)
+}
