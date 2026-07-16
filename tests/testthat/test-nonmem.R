@@ -286,6 +286,47 @@ withr::with_tempdir({
 
     })
 
+    test_that("NONMEM export assigns ALAG for absorption lag (issue #190)", {
+      # lag(depot)/alag(depot) must produce a real ALAG<n>= statement in $PK,
+      # otherwise NONMEM silently fits the model without the absorption lag.
+      lagDirect <- function() {
+        ini({ lka <- 0.45; lcl <- 1; lvc <- 3.45; llagt <- log(0.3)
+              eta.cl ~ 0.1; propSd <- 0.5 })
+        model({ ka <- exp(lka); cl <- exp(lcl + eta.cl); vc <- exp(lvc)
+                lag(depot) <- exp(llagt)
+                d/dt(depot)  <- -ka * depot
+                d/dt(center) <-  ka * depot - (cl / vc) * center
+                cp <- center / vc
+                cp ~ prop(propSd) })
+      }
+      lagVar <- function() {
+        ini({ lka <- 0.45; lcl <- 1; lvc <- 3.45; llagt <- log(0.3)
+              eta.cl ~ 0.1; propSd <- 0.5 })
+        model({ ka <- exp(lka); cl <- exp(lcl + eta.cl); vc <- exp(lvc)
+                lagt <- exp(llagt)
+                lag(depot) <- lagt
+                d/dt(depot)  <- -ka * depot
+                d/dt(center) <-  ka * depot - (cl / vc) * center
+                cp <- center / vc
+                cp ~ prop(propSd) })
+      }
+      alagVar <- function() {
+        ini({ lka <- 0.45; lcl <- 1; lvc <- 3.45; llagt <- log(0.3)
+              eta.cl ~ 0.1; propSd <- 0.5 })
+        model({ ka <- exp(lka); cl <- exp(lcl + eta.cl); vc <- exp(lvc)
+                lagt <- exp(llagt)
+                alag(depot) <- lagt
+                d/dt(depot)  <- -ka * depot
+                d/dt(center) <-  ka * depot - (cl / vc) * center
+                cp <- center / vc
+                cp ~ prop(propSd) })
+      }
+      for (m in list(lagDirect, lagVar, alagVar)) {
+        nm <- m()$nonmemModel
+        expect_match(nm, "ALAG1 *=", all=FALSE)
+      }
+    })
+
     # pk.turnover.emax3 <- function() {
     #   ini({
     #     tktr <- log(1)
