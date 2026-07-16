@@ -316,8 +316,7 @@ nlmixr2Est.nlmer <- function(env, ...) {
     add = TRUE
   )
 
-  .model <- nlmixr2est::.uiApplyMu2(env)
-  nlmixr2est::.uiFinalizeMu2(.nlmerFamilyFit(env, ...), .model)
+  .nlmerFamilyFit(env, ...)
 }
 
 attr(nlmixr2Est.nlmer, "covPresent") <- TRUE
