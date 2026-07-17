@@ -15,6 +15,7 @@ fmeMcmcControl(
   ntrydr = 1,
   drscale = NULL,
   verbose = FALSE,
+  seed = 99,
   returnFmeMcmc = FALSE,
   stickyRecalcN = 4,
   maxOdeRecalc = 5,
@@ -92,6 +93,13 @@ fmeMcmcControl(
     numeric value \code{i > 1}, prints status information every 
 	\code{i} iterations.
   }
+
+\item{seed}{an integer seed used for the mcmc chain.  The chain is
+fully determined by this seed, so a fixed value makes the fit
+reproducible.  The run is wrapped in \code{\link[rxode2:rxWithSeed]{rxode2::rxWithSeed()}}, which
+restores the prior random number generator state afterward, so
+seeding the fit does not disturb the calling session's stream.  Vary
+this to explore different chains.}
 
 \item{returnFmeMcmc}{return the fmeMcmc output instead of the nlmixr2
 fit}

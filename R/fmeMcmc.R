@@ -9,6 +9,13 @@
 #' @param returnFmeMcmc return the fmeMcmc output instead of the nlmixr2
 #'   fit
 #'
+#' @param seed an integer seed used for the mcmc chain.  The chain is
+#'   fully determined by this seed, so a fixed value makes the fit
+#'   reproducible.  The run is wrapped in [rxode2::rxWithSeed()], which
+#'   restores the prior random number generator state afterward, so
+#'   seeding the fit does not disturb the calling session's stream.  Vary
+#'   this to explore different chains.
+#'
 #' @return fmeMcmc control structure
 #' @export
 #' @author Matthew L. Fidler
@@ -62,6 +69,7 @@ fmeMcmcControl <- function(jump=NULL,
                            ntrydr = 1,
                            drscale = NULL,
                            verbose = FALSE,
+                           seed = 99,
                            returnFmeMcmc=FALSE,
 
                            # rxode2/nlmixr2est options
@@ -109,6 +117,7 @@ fmeMcmcControl <- function(jump=NULL,
     call.=FALSE)
   }
 
+  checkmate::assertIntegerish(seed, any.missing=FALSE, len=1)
   checkmate::assertIntegerish(stickyRecalcN, any.missing=FALSE, lower=0, len=1)
   checkmate::assertIntegerish(maxOdeRecalc, any.missing=FALSE, len=1)
   checkmate::assertNumeric(odeRecalcFactor, len=1, lower=1, any.missing=FALSE)
@@ -177,6 +186,7 @@ fmeMcmcControl <- function(jump=NULL,
     ntrydr = as.integer(ntrydr),
     drscale = drscale,
     verbose = as.logical(verbose),
+    seed = as.integer(seed),
     covMethod=match.arg(covMethod),
     optExpression=optExpression,
     literalFix=literalFix,
@@ -313,7 +323,7 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
   if (is.null(.ctl$covscale)) {
     .ctl$covscale <- 2.4^2 / length(.env$par.ini)
   }
-  .ret <- bquote(FME::modMCMC(
+  .mcmcCall <- bquote(FME::modMCMC(
     f=.(babelmixr2::.fmeMcmcF),
     p=.(.env$par.ini),
     lower=.(.env$lower),
@@ -327,7 +337,11 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
     ntrydr=.(.ctl$ntrydr),
     drscale=.(.ctl$drscale),
     verbose=.(.ctl$verbose)))
-  .ret <- eval(.ret)
+  # `FME::modMCMC()` proposes jumps with R's random number generator, so the
+  # chain is fully determined by the seed.  Run it under `rxWithSeed()` so the
+  # fit is reproducible for a given `seed` and the caller's random number stream
+  # is restored afterward.
+  .ret <- rxode2::rxWithSeed(.ctl$seed, eval(.mcmcCall))
   # `FME::modMCMC()` explores the internal, scaled optimization space, so the
   # sampled chain (`$pars`) is on that scale rather than the natural one -- it
   # wanders around the scaled starting point (~1) instead of the `ini({})`

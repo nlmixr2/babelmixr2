@@ -59,3 +59,41 @@ test_that("fmeMcmc works", {
 
 
 })
+
+test_that("fmeMcmc chain is determined by control's seed", {
+  skip_if_not_installed("FME")
+  skip_on_cran()
+
+  dsn <- rxode2::rxWithSeed(42, {
+    .d <- data.frame(i=1:1000)
+    .d$time <- exp(rnorm(1000))
+    .d$DV <- rbinom(1000, 1, exp(-1+.d$time)/(1+exp(-1+.d$time)))
+    .d
+  })
+
+  mod <- function() {
+    ini({
+      E0 <- 0.5
+      Em <- 0.5
+      E50 <- 2
+      g <- fix(2)
+    })
+    model({
+      v <- E0+Em*time^g/(E50^g+time^g)
+      ll(bin) ~ DV * v - log(1 + exp(v))
+    })
+  }
+
+  .fit <- function(seed) {
+    suppressMessages(nlmixr(mod, dsn, est="fmeMcmc",
+                            control=fmeMcmcControl(print=0, niter=50,
+                                                   seed=seed)))$fmeMcmc$pars
+  }
+
+  # the run is wrapped in rxWithSeed(), so the same seed reproduces the chain
+  # exactly even though the two fits run back-to-back from different RNG states
+  expect_equal(.fit(42), .fit(42))
+
+  # ... and a different seed explores a different chain
+  expect_false(isTRUE(all.equal(.fit(42), .fit(7))))
+})
