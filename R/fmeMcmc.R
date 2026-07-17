@@ -9,6 +9,13 @@
 #' @param returnFmeMcmc return the fmeMcmc output instead of the nlmixr2
 #'   fit
 #'
+#' @param seed an integer seed used for the mcmc chain.  The chain is
+#'   fully determined by this seed, so a fixed value makes the fit
+#'   reproducible.  The run is wrapped in [rxode2::rxWithSeed()], which
+#'   restores the prior random number generator state afterward, so
+#'   seeding the fit does not disturb the calling session's stream.  Vary
+#'   this to explore different chains.
+#'
 #' @return fmeMcmc control structure
 #' @export
 #' @author Matthew L. Fidler
@@ -62,6 +69,7 @@ fmeMcmcControl <- function(jump=NULL,
                            ntrydr = 1,
                            drscale = NULL,
                            verbose = FALSE,
+                           seed = 99,
                            returnFmeMcmc=FALSE,
 
                            # rxode2/nlmixr2est options
@@ -109,6 +117,7 @@ fmeMcmcControl <- function(jump=NULL,
     call.=FALSE)
   }
 
+  checkmate::assertIntegerish(seed, any.missing=FALSE, len=1)
   checkmate::assertIntegerish(stickyRecalcN, any.missing=FALSE, lower=0, len=1)
   checkmate::assertIntegerish(maxOdeRecalc, any.missing=FALSE, len=1)
   checkmate::assertNumeric(odeRecalcFactor, len=1, lower=1, any.missing=FALSE)
@@ -177,6 +186,7 @@ fmeMcmcControl <- function(jump=NULL,
     ntrydr = as.integer(ntrydr),
     drscale = drscale,
     verbose = as.logical(verbose),
+    seed = as.integer(seed),
     covMethod=match.arg(covMethod),
     optExpression=optExpression,
     literalFix=literalFix,
@@ -313,7 +323,7 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
   if (is.null(.ctl$covscale)) {
     .ctl$covscale <- 2.4^2 / length(.env$par.ini)
   }
-  .ret <- bquote(FME::modMCMC(
+  .mcmcCall <- bquote(FME::modMCMC(
     f=.(babelmixr2::.fmeMcmcF),
     p=.(.env$par.ini),
     lower=.(.env$lower),
@@ -327,10 +337,40 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
     ntrydr=.(.ctl$ntrydr),
     drscale=.(.ctl$drscale),
     verbose=.(.ctl$verbose)))
-  .ret <- eval(.ret)
+  # `FME::modMCMC()` proposes jumps with R's random number generator, so the
+  # chain is fully determined by the seed.  Run it under `rxWithSeed()` so the
+  # fit is reproducible for a given `seed` and the caller's random number stream
+  # is restored afterward.
+  .ret <- rxode2::rxWithSeed(.ctl$seed, eval(.mcmcCall))
+  # `FME::modMCMC()` explores the internal, scaled optimization space, so the
+  # sampled chain (`$pars`) is on that scale rather than the natural one -- it
+  # wanders around the scaled starting point (~1) instead of the `ini({})`
+  # values.  Back-transform the whole chain (issue #178) so that summaries of
+  # `fit$fmeMcmc` -- `summary()`, `coda::as.mcmc()`, `pairs()` -- report the
+  # actual sampled parameters and agree with `print(fit)`.  `$bestpar` is
+  # back-transformed separately by `.nlmFinalizeList()` below.
+  #
+  # `modMCMC()` also labels the columns generically (`p1`, `p2`, ...) because the
+  # scaled starting vector it is handed is unnamed, so relabel them with the real
+  # parameter names (issue #178 also noted the confusing `p7`-style names).
+  #
+  # `nlmixr2est::nlmUnscalePar()` is unexported, so reach it through the
+  # namespace (avoids a CRAN-flagged `:::` call).  It unscales by position, so
+  # the chain columns must stay in `thetaNames` order.
+  .unscalePar <- get("nlmUnscalePar", envir=asNamespace("nlmixr2est"))
+  .parNames <- .env$thetaNames
+  .chain <- .ret$pars
+  for (.i in seq_len(nrow(.chain))) {
+    .chain[.i, ] <- .unscalePar(setNames(.ret$pars[.i, ], .parNames))
+  }
+  colnames(.chain) <- .parNames
+  .ret$pars <- .chain
   if (.ctl$covMethod == "mcmc") {
+    # Every nlm scaling is a per-parameter affine map, so the sample covariance
+    # of the back-transformed chain is exactly the scale-adjusted covariance
+    # that `.nlmAdjustCov()` used to produce from the scaled chain.
     .ret$cov.unscaled <- cov(.ret$pars)
-    .ret$cov <- nlmixr2est::.nlmAdjustCov(.ret$cov.unscaled, .ret$bestpar)
+    .ret$cov <- .ret$cov.unscaled
   }
   .ret <- nlmixr2est::.nlmFinalizeList(.env, .ret, par="bestpar", printLine=TRUE,
                                        hessianCov=(.ctl$covMethod == "r"))
