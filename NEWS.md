@@ -1,5 +1,11 @@
 # babelmixr2 0.1.11.9000
 
+* Each estimation method now carries `type` and `description` attributes so it
+  appears in the category-grouped method list nlmixr2est prints for an
+  unsupported `est=` (or a bare `nlmixr2()` call): `nonmem`, `monolix`, `pknca`,
+  `fmeMcmc` and `pseudoOptim` under "External", `saemix` under "Stochastic EM",
+  `nlmer` under "Integral approximation", and `poped` under "Optimal Design".
+
 * The mu-referenced covariate algorithm (`muRefCovAlg`) is now applied
   through the `nlmixr2est` preprocessing/post-final-object hooks instead
   of explicit `nlmixr2est::.uiApplyMu2()`/`.uiFinalizeMu2()` calls in the
@@ -35,6 +41,7 @@
   `print` (logical), `printNcol` and `useColor` arguments into the same
   `iterPrintControl` sub-list; a nonzero `every` enables the `saemix`
   progress output.
+
 * Fix NONMEM export silently dropping the absorption lag (#190).  A
   `lag(depot)`/`alag(depot)` assignment computed the lag parameter in `$PK`
   but never emitted the corresponding `ALAG<n>=` statement, so NONMEM fit the

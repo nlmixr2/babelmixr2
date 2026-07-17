@@ -157,6 +157,8 @@ nlmixr2Est.pknca <- function(env, ...) {
   class(env) <- "pkncaEst"
   env
 }
+attr(nlmixr2Est.pknca, "type") <- "External"
+attr(nlmixr2Est.pknca, "description") <- "PKNCA-based initial estimates (NCA)"
 
 #' Get the lines of the model which assign the dependent variable(s)
 #' @return A list of dependent variable lines (or NULL if there are no dependent

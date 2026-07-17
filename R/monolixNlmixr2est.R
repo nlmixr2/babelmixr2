@@ -372,6 +372,8 @@ nlmixr2Est.monolix <- function(env, ...) {
   .monolixFamilyFit(env, ...)
 }
 attr(nlmixr2Est.monolix, "covPresent") <- TRUE
+attr(nlmixr2Est.monolix, "type") <- "External"
+attr(nlmixr2Est.monolix, "description") <- "Monolix (external software, SAEM)"
 attr(nlmixr2Est.monolix, "mu") <- function(control) {
   isTRUE(control$muRefCovAlg)
 }

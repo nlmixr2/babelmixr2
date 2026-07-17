@@ -3045,6 +3045,8 @@ nlmixr2Est.poped <- function(env, ...) {
   }, add=TRUE)
   .setupPopEDdatabase(.ui, env$data, env$control)
 }
+attr(nlmixr2Est.poped, "type") <- "Optimal Design"
+attr(nlmixr2Est.poped, "description") <- "PopED optimal design"
 
 
 # This is a way to export a rxode2 optimization alternative via a file
