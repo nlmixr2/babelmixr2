@@ -1,6 +1,5 @@
 #' @export
 nlmixr2Est.saemix <- function(env, ...) {
-  .model <- nlmixr2est::.uiApplyMu2(env)
   .ui <- env$ui
 
   # Decompress UI object if compressed
@@ -23,7 +22,7 @@ nlmixr2Est.saemix <- function(env, ...) {
     }
   }, add = TRUE)
 
-  nlmixr2est::.uiFinalizeMu2(.saemixFamilyFit(env, ...), .model)
+  .saemixFamilyFit(env, ...)
 }
 attr(nlmixr2Est.saemix, "type") <- "Stochastic EM"
 attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
@@ -299,7 +298,7 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
                          print.is = .control$print.is,
                          nbdisplay = .control$nbdisplay,
                          displayProgress = .control$displayProgress,
-                         print = .control$print,
+                         print = .control$iterPrintControl$every > 0L,
                          save = FALSE, # handled by nlmixr2
                          save.graphs = FALSE, # handled by nlmixr2
                          warnings = .control$warnings,

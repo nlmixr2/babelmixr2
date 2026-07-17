@@ -1,15 +1,15 @@
 #' Control for nlmer estimation method in nlmixr2
 #'
+#' @inheritParams nlmixr2est::iterPrintParams
 #' @inheritParams nlmixr2est::foceiControl
 #' @inheritParams nlmixr2est::saemControl
 #' @inheritParams nlmixr2est::nlmeControl
 #'
 #' @param optimizer passed to [lme4::nlmerControl()]: optimizer to use
-#' @param restart_edge passed to [lme4::nlmerControl()]
-#' @param boundary.tol passed to [lme4::nlmerControl()]
-#' @param calc.derivs passed to [lme4::nlmerControl()]
-#' @param use.last.params passed to [lme4::nlmerControl()]
-#' @param sparseX passed to [lme4::nlmerControl()]
+#' @param tolPwrss passed to [lme4::nlmerControl()]: tolerance for the
+#'   penalized, weighted residual sum-of-squares (PWRSS) inner iterations
+#' @param optCtrl a `list` of additional control parameters passed to the
+#'   nonlinear optimizer via [lme4::nlmerControl()]
 #' @param returnNlmer logical; when `TRUE` return the raw lme4 nlmerMod
 #'   object instead of the nlmixr2 fit
 #' @param muRefCovAlg logical; when `TRUE` apply mu2 covariate
@@ -52,6 +52,9 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
                                 stickyRecalcN = 4,
                                 maxOdeRecalc = 5,
                                 odeRecalcFactor = 10^(0.5),
+                                useColor = NULL,
+                                printNcol = NULL,
+                                print = 1L,
                                 # nlmixr2 standard options
                                 optExpression = TRUE,
                                 literalFix = TRUE,
@@ -87,12 +90,17 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
 
   .xtra <- list(...)
   .bad <- names(.xtra)
-  .bad <- .bad[!(.bad %in% c("genRxControl"))]
+  .bad <- .bad[!(.bad %in% c("genRxControl", "iterPrintControl"))]
   if (length(.bad) > 0) {
     stop("unused argument: ",
          paste(paste0("'", .bad, "'"), collapse = ", "),
          call. = FALSE)
   }
+
+  .iterPrintControl <- nlmixr2est::.absorbIterPrintControl(print = print,
+                                                           printNcol = printNcol,
+                                                           useColor = useColor,
+                                                           iterPrintControl = .xtra$iterPrintControl)
 
   .genRxControl <- FALSE
   if (!is.null(.xtra$genRxControl)) {
@@ -137,6 +145,7 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
     stickyRecalcN = as.integer(stickyRecalcN),
     maxOdeRecalc = as.integer(maxOdeRecalc),
     odeRecalcFactor = odeRecalcFactor,
+    iterPrintControl = .iterPrintControl,
     optExpression = optExpression,
     literalFix = literalFix,
     sumProd = sumProd,
@@ -158,7 +167,6 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
 #' @export
 nlmerControl <- nlmixr2NlmerControl
 
-#' @export
 rxUiDeparse.nlmerControl <- function(object, var) {
   .default <- nlmerControl()
   .w <- nlmixr2est::.deparseDifferent(.default, object, "genRxControl")

@@ -1,5 +1,6 @@
 #' Control for saemix estimation method in nlmixr2
 #'
+#' @inheritParams nlmixr2est::iterPrintParams
 #' @inheritParams nlmixr2est::foceiControl
 #' @inheritParams nlmixr2est::saemControl
 #'
@@ -19,7 +20,12 @@
 #' @param print.is logical, whether to print progress during Importance Sampling (default `FALSE`)
 #' @param nbdisplay number of iterations between progress displays (default `100`)
 #' @param displayProgress logical, whether to display graphical progress (default `FALSE`)
-#' @param print logical, whether to print algorithm progress (default `TRUE`)
+#' @param print whether `saemix` prints algorithm progress (default
+#'   `FALSE`).  Accepts the legacy logical/integer scalar or a
+#'   pre-built [nlmixr2est::iterPrintControl()] object; internally the
+#'   control stores a single `iterPrintControl` sub-list (matching the
+#'   `nlmixr2est` iteration-print unification), and any nonzero
+#'   `every` enables the `saemix` progress output
 #' @param save logical, whether to save results to files (default `TRUE`)
 #' @param save.graphs logical, whether to save graphs (default `TRUE`)
 #' @param directory directory where results and graphs are saved (default `"newdir"`)
@@ -85,8 +91,8 @@ saemixControl <- function(map = TRUE,
                           maxOdeRecalc = 5,
                           odeRecalcFactor = 10^(0.5),
 
-                          useColor = crayon::has_color(),
-                          printNcol = floor((getOption("width") - 23) / 12),
+                          useColor = NULL,
+                          printNcol = NULL,
 
                           normType = c("rescale2", "mean", "rescale", "std", "len", "constant"),
                           scaleType = c("none", "nlmixr2", "norm", "mult", "multAdd"),
@@ -121,7 +127,6 @@ saemixControl <- function(map = TRUE,
   checkmate::assertLogical(print.is, len = 1, any.missing = FALSE)
   checkmate::assertIntegerish(nbdisplay, len = 1, any.missing = FALSE)
   checkmate::assertLogical(displayProgress, len = 1, any.missing = FALSE)
-  checkmate::assertLogical(print, len = 1, any.missing = FALSE)
   checkmate::assertLogical(save, len = 1, any.missing = FALSE)
   checkmate::assertLogical(save.graphs, len = 1, any.missing = FALSE)
   checkmate::assertCharacter(directory, len = 1, any.missing = FALSE)
@@ -145,10 +150,20 @@ saemixControl <- function(map = TRUE,
 
   .xtra <- list(...)
   .bad <- names(.xtra)
-  .bad <- .bad[!(.bad %in% c("genRxControl"))]
+  .bad <- .bad[!(.bad %in% c("genRxControl", "iterPrintControl"))]
   if (length(.bad) > 0) {
     stop("unused argument: ", paste(paste0("'", .bad, "'"), collapse = ", "), call. = FALSE)
   }
+
+  # `print` was historically a logical for this method; coerce so the
+  # shared absorb helper (which requires an integerish `every`) accepts it
+  if (checkmate::testLogical(print, len = 1, any.missing = FALSE)) {
+    print <- as.integer(print)
+  }
+  .iterPrintControl <- nlmixr2est::.absorbIterPrintControl(print = print,
+                                                           printNcol = printNcol,
+                                                           useColor = useColor,
+                                                           iterPrintControl = .xtra$iterPrintControl)
 
   .genRxControl <- FALSE
   if (!is.null(.xtra$genRxControl)) {
@@ -215,7 +230,6 @@ saemixControl <- function(map = TRUE,
                print.is = print.is,
                nbdisplay = nbdisplay,
                displayProgress = displayProgress,
-               print = print,
                save = save,
                save.graphs = save.graphs,
                directory = directory,
@@ -238,8 +252,7 @@ saemixControl <- function(map = TRUE,
                stickyRecalcN = as.integer(stickyRecalcN),
                maxOdeRecalc = as.integer(maxOdeRecalc),
                odeRecalcFactor = odeRecalcFactor,
-               useColor = useColor,
-               printNcol = printNcol,
+               iterPrintControl = .iterPrintControl,
                normType = normType,
                scaleType = scaleType,
                scaleCmax = scaleCmax,

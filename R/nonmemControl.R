@@ -295,25 +295,6 @@ nmObjGetControl.nonmem <- function(x, ...) {
   stop("cannot find nonmem related control object", call.=FALSE)
 }
 
-#' @export
-nmObjHandleControlObject.nonmemControl <- function(control, env) {
-  assign("nonmemControl", control, envir=env)
-}
-
-#' @export
-nmObjGetControl.nonmem <- function(x, ...) {
-  .env <- x[[1]]
-  if (exists("nonmemControl", .env)) {
-    .control <- get("nonmemControl", .env)
-    if (inherits(.control, "nonmemControl")) return(.control)
-  }
-  if (exists("control", .env)) {
-    .control <- get("control", .env)
-    if (inherits(.control, "nonmemControl")) return(.control)
-  }
-  stop("cannot find nonmem related control object", call.=FALSE)
-}
-
 .nonmemControlToFoceiControl <- function(env, assign=FALSE) {
   .nonmemControl <- env$nonmemControl
   .ui <- env$ui

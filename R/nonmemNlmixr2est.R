@@ -298,7 +298,6 @@
 
 #' @export
 nlmixr2Est.nonmem <- function(env, ...) {
-  .model <- nlmixr2est::.uiApplyMu2(env)
   .ui <- env$ui
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
@@ -309,8 +308,11 @@ nlmixr2Est.nonmem <- function(env, ...) {
       rm("control", envir=.ui)
     }
   }, add=TRUE)
-  nlmixr2est::.uiFinalizeMu2(.nonmemFamilyFit(env, ...), .model)
+  .nonmemFamilyFit(env, ...)
 }
 attr(nlmixr2Est.nonmem, "covPresent") <- TRUE
 attr(nlmixr2Est.nonmem, "type") <- "External"
 attr(nlmixr2Est.nonmem, "description") <- "NONMEM (external software)"
+attr(nlmixr2Est.nonmem, "mu") <- function(control) {
+  isTRUE(control$muRefCovAlg)
+}
