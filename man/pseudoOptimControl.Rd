@@ -14,8 +14,8 @@ pseudoOptimControl(
   stickyRecalcN = 4,
   maxOdeRecalc = 5,
   odeRecalcFactor = 10^(0.5),
-  useColor = crayon::has_color(),
-  printNcol = floor((getOption("width") - 23)/12),
+  useColor = NULL,
+  printNcol = NULL,
   print = 1L,
   normType = c("rescale2", "mean", "rescale", "std", "len", "constant"),
   scaleType = c("none", "nlmixr2", "norm", "mult", "multAdd"),
@@ -70,163 +70,49 @@ ODE solve.}
 \item{odeRecalcFactor}{The ODE recalculation factor when ODE
 solving goes bad, this is the factor the rtol/atol is reduced}
 
-\item{useColor}{Boolean indicating if focei can use ASCII color codes}
+\item{useColor}{Logical (or `NULL`) emit ANSI bold/color escapes in the
+iteration print. `NULL` (default) defers to [crayon::has_color()].}
 
-\item{printNcol}{Number of columns to printout before wrapping
-parameter estimates/gradient}
+\item{printNcol}{Integer (or `NULL`) parameter columns per row before
+wrapping. `NULL` (default) uses `floor((getOption("width") - 23) / 12)`.}
 
-\item{print}{Integer representing when the outer step is
-printed. When this is 0 or do not print the iterations.  1 is
-print every function evaluation (default), 5 is print every 5
-evaluations.}
+\item{print}{Either a scalar print-frequency (`0` = suppress, `1`
+(default) = every evaluation, `N` = every Nth), OR a pre-built
+[iterPrintControl()] object. Equivalent to
+`iterPrintControl(every = print, ncol = printNcol, useColor = useColor)`.}
 
-\item{normType}{This is the type of parameter
-    normalization/scaling used to get the scaled initial values
-    for nlmixr2.  These are used with \code{scaleType} of.
+\item{normType}{Parameter normalization/scaling used to get scaled
+initial values for \code{scaleType}, of the form
+\code{Vscaled = (Vunscaled-C1)/C2} (see
+\href{https://en.wikipedia.org/wiki/Feature_scaling}{Feature Scaling};
+\code{rescale2} follows the
+\href{http://apmonitor.com/me575/uploads/Main/optimization_book.pdf}{OptdesX}
+manual): \code{"rescale2"} scales all parameters to (-1, 1);
+\code{"rescale"} (min-max) scales to (0, 1); \code{"mean"} centers on
+the mean with range (0, 1); \code{"std"} standardizes by mean/sd;
+\code{"len"} scales to unit (Euclidean) length; \code{"constant"}
+performs no normalization (\code{C1=0}, \code{C2=1}).}
 
-    With the exception of \code{rescale2}, these come
-    from
-    \href{https://en.wikipedia.org/wiki/Feature_scaling}{Feature
-    Scaling}. The \code{rescale2} The rescaling is the same type
-    described in the
-    \href{http://apmonitor.com/me575/uploads/Main/optimization_book.pdf}{OptdesX}
-    software manual.
-
-    In general, all all scaling formula can be described by:
-
-    \deqn{v_{scaled}}{Vscaled} = (\deqn{v_{unscaled}-C_{1}}{Vunscaled-C1})/\deqn{C_{2}}{C2}
-
-
-    Where
-
-
-    The other data normalization approaches follow the following formula
-
-    \deqn{v_{scaled}}{Vscaled} = (\deqn{v_{unscaled}-C_{1}}{Vunscaled-C1})/\deqn{C_{2}}{C2}
-
-\itemize{
-
-\item \code{rescale2} This scales all parameters from (-1 to 1).
-    The relative differences between the parameters are preserved
-    with this approach and the constants are:
-
-    \deqn{C_{1}}{C1} = (max(all unscaled values)+min(all unscaled values))/2
-
-    \deqn{C_{2}}{C2} = (max(all unscaled values) - min(all unscaled values))/2
-
-
-\item \code{rescale} or min-max normalization. This rescales all
-    parameters from (0 to 1).  As in the \code{rescale2} the
-    relative differences are preserved.  In this approach:
-
-    \deqn{C_{1}}{C1} = min(all unscaled values)
-
-    \deqn{C_{2}}{C2} = max(all unscaled values) - min(all unscaled values)
-
-
-\item \code{mean} or mean normalization.  This rescales to center
-    the parameters around the mean but the parameters are from 0
-    to 1.  In this approach:
-
-    \deqn{C_{1}}{C1} = mean(all unscaled values)
-
-    \deqn{C_{2}}{C2} = max(all unscaled values) - min(all unscaled values)
-
-\item \code{std} or standardization.  This standardizes by the mean
-     and standard deviation.  In this approach:
-
-    \deqn{C_{1}}{C1} = mean(all unscaled values)
-
-    \deqn{C_{2}}{C2} = sd(all unscaled values)
-
-\item \code{len} or unit length scaling.  This scales the
-   parameters to the unit length.  For this approach we use the Euclidean length, that
-   is:
-
-    \deqn{C_{1}}{C1} = 0
-
-    \deqn{C_{2}}{C2} = \deqn{\sqrt(v_1^2 + v_2^2 + \cdots + v_n^2)}{sqrt(v_1^2 + v_2^2 + ... + v_n^2)}
-
-
-\item \code{constant} which does not perform data normalization. That is
-
-    \deqn{C_{1}}{C1} = 0
-
-    \deqn{C_{2}}{C2} = 1
-
-}}
-
-\item{scaleType}{The scaling scheme for nlmixr2.  The supported types are:
-
-\itemize{
-\item \code{nlmixr2}  In this approach the scaling is performed by the following equation:
-
-   \deqn{v_{scaled}}{Vscaled} = (\deqn{v_{current} - v_{init}}{Vcurrent - Vinit})*scaleC[i] + scaleTo
-
-The \code{scaleTo} parameter is specified by the \code{normType},
-and the scales are specified by \code{scaleC}.
-
-\item \code{norm} This approach uses the simple scaling provided
-    by the \code{normType} argument.
-
-\item \code{mult} This approach does not use the data
-normalization provided by \code{normType}, but rather uses
-multiplicative scaling to a constant provided by the \code{scaleTo}
-argument.
-
-  In this case:
-
-  \deqn{v_{scaled}}{Vscaled} = \deqn{v_{current}}{Vcurrent}/\deqn{v_{init}}{Vinit}*scaleTo
-
-\item \code{multAdd} This approach changes the scaling based on
-the parameter being specified.  If a parameter is defined in an
-exponential block (ie exp(theta)), then it is scaled on a
-linearly, that is:
-
-  \deqn{v_{scaled}}{Vscaled} = (\deqn{v_{current}-v_{init}}{Vcurrent-Vinit}) + scaleTo
-
-Otherwise the parameter is scaled multiplicatively.
-
-   \deqn{v_{scaled}}{Vscaled} = \deqn{v_{current}}{Vcurrent}/\deqn{v_{init}}{Vinit}*scaleTo
-
-}}
+\item{scaleType}{The scaling scheme for nlmixr2: \code{"nlmixr2"}
+(default) scales as \code{(current-init)*scaleC[i] + scaleTo}, with
+\code{scaleTo} from \code{normType} and scales from \code{scaleC};
+\code{"norm"} uses the simple scaling from \code{normType};
+\code{"mult"} scales multiplicatively as \code{current/init*scaleTo};
+\code{"multAdd"} scales linearly (\code{(current-init)+scaleTo}) for
+parameters in an exponential block (e.g. \code{exp(theta)}) and
+multiplicatively otherwise.}
 
 \item{scaleCmax}{Maximum value of the scaleC to prevent overflow.}
 
 \item{scaleCmin}{Minimum value of the scaleC to prevent underflow.}
 
-\item{scaleC}{The scaling constant used with
-    \code{scaleType=nlmixr2}.  When not specified, it is based on
-    the type of parameter that is estimated.  The idea is to keep
-    the derivatives similar on a log scale to have similar
-    gradient sizes.  Hence parameters like log(exp(theta)) would
-    have a scaling factor of 1 and log(theta) would have a scaling
-    factor of ini_value (to scale by 1/value; ie
-    d/dt(log(ini_value)) = 1/ini_value or scaleC=ini_value)
-
-   \itemize{
-
-   \item For parameters in an exponential (ie exp(theta)) or
-   parameters specifying powers, boxCox or yeoJohnson
-   transformations , this is 1.
-
-   \item For additive, proportional, lognormal error structures,
-   these are given by 0.5*abs(initial_estimate)
-
-   \item Factorials are scaled by abs(1/digamma(initial_estimate+1))
-
-   \item parameters in a log scale (ie log(theta)) are transformed
-   by log(abs(initial_estimate))*abs(initial_estimate)
-
-   }
-
-   These parameter scaling coefficients are chose to try to keep
-   similar slopes among parameters.  That is they all follow the
-   slopes approximately on a log-scale.
-
-   While these are chosen in a logical manner, they may not always
-   apply.  You can specify each parameters scaling factor by this
-   parameter if you wish.}
+\item{scaleC}{Scaling constant used with \code{scaleType="nlmixr2"};
+when not specified, chosen by parameter type to keep gradient sizes
+similar on a log scale: `1` for exp()-transformed/power/boxCox/
+yeoJohnson parameters, `0.5*abs(est)` for additive/proportional/
+lognormal error parameters, `abs(1/digamma(est+1))` for factorials,
+and `log(abs(est))*abs(est)` for log-scale parameters. May be set
+explicitly per parameter if these defaults don't apply well.}
 
 \item{scaleTo}{Scale the initial parameter estimate to this value.
 By default this is 1.  When zero or below, no scaling is performed.}
@@ -249,54 +135,34 @@ optimization; Default is `TRUE`.}
 literals and re-adjust ui and parameter estimates after
 optimization; Default is `TRUE`.}
 
-\item{addProp}{specifies the type of additive plus proportional
-  errors, the one where standard deviations add (combined1) or the
-  type where the variances add (combined2).
-
-The combined1 error type can be described by the following equation:
-
-  \deqn{y = f + (a + b\times f^c) \times \varepsilon}{y = f + (a + b*f^c)*err}
-
-The combined2 error model can be described by the following equation:
-
- \deqn{y = f + \sqrt{a^2 + b^2\times f^{2\times c}} \times \varepsilon}{y = f + sqrt(a^2 + b^2*(f^c)^2)*err}
-
- Where:
-
- - y represents the observed value
-
- - f represents the predicted value
-
- - a  is the additive standard deviation
-
- - b is the proportional/power standard deviation
-
- - c is the power exponent (in the proportional case c=1)}
+\item{addProp}{Type of additive-plus-proportional error: `"combined1"`,
+where standard deviations add:
+\deqn{y = f + (a + b\times f^c) \times \varepsilon}{y = f + (a + b*f^c)*err};
+or `"combined2"`, where variances add:
+\deqn{y = f + \sqrt{a^2 + b^2\times f^{2\times c}} \times \varepsilon}{y = f + sqrt(a^2 + b^2*(f^c)^2)*err}.
+Here y = observed, f = predicted, a = additive sd, b = proportional/power
+sd, c = power exponent (1 in the proportional case).}
 
 \item{calcTables}{This boolean is to determine if the foceiFit
 will calculate tables. By default this is \code{TRUE}}
 
 \item{compress}{Should the object have compressed items}
 
-\item{covMethod}{Method for calculating covariance.  In this
-    discussion, R is the Hessian matrix of the objective
-    function. The S matrix is the sum of individual
-    gradient cross-product (evaluated at the individual empirical
-    Bayes estimates).
-
-\itemize{
-
- \item "\code{r,s}" Uses the sandwich matrix to calculate the
- covariance, that is: \code{solve(R) \%*\% S \%*\% solve(R)}
-
- \item "\code{r}" Uses the Hessian matrix to calculate the
- covariance as \code{2 \%*\% solve(R)}
-
- \item "\code{s}" Uses the cross-product matrix to calculate the
- covariance as \code{4 \%*\% solve(S)}
-
- \item "" Does not calculate the covariance step.
-}}
+\item{covMethod}{Method for calculating the covariance.  \code{"analytic"} (the
+default) uses the exact analytic observed-information R-matrix (reported as
+\eqn{R^{-1}}) and additionally returns the residual and \code{Omega} standard
+errors; it covers FOCEI/FOCE fits with additive, proportional, or combined
+error, mu-referenced/covariate/other structural parameters (and
+non-mu-referenced etas), and SD-scale inter-occasion variability, and emits a
+message and falls back to the finite-difference Hessian for anything out of
+scope (FO, \code{nAGQ > 1}, censoring, DV-transformed error, bounded-parameter
+transforms, a structural theta shared by two etas, non-SD \code{iovXform}, or a
+pure-proportional variance that vanishes at a near-zero prediction).  The
+finite-difference methods use R (the Hessian) and S (the sum of individual
+gradient cross-products at the empirical Bayes estimates): \code{"r,s"} sandwich
+(\code{solve(R)\%*\%S\%*\%solve(R)}), \code{"r"} Hessian-based
+(\code{solve(R)}), \code{"s"} cross-product-based (\code{solve(S)}), or
+\code{""} to skip the covariance step.}
 
 \item{adjObf}{is a boolean to indicate if the objective function
 should be adjusted to be closer to NONMEM's default objective
@@ -305,20 +171,11 @@ function.  By default this is \code{TRUE}}
 \item{ci}{Confidence level for some tables.  By default this is
 0.95 or 95\% confidence.}
 
-\item{sigdig}{Optimization significant digits. This controls:
-
-\itemize{
-
- \item The tolerance of the inner and outer optimization is \code{10^-sigdig}
-
- \item The tolerance of the ODE solvers is
- \code{0.5*10^(-sigdig-2)}; For the sensitivity equations and
- steady-state solutions the default is \code{0.5*10^(-sigdig-1.5)}
- (sensitivity changes only applicable for liblsoda)
-
- \item The tolerance of the boundary check is \code{5 * 10 ^ (-sigdig + 1)}
-
-}}
+\item{sigdig}{Optimization significant digits; controls the inner/outer
+optimization tolerance (\code{10^-sigdig}), ODE solver tolerance
+(\code{0.5*10^(-sigdig-2)}, or \code{0.5*10^(-sigdig-1.5)} for
+sensitivity/steady-state with liblsoda), and boundary check tolerance
+(\code{5*10^(-sigdig+1)}).}
 
 \item{sigdigTable}{Significant digits in the final output table.
 If not specified, then it matches the significant digits in the

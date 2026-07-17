@@ -5,6 +5,7 @@
 #' Get the structural params to estimate for nlmer (= saemParamsToEstimate)
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
 #' @return Character vector of parameter names (mu-ref thetas + nonMuEtas)
 #' @export
 rxUiGet.nlmerThetas <- function(x, ...) {
@@ -15,6 +16,7 @@ attr(rxUiGet.nlmerThetas, "rstudio") <- "tka"
 #' Starting values for nlmer fixed effects
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
 #' @return Named numeric vector: iniDf estimates for thetas, 0 for nonMuEtas
 #' @export
 rxUiGet.nlmerStart <- function(x, ...) {
@@ -41,6 +43,7 @@ attr(rxUiGet.nlmerStart, "rstudio") <- c(tka = 0.45)
 #' Build the random-effects part (part 3) of the nlmer 3-part formula
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
 #' @return Formula: param1 + param2 + ... + (rand1 + rand2 | ID)
 #' @export
 rxUiGet.nlmerRandomFormula <- function(x, ...) {
@@ -64,6 +67,7 @@ attr(rxUiGet.nlmerRandomFormula, "rstudio") <- tka + tcl + tv ~ 1
 #' Build the full 3-part nlmer formula
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
 #' @return 3-part formula for lme4::nlmer
 #' @export
 rxUiGet.nlmerFormula <- function(x, ...) {
@@ -88,7 +92,7 @@ attr(rxUiGet.nlmerFormula, "rstudio") <-
 # Sensitivity:   rx__sens_rx_pred__BY_THETA_i___ for each param
 # -----------------------------------------------------------------------
 
-#' Build THETA[i] prefix substitution lines for nlmer
+#' Build `THETA[i]` prefix substitution lines for nlmer
 #'
 #' @param ui rxode2 ui object
 #' @return List of quoted assignment expressions
@@ -103,9 +107,10 @@ attr(rxUiGet.nlmerFormula, "rstudio") <-
   })
 }
 
-#' nlmer base model (saem-dropped etas, THETA[i] prefix, nlme error lines)
+#' nlmer base model (saem-dropped etas, `THETA[i]` prefix, nlme error lines)
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
 #' @export
 rxUiGet.nlmerModel0 <- function(x, ...) {
   .f <- x[[1]]
@@ -125,6 +130,7 @@ attr(rxUiGet.nlmerModel0, "rstudio") <- quote(rxModelVars({}))
 #' Prune the nlmer model for symengine loading
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
 #' @noRd
 .nlmerPrune <- function(x) {
   .x <- x[[1]]
@@ -147,6 +153,7 @@ attr(rxUiGet.nlmerModel0, "rstudio") <- quote(rxModelVars({}))
 #' Load pruned nlmer model into symengine (no sensitivity promotion)
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
 #' @export
 rxUiGet.loadPruneNlmer <- function(x, ...) {
   nlmixr2est::.loadSymengine(.nlmerPrune(x), promoteLinSens = FALSE)
@@ -156,15 +163,18 @@ attr(rxUiGet.loadPruneNlmer, "rstudio") <- emptyenv()
 #' Load pruned nlmer model into symengine (with sensitivity promotion)
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
 #' @export
 rxUiGet.loadPruneNlmerSens <- function(x, ...) {
   nlmixr2est::.loadSymengine(.nlmerPrune(x), promoteLinSens = TRUE)
 }
 attr(rxUiGet.loadPruneNlmerSens, "rstudio") <- emptyenv()
 
-#' Compute d(state)/d(THETA[i]) sensitivities for nlmer
+#' Compute d(state)/d(`THETA[i]`) sensitivities for nlmer
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
+#' @rdname rxUiGet.nlmerThetaSens
 #' @export
 rxUiGet.nlmerThetaS <- function(x, ...) {
   .s <- rxUiGet.loadPruneNlmerSens(x, ...)
@@ -172,9 +182,10 @@ rxUiGet.nlmerThetaS <- function(x, ...) {
 }
 attr(rxUiGet.nlmerThetaS, "rstudio") <- emptyenv()
 
-#' Compute d(f)/d(THETA[i]) for all nlmer parameters
+#' Compute d(f)/d(`THETA[i]`) for all nlmer parameters
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
 #' @export
 rxUiGet.nlmerHdTheta <- function(x, ...) {
   .s <- rxUiGet.nlmerThetaS(x)
@@ -186,7 +197,7 @@ rxUiGet.nlmerHdTheta <- function(x, ...) {
     isTheta = TRUE
   )
   if (rxode2::.useUtf()) {
-    rxode2::.malert("calculate ∂(f)/∂(θ)")
+    rxode2::.malert("calculate \u2202(f)/\u2202(\u03b8)")
   } else {
     rxode2::.malert("calculate d(f)/d(theta)")
   }
@@ -220,9 +231,10 @@ rxUiGet.nlmerHdTheta <- function(x, ...) {
 }
 attr(rxUiGet.nlmerHdTheta, "rstudio") <- emptyenv()
 
-#' params() string for the nlmer THETA[i]-indexed model
+#' params() string for the nlmer `THETA[i]`-indexed model
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
 #' @export
 rxUiGet.nlmerParams <- function(x, ...) {
   .ui <- x[[1]]
@@ -304,6 +316,7 @@ attr(rxUiGet.nlmerParams, "rstudio") <- "params(THETA[1], DV)"
 #' Full nlmer symengine environment with sensitivities
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
 #' @export
 rxUiGet.nlmerEnv <- function(x, ...) {
   .s <- rxUiGet.nlmerHdTheta(x, ...)
@@ -351,14 +364,15 @@ attr(rxUiGet.nlmerEnv, "rstudio") <- emptyenv()
 #'   `eventSens = "jump"` this model carries rxode2's analytic event-jump
 #'   sensitivities (loaded/activated by [nlmixr2est::.nlmSetupEnv()]).
 #' - `predOnly`: compiled rxode2 model for prediction only
-#' - `eventTheta`: integer vector flagging THETA[i] that need Shi2021 finite
+#' - `eventTheta`: integer vector flagging `THETA[i]` that need Shi2021 finite
 #'   differences for dosing parameters (all 0 under `eventSens = "jump"`)
-#' - `paramNames`: character vector of parameter names in THETA[i] order
+#' - `paramNames`: character vector of parameter names in `THETA[i]` order
 #'
 #' The list follows the `modelInfo` contract of [nlmixr2est::.nlmSetupEnv()]
 #' so the nlm C machinery can load it once and keep it resident.
 #'
 #' @param x rxUiGet list(ui)
+#' @param ... additional arguments (currently ignored)
 #' @export
 rxUiGet.nlmerSensModel <- function(x, ...) {
   .s <- rxUiGet.nlmerEnv(x, ...)

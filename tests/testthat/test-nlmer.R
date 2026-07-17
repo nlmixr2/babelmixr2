@@ -23,12 +23,16 @@ test_that("nlmer estimation basic smoke test", {
     })
   }
 
-  # Use the built-in theo dataset, filter to observation rows
-  filteredTheo <- nlmixr2data::theo_sd[!(nlmixr2data::theo_sd$TIME == 0 & nlmixr2data::theo_sd$EVID == 0), ]
+  # Use the built-in theo dataset *unfiltered*: the full object (dosing rows
+  # + all observations, including the t=0 observation) is loaded into the nlm
+  # solver, which solves the whole thing and subsets by index to the
+  # observation gradient/f values lme4 fits against.  nlmer must not require
+  # the caller to strip dosing/observation rows out of the estimation data.
+  fullTheo <- nlmixr2data::theo_sd
 
   # Run a short nlmer fit; keep iterations small so test is quick
   fit <- tryCatch(
-    nlmixr2(oneCmt, filteredTheo, est = "nlmer", nlmerControl(tolPwrss = 1e-6, optCtrl = list(maxfun = 10), returnNlmer = FALSE)),
+    nlmixr2(oneCmt, fullTheo, est = "nlmer", nlmerControl(tolPwrss = 1e-6, optCtrl = list(maxfun = 10), returnNlmer = FALSE)),
     error = function(e) {
       skip(paste("nlmer fit failed on this environment:", conditionMessage(e)))
     }
@@ -42,6 +46,8 @@ test_that("nlmer estimation basic smoke test", {
   expect_true(is.numeric(fit$theta))
   # objective should be finite
   expect_true(is.finite(fit$objective))
+  # every observation row (all 132, including t=0) is fit -- nothing dropped
+  expect_equal(fit$nobs, sum(fullTheo$EVID == 0))
 })
 
 test_that("nlmer jump sensitivities give correct dosing-parameter gradients", {
@@ -68,8 +74,7 @@ test_that("nlmer jump sensitivities give correct dosing-parameter gradients", {
       cp ~ add(add.sd)
     })
   }
-  ft <- nlmixr2data::theo_sd[!(nlmixr2data::theo_sd$TIME == 0 &
-                                 nlmixr2data::theo_sd$EVID == 0), ]
+  ft <- nlmixr2data::theo_sd
 
   # Load the resident nlm solver env exactly like .nlmerFamilyFit, returning
   # the per-subject prediction + Jacobian solver handle.

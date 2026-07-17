@@ -327,6 +327,26 @@ withr::with_tempdir({
       }
     })
 
+    test_that("NONMEM reserved-name variable rename is announced (issue #190)", {
+      # A plain model variable colliding with a NONMEM reserved name is renamed
+      # to RXR<n>; the rename must not be silent.
+      reservedVar <- function() {
+        ini({ lka <- 0.45; lcl <- 1; lvc <- 3.45; lalag <- log(0.3)
+              eta.cl ~ 0.1; propSd <- 0.5 })
+        model({ ka <- exp(lka); cl <- exp(lcl + eta.cl); vc <- exp(lvc)
+                alag <- exp(lalag)
+                d/dt(depot)  <- -ka * depot
+                d/dt(center) <-  ka * depot - (cl / vc) * center
+                cp <- center / vc * alag
+                cp ~ prop(propSd) })
+      }
+      expect_message(
+        nm <- reservedVar()$nonmemModel,
+        regexp="renamed model variable 'alag' to 'RXR1'"
+      )
+      expect_match(nm, "RXR1 *=", all=FALSE)
+    })
+
     # pk.turnover.emax3 <- function() {
     #   ini({
     #     tktr <- log(1)

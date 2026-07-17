@@ -8,7 +8,7 @@
 #' using the nlm C machinery (a single multithreaded [nlmixr2est::nlmerSolveGrad()]
 #' call against the model kept resident by [nlmixr2est::.nlmSetupEnv()]).
 #' Parameters arrive in positional order matching
-#' `.nlmerGlobal$nlmerEnv$paramNames` (THETA[i] order).
+#' `.nlmerGlobal$nlmerEnv$paramNames` (`THETA[i]` order).
 #'
 #' lme4 passes one value per observation for each nonlinear parameter; within a
 #' subject these are constant (phi = beta + b), so the per-subject parameter
@@ -40,7 +40,10 @@
 
   # Single C solve: nObsTot x (nPar + 1); col 1 = rx_pred_, cols 2.. =
   # d(pred)/d(THETA[j]).  Rows are stacked per subject in solver block order.
-  .mat <- nlmixr2est::nlmerSolveGrad(.thetaMat)
+  # record=TRUE logs this evaluation's population estimate (per-subject mean of
+  # the phi columns) into the nlm parameter history, so the nlm machinery --
+  # not lme4 -- drives the iteration print and the recovered parHistData.
+  .mat <- nlmixr2est::nlmerSolveGrad(.thetaMat, record = TRUE)
 
   .pred <- numeric(.nObs)
   .grad <- matrix(0.0, .nObs, .nPar)
@@ -55,6 +58,23 @@
   }
   attr(.pred, "gradient") <- .grad
   .pred
+}
+
+#' Accessor for the nlmer formula currently being fit
+#'
+#' `lme4::nlmer()` captures `match.call()$formula` and re-evaluates it deep in
+#' its own call stack, where the babelmixr2 fit locals are not in scope, so the
+#' formula must be referenced through an exported, namespace-qualified call
+#' rather than a `:::` reference to the package's internal `.nlmerGlobal`
+#' (which CRAN disallows).  This returns the 3-part formula stashed by
+#' `.nlmerFitModel()` for the in-progress fit.
+#'
+#' @return The 3-part nlmer formula for the active fit, or `NULL` when no fit
+#'   is in progress.
+#' @export
+#' @keywords internal
+.nlmerCurrentFormula <- function() {
+  .nlmerGlobal$currentFormula
 }
 
 # -----------------------------------------------------------------------
@@ -87,11 +107,15 @@
     optExpression   = control$optExpression,
     sumProd         = control$sumProd,
     solveType       = "grad",
-    print           = 0L
+    print           = control$iterPrintControl
   )
   .sc <- unclass(.sc)
   .sc$scaleType <- 5L                # 'none' -> identity (raw phi from lme4)
   .sc$scaleC <- rep(1.0, np)
+  # lme4 owns the deviance, so there is no per-iteration objective to show;
+  # showOfv=0 drops the "Function Val." column from the header + rows, leaving a
+  # parameter-only iteration print/history (see nlmerSolveGrad(record=)).
+  .sc$showOfv <- 0L
   .sc
 }
 
@@ -141,20 +165,27 @@
   )
   .obsData$ID <- factor(.obsData$ID)
   # lme4::nlmer captures match.call()$formula and re-evaluates it deep in its
-  # call stack (where `ui` is not in scope). Storing the formula in the
-  # package-level .nlmerGlobal environment and referencing it via :: makes it
-  # resolvable from any evaluation context.
+  # call stack (where `ui` is not in scope). Stash the formula in the
+  # package-level .nlmerGlobal environment and reference it through the
+  # exported accessor .nlmerCurrentFormula(), which resolves from any
+  # evaluation context (an exported `::` call -- CRAN disallows a `:::` call to
+  # the package's own namespace).
   .nlmerGlobal$currentFormula <- ui$nlmerFormula
   on.exit(.nlmerGlobal$currentFormula <- NULL, add = TRUE)
-  eval(
+  .mod <- eval(
     quote(lme4::nlmer(
-      formula = babelmixr2:::.nlmerGlobal$currentFormula,
+      formula = babelmixr2::.nlmerCurrentFormula(),
       data    = .obsData,
       start   = .start,
       control = .lme4Ctl
     )),
     envir = environment()
   )
+  # Recover the nlm-accumulated parameter history (one row per iterType per
+  # recorded nlmerSolveGrad() call) *before* the on.exit .nlmFreeEnv() frees the
+  # resident scale.  Stash it for .nlmerFamilyFit()'s postSetup to attach.
+  .nlmerGlobal$parHistData <- nlmixr2est::nlmGetParHist(FALSE)
+  .mod
 }
 
 # -----------------------------------------------------------------------
@@ -270,6 +301,10 @@
         .ret$etaObf <- data.frame(ID = integer(0), OBJI = numeric(0))
       }
       .ret$omega <- .nlmerGetOmega(.ret$nlmer, .ui)
+      # Attach the nlm-recovered parameter history captured in .nlmerFitModel;
+      # nlmixr2CreateOutputFromUi() propagates .ret$parHistData onto the fit.
+      .ret$parHistData <- .nlmerGlobal$parHistData
+      .nlmerGlobal$parHistData <- NULL
       .ret
     })
 }

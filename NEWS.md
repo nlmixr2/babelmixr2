@@ -7,10 +7,42 @@
   The `nonmem` and `monolix` methods gained the `mu` method attribute so
   the hooks fire for them.
 
+* The `nlmer` estimation method now prints its iterations during the
+  `lme4::nlmer` optimization and records a parameter history, both driven
+  by the shared `nlmixr2est` nlm machinery (not lme4).  Each recorded
+  `nlmerSolveGrad()` evaluation logs the population parameter estimate
+  (per-subject mean of the `phi` columns) into the resident nlm scale;
+  the accumulated history is recovered via `nlmixr2est::nlmGetParHist()`
+  and stored on the fit as `parHistData`.  No objective column is shown
+  (lme4 owns the deviance).  Iteration printing defaults on
+  (`nlmerControl(print = 1L)`).  Requires `nlmixr2est (>= 6.2.0)`.
+
+* The `pseudoOptimControl()` and `fmeMcmcControl()` functions now
+  accept either the legacy scalar `print` / `printNcol` / `useColor`
+  arguments or a pre-built `nlmixr2est::iterPrintControl()` object via
+  `print`.  Internally the control list stores a single
+  `iterPrintControl` sub-list (matching the upstream `nlmixr2est`
+  unification in `nlmixr2est` PR #651), so iteration output from these
+  estimators uses the same shared C++ formatter as every other
+  `nlmixr2est` estimator.  Requires `nlmixr2est (>= 6.0.1)`.
+
+* The `iterPrintControl` unification now also covers `nlmerControl()`
+  and `saemixControl()`.  `nlmerControl()` gains the standard `print` /
+  `printNcol` / `useColor` arguments (or a pre-built
+  `nlmixr2est::iterPrintControl()` object) and feeds the resulting
+  `iterPrintControl` sub-list to the nlm C solving engine instead of a
+  hard-coded `print = 0L`.  `saemixControl()` absorbs its legacy
+  `print` (logical), `printNcol` and `useColor` arguments into the same
+  `iterPrintControl` sub-list; a nonzero `every` enables the `saemix`
+  progress output.
 * Fix NONMEM export silently dropping the absorption lag (#190).  A
   `lag(depot)`/`alag(depot)` assignment computed the lag parameter in `$PK`
   but never emitted the corresponding `ALAG<n>=` statement, so NONMEM fit the
   model without any lag.  The lag value is now assigned to `ALAG<n>` in `$PK`.
+
+* NONMEM export now announces when a model variable is renamed because it
+  collides with a NONMEM reserved name (e.g. a variable named `alag` becomes
+  `RXR1`).  The rename was previously silent (#190).
 
 * Added `nlmer` estimation method: fits nlmixr2 models via `lme4::nlmer` using
   analytical gradients from rxode2 sensitivity equations. Supports

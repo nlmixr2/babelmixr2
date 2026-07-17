@@ -1,0 +1,74 @@
+# Runs the slow test files that push/PR R-CMD-check.yaml deliberately skips.
+# The slow files are split into batches (defined in tests/testthat.R via
+# BABELMIXR2_TEST_BATCH); each batch is sized to finish well under an hour.
+# `max-parallel: 1` runs the batches one at a time so they never overlap.
+on:
+  schedule:
+    # Weekly, Saturdays 04:30 UTC.
+    - cron: '30 4 * * 6'
+  workflow_dispatch:
+
+name: slow-tests.yaml
+
+permissions: read-all
+
+# Never overlap slow-test runs (they are long); let an in-progress run finish.
+concurrency:
+  group: slow-tests
+  cancel-in-progress: false
+
+jobs:
+  slow-tests:
+    runs-on: ubuntu-latest
+
+    name: slow-tests (batch ${{ matrix.batch }})
+
+    strategy:
+      fail-fast: false
+      # Run the batches sequentially so they do not overlap.
+      max-parallel: 1
+      matrix:
+        # Must match the number of entries in `.slowBatches` in
+        # tests/testthat.R.
+        batch: [1, 2]
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      _R_CHECK_FORCE_SUGGESTS_: false
+      BABELMIXR2_TEST_BATCH: ${{ matrix.batch }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::rcmdcheck
+            nlmixr2/n1qn1c
+            nlmixr2/lbfgsb3c
+            nlmixr2/PreciseSums
+            nlmixr2/dparser-R
+            nlmixr2/lotri
+            nlmixr2/rxode2ll
+            nlmixr2/rxode2
+            nlmixr2/nlmixr2est
+            nlmixr2/nlmixr2extra
+            nlmixr2/nlmixr2plot
+            nlmixr2/nlmixr2
+            nlmixr2/nonmem2rx
+            nlmixr2/monolix2rx
+            lixoftConnectors=?ignore
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
