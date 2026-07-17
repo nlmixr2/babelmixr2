@@ -171,6 +171,8 @@ rex::register_shortcuts("babelmixr2")
     rxode2::rxAssignControlValue(ui, ".nmVarResNum", .num + 1)
     .reserved <- rbind(.reserved, data.frame(var=var, nm=.newVar))
     rxode2::rxAssignControlValue(ui, ".nmGetVarReservedDf", .reserved)
+    rxode2::.minfo(paste0("renamed model variable '", var, "' to '", .newVar,
+                          "' because '", .uvar, "' collides with a NONMEM reserved name"))
     var <- .newVar
   }
   .uvar <- gsub(".", "_", toupper(var), fixed=TRUE)
@@ -527,35 +529,6 @@ rex::register_shortcuts("babelmixr2")
 .nonmemSetCmtProperty <- function(ui, state, extra, type="f") {
   .prop <- .nonmemGetCmtProperties(ui)
   .state <- rxode2::rxState(ui)
-  .cmt <- which(state == .state)
-  .w <- which(.prop$cmt == .cmt)
-  if (length(.w) == 0L) {
-    .prop <- rbind(.prop,
-                   data.frame(cmt=.cmt,
-                              f=NA_character_,
-                              dur=NA_character_,
-                              lag=NA_character_,
-                              rate=NA_character_,
-                              init=NA_character_))
-    .w <- which(.prop$cmt == .cmt)
-  }
-  if (type == "f") {
-    .prop[.w, "f"] <- extra
-  } else if (type == "dur") {
-    .prop[.w, "dur"] <- extra
-  } else if (type == "lag") {
-    .prop[.w, "lag"] <- extra
-  } else if (type == "rate") {
-    .prop[.w, "rate"] <- extra
-  } else if (type == "init") {
-    .prop[.w, "init"] <- extra
-  }
-  rxode2::rxAssignControlValue(ui, ".cmtProperties", .prop)
-}
-
-.nonmemSetCmtProperty <- function(ui, state, extra, type="f") {
-  .prop <- .nonmemGetCmtProperties(ui)
-  .state <- rxode2::rxState(ui)
   .cmt <- .rxGetCmtNumber(state, ui)
   .w <- which(.prop$cmt == .cmt)
   if (length(.w) == 0L) {
@@ -572,12 +545,15 @@ rex::register_shortcuts("babelmixr2")
     .prop[.w, "f"] <- extra
   } else if (type == "dur") {
     .prop[.w, "dur"] <- extra
-  } else if (type == "lag") {
+  } else if (type == "lag" || type == "alag") {
+    # lag(cmt)/alag(cmt) both resolve to prefix "alag" upstream; store in lag column
     .prop[.w, "lag"] <- extra
   } else if (type == "rate") {
     .prop[.w, "rate"] <- extra
   } else if (type == "init") {
     .prop[.w, "init"] <- extra
+  } else {
+    stop("unknown compartment property type: ", type, call.=FALSE)
   }
   rxode2::rxAssignControlValue(ui, ".cmtProperties", .prop)
 }

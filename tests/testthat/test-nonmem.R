@@ -286,6 +286,67 @@ withr::with_tempdir({
 
     })
 
+    test_that("NONMEM export assigns ALAG for absorption lag (issue #190)", {
+      # lag(depot)/alag(depot) must produce a real ALAG<n>= statement in $PK,
+      # otherwise NONMEM silently fits the model without the absorption lag.
+      lagDirect <- function() {
+        ini({ lka <- 0.45; lcl <- 1; lvc <- 3.45; llagt <- log(0.3)
+              eta.cl ~ 0.1; propSd <- 0.5 })
+        model({ ka <- exp(lka); cl <- exp(lcl + eta.cl); vc <- exp(lvc)
+                lag(depot) <- exp(llagt)
+                d/dt(depot)  <- -ka * depot
+                d/dt(center) <-  ka * depot - (cl / vc) * center
+                cp <- center / vc
+                cp ~ prop(propSd) })
+      }
+      lagVar <- function() {
+        ini({ lka <- 0.45; lcl <- 1; lvc <- 3.45; llagt <- log(0.3)
+              eta.cl ~ 0.1; propSd <- 0.5 })
+        model({ ka <- exp(lka); cl <- exp(lcl + eta.cl); vc <- exp(lvc)
+                lagt <- exp(llagt)
+                lag(depot) <- lagt
+                d/dt(depot)  <- -ka * depot
+                d/dt(center) <-  ka * depot - (cl / vc) * center
+                cp <- center / vc
+                cp ~ prop(propSd) })
+      }
+      alagVar <- function() {
+        ini({ lka <- 0.45; lcl <- 1; lvc <- 3.45; llagt <- log(0.3)
+              eta.cl ~ 0.1; propSd <- 0.5 })
+        model({ ka <- exp(lka); cl <- exp(lcl + eta.cl); vc <- exp(lvc)
+                lagt <- exp(llagt)
+                alag(depot) <- lagt
+                d/dt(depot)  <- -ka * depot
+                d/dt(center) <-  ka * depot - (cl / vc) * center
+                cp <- center / vc
+                cp ~ prop(propSd) })
+      }
+      for (m in list(lagDirect, lagVar, alagVar)) {
+        nm <- m()$nonmemModel
+        expect_match(nm, "ALAG1 *=", all=FALSE)
+      }
+    })
+
+    test_that("NONMEM reserved-name variable rename is announced (issue #190)", {
+      # A plain model variable colliding with a NONMEM reserved name is renamed
+      # to RXR<n>; the rename must not be silent.
+      reservedVar <- function() {
+        ini({ lka <- 0.45; lcl <- 1; lvc <- 3.45; lalag <- log(0.3)
+              eta.cl ~ 0.1; propSd <- 0.5 })
+        model({ ka <- exp(lka); cl <- exp(lcl + eta.cl); vc <- exp(lvc)
+                alag <- exp(lalag)
+                d/dt(depot)  <- -ka * depot
+                d/dt(center) <-  ka * depot - (cl / vc) * center
+                cp <- center / vc * alag
+                cp ~ prop(propSd) })
+      }
+      expect_message(
+        nm <- reservedVar()$nonmemModel,
+        regexp="renamed model variable 'alag' to 'RXR1'"
+      )
+      expect_match(nm, "RXR1 *=", all=FALSE)
+    })
+
     # pk.turnover.emax3 <- function() {
     #   ini({
     #     tktr <- log(1)
