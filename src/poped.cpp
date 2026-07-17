@@ -231,9 +231,6 @@ Rcpp::NumericVector popedMultipleEndpointParam(Rcpp::NumericVector p,
   return ret;
 }
 
-#define max2( a , b )  ( (a) > (b) ? (a) : (b) )
-#define isSameTime(xout, xp) (fabs((xout)-(xp))  <= DBL_EPSILON*max2(fabs(xout),fabs(xp)))
-
 extern "C" {
 #define iniRxodePtrs _babelmixr2_iniRxodePtrs
   iniRxode2ptr
