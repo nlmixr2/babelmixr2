@@ -1,5 +1,12 @@
 # babelmixr2 0.1.11.9000
 
+* The mu-referenced covariate algorithm (`muRefCovAlg`) is now applied
+  through the `nlmixr2est` preprocessing/post-final-object hooks instead
+  of explicit `nlmixr2est::.uiApplyMu2()`/`.uiFinalizeMu2()` calls in the
+  `saemix`, `nonmem`, `monolix`, and `nlmer` estimation methods (#184).
+  The `nonmem` and `monolix` methods gained the `mu` method attribute so
+  the hooks fire for them.
+
 * The `nlmer` estimation method now prints its iterations during the
   `lme4::nlmer` optimization and records a parameter history, both driven
   by the shared `nlmixr2est` nlm machinery (not lme4).  Each recorded

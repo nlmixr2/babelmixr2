@@ -349,7 +349,6 @@
 
 #' @export
 nlmixr2Est.monolix <- function(env, ...) {
-  .model <- nlmixr2est::.uiApplyMu2(env)
   .ui <- env$ui
   rxode2::assertRxUiMuRefOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   .ui <- rxode2::rxUiDecompress(env$ui)
@@ -370,6 +369,9 @@ nlmixr2Est.monolix <- function(env, ...) {
       rm("control", envir=.ui)
     }
   }, add=TRUE)
-  nlmixr2est::.uiFinalizeMu2(.monolixFamilyFit(env, ...), .model)
+  .monolixFamilyFit(env, ...)
 }
 attr(nlmixr2Est.monolix, "covPresent") <- TRUE
+attr(nlmixr2Est.monolix, "mu") <- function(control) {
+  isTRUE(control$muRefCovAlg)
+}
