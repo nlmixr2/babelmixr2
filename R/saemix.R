@@ -297,7 +297,7 @@ nlmixr2Est.saemix <- function(env, ...) {
                          print.is = .control$print.is,
                          nbdisplay = .control$nbdisplay,
                          displayProgress = .control$displayProgress,
-                         print = .control$print,
+                         print = .control$iterPrintControl$every > 0L,
                          save = FALSE, # handled by nlmixr2
                          save.graphs = FALSE, # handled by nlmixr2
                          warnings = .control$warnings,

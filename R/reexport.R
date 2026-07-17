@@ -73,3 +73,7 @@ nlmixr2est::nlmixr2
 #' @importFrom rxode2 et
 #' @export
 rxode2::et
+
+#' @importFrom nlmixr2est iterPrintControl
+#' @export
+nlmixr2est::iterPrintControl
