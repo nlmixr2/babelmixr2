@@ -328,9 +328,35 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
     drscale=.(.ctl$drscale),
     verbose=.(.ctl$verbose)))
   .ret <- eval(.ret)
+  # `FME::modMCMC()` explores the internal, scaled optimization space, so the
+  # sampled chain (`$pars`) is on that scale rather than the natural one -- it
+  # wanders around the scaled starting point (~1) instead of the `ini({})`
+  # values.  Back-transform the whole chain (issue #178) so that summaries of
+  # `fit$fmeMcmc` -- `summary()`, `coda::as.mcmc()`, `pairs()` -- report the
+  # actual sampled parameters and agree with `print(fit)`.  `$bestpar` is
+  # back-transformed separately by `.nlmFinalizeList()` below.
+  #
+  # `modMCMC()` also labels the columns generically (`p1`, `p2`, ...) because the
+  # scaled starting vector it is handed is unnamed, so relabel them with the real
+  # parameter names (issue #178 also noted the confusing `p7`-style names).
+  #
+  # `nlmixr2est::nlmUnscalePar()` is unexported, so reach it through the
+  # namespace (avoids a CRAN-flagged `:::` call).  It unscales by position, so
+  # the chain columns must stay in `thetaNames` order.
+  .unscalePar <- get("nlmUnscalePar", envir=asNamespace("nlmixr2est"))
+  .parNames <- .env$thetaNames
+  .chain <- .ret$pars
+  for (.i in seq_len(nrow(.chain))) {
+    .chain[.i, ] <- .unscalePar(setNames(.ret$pars[.i, ], .parNames))
+  }
+  colnames(.chain) <- .parNames
+  .ret$pars <- .chain
   if (.ctl$covMethod == "mcmc") {
+    # Every nlm scaling is a per-parameter affine map, so the sample covariance
+    # of the back-transformed chain is exactly the scale-adjusted covariance
+    # that `.nlmAdjustCov()` used to produce from the scaled chain.
     .ret$cov.unscaled <- cov(.ret$pars)
-    .ret$cov <- nlmixr2est::.nlmAdjustCov(.ret$cov.unscaled, .ret$bestpar)
+    .ret$cov <- .ret$cov.unscaled
   }
   .ret <- nlmixr2est::.nlmFinalizeList(.env, .ret, par="bestpar", printLine=TRUE,
                                        hessianCov=(.ctl$covMethod == "r"))
