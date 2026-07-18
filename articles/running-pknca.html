@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Obtain initial estimates and unit conversions with PKNCA">
 </head>
@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">babelmixr2</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.11.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -97,9 +97,26 @@ model. You must load the <code>babelmixr2</code> library so that the
 <code><a href="https://nlmixr2.github.io/nlmixr2est/reference/nlmixr2.html" class="external-link">nlmixr()</a></code> function recognizes
 <code>est = "pknca"</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://nlmixr2.github.io/babelmixr2/">babelmixr2</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; Loading required package: nlmixr2</span></span>
-<span><span class="co">#&gt; Loading required package: nlmixr2data</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://nlmixr2.org/" class="external-link">nlmixr2</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Attaching packages</span> ───────────────────────────────────────── nlmixr2 6.0.0 ──</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">★</span> <span style="color: #0000BB;">lotri          </span> 1.0.5           <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">nlmixr2lib     </span> 0.3.2      </span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">★</span> <span style="color: #0000BB;">nlmixr2data    </span> 2.0.10          <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">nlmixr2rpt     </span> 0.2.2      </span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">★</span> <span style="color: #0000BB;">nlmixr2save    </span> 0.1.0           <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">nlmixr2targets </span> 0.1.0      </span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">★</span> <span style="color: #0000BB;">nlmixr2est     </span> 6.2.0           <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">nonmem2rx      </span> 0.1.10     </span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">★</span> <span style="color: #0000BB;">nlmixr2extra   </span> 5.1.0           <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">pmxNODE        </span> 0.1.0      </span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">★</span> <span style="color: #0000BB;">nlmixr2plot    </span> 5.0.2           <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">posologyr      </span> 1.2.8      </span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">★</span> <span style="color: #0000BB;">rxode2         </span> 5.1.3           <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">shinyMixR      </span> 0.5.3      </span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">admixr2        </span> 0.2.0           <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">pmxNODE        </span> 0.1.0      </span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">babelmixr2     </span> 0.1.11.<span style="color: #BB0000;">9000</span>     <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">FME            </span> 1.3.6.<span style="color: #BB0000;">4</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">ggPMX          </span> 1.3.2           <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">PopED          </span> 0.7.0      </span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">monolix2rx     </span> 0.0.6           <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">nlmixr2auto    </span> 1.0.0      </span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">nlmixr2auto    </span> 1.0.0           <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">nlmixr2autoinit</span> 1.0.1      </span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">nlmixr2autoinit</span> 1.0.1           <span style="color: #BBBB00;">◯</span> <span style="color: #0000BB;">xpose.nlmixr2  </span> 0.4.2</span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Conflicts</span> ───────────────────────────────────────────── nlmixr2conflicts() ──</span></span>
+<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> <span style="color: #0000BB;">rxode2</span>::<span style="color: #00BB00;">boxCox()</span>     masks <span style="color: #0000BB;">nlmixr2est</span>::boxCox()</span></span>
+<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> <span style="color: #0000BB;">coda</span>::<span style="color: #00BB00;">traceplot()</span>    masks <span style="color: #0000BB;">babelmixr2</span>::traceplot(), <span style="color: #0000BB;">nlmixr2plot</span>::traceplot()</span></span>
+<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> <span style="color: #0000BB;">rxode2</span>::<span style="color: #00BB00;">yeoJohnson()</span> masks <span style="color: #0000BB;">nlmixr2est</span>::yeoJohnson()</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://nlmixr2.github.io/babelmixr2/">babelmixr2</a></span><span class="op">)</span></span>
 <span><span class="va">one.compartment</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://nlmixr2.github.io/rxode2/reference/ini.html" class="external-link">ini</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1.57</span><span class="op">)</span>; <span class="fu">label</span><span class="op">(</span><span class="st">"Ka (1/hr)"</span><span class="op">)</span></span>
@@ -131,7 +148,7 @@ molar or molar to mass cannot because there is not a single
 mass-to-molar conversion factor.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">prepared</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="https://nlmixr2.github.io/nlmixr2/reference/nlmixr2.html" class="external-link">nlmixr2</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/nlmixr2.html" class="external-link">nlmixr2</a></span><span class="op">(</span></span>
 <span>    <span class="va">one.compartment</span>,</span>
 <span>    data <span class="op">=</span> <span class="va">theo_sd</span>,</span>
 <span>    est <span class="op">=</span> <span class="st">"pknca"</span>,</span>
@@ -154,55 +171,18 @@ object).</p>
 changed from their original values. The residual error and
 between-subject variability are unchanged.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">prepared</span><span class="op">$</span><span class="va">ui</span></span>
-<span><span class="co">#&gt;  <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">rxode2-based free-form 2-cmt ODE model</span> <span style="color: #00BBBB;">──────────────────────────────────────</span> </span></span>
-<span><span class="co">#&gt;  ── <span style="font-weight: bold;">Initalization:</span> ──  </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">Fixed Effects</span> (<span style="color: #0000BB; font-weight: bold;">$theta</span>): </span></span>
-<span><span class="co">#&gt;        tka        tcl         tv     add.sd </span></span>
-<span><span class="co">#&gt;  0.8931488  8.4104455 10.5377245  0.7000000 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">Omega</span> (<span style="color: #0000BB; font-weight: bold;">$omega</span>): </span></span>
-<span><span class="co">#&gt;        eta.ka eta.cl eta.v</span></span>
-<span><span class="co">#&gt; eta.ka    0.6    0.0   0.0</span></span>
-<span><span class="co">#&gt; eta.cl    0.0    0.3   0.0</span></span>
-<span><span class="co">#&gt; eta.v     0.0    0.0   0.1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co"><span style="font-weight: bold;">#&gt; States</span> (<span style="color: #0000BB; font-weight: bold;">$state</span> or <span style="color: #0000BB; font-weight: bold;">$stateDf</span>): </span></span>
-<span><span class="co">#&gt;   Compartment Number Compartment Name</span></span>
-<span><span class="co">#&gt; 1                  1            depot</span></span>
-<span><span class="co">#&gt; 2                  2           center</span></span>
-<span><span class="co">#&gt;  ── <span style="font-weight: bold;">μ-referencing (</span><span style="color: #0000BB; font-weight: bold;">$muRefTable</span><span style="font-weight: bold;">):</span> ──  </span></span>
-<span><span class="co">#&gt;   theta    eta level</span></span>
-<span><span class="co">#&gt; 1   tka eta.ka    id</span></span>
-<span><span class="co">#&gt; 2   tcl eta.cl    id</span></span>
-<span><span class="co">#&gt; 3    tv  eta.v    id</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  ── <span style="font-weight: bold;">Model (Normalized Syntax):</span> ── </span></span>
-<span><span class="co">#&gt; function() {</span></span>
-<span><span class="co">#&gt;     ini({</span></span>
-<span><span class="co">#&gt;         tka &lt;- c(-3.50655789731998, 0.89314878960486, 3.72508541597241)</span></span>
-<span><span class="co">#&gt;         label("Ka (1/hr)")</span></span>
-<span><span class="co">#&gt;         tcl &lt;- c(5.51439905878865, 8.41044546236311, 10.899462850803)</span></span>
-<span><span class="co">#&gt;         label("Cl (L/hr)")</span></span>
-<span><span class="co">#&gt;         tv &lt;- c(7.94567233496473, 10.5377244826318, 13.1050053785005)</span></span>
-<span><span class="co">#&gt;         label("V (L)")</span></span>
-<span><span class="co">#&gt;         add.sd &lt;- c(0, 0.7)</span></span>
-<span><span class="co">#&gt;         label("additive residual error (mg/L)")</span></span>
-<span><span class="co">#&gt;         eta.ka ~ 0.6</span></span>
-<span><span class="co">#&gt;         eta.cl ~ 0.3</span></span>
-<span><span class="co">#&gt;         eta.v ~ 0.1</span></span>
-<span><span class="co">#&gt;     })</span></span>
-<span><span class="co">#&gt;     model({</span></span>
-<span><span class="co">#&gt;         ka &lt;- exp(tka + eta.ka)</span></span>
-<span><span class="co">#&gt;         cl &lt;- exp(tcl + eta.cl)</span></span>
-<span><span class="co">#&gt;         vc &lt;- exp(tv + eta.v)</span></span>
-<span><span class="co">#&gt;         d/dt(depot) &lt;- -ka * depot</span></span>
-<span><span class="co">#&gt;         d/dt(center) &lt;- ka * depot - cl/vc * center</span></span>
-<span><span class="co">#&gt;         cp &lt;- 1000 * center/vc</span></span>
-<span><span class="co">#&gt;         cp ~ add(add.sd)</span></span>
-<span><span class="co">#&gt;     })</span></span>
-<span><span class="co">#&gt; }</span></span>
-<span></span>
+<code class="sourceCode R"><span><span class="va">prepared</span><span class="op">$</span><span class="va">ui</span></span></code></pre></div>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>k</mi><mi>a</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>k</mi><mi>a</mi></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>k</mi><mi>a</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>c</mi><mi>l</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>c</mi><mi>l</mi></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>c</mi><mi>l</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>v</mi><mi>c</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>v</mi></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>v</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><mrow><mi>d</mi><mspace width="0.222em"></mspace><mi>d</mi><mi>e</mi><mi>p</mi><mi>o</mi><mi>t</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mi>−</mi><mrow><mi>k</mi><mi>a</mi></mrow><mo>×</mo><mrow><mi>d</mi><mi>e</mi><mi>p</mi><mi>o</mi><mi>t</mi></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><mrow><mi>d</mi><mspace width="0.222em"></mspace><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi>k</mi><mi>a</mi></mrow><mo>×</mo><mrow><mi>d</mi><mi>e</mi><mi>p</mi><mi>o</mi><mi>t</mi></mrow><mo>−</mo><mfrac><mrow><mi>c</mi><mi>l</mi></mrow><mrow><mi>v</mi><mi>c</mi></mrow></mfrac><mo>×</mo><mrow><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>c</mi><mi>p</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mrow><mn>1000</mn><mo>×</mo><mrow><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow></mrow><mrow><mi>v</mi><mi>c</mi></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>c</mi><mi>p</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>∼</mo><mi>a</mi><mi>d</mi><mi>d</mi><mo stretchy="false" form="prefix">(</mo><mrow><mi>a</mi><mi>d</mi><mi>d</mi><mi>.</mi><mi>s</mi><mi>d</mi></mrow><mo stretchy="false" form="postfix">)</mo></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{align*}
+{ka} &amp; = \exp\left({tka}+{eta.ka}\right) \\
+{cl} &amp; = \exp\left({tcl}+{eta.cl}\right) \\
+{vc} &amp; = \exp\left({tv}+{eta.v}\right) \\
+\frac{d \: depot}{dt} &amp; = -{ka} {\times} {depot} \\
+\frac{d \: center}{dt} &amp; = {ka} {\times} {depot}-\frac{{cl}}{{vc}} {\times} {center} \\
+{cp} &amp; = \frac{{1000} {\times} {center}}{{vc}} \\
+{cp} &amp; \sim add({add.sd})
+\end{align*}</annotation></semantics></math></p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/knit_print.html" class="external-link">knit_print</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">prepared</span><span class="op">$</span><span class="va">nca</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
@@ -223,12 +203,11 @@ between-subject variability are unchanged.</p>
 <p>From the updated model, you can perform estimation on the new model
 object, as with any other model that has been created for
 <code>nlmixr2</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/nlmixr2.html" class="external-link">nlmixr</a></span><span class="op">(</span><span class="va">prepared</span>, data <span class="op">=</span> <span class="va">theo_sd</span>, est <span class="op">=</span> <span class="st">"focei"</span>, control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>print <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; → loading into <span style="color: #0000BB;">symengine</span> environment...</span></span>
 <span><span class="co">#&gt; → pruning branches (`if`/`else`) of full model...</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
-<span><span class="co">#&gt; → calculate jacobian</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → calculate sensitivities</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
@@ -239,86 +218,59 @@ object, as with any other model that has been created for
 <span><span class="co">#&gt; → finding duplicate expressions in inner model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → optimizing duplicate expressions in inner model...</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → finding duplicate expressions in EBE model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → optimizing duplicate expressions in EBE model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → compiling inner model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → finding duplicate expressions in FD model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → optimizing duplicate expressions in FD model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → compiling EBE model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → compiling events FD model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
-<span><span class="co">#&gt; rxode2 3.0.4.9000 using 2 threads (see ?getRxThreads)</span></span>
-<span><span class="co">#&gt;   no cache: create with `rxCreateCache()`</span></span>
 <span><span class="co">#&gt; calculating covariance matrix</span></span>
+<span><span class="co">#&gt; [===</span></span>
+<span><span class="co">#&gt; → loading into <span style="color: #0000BB;">symengine</span> environment...</span></span>
+<span><span class="co">#&gt; → pruning branches (`if`/`else`) of full model...</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
+<span><span class="co">#&gt; → calculate sensitivities</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
+<span><span class="co">#&gt; → calculate sensitivities</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
+<span><span class="co">#&gt; → optimizing duplicate expressions in FOCEi outer gradient model (2 chunks)...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; =|====|====|====|====|====|====|====|====|====] 0:00:04 </span></span>
 <span><span class="co">#&gt; done</span></span>
 <span><span class="co">#&gt; → Calculating residuals/tables</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
-<span><span class="co">#&gt; → compress origData in nlmixr2 object, save 5952</span></span>
-<span><span class="co">#&gt; → compress parHistData in nlmixr2 object, save 10632</span></span>
 <span></span>
-<span><span class="va">fit</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">── </span><span style="color: #0000BB; font-weight: bold;">nlmix</span><span style="color: #BB0000; font-weight: bold;">r²</span><span style="font-weight: bold;"> </span><span style="color: #BBBB00; font-weight: bold;">FOCE</span><span style="color: #BB0000; font-weight: bold;">i</span> (outer: nlminb) ──</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;           OBJF      AIC      BIC Log-likelihood Condition#(Cov) Condition#(Cor)</span></span>
-<span><span class="co">#&gt; FOCEi 116.9548 373.5546 393.7342      -179.7773         66.5244        12.97786</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">── Time (sec </span><span style="color: #BBBB00; font-weight: bold;">fit</span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;            setup optimize covariance table compress    other</span></span>
-<span><span class="co">#&gt; elapsed 0.034686 0.501527   0.501538 0.073     0.01 7.468249</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">── Population Parameters (</span><span style="color: #BBBB00; font-weight: bold;">fit</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #BBBB00; font-weight: bold;">fit</span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;                             <span style="font-weight: bold;">Parameter</span>  <span style="font-weight: bold;">Est.</span>     <span style="font-weight: bold;">SE</span>  <span style="font-weight: bold;">%RSE</span></span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tka</span>                         Ka (1/hr) 0.469  0.224  47.6</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tcl</span>                         Cl (L/hr)  7.92 0.0929  1.17</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tv</span>                              V (L)  10.4 0.0602 0.581</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">add.sd</span> additive residual error (mg/L) 0.697             </span></span>
-<span><span class="co">#&gt;              <span style="font-weight: bold;">Back-transformed(95%CI)</span> <span style="font-weight: bold;">BSV(CV%)</span> <span style="font-weight: bold;">Shrink(SD)%</span></span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tka</span>                 1.6 (1.03, 2.48)     68.0    <span style="color: #BB0000; font-weight: bold;">-0.666%</span> </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tcl</span>     2.75e+03 (2.29e+03, 3.3e+03)     26.1      3.95% </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tv</span>     3.19e+04 (2.83e+04, 3.59e+04)     15.4      14.5% </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">add.sd</span>                         0.697                     </span></span>
-<span><span class="co">#&gt;  </span></span>
-<span><span class="co">#&gt;   Covariance Type (<span style="color: #BBBB00;">fit</span><span style="color: #0000BB; font-weight: bold;">$covMethod</span>): <span style="font-weight: bold;">r,s</span></span></span>
-<span><span class="co">#&gt;   No correlations in between subject variability (BSV) matrix</span></span>
-<span><span class="co">#&gt;   Full BSV covariance (<span style="color: #BBBB00;">fit</span><span style="color: #0000BB; font-weight: bold;">$omega</span>) or correlation (<span style="color: #BBBB00;">fit</span><span style="color: #0000BB; font-weight: bold;">$omegaR</span>; diagonals=SDs) </span></span>
-<span><span class="co">#&gt;   Distribution stats (mean/skewness/kurtosis/p-value) available in <span style="color: #BBBB00;">fit</span><span style="color: #0000BB; font-weight: bold;">$shrink</span> </span></span>
-<span><span class="co">#&gt;   Information about run found (<span style="color: #BBBB00;">fit</span><span style="color: #0000BB; font-weight: bold;">$runInfo</span>):</span></span>
-<span><span class="co">#&gt;    • gradient problems with initial estimate and covariance; see $scaleInfo </span></span>
-<span><span class="co">#&gt;    • last objective function was not at minimum, possible problems in optimization </span></span>
-<span><span class="co">#&gt;    • ETAs were reset to zero during optimization; (Can control by foceiControl(resetEtaP=.)) </span></span>
-<span><span class="co">#&gt;    • initial ETAs were nudged; (can control by foceiControl(etaNudge=., etaNudge2=)) </span></span>
-<span><span class="co">#&gt;   Censoring (<span style="color: #BBBB00;">fit</span><span style="color: #0000BB; font-weight: bold;">$censInformation</span>): No censoring</span></span>
-<span><span class="co">#&gt;   Minimization message (<span style="color: #BBBB00;">fit</span><span style="color: #0000BB; font-weight: bold;">$message</span>):  </span></span>
-<span><span class="co">#&gt;     false convergence (8) </span></span>
-<span><span class="co">#&gt;   In an ODE system, false convergence may mean "useless" evaluations were performed.</span></span>
-<span><span class="co">#&gt;   See https://tinyurl.com/yyrrwkce</span></span>
-<span><span class="co">#&gt;   It could also mean the convergence is poor, check results before accepting fit</span></span>
-<span><span class="co">#&gt;   You may also try a good derivative free optimization:</span></span>
-<span><span class="co">#&gt;     nlmixr2(...,control=list(outerOpt="bobyqa"))</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">── Fit Data (object </span><span style="color: #BBBB00; font-weight: bold;">fit</span><span style="font-weight: bold;"> is a modified </span><span style="color: #0000BB; font-weight: bold;">tibble</span><span style="font-weight: bold;">): ──</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 132 × 22</span></span></span>
-<span><span class="co">#&gt;   ID     TIME    DV  PRED    RES   WRES IPRED   IRES  IWRES CPRED   CRES  CWRES</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 1      0     0.74  0     0.74   1.06   0     0.74   1.06   0     0.74   1.06 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 1      0.25  2.84  3.27 -<span style="color: #BB0000;">0.432</span> -<span style="color: #BB0000;">0.234</span>  3.84 -<span style="color: #BB0000;">1.00</span>  -<span style="color: #BB0000;">1.44</span>   3.23 -<span style="color: #BB0000;">0.389</span> -<span style="color: #BB0000;">0.185</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 1      0.57  6.57  5.84  0.730  0.297  6.78 -<span style="color: #BB0000;">0.215</span> -<span style="color: #BB0000;">0.308</span>  5.78  0.786  0.287</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 129 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 10 more variables: eta.ka &lt;dbl&gt;, eta.cl &lt;dbl&gt;, eta.v &lt;dbl&gt;, depot &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   center &lt;dbl&gt;, ka &lt;dbl&gt;, cl &lt;dbl&gt;, vc &lt;dbl&gt;, tad &lt;dbl&gt;, dosenum &lt;dbl&gt;</span></span></span></code></pre></div>
+<span><span class="va">fit</span></span></code></pre></div>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>k</mi><mi>a</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>k</mi><mi>a</mi></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>k</mi><mi>a</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>c</mi><mi>l</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>c</mi><mi>l</mi></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>c</mi><mi>l</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>v</mi><mi>c</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>v</mi></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>v</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><mrow><mi>d</mi><mspace width="0.222em"></mspace><mi>d</mi><mi>e</mi><mi>p</mi><mi>o</mi><mi>t</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mi>−</mi><mrow><mi>k</mi><mi>a</mi></mrow><mo>×</mo><mrow><mi>d</mi><mi>e</mi><mi>p</mi><mi>o</mi><mi>t</mi></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><mrow><mi>d</mi><mspace width="0.222em"></mspace><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi>k</mi><mi>a</mi></mrow><mo>×</mo><mrow><mi>d</mi><mi>e</mi><mi>p</mi><mi>o</mi><mi>t</mi></mrow><mo>−</mo><mfrac><mrow><mi>c</mi><mi>l</mi></mrow><mrow><mi>v</mi><mi>c</mi></mrow></mfrac><mo>×</mo><mrow><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>c</mi><mi>p</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mrow><mn>1000</mn><mo>×</mo><mrow><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow></mrow><mrow><mi>v</mi><mi>c</mi></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>c</mi><mi>p</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>∼</mo><mi>a</mi><mi>d</mi><mi>d</mi><mo stretchy="false" form="prefix">(</mo><mrow><mi>a</mi><mi>d</mi><mi>d</mi><mi>.</mi><mi>s</mi><mi>d</mi></mrow><mo stretchy="false" form="postfix">)</mo></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{align*}
+{ka} &amp; = \exp\left({tka}+{eta.ka}\right) \\
+{cl} &amp; = \exp\left({tcl}+{eta.cl}\right) \\
+{vc} &amp; = \exp\left({tv}+{eta.v}\right) \\
+\frac{d \: depot}{dt} &amp; = -{ka} {\times} {depot} \\
+\frac{d \: center}{dt} &amp; = {ka} {\times} {depot}-\frac{{cl}}{{vc}} {\times} {center} \\
+{cp} &amp; = \frac{{1000} {\times} {center}}{{vc}} \\
+{cp} &amp; \sim add({add.sd})
+\end{align*}</annotation></semantics></math></p>
 </div>
 <div class="section level2">
 <h2 id="give-pknca-a-different-dataset-or-a-completed-nca-analysis">Give PKNCA a different dataset or a completed NCA analysis<a class="anchor" aria-label="anchor" href="#give-pknca-a-different-dataset-or-a-completed-nca-analysis"></a>
@@ -334,12 +286,12 @@ single-ascending dose portion of the first-in-human study) to be
 estimated.</p>
 <p>To do this, give your data to PKNCA using the <code>ncaData</code>
 argument to <code><a href="../reference/pkncaControl.html">pkncaControl()</a></code> as follows:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Choose a subset of the full dataset for NCA</span></span>
 <span><span class="va">dNCA</span> <span class="op">&lt;-</span> <span class="va">theo_sd</span><span class="op">[</span><span class="va">theo_sd</span><span class="op">$</span><span class="va">ID</span> <span class="op">&lt;=</span> <span class="fl">6</span>, <span class="op">]</span></span>
 <span></span>
 <span><span class="va">preparedNcaData</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="https://nlmixr2.github.io/nlmixr2/reference/nlmixr2.html" class="external-link">nlmixr2</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://nlmixr2.github.io/nlmixr2est/reference/nlmixr2.html" class="external-link">nlmixr2</a></span><span class="op">(</span></span>
 <span>    <span class="va">one.compartment</span>,</span>
 <span>    data <span class="op">=</span> <span class="va">theo_sd</span>,</span>
 <span>    est <span class="op">=</span> <span class="st">"pknca"</span>,</span>
@@ -353,54 +305,16 @@ argument to <code><a href="../reference/pkncaControl.html">pkncaControl()</a></c
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> change initial estimate (8.3955404628088) and upper/lower bound (5.85241523541802 to 10.7637056987378) of `tcl`</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> change initial estimate (10.5377244826318) and upper/lower bound (7.94370069836702 to 13.1024358787022) of `tv`</span></span>
 <span></span>
-<span><span class="va">preparedNcaData</span><span class="op">$</span><span class="va">ui</span></span>
-<span><span class="co">#&gt;  <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">rxode2-based free-form 2-cmt ODE model</span> <span style="color: #00BBBB;">──────────────────────────────────────</span> </span></span>
-<span><span class="co">#&gt;  ── <span style="font-weight: bold;">Initalization:</span> ──  </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">Fixed Effects</span> (<span style="color: #0000BB; font-weight: bold;">$theta</span>): </span></span>
-<span><span class="co">#&gt;        tka        tcl         tv     add.sd </span></span>
-<span><span class="co">#&gt;  0.9290271  8.3955405 10.5377245  0.7000000 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">Omega</span> (<span style="color: #0000BB; font-weight: bold;">$omega</span>): </span></span>
-<span><span class="co">#&gt;        eta.ka eta.cl eta.v</span></span>
-<span><span class="co">#&gt; eta.ka    0.6    0.0   0.0</span></span>
-<span><span class="co">#&gt; eta.cl    0.0    0.3   0.0</span></span>
-<span><span class="co">#&gt; eta.v     0.0    0.0   0.1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co"><span style="font-weight: bold;">#&gt; States</span> (<span style="color: #0000BB; font-weight: bold;">$state</span> or <span style="color: #0000BB; font-weight: bold;">$stateDf</span>): </span></span>
-<span><span class="co">#&gt;   Compartment Number Compartment Name</span></span>
-<span><span class="co">#&gt; 1                  1            depot</span></span>
-<span><span class="co">#&gt; 2                  2           center</span></span>
-<span><span class="co">#&gt;  ── <span style="font-weight: bold;">μ-referencing (</span><span style="color: #0000BB; font-weight: bold;">$muRefTable</span><span style="font-weight: bold;">):</span> ──  </span></span>
-<span><span class="co">#&gt;   theta    eta level</span></span>
-<span><span class="co">#&gt; 1   tka eta.ka    id</span></span>
-<span><span class="co">#&gt; 2   tcl eta.cl    id</span></span>
-<span><span class="co">#&gt; 3    tv  eta.v    id</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  ── <span style="font-weight: bold;">Model (Normalized Syntax):</span> ── </span></span>
-<span><span class="co">#&gt; function() {</span></span>
-<span><span class="co">#&gt;     ini({</span></span>
-<span><span class="co">#&gt;         tka &lt;- c(-3.50655789731998, 0.929027077269762, 3.32136703319919)</span></span>
-<span><span class="co">#&gt;         label("Ka (1/hr)")</span></span>
-<span><span class="co">#&gt;         tcl &lt;- c(5.85241523541802, 8.3955404628088, 10.7637056987378)</span></span>
-<span><span class="co">#&gt;         label("Cl (L/hr)")</span></span>
-<span><span class="co">#&gt;         tv &lt;- c(7.94370069836702, 10.5377244826318, 13.1024358787022)</span></span>
-<span><span class="co">#&gt;         label("V (L)")</span></span>
-<span><span class="co">#&gt;         add.sd &lt;- c(0, 0.7)</span></span>
-<span><span class="co">#&gt;         label("additive residual error (mg/L)")</span></span>
-<span><span class="co">#&gt;         eta.ka ~ 0.6</span></span>
-<span><span class="co">#&gt;         eta.cl ~ 0.3</span></span>
-<span><span class="co">#&gt;         eta.v ~ 0.1</span></span>
-<span><span class="co">#&gt;     })</span></span>
-<span><span class="co">#&gt;     model({</span></span>
-<span><span class="co">#&gt;         ka &lt;- exp(tka + eta.ka)</span></span>
-<span><span class="co">#&gt;         cl &lt;- exp(tcl + eta.cl)</span></span>
-<span><span class="co">#&gt;         vc &lt;- exp(tv + eta.v)</span></span>
-<span><span class="co">#&gt;         d/dt(depot) &lt;- -ka * depot</span></span>
-<span><span class="co">#&gt;         d/dt(center) &lt;- ka * depot - cl/vc * center</span></span>
-<span><span class="co">#&gt;         cp &lt;- 1000 * center/vc</span></span>
-<span><span class="co">#&gt;         cp ~ add(add.sd)</span></span>
-<span><span class="co">#&gt;     })</span></span>
-<span><span class="co">#&gt; }</span></span></code></pre></div>
+<span><span class="va">preparedNcaData</span><span class="op">$</span><span class="va">ui</span></span></code></pre></div>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>k</mi><mi>a</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>k</mi><mi>a</mi></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>k</mi><mi>a</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>c</mi><mi>l</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>c</mi><mi>l</mi></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>c</mi><mi>l</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>v</mi><mi>c</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>v</mi></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>v</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><mrow><mi>d</mi><mspace width="0.222em"></mspace><mi>d</mi><mi>e</mi><mi>p</mi><mi>o</mi><mi>t</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mi>−</mi><mrow><mi>k</mi><mi>a</mi></mrow><mo>×</mo><mrow><mi>d</mi><mi>e</mi><mi>p</mi><mi>o</mi><mi>t</mi></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><mrow><mi>d</mi><mspace width="0.222em"></mspace><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi>k</mi><mi>a</mi></mrow><mo>×</mo><mrow><mi>d</mi><mi>e</mi><mi>p</mi><mi>o</mi><mi>t</mi></mrow><mo>−</mo><mfrac><mrow><mi>c</mi><mi>l</mi></mrow><mrow><mi>v</mi><mi>c</mi></mrow></mfrac><mo>×</mo><mrow><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>c</mi><mi>p</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mrow><mn>1000</mn><mo>×</mo><mrow><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow></mrow><mrow><mi>v</mi><mi>c</mi></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>c</mi><mi>p</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>∼</mo><mi>a</mi><mi>d</mi><mi>d</mi><mo stretchy="false" form="prefix">(</mo><mrow><mi>a</mi><mi>d</mi><mi>d</mi><mi>.</mi><mi>s</mi><mi>d</mi></mrow><mo stretchy="false" form="postfix">)</mo></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{align*}
+{ka} &amp; = \exp\left({tka}+{eta.ka}\right) \\
+{cl} &amp; = \exp\left({tcl}+{eta.cl}\right) \\
+{vc} &amp; = \exp\left({tv}+{eta.v}\right) \\
+\frac{d \: depot}{dt} &amp; = -{ka} {\times} {depot} \\
+\frac{d \: center}{dt} &amp; = {ka} {\times} {depot}-\frac{{cl}}{{vc}} {\times} {center} \\
+{cp} &amp; = \frac{{1000} {\times} {center}}{{vc}} \\
+{cp} &amp; \sim add({add.sd})
+\end{align*}</annotation></semantics></math></p>
 <p>The initial estimates are now based on NCA calculated from the
 <code>dNCA</code> dataset rather than the full <code>theo_sd</code>
 dataset.</p>
@@ -441,7 +355,7 @@ scale.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Running NONMEM with nlmixr2">
 </head>
@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">babelmixr2</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.11.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,9 +74,7 @@
     
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://nlmixr2.github.io/babelmixr2/">babelmixr2</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; Loading required package: nlmixr2</span></span>
-<span><span class="co">#&gt; Loading required package: nlmixr2data</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://nlmixr2.github.io/babelmixr2/">babelmixr2</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="step-0-what-do-you-need-to-do-to-have-nlmixr2-run-nonmem-from-a-nlmixr2-model">Step 0: What do you need to do to have <code>nlmixr2</code> run
 <code>NONMEM</code> from a nlmixr2 model<a class="anchor" aria-label="anchor" href="#step-0-what-do-you-need-to-do-to-have-nlmixr2-run-nonmem-from-a-nlmixr2-model"></a>
@@ -177,8 +175,7 @@ function here).</p>
 <span><span class="co">#&gt; 0PARAMETER ESTIMATE IS NEAR ITS BOUNDARY</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; nonmem model: 'pk.turnover.emax3-nonmem/pk.turnover.emax3.nmctl'</span></span>
-<span><span class="co">#&gt; → terminated with rounding errors, can force nlmixr2/rxode2 to read with nonmemControl(readRounding=TRUE)</span></span>
-<span><span class="co">#&gt; Error : nonmem minimization not successful</span></span></code></pre></div>
+<span><span class="co">#&gt; → terminated with rounding errors, can force nlmixr2/rxode2 to read with nonmemControl(readRounding=TRUE)</span></span></code></pre></div>
 <p>That this is the same way you would run an ordinary
 <code>nlmixr2</code> model, but it is simply a new estimation method
 <code>"nonmem"</code> with a new controller
@@ -212,19 +209,22 @@ anyway:</p>
 <span><span class="co">#&gt; → loading into <span style="color: #0000BB;">symengine</span> environment...</span></span>
 <span><span class="co">#&gt; → pruning branches (`if`/`else`) of full model...</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
-<span><span class="co">#&gt; → finding duplicate expressions in EBE model...</span></span>
-<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
-<span><span class="co">#&gt; → optimizing duplicate expressions in EBE model...</span></span>
+<span><span class="co">#&gt; → optimizing duplicate expressions in EBE model (2 chunks)...</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → compiling EBE model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
-<span><span class="co">#&gt; rxode2 3.0.4.9000 using 2 threads (see ?getRxThreads)</span></span>
+<span><span class="co">#&gt; rxode2 5.1.3 using 2 threads (see ?getRxThreads)</span></span>
 <span><span class="co">#&gt;   no cache: create with `rxCreateCache()`</span></span>
 <span><span class="co">#&gt; → Calculating residuals/tables</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
-<span><span class="co">#&gt; → compress origData in nlmixr2 object, save 27560</span></span>
-<span><span class="co">#&gt; → compress parHistData in nlmixr2 object, save 5536</span></span></code></pre></div>
+<span><span class="co">#&gt; → compress origData in nlmixr2 object, save 27800</span></span>
+<span><span class="co">#&gt; → compress parHistData in nlmixr2 object, save 4864</span></span></code></pre></div>
 <p>You may see more work happening than you expected to need for an
 already completed model. When reading in a NONMEM model,
 <code>babelmixr2</code> grabs:</p>
@@ -266,23 +266,23 @@ object:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Time (sec </span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;            setup table compress NONMEM</span></span>
-<span><span class="co">#&gt; elapsed 0.031078 0.091     0.01 320.27</span></span>
+<span><span class="co">#&gt;             setup preprocess postprocess table compress NONMEM</span></span>
+<span><span class="co">#&gt; elapsed 0.8841095      0.029       0.026 0.103    0.016 320.27</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Population Parameters (</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;                <span style="font-weight: bold;">Est.</span> <span style="font-weight: bold;">Back-transformed</span> <span style="font-weight: bold;">BSV(CV% or SD)</span> <span style="font-weight: bold;">Shrink(SD)%</span></span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tktr</span>       6.24e-07                1           86.5      <span style="color: #BB0000; font-weight: bold;">59.8%</span> </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tka</span>       -3.01e-06                1           86.5      <span style="color: #BB0000; font-weight: bold;">59.8%</span> </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tcl</span>              -2            0.135           28.6      1.34% </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tv</span>             2.05             7.78           22.8      6.44% </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">prop.err</span>     0.0986           0.0986                           </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">pkadd.err</span>     0.512            0.512                           </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">temax</span>          6.42            0.998        0.00707      <span style="color: #BB0000; font-weight: bold;">100.%</span> </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tec50</span>         0.141             1.15           45.0      6.06% </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tkout</span>         -2.95           0.0522           9.16      <span style="color: #BB0000; font-weight: bold;">32.4%</span> </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">te0</span>            4.57             96.6           5.24      18.1% </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">pdadd.err</span>      3.72             3.72                           </span></span>
+<span><span class="co">#&gt;                <span style="font-weight: bold;">Est.</span> <span style="font-weight: bold;">SE</span> <span style="font-weight: bold;">%RSE</span> <span style="font-weight: bold;">Back-transformed(95%CI)</span> <span style="font-weight: bold;">BSV(CV% or SD)</span> <span style="font-weight: bold;">Shrink(SD)%</span></span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">tktr</span>       6.241e-7                           1.000          86.45      <span style="color: #BB0000; font-weight: bold;">59.84</span> </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">tka</span>       -3.006e-6                           1.000          86.48      <span style="color: #BB0000; font-weight: bold;">59.84</span> </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">tcl</span>          -2.004                          0.1348          28.59      1.341 </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">tv</span>            2.052                           7.783          22.83      6.442 </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">prop.err</span>    0.09858                         0.09858                           </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">pkadd.err</span>    0.5116                          0.5116                           </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">temax</span>         6.418                          0.9984       0.007071      <span style="color: #BB0000; font-weight: bold;">99.99</span> </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">tec50</span>        0.1408                           1.151          44.98      6.065 </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">tkout</span>        -2.953                         0.05216          9.164      <span style="color: #BB0000; font-weight: bold;">32.42</span> </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">te0</span>           4.570                           96.59          5.243      18.09 </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">pdadd.err</span>     3.717                           3.717                           </span></span>
 <span><span class="co">#&gt;  </span></span>
 <span><span class="co">#&gt;   No correlations in between subject variability (BSV) matrix</span></span>
 <span><span class="co">#&gt;   Full BSV covariance (<span style="color: #0000BB; font-weight: bold;">$omega</span>) or correlation (<span style="color: #0000BB; font-weight: bold;">$omegaR</span>; diagonals=SDs) </span></span>
@@ -341,59 +341,89 @@ wanted to add a covariance step you can with
 <span><span class="co">#&gt; → loading into <span style="color: #0000BB;">symengine</span> environment...</span></span>
 <span><span class="co">#&gt; → pruning branches (`if`/`else`) of full model...</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
-<span><span class="co">#&gt; → calculate jacobian</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → calculate sensitivities</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → calculate ∂(f)/∂(η)</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
-<span><span class="co">#&gt; → finding duplicate expressions in inner model...</span></span>
+<span><span class="co">#&gt; → optimizing duplicate expressions in inner model (2 chunks)...</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
-<span><span class="co">#&gt; → optimizing duplicate expressions in inner model...</span></span>
-<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
-<span><span class="co">#&gt; → finding duplicate expressions in EBE model...</span></span>
-<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
-<span><span class="co">#&gt; → optimizing duplicate expressions in EBE model...</span></span>
+<span><span class="co">#&gt; → optimizing duplicate expressions in EBE model (2 chunks)...</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → compiling inner model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → finding duplicate expressions in FD model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → optimizing duplicate expressions in FD model...</span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → compiling EBE model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → compiling events FD model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; calculating covariance matrix</span></span>
-<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:06</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:18</span></span>
 <span><span class="co">#&gt; Warning in foceiFitCpp_(.ret): using R matrix to calculate covariance, can</span></span>
 <span><span class="co">#&gt; check sandwich or S matrix with $covRS and $covS</span></span>
 <span><span class="co">#&gt; Warning in foceiFitCpp_(.ret): gradient problems with covariance; see</span></span>
 <span><span class="co">#&gt; $scaleInfo</span></span>
-<span><span class="co">#&gt; → compress origData in nlmixr2 object, save 27560</span></span>
+<span><span class="co">#&gt; → compress origData in nlmixr2 object, save 27800</span></span>
 <span><span class="co">#&gt; Updated original fit object <span style="color: #BBBB00;">f</span></span></span>
-<span><span class="co">#&gt;                tktr           tka           tcl           tv         temax</span></span>
-<span><span class="co">#&gt; tktr   1.821078e-02 -1.512272e-02 -2.550343e-05 3.216116e-04  0.0015410335</span></span>
-<span><span class="co">#&gt; tka   -1.512272e-02  1.815814e-02 -1.992622e-05 3.175474e-04  0.0010345827</span></span>
-<span><span class="co">#&gt; tcl   -2.550343e-05 -1.992622e-05  2.477225e-04 1.181659e-05 -0.0008009162</span></span>
-<span><span class="co">#&gt; tv     3.216116e-04  3.175474e-04  1.181659e-05 3.184497e-04  0.0010914727</span></span>
-<span><span class="co">#&gt; temax  1.541033e-03  1.034583e-03 -8.009162e-04 1.091473e-03  7.5815740647</span></span>
-<span><span class="co">#&gt; tec50  1.410716e-04  1.273505e-04 -3.578298e-04 1.229707e-04  0.0483191718</span></span>
-<span><span class="co">#&gt; tkout  1.023011e-04  1.011022e-04 -9.757882e-05 1.188260e-04 -0.0189641465</span></span>
-<span><span class="co">#&gt; te0    1.310259e-05  1.399880e-05 -9.833068e-06 1.232683e-05 -0.0004365713</span></span>
-<span><span class="co">#&gt;               tec50         tkout           te0</span></span>
-<span><span class="co">#&gt; tktr   0.0001410716  1.023011e-04  1.310259e-05</span></span>
-<span><span class="co">#&gt; tka    0.0001273505  1.011022e-04  1.399880e-05</span></span>
-<span><span class="co">#&gt; tcl   -0.0003578298 -9.757882e-05 -9.833068e-06</span></span>
-<span><span class="co">#&gt; tv     0.0001229707  1.188260e-04  1.232683e-05</span></span>
-<span><span class="co">#&gt; temax  0.0483191718 -1.896415e-02 -4.365713e-04</span></span>
-<span><span class="co">#&gt; tec50  0.0018345990  1.544065e-04 -1.357629e-04</span></span>
-<span><span class="co">#&gt; tkout  0.0001544065  6.320302e-04  5.220487e-05</span></span>
-<span><span class="co">#&gt; te0   -0.0001357629  5.220487e-05  8.843897e-05</span></span></code></pre></div>
+<span><span class="co">#&gt;                    tktr           tka           tcl            tv      prop.err</span></span>
+<span><span class="co">#&gt; tktr       9.438963e-03 -7.566105e-03 -8.391453e-06  1.638125e-04 -7.616849e-05</span></span>
+<span><span class="co">#&gt; tka       -7.566105e-03  9.434620e-03 -1.107997e-05  1.641275e-04 -7.568561e-05</span></span>
+<span><span class="co">#&gt; tcl       -8.391453e-06 -1.107997e-05  1.331091e-04  3.188611e-06 -6.762396e-06</span></span>
+<span><span class="co">#&gt; tv         1.638125e-04  1.641275e-04  3.188611e-06  1.585240e-04  7.586524e-06</span></span>
+<span><span class="co">#&gt; prop.err  -7.616849e-05 -7.568561e-05 -6.762396e-06  7.586524e-06  9.985179e-05</span></span>
+<span><span class="co">#&gt; pkadd.err  2.303286e-04  2.259924e-04  1.525928e-04 -2.635294e-05 -2.818821e-04</span></span>
+<span><span class="co">#&gt; temax      5.404351e-05  9.665538e-04 -3.265200e-04  4.443833e-04  3.421248e-05</span></span>
+<span><span class="co">#&gt; tec50      5.244441e-05  6.812173e-05 -1.929679e-04  6.422705e-05  1.591468e-05</span></span>
+<span><span class="co">#&gt; tkout      4.907512e-05  4.613610e-05 -5.420575e-05  6.020930e-05  7.931552e-06</span></span>
+<span><span class="co">#&gt; te0        7.120918e-06  6.412089e-06 -5.420980e-06  6.270989e-06  6.083454e-07</span></span>
+<span><span class="co">#&gt; pdadd.err  2.478591e-04  2.453652e-04 -1.536594e-04  2.027390e-04  1.793269e-05</span></span>
+<span><span class="co">#&gt;               pkadd.err         temax         tec50         tkout           te0</span></span>
+<span><span class="co">#&gt; tktr       2.303286e-04  5.404351e-05  5.244441e-05  4.907512e-05  7.120918e-06</span></span>
+<span><span class="co">#&gt; tka        2.259924e-04  9.665538e-04  6.812173e-05  4.613610e-05  6.412089e-06</span></span>
+<span><span class="co">#&gt; tcl        1.525928e-04 -3.265200e-04 -1.929679e-04 -5.420575e-05 -5.420980e-06</span></span>
+<span><span class="co">#&gt; tv        -2.635294e-05  4.443833e-04  6.422705e-05  6.020930e-05  6.270989e-06</span></span>
+<span><span class="co">#&gt; prop.err  -2.818821e-04  3.421248e-05  1.591468e-05  7.931552e-06  6.083454e-07</span></span>
+<span><span class="co">#&gt; pkadd.err  2.916072e-03 -6.483022e-04 -2.468123e-04 -8.321612e-05 -7.742348e-06</span></span>
+<span><span class="co">#&gt; temax     -6.483022e-04  3.800252e+00  2.402185e-02 -9.570953e-03 -2.240365e-04</span></span>
+<span><span class="co">#&gt; tec50     -2.468123e-04  2.402185e-02  9.372351e-04  8.486017e-05 -6.716487e-05</span></span>
+<span><span class="co">#&gt; tkout     -8.321612e-05 -9.570953e-03  8.486017e-05  3.188372e-04  2.636143e-05</span></span>
+<span><span class="co">#&gt; te0       -7.742348e-06 -2.240365e-04 -6.716487e-05  2.636143e-05  4.424416e-05</span></span>
+<span><span class="co">#&gt; pdadd.err -8.642045e-05 -2.281107e-02  1.705815e-04  1.978084e-04  1.571583e-05</span></span>
+<span><span class="co">#&gt;               pdadd.err</span></span>
+<span><span class="co">#&gt; tktr       2.478591e-04</span></span>
+<span><span class="co">#&gt; tka        2.453652e-04</span></span>
+<span><span class="co">#&gt; tcl       -1.536594e-04</span></span>
+<span><span class="co">#&gt; tv         2.027390e-04</span></span>
+<span><span class="co">#&gt; prop.err   1.793269e-05</span></span>
+<span><span class="co">#&gt; pkadd.err -8.642045e-05</span></span>
+<span><span class="co">#&gt; temax     -2.281107e-02</span></span>
+<span><span class="co">#&gt; tec50      1.705815e-04</span></span>
+<span><span class="co">#&gt; tkout      1.978084e-04</span></span>
+<span><span class="co">#&gt; te0        1.571583e-05</span></span>
+<span><span class="co">#&gt; pdadd.err  3.897518e-02</span></span></code></pre></div>
 <p><code>nlmixr2</code> is more generous in what constitutes a
 covariance step. The <code>r,s</code> covariance matrix is the “most”
 successful covariance step for <code>focei</code>, but the system will
@@ -432,99 +462,45 @@ following:</p>
 <span><span class="co">#&gt; → loading into <span style="color: #0000BB;">symengine</span> environment...</span></span>
 <span><span class="co">#&gt; → pruning branches (`if`/`else`) of full model...</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
-<span><span class="co">#&gt; → finding duplicate expressions in EBE model...</span></span>
-<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====</span></span>
-<span><span class="co">#&gt; ====|====] 0:00:00</span></span>
-<span><span class="co">#&gt; → optimizing duplicate expressions in EBE model...</span></span>
+<span><span class="co">#&gt; → optimizing duplicate expressions in EBE model (2 chunks)...</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00 </span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → compiling EBE model...</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → Calculating residuals/tables</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
-<span><span class="co">#&gt; → compress origData in nlmixr2 object, save 27560</span></span>
-<span><span class="co">#&gt; → compress parHistData in nlmixr2 object, save 8800</span></span></code></pre></div>
+<span><span class="co">#&gt; → compress origData in nlmixr2 object, save 27800</span></span>
+<span><span class="co">#&gt; → compress parHistData in nlmixr2 object, save 7344</span></span></code></pre></div>
 <p>You can see the <code>NONMEM</code> run is now successful and
 validates against the <code>rxode2</code> model below:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">f2</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">── </span><span style="color: #0000BB; font-weight: bold;">nlmix</span><span style="color: #BB0000; font-weight: bold;">r²</span><span style="font-weight: bold;"> </span><span style="color: #BBBB00; font-weight: bold;">nonmem</span><span style="font-weight: bold;"> ver 7.4.3 ──</span></span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;                  OBJF      AIC      BIC Log-likelihood Condition#(Cov)</span></span>
-<span><span class="co">#&gt; nonmem focei 1418.923 2338.618 2405.498      -1153.309    1.852796e+16</span></span>
-<span><span class="co">#&gt;              Condition#(Cor)</span></span>
-<span><span class="co">#&gt; nonmem focei        18934770</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">── Time (sec </span><span style="color: #BBBB00; font-weight: bold;">f2</span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;            setup table compress NONMEM</span></span>
-<span><span class="co">#&gt; elapsed 0.003082 0.098    0.009 505.59</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">── Population Parameters (</span><span style="color: #BBBB00; font-weight: bold;">f2</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #BBBB00; font-weight: bold;">f2</span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;                <span style="font-weight: bold;">Est.</span>       <span style="font-weight: bold;">SE</span>     <span style="font-weight: bold;">%RSE</span>     <span style="font-weight: bold;">Back-transformed(95%CI)</span> <span style="font-weight: bold;">BSV(CV%)</span></span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tktr</span>       6.24e-07 9.05e-05 1.45e+04                    1 (1, 1)         </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tka</span>       -3.57e-06 0.000153 4.29e+03                    1 (1, 1)         </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tcl</span>           -1.99   0.0639      3.2         0.136 (0.12, 0.154)     27.6</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tv</span>             2.05     2.66      130      7.76 (0.042, 1.44e+03)     23.6</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">prop.err</span>      0.161                                         0.161         </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">pkadd.err</span>     0.571                                         0.571         </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">temax</span>          9.98     4.96     49.7                1 (0.565, 1)         </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tec50</span>         0.131     1.61 1.23e+03         1.14 (0.0489, 26.6)     43.6</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tkout</span>         -2.96     28.3      954 0.0517 (4.63e-26, 5.77e+22)     8.63</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">te0</span>            4.57    0.411        9            96.7 (43.2, 217)     5.19</span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">pdadd.err</span>      3.59                                          3.59         </span></span>
-<span><span class="co">#&gt;           <span style="font-weight: bold;">Shrink(SD)%</span></span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tktr</span>                 </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tka</span>                  </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tcl</span>            3.19% </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tv</span>             10.7% </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">prop.err</span>             </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">pkadd.err</span>            </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">temax</span>                </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tec50</span>          7.12% </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tkout</span>          <span style="color: #BB0000; font-weight: bold;">33.8%</span> </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">te0</span>            17.2% </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">pdadd.err</span>            </span></span>
-<span><span class="co">#&gt;  </span></span>
-<span><span class="co">#&gt;   Covariance Type (<span style="color: #BBBB00;">f2</span><span style="color: #0000BB; font-weight: bold;">$covMethod</span>): <span style="font-weight: bold;">nonmem.r,s</span></span></span>
-<span><span class="co">#&gt;   No correlations in between subject variability (BSV) matrix</span></span>
-<span><span class="co">#&gt;   Full BSV covariance (<span style="color: #BBBB00;">f2</span><span style="color: #0000BB; font-weight: bold;">$omega</span>) or correlation (<span style="color: #BBBB00;">f2</span><span style="color: #0000BB; font-weight: bold;">$omegaR</span>; diagonals=SDs) </span></span>
-<span><span class="co">#&gt;   Distribution stats (mean/skewness/kurtosis/p-value) available in <span style="color: #BBBB00;">f2</span><span style="color: #0000BB; font-weight: bold;">$shrink</span> </span></span>
-<span><span class="co">#&gt;   Censoring (<span style="color: #BBBB00;">f2</span><span style="color: #0000BB; font-weight: bold;">$censInformation</span>): No censoring</span></span>
-<span><span class="co">#&gt;   Minimization message (<span style="color: #BBBB00;">f2</span><span style="color: #0000BB; font-weight: bold;">$message</span>):  </span></span>
-<span><span class="co">#&gt;     </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  WARNINGS AND ERRORS (IF ANY) FOR PROBLEM    1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  (WARNING  2) NM-TRAN INFERS THAT THE DATA ARE POPULATION.</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     </span></span>
-<span><span class="co">#&gt; 0MINIMIZATION SUCCESSFUL</span></span>
-<span><span class="co">#&gt;  HOWEVER, PROBLEMS OCCURRED WITH THE MINIMIZATION.</span></span>
-<span><span class="co">#&gt;  REGARD THE RESULTS OF THE ESTIMATION STEP CAREFULLY, AND ACCEPT THEM ONLY</span></span>
-<span><span class="co">#&gt;  AFTER CHECKING THAT THE COVARIANCE STEP PRODUCES REASONABLE OUTPUT.</span></span>
-<span><span class="co">#&gt;  NO. OF FUNCTION EVALUATIONS USED:     2391</span></span>
-<span><span class="co">#&gt;  NO. OF SIG. DIGITS IN FINAL EST.:  4.1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     IPRED relative difference compared to Nonmem IPRED: 0%; 95% percentile: (0%,0%); rtol=6.85e-06</span></span>
-<span><span class="co">#&gt;     PRED relative difference compared to Nonmem PRED: 0%; 95% percentile: (0%,0%); rtol=6.45e-06</span></span>
-<span><span class="co">#&gt;     IPRED absolute difference compared to Nonmem IPRED: 95% percentile: (2.89e-06, 0.000506); atol=7.19e-05</span></span>
-<span><span class="co">#&gt;     PRED absolute difference compared to Nonmem PRED: 95% percentile: (5.14e-07,0.00318); atol=6.45e-06</span></span>
-<span><span class="co">#&gt;     nonmem model: 'pk.turnover.emax4-nonmem/pk.turnover.emax4.nmctl' </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">── Fit Data (object </span><span style="color: #BBBB00; font-weight: bold;">f2</span><span style="font-weight: bold;"> is a modified </span><span style="color: #0000BB; font-weight: bold;">tibble</span><span style="font-weight: bold;">): ──</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 483 × 32</span></span></span>
-<span><span class="co">#&gt;   ID     TIME CMT      DV  PRED   RES IPRED   IRES IWRES eta.cl eta.v eta.ec50</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 1       0.5 cp      0    1.16 -<span style="color: #BB0000;">1.16</span> 0.920 -<span style="color: #BB0000;">0.920</span> -<span style="color: #BB0000;">1.56</span>  0.689 0.228    0.160</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 1       1   cp      1.9  3.38 -<span style="color: #BB0000;">1.48</span> 2.68  -<span style="color: #BB0000;">0.780</span> -<span style="color: #BB0000;">1.09</span>  0.689 0.228    0.160</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 1       2   cp      3.3  7.53 -<span style="color: #BB0000;">4.23</span> 5.94  -<span style="color: #BB0000;">2.64</span>  -<span style="color: #BB0000;">2.36</span>  0.689 0.228    0.160</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 480 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 20 more variables: eta.kout &lt;dbl&gt;, eta.e0 &lt;dbl&gt;, cp &lt;dbl&gt;, depot &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   gut &lt;dbl&gt;, center &lt;dbl&gt;, effect &lt;dbl&gt;, ktr &lt;dbl&gt;, ka &lt;dbl&gt;, cl &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   v &lt;dbl&gt;, emax &lt;dbl&gt;, ec50 &lt;dbl&gt;, kout &lt;dbl&gt;, e0 &lt;dbl&gt;, DCP &lt;dbl&gt;, PD &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   kin &lt;dbl&gt;, tad &lt;dbl&gt;, dosenum &lt;dbl&gt;</span></span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">f2</span></span></code></pre></div>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>k</mi><mi>t</mi><mi>r</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mi>k</mi><mi>t</mi><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>k</mi><mi>a</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mi>k</mi><mi>a</mi><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>c</mi><mi>l</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>c</mi><mi>l</mi></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>c</mi><mi>l</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>v</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>v</mi></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>v</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>e</mi><mi>m</mi><mi>a</mi><mi>x</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mi>e</mi><mi>x</mi><mi>p</mi><mi>i</mi><mi>t</mi><mo stretchy="false" form="prefix">(</mo><mrow><mi>t</mi><mi>e</mi><mi>m</mi><mi>a</mi><mi>x</mi></mrow><mo>,</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>e</mi><mi>c</mi><mn>50</mn></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>e</mi><mi>c</mi><mn>50</mn></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>e</mi><mi>c</mi><mn>50</mn></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>k</mi><mi>o</mi><mi>u</mi><mi>t</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>k</mi><mi>o</mi><mi>u</mi><mi>t</mi></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>k</mi><mi>o</mi><mi>u</mi><mi>t</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>e</mi><mn>0</mn></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>t</mi><mi>e</mi><mn>0</mn></mrow><mo>+</mo><mrow><mi>e</mi><mi>t</mi><mi>a</mi><mi>.</mi><mi>e</mi><mn>0</mn></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>D</mi><mi>C</mi><mi>P</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mrow><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow><mi>v</mi></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>P</mi><mi>D</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mn>1</mn><mo>−</mo><mfrac><mrow><mrow><mi>e</mi><mi>m</mi><mi>a</mi><mi>x</mi></mrow><mo>×</mo><mrow><mi>D</mi><mi>C</mi><mi>P</mi></mrow></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mi>e</mi><mi>c</mi><mn>50</mn></mrow><mo>+</mo><mrow><mi>D</mi><mi>C</mi><mi>P</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>e</mi><mi>f</mi><mi>f</mi><mi>e</mi><mi>c</mi><mi>t</mi><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi>e</mi><mn>0</mn></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>k</mi><mi>i</mi><mi>n</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi>e</mi><mn>0</mn></mrow><mo>×</mo><mrow><mi>k</mi><mi>o</mi><mi>u</mi><mi>t</mi></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><mrow><mi>d</mi><mspace width="0.222em"></mspace><mi>d</mi><mi>e</mi><mi>p</mi><mi>o</mi><mi>t</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mi>−</mi><mrow><mi>k</mi><mi>t</mi><mi>r</mi></mrow><mo>×</mo><mrow><mi>d</mi><mi>e</mi><mi>p</mi><mi>o</mi><mi>t</mi></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><mrow><mi>d</mi><mspace width="0.222em"></mspace><mi>g</mi><mi>u</mi><mi>t</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi>k</mi><mi>t</mi><mi>r</mi></mrow><mo>×</mo><mrow><mi>d</mi><mi>e</mi><mi>p</mi><mi>o</mi><mi>t</mi></mrow><mo>−</mo><mrow><mi>k</mi><mi>a</mi></mrow><mo>×</mo><mrow><mi>g</mi><mi>u</mi><mi>t</mi></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><mrow><mi>d</mi><mspace width="0.222em"></mspace><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi>k</mi><mi>a</mi></mrow><mo>×</mo><mrow><mi>g</mi><mi>u</mi><mi>t</mi></mrow><mo>−</mo><mfrac><mrow><mi>c</mi><mi>l</mi></mrow><mi>v</mi></mfrac><mo>×</mo><mrow><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><mrow><mi>d</mi><mspace width="0.222em"></mspace><mi>e</mi><mi>f</mi><mi>f</mi><mi>e</mi><mi>c</mi><mi>t</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mrow><mi>k</mi><mi>i</mi><mi>n</mi></mrow><mo>×</mo><mrow><mi>P</mi><mi>D</mi></mrow><mo>−</mo><mrow><mi>k</mi><mi>o</mi><mi>u</mi><mi>t</mi></mrow><mo>×</mo><mrow><mi>e</mi><mi>f</mi><mi>f</mi><mi>e</mi><mi>c</mi><mi>t</mi></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>c</mi><mi>p</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mrow><mi>c</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>e</mi><mi>r</mi></mrow><mi>v</mi></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>c</mi><mi>p</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>∼</mo><mi>p</mi><mi>r</mi><mi>o</mi><mi>p</mi><mo stretchy="false" form="prefix">(</mo><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>p</mi><mi>.</mi><mi>e</mi><mi>r</mi><mi>r</mi></mrow><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mi>a</mi><mi>d</mi><mi>d</mi><mo stretchy="false" form="prefix">(</mo><mrow><mi>p</mi><mi>k</mi><mi>a</mi><mi>d</mi><mi>d</mi><mi>.</mi><mi>e</mi><mi>r</mi><mi>r</mi></mrow><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>e</mi><mi>f</mi><mi>f</mi><mi>e</mi><mi>c</mi><mi>t</mi></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>∼</mo><mi>a</mi><mi>d</mi><mi>d</mi><mo stretchy="false" form="prefix">(</mo><mrow><mi>p</mi><mi>d</mi><mi>a</mi><mi>d</mi><mi>d</mi><mi>.</mi><mi>e</mi><mi>r</mi><mi>r</mi></mrow><mo stretchy="false" form="postfix">)</mo><mo>∨</mo><mrow><mi>p</mi><mi>c</mi><mi>a</mi></mrow></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{align*}
+{ktr} &amp; = \exp\left({tktr}\right) \\
+{ka} &amp; = \exp\left({tka}\right) \\
+{cl} &amp; = \exp\left({tcl}+{eta.cl}\right) \\
+{v} &amp; = \exp\left({tv}+{eta.v}\right) \\
+{emax} &amp; = expit({temax}, {0}, {1}) \\
+{ec50} &amp; = \exp\left({tec50}+{eta.ec50}\right) \\
+{kout} &amp; = \exp\left({tkout}+{eta.kout}\right) \\
+{e0} &amp; = \exp\left({te0}+{eta.e0}\right) \\
+{DCP} &amp; = \frac{{center}}{{v}} \\
+{PD} &amp; = {1}-\frac{{emax} {\times} {DCP}}{\left({ec50}+{DCP}\right)} \\
+effect({0}) &amp; = {e0} \\
+{kin} &amp; = {e0} {\times} {kout} \\
+\frac{d \: depot}{dt} &amp; = -{ktr} {\times} {depot} \\
+\frac{d \: gut}{dt} &amp; = {ktr} {\times} {depot}-{ka} {\times} {gut} \\
+\frac{d \: center}{dt} &amp; = {ka} {\times} {gut}-\frac{{cl}}{{v}} {\times} {center} \\
+\frac{d \: effect}{dt} &amp; = {kin} {\times} {PD}-{kout} {\times} {effect} \\
+{cp} &amp; = \frac{{center}}{{v}} \\
+{cp} &amp; \sim prop({prop.err})+add({pkadd.err}) \\
+{effect} &amp; \sim add({pdadd.err}){\lor}{pca}
+\end{align*}</annotation></semantics></math></p>
 <p>One thing to emphasize: unlike other translators, you will know
 immediately if the translation is off because the model will not
 validate. Hence you can start this process with confidence - you will
@@ -534,24 +510,35 @@ NONMEM to a nlmixr2 fit</a>.</p>
 <p>Since it is a <code>nlmixr2</code> object it would be easy to perform
 a VPC too (the same is true for NONMEM models):</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">v1s</span> <span class="op">&lt;-</span> <span class="fu">vpcPlot</span><span class="op">(</span><span class="va">f2</span>, show<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>obs_dv<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>, scales<span class="op">=</span><span class="st">"free_y"</span><span class="op">)</span> <span class="op">+</span></span>
+<code class="sourceCode R"><span><span class="va">v1s</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://nlmixr2.github.io/nlmixr2plot/reference/vpcPlot.html" class="external-link">vpcPlot</a></span><span class="op">(</span><span class="va">f2</span>, show<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>obs_dv<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>, scales<span class="op">=</span><span class="st">"free_y"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ylab</a></span><span class="op">(</span><span class="st">"Warfarin Cp [mg/L] or PCA"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">xlab</a></span><span class="op">(</span><span class="st">"Time [h]"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span></span>
+<span><span class="co">#&gt; Warning in filter_dv(obs, verbose): No software packages matched for filtering values, not filtering.</span></span>
+<span><span class="co">#&gt;  Object class: other, data.frame</span></span>
+<span><span class="co">#&gt;  Available filters: phoenix, nonmem</span></span>
+<span><span class="co">#&gt; Warning in filter_dv(sim, verbose): No software packages matched for filtering values, not filtering.</span></span>
+<span><span class="co">#&gt;  Object class: other, nlmixr2vpcSim, data.frame</span></span>
+<span><span class="co">#&gt;  Available filters: phoenix, nonmem</span></span>
 <span></span>
-<span><span class="va">v2s</span> <span class="op">&lt;-</span> <span class="fu">vpcPlot</span><span class="op">(</span><span class="va">f2</span>, show<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>obs_dv<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>, pred_corr <span class="op">=</span> <span class="cn">TRUE</span>, scales<span class="op">=</span><span class="st">"free_y"</span><span class="op">)</span> <span class="op">+</span></span>
+<span><span class="va">v2s</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://nlmixr2.github.io/nlmixr2plot/reference/vpcPlot.html" class="external-link">vpcPlot</a></span><span class="op">(</span><span class="va">f2</span>, show<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>obs_dv<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>, pred_corr <span class="op">=</span> <span class="cn">TRUE</span>, scales<span class="op">=</span><span class="st">"free_y"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ylab</a></span><span class="op">(</span><span class="st">"Prediction Corrected Warfarin Cp [mg/L] or PCA"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">xlab</a></span><span class="op">(</span><span class="st">"Time [h]"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning in filter_dv(obs, verbose): No software packages matched for filtering values, not filtering.</span></span>
+<span><span class="co">#&gt;  Object class: other, data.frame</span></span>
+<span><span class="co">#&gt;  Available filters: phoenix, nonmem</span></span>
+<span><span class="co">#&gt; Warning in filter_dv(obs, verbose): No software packages matched for filtering values, not filtering.</span></span>
+<span><span class="co">#&gt;  Object class: other, nlmixr2vpcSim, data.frame</span></span>
+<span><span class="co">#&gt;  Available filters: phoenix, nonmem</span></span>
 <span></span>
 <span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">v1s</span></span></code></pre></div>
-<p><img src="running-nonmem_files/figure-html/unnamed-chunk-2-1.png" width="700"></p>
+<p><img src="running-nonmem_files/figure-html/unnamed-chunk-2-1.png" class="r-plt" alt="" width="700"></p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">v2s</span></span></code></pre></div>
-<p><img src="running-nonmem_files/figure-html/unnamed-chunk-2-2.png" width="700"></p>
+<p><img src="running-nonmem_files/figure-html/unnamed-chunk-2-2.png" class="r-plt" alt="" width="700"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
@@ -564,7 +551,7 @@ a VPC too (the same is true for NONMEM models):</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>
