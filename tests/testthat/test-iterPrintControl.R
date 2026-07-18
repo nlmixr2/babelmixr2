@@ -1,7 +1,8 @@
 test_that("nlmerControl absorbs print/printNcol/useColor into iterPrintControl", {
   .ctl <- nlmerControl()
   expect_s3_class(.ctl$iterPrintControl, "iterPrintControl")
-  expect_equal(.ctl$iterPrintControl$every, 0L)
+  # nlmerControl() defaults to print = 1L so nlmer iterations print by default
+  expect_equal(.ctl$iterPrintControl$every, 1L)
   expect_null(.ctl[["print"]])
   expect_null(.ctl[["printNcol"]])
   expect_null(.ctl[["useColor"]])
