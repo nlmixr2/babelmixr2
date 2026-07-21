@@ -156,7 +156,7 @@ f <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
 #> [====|====|====|====|====|====|====|====|====|====] 0:00:00
 #> → compiling EBE model...
 #> ✔ done
-#> rxode2 5.1.3 using 2 threads (see ?getRxThreads)
+#> rxode2 5.1.4 using 2 threads (see ?getRxThreads)
 #>   no cache: create with `rxCreateCache()`
 #> → Calculating residuals/tables
 #> ✔ done
@@ -202,7 +202,7 @@ print(f)
 #> ── Time (sec $time): ──
 #> 
 #>             setup preprocess postprocess table compress NONMEM
-#> elapsed 0.8841095      0.029       0.026 0.103    0.016 320.27
+#> elapsed 0.8481431      0.027       0.027 0.098    0.017 320.27
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 

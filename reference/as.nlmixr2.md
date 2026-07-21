@@ -195,7 +195,7 @@ fit <- as.nlmixr2(new)
 #>  
 #>  
 #> ✔ done
-#> rxode2 5.1.3 using 2 threads (see ?getRxThreads)
+#> rxode2 5.1.4 using 2 threads (see ?getRxThreads)
 #>   no cache: create with `rxCreateCache()`
 #> → Calculating residuals/tables
 #> ✔ done
@@ -211,7 +211,7 @@ print(fit)
 #> ── Time (sec $time): ──
 #> 
 #>             setup postprocess table compress NONMEM as.nlmixr2
-#> elapsed 0.6468777       0.016 0.058    0.001 100.95      1.609
+#> elapsed 0.6365934       0.016 0.336    0.002 100.95      1.557
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 

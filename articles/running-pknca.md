@@ -30,10 +30,10 @@ library(nlmixr2)
 #> ★ lotri           1.0.5           ◯ nlmixr2lib      0.3.2      
 #> ★ nlmixr2data     2.0.10          ◯ nlmixr2rpt      0.2.2      
 #> ★ nlmixr2save     0.1.0           ◯ nlmixr2targets  0.1.0      
-#> ★ nlmixr2est      6.2.0           ◯ nonmem2rx       0.1.10     
+#> ★ nlmixr2est      7.0.0           ◯ nonmem2rx       0.1.10     
 #> ★ nlmixr2extra    5.1.0           ◯ pmxNODE         0.1.0      
 #> ★ nlmixr2plot     5.0.2           ◯ posologyr       1.2.8      
-#> ★ rxode2          5.1.3           ◯ shinyMixR       0.5.3      
+#> ★ rxode2          5.1.4           ◯ shinyMixR       0.5.3      
 #> ◯ admixr2         0.2.0           ◯ pmxNODE         0.1.0      
 #> ◯ babelmixr2      0.1.11.9000     ◯ FME             1.3.6.4    
 #> ◯ ggPMX           1.3.2           ◯ PopED           0.7.0      
@@ -184,25 +184,7 @@ fit <- nlmixr(prepared, data = theo_sd, est = "focei", control = list(print = 0)
 #> → compiling events FD model...
 #> ✔ done
 #> calculating covariance matrix
-#> [===
-#> → loading into symengine environment...
-#> → pruning branches (`if`/`else`) of full model...
-#> ✔ done
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00
-#> → calculate sensitivities
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00
-#> → calculate sensitivities
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00
-#> → optimizing duplicate expressions in FOCEi outer gradient model (2 chunks)...
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00 
-#> 
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00 
-#> 
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00 
-#> 
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00 
-#> 
-#> =|====|====|====|====|====|====|====|====|====] 0:00:04 
+#> [====|====|====|====|====|====|====|====|====|====] 0:00:01 
 #> done
 #> → Calculating residuals/tables
 #> ✔ done
