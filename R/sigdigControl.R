@@ -91,6 +91,7 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .babelmixr2RxControlFromSigdig <- function(rxControl, sigdig, genRxControl=FALSE) {
+  if (is.null(genRxControl)) genRxControl <- FALSE
   if (is.null(rxControl)) {
     if (!is.null(sigdig)) {
       rxControl <- .rxControlScaleSigdig(rxode2::rxControl(sigdig=sigdig), sigdig)
