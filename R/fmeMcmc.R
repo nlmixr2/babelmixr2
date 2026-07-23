@@ -9,6 +9,15 @@
 #' @param returnFmeMcmc return the fmeMcmc output instead of the nlmixr2
 #'   fit
 #'
+#' @param indTolRelax when `TRUE` (default) a subject whose ODE solve had to
+#'   be retried with a relaxed tolerance keeps that relaxed tolerance for the
+#'   rest of the fit instead of resetting it every evaluation
+#'
+#' @param eventSens method used for the dosing-parameter (alag/F/rate/dur)
+#'   sensitivities: `"jump"` routes them through rxode2's analytic event
+#'   jumps; `"fd"` falls back to Shi2021 finite differences.  See
+#'   [nlmixr2est::nlmControl()].
+#'
 #' @param seed an integer seed used for the mcmc chain.  The chain is
 #'   fully determined by this seed, so a fixed value makes the fit
 #'   reproducible.  The run is wrapped in [rxode2::rxWithSeed()], which
@@ -77,6 +86,7 @@ fmeMcmcControl <- function(jump=NULL,
                            stickyRecalcN=4,
                            maxOdeRecalc=5,
                            odeRecalcFactor=10^(0.5),
+                           indTolRelax=TRUE,
 
                            useColor = NULL,
                            printNcol = NULL, #
@@ -96,7 +106,8 @@ fmeMcmcControl <- function(jump=NULL,
                            addProp = c("combined2", "combined1"),
                            calcTables=TRUE, compress=TRUE,
                            covMethod=c("mcmc", "r", ""),
-                           adjObf=TRUE, ci=0.95, sigdig=4, sigdigTable=NULL, ...) {
+                           adjObf=TRUE, ci=0.95, sigdig=4, sigdigTable=NULL,
+                           eventSens=c("jump", "fd"), ...) {
 
 
   checkmate::assertLogical(optExpression, len=1, any.missing=FALSE)
@@ -107,6 +118,8 @@ fmeMcmcControl <- function(jump=NULL,
   checkmate::assertLogical(calcTables, len=1, any.missing=FALSE)
   checkmate::assertLogical(compress, len=1, any.missing=TRUE)
   checkmate::assertLogical(adjObf, len=1, any.missing=TRUE)
+  checkmate::assertLogical(indTolRelax, len=1, any.missing=FALSE)
+  eventSens <- match.arg(eventSens)
 
   .xtra <- list(...)
   .bad <- names(.xtra)
@@ -122,33 +135,11 @@ fmeMcmcControl <- function(jump=NULL,
   checkmate::assertIntegerish(maxOdeRecalc, any.missing=FALSE, len=1)
   checkmate::assertNumeric(odeRecalcFactor, len=1, lower=1, any.missing=FALSE)
 
-  .genRxControl <- FALSE
-  if (!is.null(.xtra$genRxControl)) {
-    .genRxControl <- .xtra$genRxControl
-  }
-  if (is.null(rxControl)) {
-    if (!is.null(sigdig)) {
-      rxControl <- rxode2::rxControl(sigdig=sigdig)
-    } else {
-      rxControl <- rxode2::rxControl(atol=1e-4, rtol=1e-4)
-    }
-    .genRxControl <- TRUE
-  } else if (inherits(rxControl, "rxControl")) {
-  } else if (is.list(rxControl)) {
-    rxControl <- do.call(rxode2::rxControl, rxControl)
-  } else {
-    stop("solving options 'rxControl' needs to be generated from 'rxode2::rxControl'", call=FALSE)
-  }
-  if (!is.null(sigdig)) {
-    checkmate::assertNumeric(sigdig, lower=1, finite=TRUE, any.missing=TRUE, len=1)
-    if (is.null(sigdigTable)) {
-      sigdigTable <- round(sigdig)
-    }
-  }
-  if (is.null(sigdigTable)) {
-    sigdigTable <- 3
-  }
-  checkmate::assertIntegerish(sigdigTable, lower=1, len=1, any.missing=FALSE)
+  .rx <- .babelmixr2RxControlFromSigdig(rxControl, sigdig, .xtra$genRxControl)
+  rxControl <- .rx$rxControl
+  .genRxControl <- .rx$genRxControl
+
+  sigdigTable <- .babelmixr2SigdigTable(sigdigTable, sigdig)
 
   .iterPrintControl <- nlmixr2est::.absorbIterPrintControl(print = print,
                                                            printNcol = printNcol,
@@ -198,6 +189,8 @@ fmeMcmcControl <- function(jump=NULL,
     stickyRecalcN=as.integer(stickyRecalcN),
     maxOdeRecalc=as.integer(maxOdeRecalc),
     odeRecalcFactor=odeRecalcFactor,
+    indTolRelax=indTolRelax,
+    eventSens=eventSens,
 
     iterPrintControl=.iterPrintControl,
     scaleType=scaleType,
@@ -284,7 +277,9 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
                                 interaction=0L,
                                 compress=.fmeMcmcControl$compress,
                                 ci=.fmeMcmcControl$ci,
-                                sigdigTable=.fmeMcmcControl$sigdigTable)
+                                sigdigTable=.fmeMcmcControl$sigdigTable,
+                                indTolRelax=.fmeMcmcControl$indTolRelax,
+                                eventSens=.fmeMcmcControl$eventSens)
   if (assign) env$control <- .foceiControl
   .foceiControl
 }
