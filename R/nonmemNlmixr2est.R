@@ -190,10 +190,10 @@
   .ccontraFile <- file.path(.exportPath, .ui$nonmemCcontraName)
   .qs <- file.path(.exportPath, .ui$nonmemQs)
 
-  if (file.exists(.qs)) {
+  .cachedFit <- .babelmixr2LoadFitCache(.qs)
+  if (!is.null(.cachedFit)) {
     .minfo("load saved nlmixr2 object")
-    .ret <- qs2::qs_read(.qs)
-    return(.ret)
+    return(.cachedFit)
   } else if (!file.exists(.nmctlFile)) {
     .minfo("writing nonmem files")
     writeLines(text=.nmctl, con=.nmctlFile)
@@ -262,7 +262,7 @@
     }
     .msg$message <- c(.msg$message, paste0("nonmem model: '", .nmctlFile, "'"))
     assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
-    qs2::qs_save(.ret, .qs)
+    .babelmixr2SaveFitCache(.ret, .qs)
   }
   .ret
 }

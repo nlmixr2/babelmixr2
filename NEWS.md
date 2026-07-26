@@ -1,5 +1,12 @@
 # babelmixr2 0.1.11.9000
 
+* The NONMEM/Monolix fit cache is now written with `saveRDS()` as
+  `<model>.rds` / `nlmixr.rds` instead of `qs2`, so `qs2` moved from
+  `Imports` to `Suggests`.  Existing run directories keep working: a
+  `.qs2` cache is read once (when `qs2` is installed) and rewritten as
+  the `.rds`, and if it cannot be read the fit is rebuilt from the run
+  output as it would be for any missing cache.
+
 * The mu-referenced covariate algorithm (`muRefCovAlg`) is now applied
   through the `nlmixr2est` preprocessing/post-final-object hooks instead
   of explicit `nlmixr2est::.uiApplyMu2()`/`.uiFinalizeMu2()` calls in the

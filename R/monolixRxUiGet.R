@@ -61,7 +61,7 @@ attr(rxUiGet.monolixDataFile, "rstudio") <- "character"
 
 #' @export
 rxUiGet.monolixQs <- function(x, ...) {
-  file.path(rxUiGet.monolixExportPath(x, ...), "nlmixr.qs2")
+  file.path(rxUiGet.monolixExportPath(x, ...), "nlmixr.rds")
 }
 attr(rxUiGet.monolixQs, "rstudio") <- "character"
 
