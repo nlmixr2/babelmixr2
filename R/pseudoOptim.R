@@ -426,3 +426,5 @@ nlmixr2Est.pseudoOptim <- function(env, ...) {
 }
 attr(nlmixr2Est.pseudoOptim, "covPresent") <- TRUE
 attr(nlmixr2Est.pseudoOptim, "unbounded") <- FALSE
+attr(nlmixr2Est.pseudoOptim, "type") <- "External"
+attr(nlmixr2Est.pseudoOptim, "description") <- "FME pseudo-random global optimization"

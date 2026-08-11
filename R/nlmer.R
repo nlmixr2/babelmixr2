@@ -356,6 +356,8 @@ nlmixr2Est.nlmer <- function(env, ...) {
 
 attr(nlmixr2Est.nlmer, "covPresent") <- TRUE
 attr(nlmixr2Est.nlmer, "unbounded")  <- TRUE
+attr(nlmixr2Est.nlmer, "type") <- "Integral approximation"
+attr(nlmixr2Est.nlmer, "description") <- "lme4::nlmer (Laplace)"
 attr(nlmixr2Est.nlmer, "mu") <- function(control) {
   isTRUE(control$muRefCovAlg)
 }
