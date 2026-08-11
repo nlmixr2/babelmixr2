@@ -83,13 +83,13 @@ test_that("indTolRelax and eventSens propagate into the generated foceiControl",
     .e
   }
 
-  .fc <- babelmixr2:::.fmeMcmcControlToFoceiControl(
+  .fc <- .fmeMcmcControlToFoceiControl(
     .mkEnv("fmeMcmcControl", fmeMcmcControl(indTolRelax = FALSE, eventSens = "fd")),
     assign = FALSE)
   expect_false(.fc$indTolRelax)
   expect_identical(.fc$eventSens, "fd")
 
-  .fc <- babelmixr2:::.pseudoOptimControlToFoceiControl(
+  .fc <- .pseudoOptimControlToFoceiControl(
     .mkEnv("pseudoOptimControl", pseudoOptimControl(indTolRelax = FALSE, eventSens = "fd")),
     assign = FALSE)
   expect_false(.fc$indTolRelax)
