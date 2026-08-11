@@ -4,7 +4,7 @@
 #' @export
 lotri::lotri
 
-#' @importFrom magrittr `%>%`
+#' @importFrom magrittr "%>%"
 #' @export
 magrittr::`%>%`
 
@@ -224,11 +224,11 @@ rxode2::.minfo
 #' @export
 rxode2::RxODE
 
-#' @importFrom rxode2 `ini<-`
+#' @importFrom rxode2 "ini<-"
 #' @export
 rxode2::`ini<-`
 
-#' @importFrom rxode2 `model<-`
+#' @importFrom rxode2 "model<-"
 #' @export
 rxode2::`model<-`
 
