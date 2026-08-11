@@ -242,21 +242,21 @@
   .runLock <- .ui$monolixRunLock
 
   .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
-  if (checkmate::testFileExists(.qs)) {
+  .cachedFit <- .babelmixr2LoadFitCache(.qs)
+  if (!is.null(.cachedFit)) {
     .minfo("load saved nlmixr2 object")
-    .ret <- qs2::qs_read(.qs)
-    if (!exists("parHistData", .ret$env)) {
-      .tmp <- .ret$ui$monolixParHistory
+    if (!exists("parHistData", .cachedFit$env)) {
+      .tmp <- .cachedFit$ui$monolixParHistory
       if (is.null(.tmp)) {
         .minfo("monolix parameter history needs exported charts, please export charts")
       } else {
         .tmp$type <- "Unscaled"
-        assign("parHistData", .tmp, .ret$env)
+        assign("parHistData", .tmp, .cachedFit$env)
         .minfo("monolix parameter history integrated into fit object")
-        qs2::qs_save(.ret, .qs)
+        .babelmixr2SaveFitCache(.cachedFit, .qs)
       }
     }
-    return(.ret)
+    return(.cachedFit)
   } else if (!checkmate::testFileExists(.model)) {
     .minfo("writing monolix files")
     writeLines(text=.modelText, con=.model)
@@ -329,9 +329,8 @@
       .tmp$type <- "Unscaled"
       assign("parHistData", .tmp, .ret$env)
       .minfo("monolix parameter history integrated into fit object")
-      qs2::qs_save(.ret, .qs)
     }
-    qs2::qs_save(.ret, .qs)
+    .babelmixr2SaveFitCache(.ret, .qs)
   }
   return(.ret)
 }
