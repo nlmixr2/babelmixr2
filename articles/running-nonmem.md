@@ -156,12 +156,12 @@ f <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
 #> [====|====|====|====|====|====|====|====|====|====] 0:00:00
 #> → compiling EBE model...
 #> ✔ done
-#> rxode2 5.1.4 using 2 threads (see ?getRxThreads)
+#> rxode2 5.1.7 using 2 threads (see ?getRxThreads)
 #>   no cache: create with `rxCreateCache()`
 #> → Calculating residuals/tables
 #> ✔ done
 #> → compress origData in nlmixr2 object, save 27800
-#> → compress parHistData in nlmixr2 object, save 4864
+#> → compress parHistData in nlmixr2 object, save 5048
 ```
 
 You may see more work happening than you expected to need for an already
@@ -202,22 +202,22 @@ print(f)
 #> ── Time (sec $time): ──
 #> 
 #>             setup preprocess postprocess table compress NONMEM
-#> elapsed 0.8481431      0.027       0.027 0.098    0.017 320.27
+#> elapsed 0.9092935      0.026        0.02 0.046    0.015 320.27
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 
-#>                Est. SE %RSE Back-transformed(95%CI) BSV(CV% or SD) Shrink(SD)%
-#> tktr       6.241e-7                           1.000          86.45      59.84 
-#> tka       -3.006e-6                           1.000          86.48      59.84 
-#> tcl          -2.004                          0.1348          28.59      1.341 
-#> tv            2.052                           7.783          22.83      6.442 
-#> prop.err    0.09858                         0.09858                           
-#> pkadd.err    0.5116                          0.5116                           
-#> temax         6.418                          0.9984       0.007071      99.99 
-#> tec50        0.1408                           1.151          44.98      6.065 
-#> tkout        -2.953                         0.05216          9.164      32.42 
-#> te0           4.570                           96.59          5.243      18.09 
-#> pdadd.err     3.717                           3.717                           
+#>               Est. SE %RSE Back-transformed(95%CI) BSV(CV% or SD) Shrink(SD)%
+#> tktr       6.24e-7                            1.00           86.5       59.8 
+#> tka       -3.01e-6                            1.00           86.5       59.8 
+#> tcl          -2.00                           0.135           28.6       1.34 
+#> tv            2.05                            7.78           22.8       6.44 
+#> prop.err    0.0986                          0.0986                           
+#> pkadd.err    0.512                           0.512                           
+#> temax         6.42                           0.998        0.00707        100 
+#> tec50        0.141                            1.15           45.0       6.06 
+#> tkout        -2.95                          0.0522           9.16       32.4 
+#> te0           4.57                            96.6           5.24       18.1 
+#> pdadd.err     3.72                            3.72                           
 #>  
 #>   No correlations in between subject variability (BSV) matrix
 #>   Full BSV covariance ($omega) or correlation ($omegaR; diagonals=SDs) 
@@ -317,7 +317,7 @@ getVarCov(f)
 #> → compiling events FD model...
 #> ✔ done
 #> calculating covariance matrix
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:18
+#> [====|====|====|====|====|====|====|====|====|====] 0:00:15
 #> Warning in foceiFitCpp_(.ret): using R matrix to calculate covariance, can
 #> check sandwich or S matrix with $covRS and $covS
 #> Warning in foceiFitCpp_(.ret): gradient problems with covariance; see
@@ -413,7 +413,7 @@ f2 <- f %>% model(ktr <- exp(tktr)) %>%
 #> → Calculating residuals/tables
 #> ✔ done
 #> → compress origData in nlmixr2 object, save 27800
-#> → compress parHistData in nlmixr2 object, save 7344
+#> → compress parHistData in nlmixr2 object, save 7512
 ```
 
 You can see the `NONMEM` run is now successful and validates against the

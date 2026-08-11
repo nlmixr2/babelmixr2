@@ -169,7 +169,7 @@ f$popedFfFun
 #>     }
 #>     return(list(f = matrix(.ret$rx_pred_, ncol = 1), poped.db = poped.db))
 #> }
-#> <environment: 0x56521b87e3e8>
+#> <environment: 0x55a2fb69e058>
 ```
 
 Some things to note in this function:
@@ -204,8 +204,8 @@ design:
 ``` r
 
 summary(poped_db_ode_babelmixr2$babelmixr2$modelMT)
-#> rxode2 5.1.4 model named rx_7b71512a0bee458b095ac54be664665b model (✔ ready). 
-#> DLL: /tmp/Rtmp1KJ91H/rxode2/rx_7b71512a0bee458b095ac54be664665b__.rxd/rx_7b71512a0bee458b095ac54be664665b_.so
+#> rxode2 5.1.7 model named rx_7d508482b578f6857c3ca6c24cb8efe2 model (✔ ready). 
+#> DLL: /tmp/RtmpdpLj74/rxode2/rx_7d508482b578f6857c3ca6c24cb8efe2__.rxd/rx_7d508482b578f6857c3ca6c24cb8efe2_.so
 #> NULL
 #> 
 #> Calculated Variables:
@@ -242,8 +242,8 @@ time points greater than the design specification:
 ``` r
 
 summary(poped_db_ode_babelmixr2$babelmixr2$modelF)
-#> rxode2 5.1.4 model named rx_577a57d12b3ff2241d58f46e855615ec model (✔ ready). 
-#> DLL: /tmp/Rtmp1KJ91H/rxode2/rx_577a57d12b3ff2241d58f46e855615ec__.rxd/rx_577a57d12b3ff2241d58f46e855615ec_.so
+#> rxode2 5.1.7 model named rx_415702627a78e7f3583849f48000df43 model (✔ ready). 
+#> DLL: /tmp/RtmpdpLj74/rxode2/rx_415702627a78e7f3583849f48000df43__.rxd/rx_415702627a78e7f3583849f48000df43_.so
 #> NULL
 #> 
 #> Calculated Variables:
@@ -362,7 +362,7 @@ f$popedFgFun
 #>         NULL), rx__eta.cl = setNames(rx__eta.cl, NULL), DOSE = setNames(DOSE, 
 #>         NULL))
 #> }
-#> <environment: 0x5652260c75b8>
+#> <environment: 0x55a2fc23f3f0>
 ```
 
 ##### PopED’s error function `fError_fun`
@@ -381,7 +381,7 @@ f$popedFErrorFun
 #>     rxErr1 <- rxF * (1 + epsi[, 1]) + epsi[, 2]
 #>     return(list(y = rxErr1, poped.db = rxPoped.db))
 #> }
-#> <environment: 0x56522683ba70>
+#> <environment: 0x55a2fc94d7f8>
 ```
 
 One really important note to keep in mind is that `PopED` works with

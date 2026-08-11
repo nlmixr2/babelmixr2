@@ -305,7 +305,7 @@ fit2 <- nlmixr(mod, dsn, est="pseudoOptim")
 #> → Calculating residuals/tables
 #> ✔ done
 #> → compress origData in nlmixr2 object, save 8360
-#> → compress parHistData in nlmixr2 object, save 29848
+#> → compress parHistData in nlmixr2 object, save 30136
 
 print(fit2)
 #> ── nlmixr² log-likelihood pseudoOptim ──
@@ -316,9 +316,9 @@ print(fit2)
 #> ── Time (sec $time): ──
 #> 
 #>              setup    optimize covariance preprocess postprocess table compress
-#> elapsed 0.02272393 0.002346989   5.53e-06      0.054       0.007 0.025    0.032
+#> elapsed 0.02445509 0.001550886  8.292e-06      0.058       0.007 0.034    0.034
 #>            other
-#> elapsed 1.450924
+#> elapsed 1.427986
 #> 
 #> ── ($parFixed or $parFixedDf): ──
 #> 

@@ -26,20 +26,19 @@ function recognizes `est = "pknca"`.
 ``` r
 
 library(nlmixr2)
-#> ── Attaching packages ───────────────────────────────────────── nlmixr2 6.0.0 ──
-#> ★ lotri           1.0.5           ◯ nlmixr2lib      0.3.2      
-#> ★ nlmixr2data     2.0.10          ◯ nlmixr2rpt      0.2.2      
-#> ★ nlmixr2save     0.1.0           ◯ nlmixr2targets  0.1.0      
-#> ★ nlmixr2est      7.0.0           ◯ nonmem2rx       0.1.10     
-#> ★ nlmixr2extra    5.1.0           ◯ pmxNODE         0.1.0      
-#> ★ nlmixr2plot     5.0.2           ◯ posologyr       1.2.8      
-#> ★ rxode2          5.1.4           ◯ shinyMixR       0.5.3      
-#> ◯ admixr2         0.2.0           ◯ pmxNODE         0.1.0      
-#> ◯ babelmixr2      0.1.11.9000     ◯ FME             1.3.6.4    
-#> ◯ ggPMX           1.3.2           ◯ PopED           0.7.0      
-#> ◯ monolix2rx      0.0.6           ◯ nlmixr2auto     1.0.0      
-#> ◯ nlmixr2auto     1.0.0           ◯ nlmixr2autoinit 1.0.1      
-#> ◯ nlmixr2autoinit 1.0.1           ◯ xpose.nlmixr2   0.4.2
+#> ── Attaching packages ───────────────────────────────────────── nlmixr2 7.0.1 ──
+#> ★ lotri           1.0.5           ◯ nlmixr2auto     1.0.0      
+#> ★ nlmixr2data     2.0.10          ◯ nlmixr2autoinit 1.0.1      
+#> ★ nlmixr2save     0.2.0           ◯ nlmixr2lib      0.3.2      
+#> ★ nlmixr2est      7.0.3           ◯ nlmixr2rpt      0.2.2      
+#> ★ nlmixr2extra    5.2.0           ◯ nlmixr2targets  0.1.0      
+#> ★ nlmixr2plot     5.1.0           ◯ nonmem2rx       0.1.10     
+#> ★ rxode2          5.1.7           ◯ pmxNODE         0.1.0      
+#> ◯ admixr2         0.2.0           ◯ PopED           0.7.0      
+#> ◯ babelmixr2      0.1.11.9000     ◯ posologyr       1.2.8      
+#> ◯ FME             1.3.6.4         ◯ shinyMixR       0.5.3      
+#> ◯ ggPMX           1.3.2           ◯ xpose.nlmixr2   0.4.2      
+#> ◯ monolix2rx      0.0.7
 #> ── Conflicts ───────────────────────────────────────────── nlmixr2conflicts() ──
 #> ✖ rxode2::boxCox()     masks nlmixr2est::boxCox()
 #> ✖ coda::traceplot()    masks babelmixr2::traceplot(), nlmixr2plot::traceplot()
@@ -184,7 +183,7 @@ fit <- nlmixr(prepared, data = theo_sd, est = "focei", control = list(print = 0)
 #> → compiling events FD model...
 #> ✔ done
 #> calculating covariance matrix
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:01 
+#> [====|====|====|====|====|====|====|====|====|====] 0:00:00 
 #> done
 #> → Calculating residuals/tables
 #> ✔ done

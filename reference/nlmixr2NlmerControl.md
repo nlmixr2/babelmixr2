@@ -303,10 +303,10 @@ nlmerControl()
 #>        2 
 #> 
 #> $atol
-#> [1] 5e-07
+#> [1] 1e-07
 #> 
 #> $rtol
-#> [1] 5e-07
+#> [1] 1e-04
 #> 
 #> $maxsteps
 #> [1] 70000
@@ -493,8 +493,8 @@ nlmerControl()
 #> [1] 1e-07
 #> 
 #> $indLinMatExpType
-#> expokit 
-#>       2 
+#> Al-Mohy 
+#>       3 
 #> 
 #> $indLinMatExpOrder
 #> [1] 6
@@ -512,10 +512,10 @@ nlmerControl()
 #> [1] TRUE
 #> 
 #> $ssAtol
-#> [1] 5e-05
+#> [1] 1e-06
 #> 
 #> $ssRtol
-#> [1] 5e-05
+#> [1] 0.001
 #> 
 #> $safeZero
 #> [1] 1
@@ -541,16 +541,16 @@ nlmerControl()
 #> [1] 0
 #> 
 #> $atolSens
-#> [1] 1.581139e-06
+#> [1] 1e-07
 #> 
 #> $rtolSens
-#> [1] 1.581139e-06
+#> [1] 1e-04
 #> 
 #> $ssAtolSens
-#> [1] 0.0002108483
+#> [1] 1e-06
 #> 
 #> $ssRtolSens
-#> [1] 0.0002108483
+#> [1] 0.001
 #> 
 #> $simVariability
 #> [1] NA
@@ -696,6 +696,24 @@ nlmerControl()
 #> 
 #> $.zeros
 #> NULL
+#> 
+#> $zeroVarParamHandle
+#> [1] "warn"
+#> 
+#> $indLinStepSearch
+#> [1] 1
+#> 
+#> $indLinMaxIter
+#> [1] 20
+#> 
+#> $indLinRichardson
+#> [1] 2
+#> 
+#> $indLinIteration
+#> [1] 3
+#> 
+#> $indLinJac
+#> [1] 0
 #> 
 #> attr(,"class")
 #> [1] "rxControl"
@@ -800,10 +818,10 @@ nlmixr2NlmerControl()
 #>        2 
 #> 
 #> $atol
-#> [1] 5e-07
+#> [1] 1e-07
 #> 
 #> $rtol
-#> [1] 5e-07
+#> [1] 1e-04
 #> 
 #> $maxsteps
 #> [1] 70000
@@ -990,8 +1008,8 @@ nlmixr2NlmerControl()
 #> [1] 1e-07
 #> 
 #> $indLinMatExpType
-#> expokit 
-#>       2 
+#> Al-Mohy 
+#>       3 
 #> 
 #> $indLinMatExpOrder
 #> [1] 6
@@ -1009,10 +1027,10 @@ nlmixr2NlmerControl()
 #> [1] TRUE
 #> 
 #> $ssAtol
-#> [1] 5e-05
+#> [1] 1e-06
 #> 
 #> $ssRtol
-#> [1] 5e-05
+#> [1] 0.001
 #> 
 #> $safeZero
 #> [1] 1
@@ -1038,16 +1056,16 @@ nlmixr2NlmerControl()
 #> [1] 0
 #> 
 #> $atolSens
-#> [1] 1.581139e-06
+#> [1] 1e-07
 #> 
 #> $rtolSens
-#> [1] 1.581139e-06
+#> [1] 1e-04
 #> 
 #> $ssAtolSens
-#> [1] 0.0002108483
+#> [1] 1e-06
 #> 
 #> $ssRtolSens
-#> [1] 0.0002108483
+#> [1] 0.001
 #> 
 #> $simVariability
 #> [1] NA
@@ -1193,6 +1211,24 @@ nlmixr2NlmerControl()
 #> 
 #> $.zeros
 #> NULL
+#> 
+#> $zeroVarParamHandle
+#> [1] "warn"
+#> 
+#> $indLinStepSearch
+#> [1] 1
+#> 
+#> $indLinMaxIter
+#> [1] 20
+#> 
+#> $indLinRichardson
+#> [1] 2
+#> 
+#> $indLinIteration
+#> [1] 3
+#> 
+#> $indLinJac
+#> [1] 0
 #> 
 #> attr(,"class")
 #> [1] "rxControl"

@@ -344,10 +344,10 @@ sd, c = power exponent (1 in the proportional case).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        2 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $atol</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5e-07</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-07</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $rtol</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5e-07</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-04</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $maxsteps</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 70000</span>
@@ -534,8 +534,8 @@ sd, c = power exponent (1 in the proportional case).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-07</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $indLinMatExpType</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> expokit </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Al-Mohy </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       3 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $indLinMatExpOrder</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 6</span>
@@ -553,10 +553,10 @@ sd, c = power exponent (1 in the proportional case).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ssAtol</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5e-05</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-06</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ssRtol</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5e-05</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.001</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $safeZero</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
@@ -582,16 +582,16 @@ sd, c = power exponent (1 in the proportional case).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $atolSens</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.581139e-06</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-07</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $rtolSens</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.581139e-06</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-04</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ssAtolSens</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.0002108483</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-06</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ssRtolSens</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.0002108483</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.001</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $simVariability</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] NA</span>
@@ -737,6 +737,24 @@ sd, c = power exponent (1 in the proportional case).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $.zeros</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $zeroVarParamHandle</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "warn"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $indLinStepSearch</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $indLinMaxIter</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 20</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $indLinRichardson</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $indLinIteration</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $indLinJac</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"class")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "rxControl"</span>
@@ -841,10 +859,10 @@ sd, c = power exponent (1 in the proportional case).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        2 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $atol</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5e-07</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-07</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $rtol</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5e-07</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-04</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $maxsteps</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 70000</span>
@@ -1031,8 +1049,8 @@ sd, c = power exponent (1 in the proportional case).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-07</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $indLinMatExpType</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> expokit </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Al-Mohy </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       3 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $indLinMatExpOrder</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 6</span>
@@ -1050,10 +1068,10 @@ sd, c = power exponent (1 in the proportional case).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ssAtol</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5e-05</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-06</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ssRtol</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5e-05</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.001</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $safeZero</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
@@ -1079,16 +1097,16 @@ sd, c = power exponent (1 in the proportional case).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $atolSens</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.581139e-06</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-07</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $rtolSens</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.581139e-06</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-04</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ssAtolSens</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.0002108483</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e-06</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ssRtolSens</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.0002108483</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.001</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $simVariability</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] NA</span>
@@ -1234,6 +1252,24 @@ sd, c = power exponent (1 in the proportional case).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $.zeros</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $zeroVarParamHandle</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "warn"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $indLinStepSearch</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $indLinMaxIter</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 20</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $indLinRichardson</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $indLinIteration</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $indLinJac</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"class")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "rxControl"</span>

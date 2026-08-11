@@ -219,12 +219,12 @@ anyway:</p>
 <span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:00</span></span>
 <span><span class="co">#&gt; → compiling EBE model...</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
-<span><span class="co">#&gt; rxode2 5.1.4 using 2 threads (see ?getRxThreads)</span></span>
+<span><span class="co">#&gt; rxode2 5.1.7 using 2 threads (see ?getRxThreads)</span></span>
 <span><span class="co">#&gt;   no cache: create with `rxCreateCache()`</span></span>
 <span><span class="co">#&gt; → Calculating residuals/tables</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → compress origData in nlmixr2 object, save 27800</span></span>
-<span><span class="co">#&gt; → compress parHistData in nlmixr2 object, save 4864</span></span></code></pre></div>
+<span><span class="co">#&gt; → compress parHistData in nlmixr2 object, save 5048</span></span></code></pre></div>
 <p>You may see more work happening than you expected to need for an
 already completed model. When reading in a NONMEM model,
 <code>babelmixr2</code> grabs:</p>
@@ -267,22 +267,22 @@ object:</p>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Time (sec </span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;             setup preprocess postprocess table compress NONMEM</span></span>
-<span><span class="co">#&gt; elapsed 0.8481431      0.027       0.027 0.098    0.017 320.27</span></span>
+<span><span class="co">#&gt; elapsed 0.9092935      0.026        0.02 0.046    0.015 320.27</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Population Parameters (</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;                <span style="font-weight: bold;">Est.</span> <span style="font-weight: bold;">SE</span> <span style="font-weight: bold;">%RSE</span> <span style="font-weight: bold;">Back-transformed(95%CI)</span> <span style="font-weight: bold;">BSV(CV% or SD)</span> <span style="font-weight: bold;">Shrink(SD)%</span></span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tktr</span>       6.241e-7                           1.000          86.45      <span style="color: #BB0000; font-weight: bold;">59.84</span> </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tka</span>       -3.006e-6                           1.000          86.48      <span style="color: #BB0000; font-weight: bold;">59.84</span> </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tcl</span>          -2.004                          0.1348          28.59      1.341 </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tv</span>            2.052                           7.783          22.83      6.442 </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">prop.err</span>    0.09858                         0.09858                           </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">pkadd.err</span>    0.5116                          0.5116                           </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">temax</span>         6.418                          0.9984       0.007071      <span style="color: #BB0000; font-weight: bold;">99.99</span> </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tec50</span>        0.1408                           1.151          44.98      6.065 </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">tkout</span>        -2.953                         0.05216          9.164      <span style="color: #BB0000; font-weight: bold;">32.42</span> </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">te0</span>           4.570                           96.59          5.243      18.09 </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">pdadd.err</span>     3.717                           3.717                           </span></span>
+<span><span class="co">#&gt;               <span style="font-weight: bold;">Est.</span> <span style="font-weight: bold;">SE</span> <span style="font-weight: bold;">%RSE</span> <span style="font-weight: bold;">Back-transformed(95%CI)</span> <span style="font-weight: bold;">BSV(CV% or SD)</span> <span style="font-weight: bold;">Shrink(SD)%</span></span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">tktr</span>       6.24e-7                            1.00           86.5       <span style="color: #BB0000; font-weight: bold;">59.8</span> </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">tka</span>       -3.01e-6                            1.00           86.5       <span style="color: #BB0000; font-weight: bold;">59.8</span> </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">tcl</span>          -2.00                           0.135           28.6       1.34 </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">tv</span>            2.05                            7.78           22.8       6.44 </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">prop.err</span>    0.0986                          0.0986                           </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">pkadd.err</span>    0.512                           0.512                           </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">temax</span>         6.42                           0.998        0.00707        <span style="color: #BB0000; font-weight: bold;">100</span> </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">tec50</span>        0.141                            1.15           45.0       6.06 </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">tkout</span>        -2.95                          0.0522           9.16       <span style="color: #BB0000; font-weight: bold;">32.4</span> </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">te0</span>           4.57                            96.6           5.24       18.1 </span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">pdadd.err</span>     3.72                            3.72                           </span></span>
 <span><span class="co">#&gt;  </span></span>
 <span><span class="co">#&gt;   No correlations in between subject variability (BSV) matrix</span></span>
 <span><span class="co">#&gt;   Full BSV covariance (<span style="color: #0000BB; font-weight: bold;">$omega</span>) or correlation (<span style="color: #0000BB; font-weight: bold;">$omegaR</span>; diagonals=SDs) </span></span>
@@ -381,7 +381,7 @@ wanted to add a covariance step you can with
 <span><span class="co">#&gt; → compiling events FD model...</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; calculating covariance matrix</span></span>
-<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:18</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:15</span></span>
 <span><span class="co">#&gt; Warning in foceiFitCpp_(.ret): using R matrix to calculate covariance, can</span></span>
 <span><span class="co">#&gt; check sandwich or S matrix with $covRS and $covS</span></span>
 <span><span class="co">#&gt; Warning in foceiFitCpp_(.ret): gradient problems with covariance; see</span></span>
@@ -475,7 +475,7 @@ following:</p>
 <span><span class="co">#&gt; → Calculating residuals/tables</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; → compress origData in nlmixr2 object, save 27800</span></span>
-<span><span class="co">#&gt; → compress parHistData in nlmixr2 object, save 7344</span></span></code></pre></div>
+<span><span class="co">#&gt; → compress parHistData in nlmixr2 object, save 7512</span></span></code></pre></div>
 <p>You can see the <code>NONMEM</code> run is now successful and
 validates against the <code>rxode2</code> model below:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
