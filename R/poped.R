@@ -2069,13 +2069,19 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
 #' design (nlmixr2/babelmixr2#201).  `rxode2` converts these back to
 #' integers before solving (`.etFixCmtForSolve()`); do the same here.
 #'
+#' A multiple endpoint design names the endpoint on its observation
+#' records (`cmt="cp"`, `cmt="eff"`), so the column can hold both names
+#' and numbers.  Such a column has to stay character; the numbers are
+#' replaced by the compartment they refer to instead.
+#'
+#' @param ui rxode2 ui function
 #' @param data babelmixr2 design data
-#' @return design data where a fully numeric character `cmt` column has
-#'   been converted to an integer column; anything else is returned
+#' @return design data where the numeric compartments of a character
+#'   `cmt` column have been translated; anything else is returned
 #'   unchanged
 #' @noRd
 #' @author Matthew L. Fidler
-.popedFixDataCmt <- function(data) {
+.popedFixDataCmt <- function(ui, data) {
   .nd <- tolower(names(data))
   .wcmt <- which(.nd == "cmt")
   if (length(.wcmt) != 1L) return(data)
@@ -2087,12 +2093,23 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   .isSentinel <- !.isNa & (.cmt == "(default)" | .cmt == "(obs)")
   .num <- suppressWarnings(as.integer(.cmt))
   .isNum <- !.isNa & !.isSentinel & !is.na(.num)
-  if (!all(.isNa | .isSentinel | .isNum)) return(data)
-  .int <- integer(length(.cmt))
-  .int[.isNa] <- NA_integer_
-  .int[.isSentinel] <- 1L
-  .int[.isNum] <- .num[.isNum]
-  data[[.wcmt]] <- .int
+  if (all(.isNa | .isSentinel | .isNum)) {
+    # no compartment names at all, so the column can become integer
+    .int <- integer(length(.cmt))
+    .int[.isNa] <- NA_integer_
+    .int[.isSentinel] <- 1L
+    .int[.isNum] <- .num[.isNum]
+    data[[.wcmt]] <- .int
+    return(data)
+  }
+  .state <- rxode2::rxModelVars(ui)$state
+  # a leading "-" turns the compartment off (evid=2)
+  .w <- which(.isNum & abs(.num) >= 1L & abs(.num) <= length(.state))
+  .cmt[.w] <- ifelse(.num[.w] < 0L,
+                     paste0("-", .state[abs(.num[.w])]),
+                     .state[.num[.w]])
+  # anything left over is out of range; .popedAssertDoseCmt() complains
+  data[[.wcmt]] <- .cmt
   data
 }
 
@@ -2149,7 +2166,6 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   #
   # Data needs to match what PopED prefers, so order by id, dvid then time, not the typical ordering.  This only needs to be done in cases where there is a dvid.
   #
-  data <- .popedFixDataCmt(data)
   .nd <- tolower(names(data))
   .wdvid <- which(.nd == "dvid")
   if (length(.wdvid) == 1L) {
@@ -2169,6 +2185,7 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   # - model -- rxode2 model (setup with .popedDataToDesignSpace)
   # - data -- rxode2 data (setup with .popedDataToDesignSpace)
   .ui <- rxode2::rxUiDecompress(rxode2::assertRxUi(ui))
+  data <- .popedFixDataCmt(.ui, data)
   .popedAssertDoseCmt(.ui, data)
   # Set control options to be used within functions
   .ctl <- control

@@ -894,6 +894,20 @@ if (requireNamespace("PopED", quietly=TRUE) &&
                  model_prediction(nlmixr2(f, evName2, "poped",
                                           popedControl(groupsize=20)))$PRED)
 
+    # a column that mixes compartment names and numbers still has to
+    # translate the numbers
+    evMix <- et(amt=180, cmt="depot") %>%
+      et(amt=50, time=2, cmt=2) %>%
+      et(tms)
+    evMixName <- et(amt=180, cmt="depot") %>%
+      et(amt=50, time=2, cmt="central") %>%
+      et(tms)
+
+    expect_equal(model_prediction(nlmixr2(f, evMix, "poped",
+                                          popedControl(groupsize=20)))$PRED,
+                 model_prediction(nlmixr2(f, evMixName, "poped",
+                                          popedControl(groupsize=20)))$PRED)
+
     # a dose that cannot be matched to a compartment is an error instead
     # of a silently empty design
     expect_error(nlmixr2(f, et(amt=180, cmt=5) %>% et(tms), "poped",
@@ -903,6 +917,57 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     expect_error(nlmixr2(f, et(amt=180, cmt="matt") %>% et(tms), "poped",
                          popedControl(groupsize=20)),
                  "not in the model")
+
+  })
+
+  test_that("a numeric cmt works for a multiple endpoint design (#201)", {
+
+    library(PopED)
+
+    f <- function() {
+      ini({
+        tKA <- log(0.8)
+        tCL <- log(15)
+        tV <- log(100)
+        tE0 <- log(10)
+        eta.KA ~ 0.25
+        prop.sd <- sqrt(0.04)
+        eff.sd <- 1
+      })
+      model({
+        KA <- exp(tKA + eta.KA)
+        CL <- exp(tCL)
+        V <- exp(tV)
+        E0 <- exp(tE0)
+        d/dt(depot) <- -KA*depot
+        d/dt(central) <- KA*depot - (CL/V)*central
+        cp <- central/V
+        eff <- E0 - cp
+        cp ~ prop(prop.sd)
+        eff ~ add(eff.sd)
+      })
+    }
+
+    tms <- c(0.25, 1, 2, 4)
+
+    # the design points name the endpoint with dvid, the dose names the
+    # compartment
+    .mkData <- function(doseCmt) {
+      .d <- as.data.frame(et(amt=180, cmt=doseCmt) %>% et(tms))
+      .d$id <- 1
+      .obs1 <- .d[.d$evid == 0, ]
+      .obs1$dvid <- 1
+      .obs2 <- .obs1
+      .obs2$dvid <- 2
+      .dose <- .d[.d$evid != 0, , drop=FALSE]
+      .dose$dvid <- 1
+      rbind(.dose, .obs1, .obs2)
+    }
+
+    expect_equal(model_prediction(nlmixr2(f, .mkData(1), "poped",
+                                          popedControl(groupsize=20)))$PRED,
+                 model_prediction(nlmixr2(f, .mkData("depot"), "poped",
+                                          popedControl(groupsize=20)))$PRED)
 
   })
 
