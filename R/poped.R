@@ -2105,9 +2105,10 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   .state <- rxode2::rxModelVars(ui)$state
   # a leading "-" turns the compartment off (evid=2)
   .w <- which(.isNum & abs(.num) >= 1L & abs(.num) <= length(.state))
+  # ifelse() evaluates both branches, so both have to index with abs()
   .cmt[.w] <- ifelse(.num[.w] < 0L,
                      paste0("-", .state[abs(.num[.w])]),
-                     .state[.num[.w]])
+                     .state[abs(.num[.w])])
   # anything left over is out of range; .popedAssertDoseCmt() complains
   data[[.wcmt]] <- .cmt
   data
@@ -2132,7 +2133,8 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   .wevid <- which(.nd == "evid")
   # without evid every record is a design point (see .popedDataToDesignSpace())
   if (length(.wevid) != 1L) return(invisible())
-  .cmt <- data[[.wcmt]][which(data[[.wevid]] != 0)]
+  # evid=3 resets the system; rxode2 ignores its compartment
+  .cmt <- data[[.wcmt]][which(data[[.wevid]] != 0 & data[[.wevid]] != 3)]
   if (length(.cmt) == 0L) return(invisible())
   .state <- rxode2::rxModelVars(ui)$state
   if (is.factor(.cmt)) .cmt <- as.character(.cmt)

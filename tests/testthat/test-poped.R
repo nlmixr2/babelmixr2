@@ -920,6 +920,66 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
   })
 
+  test_that("cmt normalization edge cases (#201)", {
+
+    f <- function() {
+      ini({
+        tKA <- log(0.8)
+        tCL <- log(15)
+        tV <- log(100)
+        eta.KA ~ 0.25
+        prop.sd <- sqrt(0.04)
+      })
+      model({
+        KA <- exp(tKA + eta.KA)
+        CL <- exp(tCL)
+        V <- exp(tV)
+        d/dt(depot) <- -KA*depot
+        d/dt(central) <- KA*depot - (CL/V)*central
+        cp <- central/V
+        cp ~ prop(prop.sd)
+      })
+    }
+
+    p <- f()
+
+    # a column of numbers only becomes integer, the way rxode2 does it
+    # before solving
+    expect_equal(.popedFixDataCmt(p, data.frame(cmt=c("1", NA, "(default)",
+                                                      "(obs)", "-2")))$cmt,
+                 c(1L, NA_integer_, 1L, 1L, -2L))
+
+    # a column that mixes names and numbers stays character; a negative
+    # compartment (evid=2 turns it off) keeps its sign
+    expect_equal(.popedFixDataCmt(p, data.frame(cmt=c("depot", "2", "-2",
+                                                      NA, "5")))$cmt,
+                 c("depot", "central", "-central", NA, "5"))
+
+    # a factor is normalized too
+    expect_equal(.popedFixDataCmt(p, data.frame(cmt=factor(c("depot", "2"))))$cmt,
+                 c("depot", "central"))
+
+    # nothing to do without a cmt column
+    expect_equal(.popedFixDataCmt(p, data.frame(time=1:2))$time, 1:2)
+
+    # a reset (evid=3) ignores its compartment in rxode2, so it cannot be
+    # an error here
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 3),
+                                                   cmt=c(1L, 99L))),
+                 NA)
+
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 1),
+                                                   cmt=c(1L, 99L))),
+                 "not in the model")
+
+    # observation records are not checked; a multiple endpoint design
+    # names the endpoint there
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 0),
+                                                   cmt=c("depot", "cp"))),
+                 NA)
+
+  })
+
   test_that("a numeric cmt works for a multiple endpoint design (#201)", {
 
     library(PopED)
