@@ -846,4 +846,64 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
   })
 
+  test_that("a numeric cmt gives the same design as a named cmt (#201)", {
+
+    library(PopED)
+
+    f <- function() {
+      ini({
+        tKA <- log(0.8)
+        tCL <- log(15)
+        tV <- log(100)
+        eta.KA ~ 0.25
+        eta.CL ~ 0.25
+        eta.V ~ 0.25
+        prop.sd <- sqrt(0.04)
+      })
+      model({
+        KA <- exp(tKA + eta.KA)
+        CL <- exp(tCL + eta.CL)
+        V <- exp(tV + eta.V)
+        d/dt(depot) <- -KA*depot
+        d/dt(central) <- KA*depot - (CL/V)*central
+        cp <- central/V
+        cp ~ prop(prop.sd)
+      })
+    }
+
+    tms <- c(0.25, 0.5, 1, 2, 3, 6, 8, 12, 24)
+
+    evName <- et(amt=180, rate=180, ii=24, addl=3, cmt="depot") %>% et(tms)
+    evNum <- et(amt=180, rate=180, ii=24, addl=3, cmt=1) %>% et(tms)
+
+    predName <- model_prediction(nlmixr2(f, evName, "poped",
+                                         popedControl(groupsize=20)))$PRED
+    predNum <- model_prediction(nlmixr2(f, evNum, "poped",
+                                        popedControl(groupsize=20)))$PRED
+
+    # the dose has to actually reach the system
+    expect_true(all(predName > 0))
+    expect_equal(predNum, predName)
+
+    # dosing into the second compartment is also honored
+    evNum2 <- et(amt=180, rate=180, ii=24, addl=3, cmt=2) %>% et(tms)
+    evName2 <- et(amt=180, rate=180, ii=24, addl=3, cmt="central") %>% et(tms)
+
+    expect_equal(model_prediction(nlmixr2(f, evNum2, "poped",
+                                          popedControl(groupsize=20)))$PRED,
+                 model_prediction(nlmixr2(f, evName2, "poped",
+                                          popedControl(groupsize=20)))$PRED)
+
+    # a dose that cannot be matched to a compartment is an error instead
+    # of a silently empty design
+    expect_error(nlmixr2(f, et(amt=180, cmt=5) %>% et(tms), "poped",
+                         popedControl(groupsize=20)),
+                 "not in the model")
+
+    expect_error(nlmixr2(f, et(amt=180, cmt="matt") %>% et(tms), "poped",
+                         popedControl(groupsize=20)),
+                 "not in the model")
+
+  })
+
 }

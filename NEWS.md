@@ -1,5 +1,14 @@
 # babelmixr2 0.1.11.9000
 
+* A PopED design dataset that gives `cmt` as a compartment *number*
+  (`et(amt=180, cmt=1)`) now doses the right compartment.  `et()` keeps
+  `cmt` as a character column, so `rxode2::etTrans()` read `"1"` as a
+  compartment *name*, found no match and quietly moved the dose to an
+  extra compartment; the design built without a warning but every
+  prediction was zero and the FIM was degenerate (#201).  A dosing record
+  that still cannot be matched to a model compartment is now an error
+  instead of a silently empty design.
+
 * The PopED model translation no longer drops the `if ()` condition that
   guards an adaptive dosing call (`evid_()`, `bolus()`, `infuse()`,
   `infuseDur()`, `reset()`, ...).  The branch pruner used to flatten the
