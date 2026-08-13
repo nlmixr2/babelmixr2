@@ -1029,6 +1029,27 @@ if (requireNamespace("PopED", quietly=TRUE) &&
                  model_prediction(nlmixr2(f, .mkData("depot"), "poped",
                                           popedControl(groupsize=20)))$PRED)
 
+    # the design points can name their endpoint with cmt instead of dvid;
+    # the dose can still use a compartment number, which makes the cmt
+    # column a mix of names and numbers
+    .mkCmtData <- function(doseCmt) {
+      .d <- as.data.frame(et(amt=180, cmt=doseCmt) %>%
+                            et(time=tms, cmt="cp") %>%
+                            et(time=tms, cmt="eff"))
+      .d$id <- 1
+      .d
+    }
+
+    expect_equal(model_prediction(nlmixr2(f, .mkCmtData(1), "poped",
+                                          popedControl(groupsize=20)))$PRED,
+                 model_prediction(nlmixr2(f, .mkCmtData("depot"), "poped",
+                                          popedControl(groupsize=20)))$PRED)
+
+    expect_equal(model_prediction(nlmixr2(f, .mkCmtData(1), "poped",
+                                          popedControl(groupsize=20)))$PRED,
+                 model_prediction(nlmixr2(f, .mkData(1), "poped",
+                                          popedControl(groupsize=20)))$PRED)
+
   })
 
 }

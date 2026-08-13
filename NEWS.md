@@ -11,6 +11,12 @@
   observation records.  A dosing record that still cannot be matched to a
   model compartment is now an error instead of a silently empty design.
 
+* A multiple endpoint PopED design can now name its endpoints with `cmt`
+  (`cmt="cp"`, `cmt="eff"`) instead of `dvid`.  The `cmt` fallback was
+  already written but unreachable: a dataset without a `dvid` column
+  stopped with `attempt to select less than one element in get1index`
+  before it was tried.
+
 * The PopED model translation no longer drops the `if ()` condition that
   guards an adaptive dosing call (`evid_()`, `bolus()`, `infuse()`,
   `infuseDur()`, `reset()`, ...).  The branch pruner used to flatten the

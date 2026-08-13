@@ -1285,10 +1285,16 @@ attr(rxUiGet.popedNotfixedSigma, "rstudio") <- 0L
                                                       .data[[.wevid]] == 0, ]
                                      .time <- .data[[.wtime]]
                                      .env$mt <- max(c(.time, .env$mt))
-                                     .wd <- which(.data[[.wdvid]] == i)
-                                     if (length(.wd) == 0) {
-                                       .wd <- which(.data[[.wdvid]] ==
-                                                      ui$predDf$cond[i])
+                                     # without a dvid column the cmt
+                                     # fallback below is the only way to
+                                     # match the design points
+                                     .wd <- integer(0)
+                                     if (length(.wdvid) == 1L) {
+                                       .wd <- which(.data[[.wdvid]] == i)
+                                       if (length(.wd) == 0) {
+                                         .wd <- which(.data[[.wdvid]] ==
+                                                        ui$predDf$cond[i])
+                                       }
                                      }
                                      if (length(.wd) > 0) {
                                        .time <- .time[.wd]
