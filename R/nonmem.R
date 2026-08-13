@@ -386,7 +386,7 @@ rex::register_shortcuts("babelmixr2")
 #' @param x2 numerator
 #' @param x3 denominator
 #' @param ui rxode2 ui
-#' @return divion operator, as a side effect lines are prepended to protect divide by zero errors
+#' @return division operator, as a side effect lines are prepended to protect divide by zero errors
 #' @author Matthew L. Fidler
 #' @noRd
 .rxToNonmemHandleDivideZero <- function(x2, x3, x, ui) {
@@ -397,7 +397,7 @@ rex::register_shortcuts("babelmixr2")
 }
 #' This is where binary operators are converted to NONMEM operators
 #'
-#' @param x Binary operator R expresion
+#' @param x Binary operator R expression
 #' @param ui rxode2 user interface function
 #' @return NONMEM equivalent binary operator
 #' @author Matthew L. Fidler
@@ -798,7 +798,7 @@ rex::register_shortcuts("babelmixr2")
           }
           return(.ret)
         } else {
-          stop(sprintf("'%s' only acceps 1 argument", .x1), call. = FALSE)
+          stop(sprintf("'%s' only accepts 1 argument", .x1), call. = FALSE)
         }
       }
     }

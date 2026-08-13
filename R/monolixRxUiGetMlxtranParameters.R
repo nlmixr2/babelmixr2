@@ -20,7 +20,7 @@
 #' @param est estimate value from nlmixr2
 #' @param name name of the parameter from nlmixr2
 #' @param curEval current evaluation data-frame to understand the transformation.
-#' @param ui rxode2 ui object to get if the parmeter is an variance error term or not.
+#' @param ui rxode2 ui object to get if the parameter is an variance error term or not.
 #' @return estimate as put into the monolix .mlxtran file
 #' @noRd
 #' @author Matthew L. Fidler

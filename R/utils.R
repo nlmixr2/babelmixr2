@@ -3,7 +3,7 @@
 #' @param nm Name of the compartment
 #' @param ui rxode2 ui to query against
 #' @param error Should this error if not found (if `FALSE` return `NA_integer`)
-#' @return compartment number (or possibily NA)
+#' @return compartment number (or possibly NA)
 #' @author Bill Denney and Matthew L. Fidler
 #' @noRd
 .rxGetCmtNumber <- function(nm, ui, error=TRUE) {
@@ -48,7 +48,7 @@
 }
 #' Is a variable known to be non-zero
 #'
-#' @param variable Varible name to check
+#' @param variable Variable name to check
 #' @param ui rxode2 ui
 #' @return logical to say if the variable is known to be non-zero
 #' @author Matthew L. Fidler
