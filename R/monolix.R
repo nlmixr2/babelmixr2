@@ -361,7 +361,7 @@
               .xc[2])
             return(.ret)
           } else {
-            stop(sprintf("'%s' only acceps 1 argument", .x1), call. = FALSE)
+            stop(sprintf("'%s' only accepts 1 argument", .x1), call. = FALSE)
           }
         }
       }
@@ -551,4 +551,3 @@ rxToMonolix <- function(x, ui) {
   return(.rxToMonolix(eval(parse(text = paste0("quote({", x, "})"))),
                       ui=ui))
 }
-
