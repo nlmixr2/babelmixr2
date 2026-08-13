@@ -2,6 +2,33 @@
 
 ## babelmixr2 0.1.11.9000
 
+- The PopED model translation no longer drops the `if ()` condition that
+  guards an adaptive dosing call (`evid_()`, `bolus()`, `infuse()`,
+  `infuseDur()`, `reset()`, …). The branch pruner used to flatten the
+  model unconditionally, so a model like
+  `if (t <= 0) infuseDur(DOSE, TINF, cmt=1)` pushed a dose at *every*
+  design point instead of once
+  ([\#131](https://github.com/nlmixr2/babelmixr2/issues/131)). The
+  pruner’s capture protocol is now used and the guarded call is restored
+  after the branches are flattened.
+
+- Added two PopED examples showing how to make the dosing regimen itself
+  optimizable
+  ([\#131](https://github.com/nlmixr2/babelmixr2/issues/131)):
+
+  - `inst/poped/ex.10.PKPD.HCV.dose-and-tinf.babelmixr2.R` keeps the
+    dose record and makes the amount and infusion duration design (`a`)
+    variables via `f(depot) <- DOSE` (with `amt=1`) and
+    `dur(depot) <- TINF` (with `rate=-2`).
+
+  - `inst/poped/ex.10.PKPD.HCV.adaptive-dosing.babelmixr2.R` drops the
+    dose records entirely and pushes the regimen from inside the model
+    with `infuseDur()`, which makes the dosing *interval* a design
+    variable as well. This one needs rxode2 \> 5.1.7 (rxode2#1214).
+
+  Both are optimized with `poped_optim(..., opt_a=TRUE)` and agree on
+  the reference design (OFV 88.27).
+
 - The NONMEM/Monolix fit cache is now written with
   [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) as `<model>.rds` /
   `nlmixr.rds` instead of `qs2`, so `qs2` moved from `Imports` to
