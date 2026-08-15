@@ -313,139 +313,155 @@ export(vpcSim)
 import(nlmixr2data)
 import(nlmixr2plot)
 importFrom(lotri,lotri)
-importFrom(magrittr,`%>%`)
+importFrom(magrittr,"%>%")
 importFrom(methods,is)
-importFrom(monolix2rx,mlxtran)
-importFrom(monolix2rx,monolix2rx)
-importFrom(nlmixr2est,.nlmixrNlmeFun)
-importFrom(nlmixr2est,ACF)
-importFrom(nlmixr2est,VarCorr)
-importFrom(nlmixr2est,addCwres)
-importFrom(nlmixr2est,addNpde)
-importFrom(nlmixr2est,addTable)
-importFrom(nlmixr2est,augPred)
-importFrom(nlmixr2est,bobyqaControl)
-importFrom(nlmixr2est,fixed.effects)
-importFrom(nlmixr2est,fixef)
-importFrom(nlmixr2est,foceiControl)
-importFrom(nlmixr2est,getData)
-importFrom(nlmixr2est,getValidNlmixrCtl)
-importFrom(nlmixr2est,getVarCov)
-importFrom(nlmixr2est,groupedData)
-importFrom(nlmixr2est,iterPrintControl)
-importFrom(nlmixr2est,lbfgsb3cControl)
-importFrom(nlmixr2est,n1qn1Control)
-importFrom(nlmixr2est,newuoaControl)
-importFrom(nlmixr2est,nlmControl)
-importFrom(nlmixr2est,nlme)
-importFrom(nlmixr2est,nlmeControl)
-importFrom(nlmixr2est,nlminbControl)
-importFrom(nlmixr2est,nlmixr)
-importFrom(nlmixr2est,nlmixr2)
-importFrom(nlmixr2est,nlmixr2AllEst)
-importFrom(nlmixr2est,nlmixr2Est)
-importFrom(nlmixr2est,nlmixr2NlmeControl)
-importFrom(nlmixr2est,nlsControl)
-importFrom(nlmixr2est,nmObjGetControl)
-importFrom(nlmixr2est,nmObjGetFoceiControl)
-importFrom(nlmixr2est,nmObjHandleControlObject)
-importFrom(nlmixr2est,optimControl)
-importFrom(nlmixr2est,pdBlocked)
-importFrom(nlmixr2est,pdCompSymm)
-importFrom(nlmixr2est,pdConstruct)
-importFrom(nlmixr2est,pdDiag)
-importFrom(nlmixr2est,pdFactor)
-importFrom(nlmixr2est,pdIdent)
-importFrom(nlmixr2est,pdLogChol)
-importFrom(nlmixr2est,pdMat)
-importFrom(nlmixr2est,pdMatrix)
-importFrom(nlmixr2est,pdNatural)
-importFrom(nlmixr2est,pdSymm)
-importFrom(nlmixr2est,random.effects)
-importFrom(nlmixr2est,ranef)
-importFrom(nlmixr2est,reStruct)
-importFrom(nlmixr2est,saemControl)
-importFrom(nlmixr2est,setOfv)
-importFrom(nlmixr2est,tableControl)
-importFrom(nlmixr2est,uobyqaControl)
-importFrom(nlmixr2est,varComb)
-importFrom(nlmixr2est,varConstPower)
-importFrom(nlmixr2est,varExp)
-importFrom(nlmixr2est,varFixed)
-importFrom(nlmixr2est,varFunc)
-importFrom(nlmixr2est,varIdent)
-importFrom(nlmixr2est,varPower)
-importFrom(nlmixr2est,varWeights)
-importFrom(nlmixr2est,vpcSim)
-importFrom(nlmixr2extra,bootplot)
-importFrom(nlmixr2extra,bootstrapFit)
-importFrom(nlmixr2extra,preconditionFit)
-importFrom(nlmixr2extra,profileFixed)
-importFrom(nlmixr2extra,profileFixedSingle)
-importFrom(nlmixr2extra,profileLlp)
-importFrom(nlmixr2plot,traceplot)
-importFrom(nlmixr2plot,vpcCens)
-importFrom(nlmixr2plot,vpcCensTad)
-importFrom(nlmixr2plot,vpcPlot)
-importFrom(nlmixr2plot,vpcPlotTad)
-importFrom(nonmem2rx,as.nonmem2rx)
-importFrom(nonmem2rx,nmcov)
-importFrom(nonmem2rx,nmext)
-importFrom(nonmem2rx,nminfo)
-importFrom(nonmem2rx,nmtab)
-importFrom(nonmem2rx,nmxml)
-importFrom(nonmem2rx,nonmem2rx)
-importFrom(rxode2,.minfo)
-importFrom(rxode2,RxODE)
-importFrom(rxode2,`ini<-`)
-importFrom(rxode2,`model<-`)
-importFrom(rxode2,add.dosing)
-importFrom(rxode2,add.sampling)
-importFrom(rxode2,et)
-importFrom(rxode2,etExpand)
-importFrom(rxode2,eventTable)
-importFrom(rxode2,expit)
-importFrom(rxode2,geom_amt)
-importFrom(rxode2,geom_cens)
-importFrom(rxode2,ini)
-importFrom(rxode2,logit)
-importFrom(rxode2,lotri)
-importFrom(rxode2,model)
-importFrom(rxode2,probit)
-importFrom(rxode2,probitInv)
-importFrom(rxode2,rxCat)
-importFrom(rxode2,rxClean)
-importFrom(rxode2,rxControl)
-importFrom(rxode2,rxDerived)
-importFrom(rxode2,rxFun)
-importFrom(rxode2,rxModelVars)
-importFrom(rxode2,rxParam)
-importFrom(rxode2,rxParams)
-importFrom(rxode2,rxSetPipingAuto)
-importFrom(rxode2,rxSetSeed)
-importFrom(rxode2,rxSolve)
-importFrom(rxode2,rxUiGet)
-importFrom(rxode2,rxode)
-importFrom(rxode2,rxode2)
-importFrom(rxode2,stat_amt)
-importFrom(rxode2,stat_cens)
-importFrom(stats,approxfun)
-importFrom(stats,as.formula)
-importFrom(stats,cov)
-importFrom(stats,cov2cor)
-importFrom(stats,dlnorm)
-importFrom(stats,logLik)
-importFrom(stats,median)
-importFrom(stats,na.fail)
-importFrom(stats,na.omit)
-importFrom(stats,pchisq)
-importFrom(stats,predict)
-importFrom(stats,qchisq)
-importFrom(stats,qnorm)
-importFrom(stats,setNames)
-importFrom(stats,sigma)
-importFrom(stats,vcov)
-importFrom(utils,assignInMyNamespace)
-importFrom(utils,read.csv)
-importFrom(utils,write.csv)
+importFrom(monolix2rx,
+  mlxtran,
+  monolix2rx
+)
+importFrom(nlmixr2est,
+  .nlmixrNlmeFun,
+  ACF,
+  VarCorr,
+  addCwres,
+  addNpde,
+  addTable,
+  augPred,
+  bobyqaControl,
+  fixed.effects,
+  fixef,
+  foceiControl,
+  getData,
+  getValidNlmixrCtl,
+  getVarCov,
+  groupedData,
+  iterPrintControl,
+  lbfgsb3cControl,
+  n1qn1Control,
+  newuoaControl,
+  nlmControl,
+  nlme,
+  nlmeControl,
+  nlminbControl,
+  nlmixr,
+  nlmixr2,
+  nlmixr2AllEst,
+  nlmixr2Est,
+  nlmixr2NlmeControl,
+  nlsControl,
+  nmObjGetControl,
+  nmObjGetFoceiControl,
+  nmObjHandleControlObject,
+  optimControl,
+  pdBlocked,
+  pdCompSymm,
+  pdConstruct,
+  pdDiag,
+  pdFactor,
+  pdIdent,
+  pdLogChol,
+  pdMat,
+  pdMatrix,
+  pdNatural,
+  pdSymm,
+  random.effects,
+  ranef,
+  reStruct,
+  saemControl,
+  setOfv,
+  tableControl,
+  uobyqaControl,
+  varComb,
+  varConstPower,
+  varExp,
+  varFixed,
+  varFunc,
+  varIdent,
+  varPower,
+  varWeights,
+  vpcSim
+)
+importFrom(nlmixr2extra,
+  bootplot,
+  bootstrapFit,
+  preconditionFit,
+  profileFixed,
+  profileFixedSingle,
+  profileLlp
+)
+importFrom(nlmixr2plot,
+  traceplot,
+  vpcCens,
+  vpcCensTad,
+  vpcPlot,
+  vpcPlotTad
+)
+importFrom(nonmem2rx,
+  as.nonmem2rx,
+  nmcov,
+  nmext,
+  nminfo,
+  nmtab,
+  nmxml,
+  nonmem2rx
+)
+importFrom(rxode2,
+  "ini<-",
+  "model<-",
+  .minfo,
+  RxODE,
+  add.dosing,
+  add.sampling,
+  et,
+  etExpand,
+  eventTable,
+  expit,
+  geom_amt,
+  geom_cens,
+  ini,
+  logit,
+  lotri,
+  model,
+  probit,
+  probitInv,
+  rxCat,
+  rxClean,
+  rxControl,
+  rxDerived,
+  rxFun,
+  rxModelVars,
+  rxParam,
+  rxParams,
+  rxSetPipingAuto,
+  rxSetSeed,
+  rxSolve,
+  rxUiGet,
+  rxode,
+  rxode2,
+  stat_amt,
+  stat_cens
+)
+importFrom(stats,
+  approxfun,
+  as.formula,
+  cov,
+  cov2cor,
+  dlnorm,
+  logLik,
+  median,
+  na.fail,
+  na.omit,
+  pchisq,
+  predict,
+  qchisq,
+  qnorm,
+  setNames,
+  sigma,
+  vcov
+)
+importFrom(utils,
+  assignInMyNamespace,
+  read.csv,
+  write.csv
+)
 useDynLib(babelmixr2, .registration=TRUE)

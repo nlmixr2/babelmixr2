@@ -141,6 +141,33 @@
   ret
 } # nocov end
 
+#' Spell an imported name so `@importFrom` survives roxygen2's merged form
+#'
+#' roxygen2 (>= 8.1) collapses every `@importFrom <pkg>` block for a package
+#' into one multi-name `importFrom(<pkg>, a, b, c)` directive.  R's
+#' `parseNamespaceFile()` reads that directive by dropping the first two
+#' elements and calling `as.character()` on what is left -- which makes the
+#' first name the call head and everything after it an argument.  A
+#' backtick-quoted non-syntactic name deparses back to plain text in the head
+#' position but keeps its backticks everywhere else, so
+#' `importFrom(rxode2, .minfo, `ini<-`)` asks rxode2 for an object literally
+#' named "`ini<-`".  That is a hard error in `importIntoEnv()`, so the *entire*
+#' directive fails and none of the package's imports land -- which in turn
+#' hides the imported generics from roxygen2's own S3 detection.
+#'
+#' Double quotes deparse cleanly in every position, so use them instead.
+#'
+#' @param fun name as it appears in the `pkg::name` reexport
+#' @return `fun`, with any backtick quoting swapped for double quoting
+#' @noRd
+.importName <- function(fun) { # nocov start
+  if (grepl("^`.*`$", fun)) {
+    paste0("\"", substr(fun, 2L, nchar(fun) - 1L), "\"")
+  } else {
+    fun
+  }
+} # nocov end
+
 .genSoftReExport <- function(fun, alias=NULL) { # nocov start
   message("Writing soft reexport: ", fun)
   .newFun <- strsplit(fun, "::")[[1]]
@@ -152,7 +179,7 @@
     .aliasText <- paste0("#' @rdname ", .fun)
   }
   paste(
-    c(paste("#' @importFrom", .pkg, .fun),
+    c(paste("#' @importFrom", .pkg, .importName(.fun)),
       .aliasText,
       "#' @export",
       fun
