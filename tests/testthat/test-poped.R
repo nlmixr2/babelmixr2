@@ -846,4 +846,210 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
   })
 
+  test_that("a numeric cmt gives the same design as a named cmt (#201)", {
+
+    library(PopED)
+
+    f <- function() {
+      ini({
+        tKA <- log(0.8)
+        tCL <- log(15)
+        tV <- log(100)
+        eta.KA ~ 0.25
+        eta.CL ~ 0.25
+        eta.V ~ 0.25
+        prop.sd <- sqrt(0.04)
+      })
+      model({
+        KA <- exp(tKA + eta.KA)
+        CL <- exp(tCL + eta.CL)
+        V <- exp(tV + eta.V)
+        d/dt(depot) <- -KA*depot
+        d/dt(central) <- KA*depot - (CL/V)*central
+        cp <- central/V
+        cp ~ prop(prop.sd)
+      })
+    }
+
+    tms <- c(0.25, 0.5, 1, 2, 3, 6, 8, 12, 24)
+
+    evName <- et(amt=180, rate=180, ii=24, addl=3, cmt="depot") %>% et(tms)
+    evNum <- et(amt=180, rate=180, ii=24, addl=3, cmt=1) %>% et(tms)
+
+    predName <- model_prediction(nlmixr2(f, evName, "poped",
+                                         popedControl(groupsize=20)))$PRED
+    predNum <- model_prediction(nlmixr2(f, evNum, "poped",
+                                        popedControl(groupsize=20)))$PRED
+
+    # the dose has to actually reach the system
+    expect_true(all(predName > 0))
+    expect_equal(predNum, predName)
+
+    # dosing into the second compartment is also honored
+    evNum2 <- et(amt=180, rate=180, ii=24, addl=3, cmt=2) %>% et(tms)
+    evName2 <- et(amt=180, rate=180, ii=24, addl=3, cmt="central") %>% et(tms)
+
+    expect_equal(model_prediction(nlmixr2(f, evNum2, "poped",
+                                          popedControl(groupsize=20)))$PRED,
+                 model_prediction(nlmixr2(f, evName2, "poped",
+                                          popedControl(groupsize=20)))$PRED)
+
+    # a column that mixes compartment names and numbers still has to
+    # translate the numbers
+    evMix <- et(amt=180, cmt="depot") %>%
+      et(amt=50, time=2, cmt=2) %>%
+      et(tms)
+    evMixName <- et(amt=180, cmt="depot") %>%
+      et(amt=50, time=2, cmt="central") %>%
+      et(tms)
+
+    expect_equal(model_prediction(nlmixr2(f, evMix, "poped",
+                                          popedControl(groupsize=20)))$PRED,
+                 model_prediction(nlmixr2(f, evMixName, "poped",
+                                          popedControl(groupsize=20)))$PRED)
+
+    # a dose that cannot be matched to a compartment is an error instead
+    # of a silently empty design
+    expect_error(nlmixr2(f, et(amt=180, cmt=5) %>% et(tms), "poped",
+                         popedControl(groupsize=20)),
+                 "not in the model")
+
+    expect_error(nlmixr2(f, et(amt=180, cmt="matt") %>% et(tms), "poped",
+                         popedControl(groupsize=20)),
+                 "not in the model")
+
+  })
+
+  test_that("cmt normalization edge cases (#201)", {
+
+    f <- function() {
+      ini({
+        tKA <- log(0.8)
+        tCL <- log(15)
+        tV <- log(100)
+        eta.KA ~ 0.25
+        prop.sd <- sqrt(0.04)
+      })
+      model({
+        KA <- exp(tKA + eta.KA)
+        CL <- exp(tCL)
+        V <- exp(tV)
+        d/dt(depot) <- -KA*depot
+        d/dt(central) <- KA*depot - (CL/V)*central
+        cp <- central/V
+        cp ~ prop(prop.sd)
+      })
+    }
+
+    p <- f()
+
+    # a column of numbers only becomes integer, the way rxode2 does it
+    # before solving
+    expect_equal(.popedFixDataCmt(p, data.frame(cmt=c("1", NA, "(default)",
+                                                      "(obs)", "-2")))$cmt,
+                 c(1L, NA_integer_, 1L, 1L, -2L))
+
+    # a column that mixes names and numbers stays character; a negative
+    # compartment (evid=2 turns it off) keeps its sign
+    expect_equal(.popedFixDataCmt(p, data.frame(cmt=c("depot", "2", "-2",
+                                                      NA, "5")))$cmt,
+                 c("depot", "central", "-central", NA, "5"))
+
+    # a factor is normalized too
+    expect_equal(.popedFixDataCmt(p, data.frame(cmt=factor(c("depot", "2"))))$cmt,
+                 c("depot", "central"))
+
+    # nothing to do without a cmt column
+    expect_equal(.popedFixDataCmt(p, data.frame(time=1:2))$time, 1:2)
+
+    # a reset (evid=3) ignores its compartment in rxode2, so it cannot be
+    # an error here
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 3),
+                                                   cmt=c(1L, 99L))),
+                 NA)
+
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 1),
+                                                   cmt=c(1L, 99L))),
+                 "not in the model")
+
+    # observation records are not checked; a multiple endpoint design
+    # names the endpoint there
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 0),
+                                                   cmt=c("depot", "cp"))),
+                 NA)
+
+  })
+
+  test_that("a numeric cmt works for a multiple endpoint design (#201)", {
+
+    library(PopED)
+
+    f <- function() {
+      ini({
+        tKA <- log(0.8)
+        tCL <- log(15)
+        tV <- log(100)
+        tE0 <- log(10)
+        eta.KA ~ 0.25
+        prop.sd <- sqrt(0.04)
+        eff.sd <- 1
+      })
+      model({
+        KA <- exp(tKA + eta.KA)
+        CL <- exp(tCL)
+        V <- exp(tV)
+        E0 <- exp(tE0)
+        d/dt(depot) <- -KA*depot
+        d/dt(central) <- KA*depot - (CL/V)*central
+        cp <- central/V
+        eff <- E0 - cp
+        cp ~ prop(prop.sd)
+        eff ~ add(eff.sd)
+      })
+    }
+
+    tms <- c(0.25, 1, 2, 4)
+
+    # the design points name the endpoint with dvid, the dose names the
+    # compartment
+    .mkData <- function(doseCmt) {
+      .d <- as.data.frame(et(amt=180, cmt=doseCmt) %>% et(tms))
+      .d$id <- 1
+      .obs1 <- .d[.d$evid == 0, ]
+      .obs1$dvid <- 1
+      .obs2 <- .obs1
+      .obs2$dvid <- 2
+      .dose <- .d[.d$evid != 0, , drop=FALSE]
+      .dose$dvid <- 1
+      rbind(.dose, .obs1, .obs2)
+    }
+
+    expect_equal(model_prediction(nlmixr2(f, .mkData(1), "poped",
+                                          popedControl(groupsize=20)))$PRED,
+                 model_prediction(nlmixr2(f, .mkData("depot"), "poped",
+                                          popedControl(groupsize=20)))$PRED)
+
+    # the design points can name their endpoint with cmt instead of dvid;
+    # the dose can still use a compartment number, which makes the cmt
+    # column a mix of names and numbers
+    .mkCmtData <- function(doseCmt) {
+      .d <- as.data.frame(et(amt=180, cmt=doseCmt) %>%
+                            et(time=tms, cmt="cp") %>%
+                            et(time=tms, cmt="eff"))
+      .d$id <- 1
+      .d
+    }
+
+    expect_equal(model_prediction(nlmixr2(f, .mkCmtData(1), "poped",
+                                          popedControl(groupsize=20)))$PRED,
+                 model_prediction(nlmixr2(f, .mkCmtData("depot"), "poped",
+                                          popedControl(groupsize=20)))$PRED)
+
+    expect_equal(model_prediction(nlmixr2(f, .mkCmtData(1), "poped",
+                                          popedControl(groupsize=20)))$PRED,
+                 model_prediction(nlmixr2(f, .mkData(1), "poped",
+                                          popedControl(groupsize=20)))$PRED)
+
+  })
+
 }
