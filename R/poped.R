@@ -875,7 +875,19 @@ rxUiGet.popedRxmodelBase <- function(x, ...) {
   .mod <- .mod[.w]
   .errDf <- .iniDf[!is.na(.iniDf$err), ,drop=FALSE]
   # remove if/else so extra lhs statements are not hanging around
-  .mod <- str2lang(paste0("{", rxode2::.rxPrune(as.call(c(quote(`{`), .mod))), "}"))
+  #
+  # Adaptive dosing calls (`evid_()`, `bolus()`, `infuse()`, `infuseDur()`,
+  # ...) cannot be flattened this way; the pruner captures them (and the
+  # conditions they were nested under) when `..captureN`/`..capturedEvid`
+  # are present in the pruning environment.  Without this the enclosing
+  # `if ()` is dropped and the dose fires at every event time.
+  .pruneEnv <- new.env(parent=emptyenv())
+  .pruneEnv$.if <- NULL
+  .pruneEnv$.def1 <- NULL
+  .pruneEnv$..captureN <- 0L
+  .pruneEnv$..capturedEvid <- list()
+  .mod <- str2lang(paste0("{", rxode2::.rxPrune(as.call(c(quote(`{`), .mod)),
+                                                envir=.pruneEnv), "}"))
   .mod <- lapply(seq_along(.mod)[-1],
                  function(i) { .mod[[i]]})
   .mod <- lapply(seq_along(.mod),
@@ -896,6 +908,17 @@ rxUiGet.popedRxmodelBase <- function(x, ...) {
                    }
                    .replaceErrWithConst(.cur, .errDf)
                  })
+  # restore the adaptive dosing calls captured by the pruner; the
+  # `rxCaptureId#` variables hold the (flattened) condition they were
+  # nested under.
+  if (length(.pruneEnv$..capturedEvid) > 0L) {
+    .mod <- c(.mod,
+              lapply(.pruneEnv$..capturedEvid,
+                     function(cap) {
+                       str2lang(paste0("if (", cap$capVar, ") { ",
+                                       cap$original, " }"))
+                     }))
+  }
   .mod
 }
 attr(rxUiGet.popedRxmodelBase, "desc") <- "This gets the base rxode2 model for PopED"

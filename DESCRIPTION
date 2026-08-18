@@ -18,6 +18,7 @@ URL: https://nlmixr2.github.io/babelmixr2/, https://github.com/nlmixr2/babelmixr
 NeedsCompilation: yes
 Encoding: UTF-8
 Suggests:
+    qs2,
     testthat,
     withr,
     lixoftConnectors,
@@ -50,7 +51,6 @@ Imports:
     nonmem2rx (>= 0.1.5),
     monolix2rx (>= 0.0.3),
     methods,
-    qs2,
     rex,
     rxode2 (>= 4.1.0)
 Roxygen: list(markdown = TRUE)
