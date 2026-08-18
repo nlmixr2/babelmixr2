@@ -20,6 +20,7 @@ fmeMcmcControl(
   stickyRecalcN = 4,
   maxOdeRecalc = 5,
   odeRecalcFactor = 10^(0.5),
+  indTolRelax = TRUE,
   useColor = NULL,
   printNcol = NULL,
   print = 1L,
@@ -42,6 +43,7 @@ fmeMcmcControl(
   ci = 0.95,
   sigdig = 4,
   sigdigTable = NULL,
+  eventSens = c("jump", "fd"),
   ...
 )
 }
@@ -113,6 +115,10 @@ ODE solve.}
 
 \item{odeRecalcFactor}{The ODE recalculation factor when ODE
 solving goes bad, this is the factor the rtol/atol is reduced}
+
+\item{indTolRelax}{when \code{TRUE} (default) a subject whose ODE solve had to
+be retried with a relaxed tolerance keeps that relaxed tolerance for the
+rest of the fit instead of resetting it every evaluation}
 
 \item{useColor}{Logical (or `NULL`) emit ANSI bold/color escapes in the
 iteration print. `NULL` (default) defers to [crayon::has_color()].}
@@ -192,8 +198,9 @@ will calculate tables. By default this is \code{TRUE}}
 
 \item{compress}{Should the object have compressed items}
 
-\item{covMethod}{Method for calculating the covariance.  \code{"analytic"} (the
-default) uses the exact analytic observed-information R-matrix (reported as
+\item{covMethod}{Method for calculating the covariance.  \code{"r,s"} (the
+default) is the sandwich estimator (see below).  \code{"analytic"}
+uses the exact analytic observed-information R-matrix (reported as
 \eqn{R^{-1}}) and additionally returns the residual and \code{Omega} standard
 errors; it covers FOCEI/FOCE fits with additive, proportional, or combined
 error, mu-referenced/covariate/other structural parameters (and
@@ -206,7 +213,11 @@ finite-difference methods use R (the Hessian) and S (the sum of individual
 gradient cross-products at the empirical Bayes estimates): \code{"r,s"} sandwich
 (\code{solve(R)\%*\%S\%*\%solve(R)}), \code{"r"} Hessian-based
 (\code{solve(R)}), \code{"s"} cross-product-based (\code{solve(S)}), or
-\code{""} to skip the covariance step.}
+\code{""} to skip the covariance step.  \code{"sa"} (SAEM Louis
+stochastic-approximation FIM) and \code{"imp"} (importance-sampling
+Monte-Carlo observed information) are also accepted for any method; they
+are computed post-fit at the converged estimates by the decoupled
+recompute engine.}
 
 \item{adjObf}{is a boolean to indicate if the objective function
 should be adjusted to be closer to NONMEM's default objective
@@ -215,15 +226,28 @@ function.  By default this is \code{TRUE}}
 \item{ci}{Confidence level for some tables.  By default this is
 0.95 or 95\% confidence.}
 
-\item{sigdig}{Optimization significant digits; controls the inner/outer
-optimization tolerance (\code{10^-sigdig}), ODE solver tolerance
-(\code{0.5*10^(-sigdig-2)}, or \code{0.5*10^(-sigdig-1.5)} for
-sensitivity/steady-state with liblsoda), and boundary check tolerance
-(\code{5*10^(-sigdig+1)}).}
+\item{sigdig}{Optimization significant digits.  One value drives, with a single
+consistent formula, the inner/outer optimizer convergence tolerance
+(\code{10^-sigdig}), the boundary check tolerance (\code{5*10^(-sigdig+1)}),
+and the ODE solver tolerances: the \code{rtol} exponent IS \code{sigdig} and
+\code{atol} sits three orders below, so \code{rtol = 10^-sigdig},
+\code{atol = 10^(-sigdig-3)} for every solver (stiff, non-stiff or
+auto-switching).  The sensitivity (\code{atolSens}/\code{rtolSens})
+tolerances match the main solve (the outer gradient and covariance are built
+from them); the steady-state (\code{ssAtol}/\code{ssRtol}) tolerances run one
+order looser.
+Keying the optimizer to the same \code{10^-sigdig} means it converges to
+exactly the precision the solve supports.  At the default \code{sigdig = 3}
+this is \code{atol = 1e-6}, \code{rtol = 1e-3}.}
 
 \item{sigdigTable}{Significant digits in the final output table.
 If not specified, then it matches the significant digits in the
 `sigdig` optimization algorithm.  If `sigdig` is NULL, use 3.}
+
+\item{eventSens}{method used for the dosing-parameter (alag/F/rate/dur)
+sensitivities: \code{"jump"} routes them through rxode2's analytic event
+jumps; \code{"fd"} falls back to Shi2021 finite differences.  See
+\code{\link[nlmixr2est:nlmControl]{nlmixr2est::nlmControl()}}.}
 
 \item{...}{Ignored parameters}
 }

@@ -7,7 +7,7 @@
 \usage{
 nlmixr2NlmerControl(
   optimizer = "bobyqa",
-  tolPwrss = 1e-07,
+  tolPwrss = NULL,
   optCtrl = list(),
   returnNlmer = FALSE,
   muRefCovAlg = TRUE,
@@ -18,6 +18,7 @@ nlmixr2NlmerControl(
   stickyRecalcN = 4,
   maxOdeRecalc = 5,
   odeRecalcFactor = 10^(0.5),
+  indTolRelax = TRUE,
   useColor = NULL,
   printNcol = NULL,
   print = 1L,
@@ -37,7 +38,7 @@ nlmixr2NlmerControl(
 
 nlmerControl(
   optimizer = "bobyqa",
-  tolPwrss = 1e-07,
+  tolPwrss = NULL,
   optCtrl = list(),
   returnNlmer = FALSE,
   muRefCovAlg = TRUE,
@@ -48,6 +49,7 @@ nlmerControl(
   stickyRecalcN = 4,
   maxOdeRecalc = 5,
   odeRecalcFactor = 10^(0.5),
+  indTolRelax = TRUE,
   useColor = NULL,
   printNcol = NULL,
   print = 1L,
@@ -69,7 +71,10 @@ nlmerControl(
 \item{optimizer}{passed to \code{\link[lme4:nlmerControl]{lme4::nlmerControl()}}: optimizer to use}
 
 \item{tolPwrss}{passed to \code{\link[lme4:nlmerControl]{lme4::nlmerControl()}}: tolerance for the
-penalized, weighted residual sum-of-squares (PWRSS) inner iterations}
+penalized, weighted residual sum-of-squares (PWRSS) inner iterations.
+When \code{NULL} (the default) it is derived from \code{sigdig}, keeping the
+\code{lme4} default of \code{1e-7} at the default \code{sigdig = 4} and
+tightening/loosening it one order of magnitude per significant digit}
 
 \item{optCtrl}{a \code{list} of additional control parameters passed to the
 nonlinear optimizer via \code{\link[lme4:nlmerControl]{lme4::nlmerControl()}}}
@@ -102,6 +107,10 @@ with a relaxed tolerance}
 
 \item{odeRecalcFactor}{factor by which atol/rtol are relaxed on an ODE
 solve retry}
+
+\item{indTolRelax}{when \code{TRUE} (default) a subject whose ODE solve had to
+be retried with a relaxed tolerance keeps that relaxed tolerance for the
+rest of the fit instead of resetting it every evaluation}
 
 \item{useColor}{Logical (or `NULL`) emit ANSI bold/color escapes in the
 iteration print. `NULL` (default) defers to [crayon::has_color()].}
@@ -140,11 +149,19 @@ function.  By default this is \code{TRUE}}
 \item{ci}{Confidence level for some tables.  By default this is
 0.95 or 95\% confidence.}
 
-\item{sigdig}{Optimization significant digits; controls the inner/outer
-optimization tolerance (\code{10^-sigdig}), ODE solver tolerance
-(\code{0.5*10^(-sigdig-2)}, or \code{0.5*10^(-sigdig-1.5)} for
-sensitivity/steady-state with liblsoda), and boundary check tolerance
-(\code{5*10^(-sigdig+1)}).}
+\item{sigdig}{Optimization significant digits.  One value drives, with a single
+consistent formula, the inner/outer optimizer convergence tolerance
+(\code{10^-sigdig}), the boundary check tolerance (\code{5*10^(-sigdig+1)}),
+and the ODE solver tolerances: the \code{rtol} exponent IS \code{sigdig} and
+\code{atol} sits three orders below, so \code{rtol = 10^-sigdig},
+\code{atol = 10^(-sigdig-3)} for every solver (stiff, non-stiff or
+auto-switching).  The sensitivity (\code{atolSens}/\code{rtolSens})
+tolerances match the main solve (the outer gradient and covariance are built
+from them); the steady-state (\code{ssAtol}/\code{ssRtol}) tolerances run one
+order looser.
+Keying the optimizer to the same \code{10^-sigdig} means it converges to
+exactly the precision the solve supports.  At the default \code{sigdig = 3}
+this is \code{atol = 1e-6}, \code{rtol = 1e-3}.}
 
 \item{sigdigTable}{Significant digits in the final output table.
 If not specified, then it matches the significant digits in the

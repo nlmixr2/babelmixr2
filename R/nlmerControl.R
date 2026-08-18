@@ -7,7 +7,10 @@
 #'
 #' @param optimizer passed to [lme4::nlmerControl()]: optimizer to use
 #' @param tolPwrss passed to [lme4::nlmerControl()]: tolerance for the
-#'   penalized, weighted residual sum-of-squares (PWRSS) inner iterations
+#'   penalized, weighted residual sum-of-squares (PWRSS) inner iterations.
+#'   When `NULL` (the default) it is derived from `sigdig`, keeping the
+#'   `lme4` default of `1e-7` at the default `sigdig = 4` and
+#'   tightening/loosening it one order of magnitude per significant digit
 #' @param optCtrl a `list` of additional control parameters passed to the
 #'   nonlinear optimizer via [lme4::nlmerControl()]
 #' @param returnNlmer logical; when `TRUE` return the raw lme4 nlmerMod
@@ -30,6 +33,9 @@
 #'   with a relaxed tolerance
 #' @param odeRecalcFactor factor by which atol/rtol are relaxed on an ODE
 #'   solve retry
+#' @param indTolRelax when `TRUE` (default) a subject whose ODE solve had to
+#'   be retried with a relaxed tolerance keeps that relaxed tolerance for the
+#'   rest of the fit instead of resetting it every evaluation
 #'
 #' @return nlmer control structure
 #' @export
@@ -38,7 +44,7 @@
 #' nlmerControl()
 #' nlmixr2NlmerControl()
 nlmixr2NlmerControl <- function(optimizer = "bobyqa",
-                                tolPwrss = 1e-7,
+                                tolPwrss = NULL,
                                 optCtrl = list(),
                                 returnNlmer = FALSE,
                                 muRefCovAlg = TRUE,
@@ -52,6 +58,7 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
                                 stickyRecalcN = 4,
                                 maxOdeRecalc = 5,
                                 odeRecalcFactor = 10^(0.5),
+                                indTolRelax = TRUE,
                                 useColor = NULL,
                                 printNcol = NULL,
                                 print = 1L,
@@ -76,6 +83,12 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
   checkmate::assertLogical(calcTables, len = 1, any.missing = FALSE)
   checkmate::assertLogical(compress, len = 1, any.missing = TRUE)
   checkmate::assertLogical(adjObf, len = 1, any.missing = TRUE)
+  checkmate::assertLogical(indTolRelax, len = 1, any.missing = FALSE)
+  # lme4's inner PWRSS tolerance follows `sigdig` the way the nlmixr2est
+  # optimizer tolerances do, keeping the tuned 1e-7 at the default sigdig=4
+  if (is.null(tolPwrss)) {
+    tolPwrss <- if (is.null(sigdig)) 1e-7 else .sigdigScale(1e-7, sigdig)
+  }
   checkmate::assertNumeric(tolPwrss, len = 1, any.missing = FALSE, lower = 0)
   checkmate::assertNumeric(ci, lower = 0, upper = 1, any.missing = FALSE, len = 1)
   checkmate::assertNumeric(shiErr, lower = 0, any.missing = FALSE, len = 1)
@@ -102,35 +115,11 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
                                                            useColor = useColor,
                                                            iterPrintControl = .xtra$iterPrintControl)
 
-  .genRxControl <- FALSE
-  if (!is.null(.xtra$genRxControl)) {
-    .genRxControl <- .xtra$genRxControl
-  }
-  if (is.null(rxControl)) {
-    if (!is.null(sigdig)) {
-      rxControl <- rxode2::rxControl(sigdig = sigdig)
-    } else {
-      rxControl <- rxode2::rxControl(atol = 1e-4, rtol = 1e-4)
-    }
-    .genRxControl <- TRUE
-  } else if (inherits(rxControl, "rxControl")) {
-  } else if (is.list(rxControl)) {
-    rxControl <- do.call(rxode2::rxControl, rxControl)
-  } else {
-    stop("solving options 'rxControl' needs to be generated from 'rxode2::rxControl'",
-         call. = FALSE)
-  }
+  .rx <- .babelmixr2RxControlFromSigdig(rxControl, sigdig, .xtra$genRxControl)
+  rxControl <- .rx$rxControl
+  .genRxControl <- .rx$genRxControl
 
-  if (!is.null(sigdig)) {
-    checkmate::assertNumeric(sigdig, lower = 1, finite = TRUE, any.missing = TRUE, len = 1)
-    if (is.null(sigdigTable)) {
-      sigdigTable <- round(sigdig)
-    }
-  }
-  if (is.null(sigdigTable)) {
-    sigdigTable <- 3
-  }
-  checkmate::assertIntegerish(sigdigTable, lower = 1, len = 1, any.missing = FALSE)
+  sigdigTable <- .babelmixr2SigdigTable(sigdigTable, sigdig)
 
   .ret <- list(
     optimizer = optimizer,
@@ -145,6 +134,7 @@ nlmixr2NlmerControl <- function(optimizer = "bobyqa",
     stickyRecalcN = as.integer(stickyRecalcN),
     maxOdeRecalc = as.integer(maxOdeRecalc),
     odeRecalcFactor = odeRecalcFactor,
+    indTolRelax = indTolRelax,
     iterPrintControl = .iterPrintControl,
     optExpression = optExpression,
     literalFix = literalFix,
@@ -231,7 +221,8 @@ getValidNlmixrCtl.nlmer <- function(control) {
     compress = .nlmerControl$compress,
     ci = .nlmerControl$ci,
     sigdigTable = .nlmerControl$sigdigTable,
-    indTolRelax = TRUE
+    indTolRelax = .nlmerControl$indTolRelax,
+    eventSens = .nlmerControl$eventSens
   )
   if (assign) env$control <- .foceiControl
   .foceiControl

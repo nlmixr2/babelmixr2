@@ -42,6 +42,13 @@
 #' @param nb.simpred number of simulations for predictions (default `100`)
 #' @param ipar.lmcmc parameter for L-MCMC (default `50`)
 #' @param ipar.rmcmc parameter for R-MCMC (default `0.05`)
+#' @param indTolRelax when `TRUE` (default) a subject whose ODE solve had to
+#'   be retried with a relaxed tolerance keeps that relaxed tolerance for the
+#'   rest of the fit instead of resetting it every evaluation
+#' @param eventSens method used for the dosing-parameter (alag/F/rate/dur)
+#'   sensitivities when the final tables are built: `"jump"` routes them
+#'   through rxode2's analytic event jumps; `"fd"` falls back to Shi2021
+#'   finite differences.  See [nlmixr2est::foceiControl()].
 #'
 #' @return saemix control structure
 #' @export
@@ -90,6 +97,8 @@ saemixControl <- function(map = TRUE,
                           stickyRecalcN = 4,
                           maxOdeRecalc = 5,
                           odeRecalcFactor = 10^(0.5),
+                          indTolRelax = TRUE,
+                          eventSens = c("jump", "fd"),
 
                           useColor = NULL,
                           printNcol = NULL,
@@ -147,6 +156,8 @@ saemixControl <- function(map = TRUE,
   checkmate::assertLogical(compress, any.missing = FALSE, len = 1)
   checkmate::assertLogical(calcTables, len = 1, any.missing = FALSE)
   checkmate::assertNumeric(ci, any.missing = FALSE, len = 1, lower = 0, upper = 1)
+  checkmate::assertLogical(indTolRelax, len = 1, any.missing = FALSE)
+  eventSens <- match.arg(eventSens)
 
   .xtra <- list(...)
   .bad <- names(.xtra)
@@ -165,23 +176,9 @@ saemixControl <- function(map = TRUE,
                                                            useColor = useColor,
                                                            iterPrintControl = .xtra$iterPrintControl)
 
-  .genRxControl <- FALSE
-  if (!is.null(.xtra$genRxControl)) {
-    .genRxControl <- .xtra$genRxControl
-  }
-  if (is.null(rxControl)) {
-    if (!is.null(sigdig)) {
-      rxControl <- rxode2::rxControl(sigdig = sigdig)
-    } else {
-      rxControl <- rxode2::rxControl(atol = 1e-4, rtol = 1e-4)
-    }
-    .genRxControl <- TRUE
-  } else if (inherits(rxControl, "rxControl")) {
-  } else if (is.list(rxControl)) {
-    rxControl <- do.call(rxode2::rxControl, rxControl)
-  } else {
-    stop("solving options 'rxControl' needs to be generated from 'rxode2::rxControl'", call. = FALSE)
-  }
+  .rx <- .babelmixr2RxControlFromSigdig(rxControl, sigdig, .xtra$genRxControl)
+  rxControl <- .rx$rxControl
+  .genRxControl <- .rx$genRxControl
 
   if (checkmate::testIntegerish(addProp, lower = 1, upper = 2, len = 1)) {
     addProp <- c("combined2", "combined1")[addProp]
@@ -189,10 +186,7 @@ saemixControl <- function(map = TRUE,
     addProp <- match.arg(addProp)
   }
 
-  if (is.null(sigdigTable)) {
-    sigdigTable <- 3
-  }
-  checkmate::assertIntegerish(sigdigTable, lower = 1, len = 1, any.missing = FALSE)
+  sigdigTable <- .babelmixr2SigdigTable(sigdigTable, sigdig)
 
   if (checkmate::testIntegerish(scaleType, len = 1, lower = 1, upper = 5, any.missing = FALSE)) {
     scaleType <- as.integer(scaleType)
@@ -252,6 +246,8 @@ saemixControl <- function(map = TRUE,
                stickyRecalcN = as.integer(stickyRecalcN),
                maxOdeRecalc = as.integer(maxOdeRecalc),
                odeRecalcFactor = odeRecalcFactor,
+               indTolRelax = indTolRelax,
+               eventSens = eventSens,
                iterPrintControl = .iterPrintControl,
                normType = normType,
                scaleType = scaleType,
