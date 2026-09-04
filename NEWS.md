@@ -1,5 +1,30 @@
 # babelmixr2 0.1.11.9000
 
+* `est="nonmem"` now translates a declared non-Gaussian random effect
+  distribution (`lotri`'s `dist()` line).  By the time babelmixr2 sees
+  such a model nlmixr2est has already expanded it into a latent standard
+  normal with a fixed unit `$OMEGA`, the copula correlation in ordinary
+  thetas, and a `phiU()` + inverse CDF line -- so with `phiU()` and
+  `tanh()` added to the translation table (`PHI(x)+DEL` and `DTANH()`,
+  NONMEM's own idioms) every family whose quantile function is elementary
+  comes out as ordinary NONMEM arithmetic, with nothing special to write.
+
+  A normal-based family (`dnorm`, `stdNormal`, `dlnorm`) collapses onto
+  the latent random effect before it gets here, since `qnorm(phiU(z))` is
+  `z` -- which is what lets those translate to software that has a normal
+  CDF but no inverse for it.
+
+  The three families whose quantile function is not elementary -- gamma,
+  beta and Student t -- are refused with a message naming the routine
+  NONMEM would need.  NONMEM reaches those through a `$ABBR FUNCTION
+  GAMMACDFINV(VQ,10)` argument vector filled slot by slot, which is a
+  statement protocol rather than an expression and so cannot come out of
+  the expression translator; babelmixr2 does not write it yet.
+
+* `est="monolix"`, `"saemix"`, `"nlmer"` and `"poped"` refuse a declared
+  non-Gaussian random effect distribution rather than quietly translating
+  a different model.
+
 * The PopED model translation no longer drops the `if ()` condition that
   guards an adaptive dosing call (`evid_()`, `bolus()`, `infuse()`,
   `infuseDur()`, `reset()`, ...).  The branch pruner used to flatten the

@@ -311,6 +311,12 @@ nlmixr2Est.nonmem <- function(env, ...) {
   .nonmemFamilyFit(env, ...)
 }
 attr(nlmixr2Est.nonmem, "covPresent") <- TRUE
+# a declared non-normal random effect arrives here already expanded by
+# nlmixr2est's pre-processing hook, and phiU()/tanh() translate to
+# PHI()+DEL and DTANH() -- so every family with an elementary quantile
+# function becomes ordinary NONMEM arithmetic.  The three that are not
+# elementary (gamma, beta, t) are refused by .nonmemAssertEtaDist()
+attr(nlmixr2Est.nonmem, "etaDist") <- TRUE
 attr(nlmixr2Est.nonmem, "type") <- "External"
 attr(nlmixr2Est.nonmem, "description") <- "NONMEM (external software)"
 attr(nlmixr2Est.nonmem, "mu") <- function(control) {

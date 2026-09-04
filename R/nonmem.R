@@ -79,6 +79,11 @@ rex::register_shortcuts("babelmixr2")
   "atan"=c("DATAN(", ")"),
   "sinh"=c("DSINH(", ")"),
   "cosh"=c("DCOSH(", ")"),
+  "tanh"=c("DTANH(", ")"),
+  ## phiU() is phi() bounded away from 0 and 1 so an inverse CDF cannot
+  ## return an infinity; NONMEM's own idiom for that is `PHI(x)+DEL`
+  ## (gamma_indpar.pdf), which is what this emits
+  "phiU"=c("(PHI(", ")+1.0E-15)"),
   "atan2"=c("DATAN2(", ")"),
   "floor"=c("FLOOR(", ")"),
   "ceil"=c("CEILING(", ")"),

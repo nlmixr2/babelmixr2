@@ -38,6 +38,11 @@ rxUiGetNonememModelEnv$rxS <- NULL
 rxUiGet.nonmemModel <- function(x, ...) {
   .ui <- x[[1]]
   rxUiGetNonememModelEnv$rxS <- .ui$loadPrune
+  ## a declared random effect distribution NONMEM cannot be given as an
+  ## expression is refused here, before any of the stream is written, so
+  ## the message names what the user declared rather than an internal
+  ## function they never wrote
+  .nonmemAssertEtaDist(.ui)
   .nonmemResetUi(.ui)
   .ret <- paste0(
     "$PROBLEM ", .ui$nonmemNodelName, " translated from babelmixr2\n; comments show mu referenced model in ui$getSplitMuModel\n\n",
