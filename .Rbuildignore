@@ -14,3 +14,4 @@
 ^vignettes/articles$
 ^_pkgdown\.yml$
 ^\.vexp$
+^src/.*[.]d$
