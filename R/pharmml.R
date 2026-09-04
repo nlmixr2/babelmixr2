@@ -112,6 +112,11 @@
   asinh = "arcsinh", acosh = "arccosh", atanh = "arctanh"
 )
 
+# R logical binary operators -> math:LogicBinop/@op
+.rxPmlLogicBinop <- c("<" = "lt", "<=" = "leq", ">" = "gt", ">=" = "geq",
+                      "==" = "eq", "!=" = "neq", "&" = "and", "&&" = "and",
+                      "|" = "or", "||" = "or")
+
 # One-argument R functions with no direct Uniop; rewritten as an equivalent
 # expression before translation.
 .rxPmlRewrite <- list(
@@ -135,6 +140,30 @@
 
   # ( a ) is transparent
   if (.fn == "(") return(.rxToPharmml(x[[2]], ui, indent))
+
+  if (.fn == "!" && .nargs == 1L) {
+    return(.pmlNode("math:LogicUniop", attrs = c(op = "not"),
+                    children = .rxToPharmml(x[[2]], ui),
+                    indent = indent))
+  }
+
+  if (.fn %in% names(.rxPmlLogicBinop) && .nargs == 2L) {
+    return(.pmlNode("math:LogicBinop",
+                    attrs = c(op = .rxPmlLogicBinop[[.fn]]),
+                    children = c(.rxToPharmml(x[[2]], ui),
+                                 .rxToPharmml(x[[3]], ui)),
+                    indent = indent))
+  }
+
+  if (.fn == "ifelse" && .nargs == 3L) {
+    return(.rxToPharmmlPiecewise(x[[2]], x[[3]], x[[4]], ui, indent))
+  }
+
+  if (.fn == "if") {
+    return(.rxToPharmmlPiecewise(x[[2]], x[[3]],
+                                 if (length(x) > 3L) x[[4]] else NULL,
+                                 ui, indent))
+  }
 
   # unary minus/plus
   if (.fn %in% c("-", "+") && .nargs == 1L) {
@@ -172,4 +201,33 @@
   }
 
   stop("cannot translate '", deparse1(x), "' to PharmML", call. = FALSE)
+}
+
+#' Emit a math:Piece
+#'
+#' @param value already-emitted value expression
+#' @param cond already-emitted condition expression, or NULL for Otherwise
+#' @return character(1)
+#' @noRd
+.rxToPharmmlPiece <- function(value, cond = NULL) {
+  .condChild <- if (is.null(cond)) .pmlNode("math:Otherwise") else cond
+  .pmlNode("math:Piece",
+           children = c(value, .pmlNode("math:Condition", children = .condChild)))
+}
+
+#' Translate an if/else or ifelse() into a math:Piecewise
+#'
+#' @param test unevaluated condition
+#' @param yes unevaluated true branch
+#' @param no unevaluated false branch, or NULL when absent
+#' @param ui rxode2 UI or NULL
+#' @param indent indent depth
+#' @return character(1)
+#' @noRd
+.rxToPharmmlPiecewise <- function(test, yes, no = NULL, ui = NULL, indent = 0L) {
+  .pieces <- .rxToPharmmlPiece(.rxToPharmml(yes, ui), .rxToPharmml(test, ui))
+  if (!is.null(no)) {
+    .pieces <- c(.pieces, .rxToPharmmlPiece(.rxToPharmml(no, ui)))
+  }
+  .pmlNode("math:Piecewise", children = .pieces, indent = indent)
 }

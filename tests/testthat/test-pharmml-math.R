@@ -111,3 +111,40 @@ test_that(".rxToPharmml nests correctly and preserves precedence", {
   expect_match(.x, "^<math:Binop op=\"minus\">")
   expect_equal(lengths(regmatches(.x, gregexpr("math:Binop", .x))), 8L)
 })
+
+test_that(".rxToPharmml maps logical operators", {
+  expect_match(.rxToPharmml(quote(a < b)),  'LogicBinop op="lt"')
+  expect_match(.rxToPharmml(quote(a <= b)), 'LogicBinop op="leq"')
+  expect_match(.rxToPharmml(quote(a > b)),  'LogicBinop op="gt"')
+  expect_match(.rxToPharmml(quote(a >= b)), 'LogicBinop op="geq"')
+  expect_match(.rxToPharmml(quote(a == b)), 'LogicBinop op="eq"')
+  expect_match(.rxToPharmml(quote(a != b)), 'LogicBinop op="neq"')
+  expect_match(.rxToPharmml(quote(a & b)),  'LogicBinop op="and"')
+  expect_match(.rxToPharmml(quote(a | b)),  'LogicBinop op="or"')
+  expect_match(.rxToPharmml(quote(!a)),     'LogicUniop op="not"')
+})
+
+test_that(".rxToPharmml maps ifelse() to a two-piece Piecewise", {
+  .x <- .rxToPharmml(quote(ifelse(wt > 70, a, b)))
+  expect_match(.x, "^<math:Piecewise>")
+  expect_equal(lengths(regmatches(.x, gregexpr("<math:Piece>", .x))), 2L)
+  expect_match(.x, "<math:Otherwise/>")
+  expect_match(.x, 'LogicBinop op="gt"')
+})
+
+test_that(".rxToPharmml maps a bare if/else to Piecewise", {
+  .x <- .rxToPharmml(quote(if (wt > 70) a else b))
+  expect_equal(lengths(regmatches(.x, gregexpr("<math:Piece>", .x))), 2L)
+  expect_match(.x, "<math:Otherwise/>")
+})
+
+test_that(".rxToPharmml maps an if with no else to a one-piece Piecewise", {
+  .x <- .rxToPharmml(quote(if (wt > 70) a))
+  expect_equal(lengths(regmatches(.x, gregexpr("<math:Piece>", .x))), 1L)
+  expect_false(grepl("Otherwise", .x, fixed = TRUE))
+})
+
+test_that(".rxToPharmml handles nested ifelse()", {
+  .x <- .rxToPharmml(quote(ifelse(a > 1, x, ifelse(b > 2, y, z))))
+  expect_equal(lengths(regmatches(.x, gregexpr("<math:Piecewise>", .x))), 2L)
+})
