@@ -114,3 +114,60 @@ pharmmlValidate <- function(x, version = "0.9", error = TRUE) {
   }
   .ret
 }
+
+#' Escape a string for use in an XML attribute value
+#'
+#' @param x character vector
+#' @return escaped character vector
+#' @noRd
+.pmlEscapeAttr <- function(x) {
+  x <- gsub("&", "&amp;", x, fixed = TRUE)
+  x <- gsub("<", "&lt;", x, fixed = TRUE)
+  x <- gsub(">", "&gt;", x, fixed = TRUE)
+  gsub('"', "&quot;", x, fixed = TRUE)
+}
+
+#' Indent prefix for a PharmML node
+#'
+#' @param n indent depth
+#' @return character(1) of spaces
+#' @noRd
+.pmlIndent <- function(n) {
+  strrep("    ", n)
+}
+
+#' Emit a PharmML XML element
+#'
+#' @param name Element name, including the namespace prefix
+#' @param attrs Named character vector of attributes, or `NULL`
+#' @param children Character vector of already-emitted child nodes, or `NULL`
+#'   for an empty element
+#' @param indent Indent depth for this element
+#' @return character(1)
+#' @noRd
+.pmlNode <- function(name, attrs = NULL, children = NULL, indent = 0L) {
+  .pad <- .pmlIndent(indent)
+  .a <- ""
+  if (length(attrs) > 0L) {
+    .a <- paste0(" ", paste0(names(attrs), '="', .pmlEscapeAttr(attrs), '"',
+                             collapse = " "))
+  }
+  if (length(children) == 0L) {
+    return(paste0(.pad, "<", name, .a, "/>"))
+  }
+  paste0(.pad, "<", name, .a, ">\n",
+         paste(children, collapse = "\n"), "\n",
+         .pad, "</", name, ">")
+}
+
+#' Emit a PharmML element with a text value
+#'
+#' @param name Element name, including the namespace prefix
+#' @param value Scalar value
+#' @param indent Indent depth
+#' @return character(1)
+#' @noRd
+.pmlText <- function(name, value, indent = 0L) {
+  paste0(.pmlIndent(indent), "<", name, ">",
+         .pmlEscapeAttr(as.character(value)), "</", name, ">")
+}
