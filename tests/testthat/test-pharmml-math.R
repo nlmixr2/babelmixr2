@@ -191,3 +191,44 @@ test_that("the math walker emits schema-valid PharmML", {
                 info = paste("failed for:", deparse1(.e)))
   }
 })
+
+# Table-completeness: every entry in every operator table must translate and
+# produce schema-valid output.  Iterating the tables (rather than listing cases
+# by hand) means adding a table entry without a test is impossible.
+test_that("every .rxPmlUniop entry translates to its declared operator", {
+  for (.fn in names(.rxPmlUniop)) {
+    .call <- if (.fn == "-") quote(-a) else as.call(list(as.name(.fn), quote(a)))
+    .x <- .rxToPharmml(.call)
+    expect_match(.x, paste0('math:Uniop op="', .rxPmlUniop[[.fn]], '"'),
+                 fixed = FALSE, info = .fn)
+    expect_true(pharmmlValidate(.pharmmlWrapMath(.x)), info = .fn)
+  }
+})
+
+test_that("every .rxPmlBinop and .rxPmlBinopF entry translates", {
+  for (.fn in names(.rxPmlBinop)) {
+    .x <- .rxToPharmml(as.call(list(as.name(.fn), quote(a), quote(b))))
+    expect_match(.x, paste0('math:Binop op="', .rxPmlBinop[[.fn]], '"'), info = .fn)
+    expect_true(pharmmlValidate(.pharmmlWrapMath(.x)), info = .fn)
+  }
+  for (.fn in names(.rxPmlBinopF)) {
+    .x <- .rxToPharmml(as.call(list(as.name(.fn), quote(a), quote(b))))
+    expect_match(.x, paste0('math:Binop op="', .rxPmlBinopF[[.fn]], '"'), info = .fn)
+    expect_true(pharmmlValidate(.pharmmlWrapMath(.x)), info = .fn)
+  }
+})
+
+test_that("every .rxPmlLogicBinop entry translates", {
+  for (.fn in names(.rxPmlLogicBinop)) {
+    .x <- .rxToPharmml(as.call(list(as.name(.fn), quote(a), quote(b))))
+    expect_match(.x, paste0('math:LogicBinop op="', .rxPmlLogicBinop[[.fn]], '"'),
+                 info = .fn)
+  }
+})
+
+test_that("every .rxPmlRewrite entry translates and validates", {
+  for (.fn in names(.rxPmlRewrite)) {
+    .x <- .rxToPharmml(as.call(list(as.name(.fn), quote(a))))
+    expect_true(pharmmlValidate(.pharmmlWrapMath(.x)), info = .fn)
+  }
+})
