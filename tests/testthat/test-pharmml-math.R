@@ -49,3 +49,65 @@ test_that(".rxToPharmml rejects constructs PharmML cannot express", {
   expect_error(.rxToPharmml(quote(NA)), "NA")
   expect_error(.rxToPharmml(quote(digamma(x))), "digamma")
 })
+
+test_that(".rxToPharmml handles binary operators", {
+  expect_equal(
+    .rxToPharmml(quote(a + b)),
+    paste0("<math:Binop op=\"plus\">\n",
+           "<ct:SymbRef symbIdRef=\"a\"/>\n",
+           "<ct:SymbRef symbIdRef=\"b\"/>\n",
+           "</math:Binop>"))
+
+  expect_match(.rxToPharmml(quote(a * b)), 'op="times"')
+  expect_match(.rxToPharmml(quote(a / b)), 'op="divide"')
+  expect_match(.rxToPharmml(quote(a - b)), 'op="minus"')
+  expect_match(.rxToPharmml(quote(a ^ b)), 'op="power"')
+})
+
+test_that(".rxToPharmml handles unary minus", {
+  expect_equal(
+    .rxToPharmml(quote(-a)),
+    paste0("<math:Uniop op=\"minus\">\n",
+           "<ct:SymbRef symbIdRef=\"a\"/>\n",
+           "</math:Uniop>"))
+})
+
+test_that(".rxToPharmml maps rxode2 functions onto native Uniop values", {
+  expect_match(.rxToPharmml(quote(exp(a))),   'Uniop op="exp"')
+  expect_match(.rxToPharmml(quote(log(a))),   'Uniop op="log"')
+  expect_match(.rxToPharmml(quote(sqrt(a))),  'Uniop op="sqrt"')
+  expect_match(.rxToPharmml(quote(log10(a))), 'Uniop op="log10"')
+  # PharmML has these natively -- unlike Monolix, no rewrite needed
+  expect_match(.rxToPharmml(quote(logit(a))),  'Uniop op="logit"')
+  expect_match(.rxToPharmml(quote(expit(a))),  'Uniop op="logistic"')
+  expect_match(.rxToPharmml(quote(probit(a))), 'Uniop op="probit"')
+  expect_match(.rxToPharmml(quote(pnorm(a))),  'Uniop op="normcdf"')
+  expect_match(.rxToPharmml(quote(lgamma(a))), 'Uniop op="gammaln"')
+})
+
+test_that(".rxToPharmml rewrites functions with no direct Uniop", {
+  .x <- .rxToPharmml(quote(log1p(a)))
+  expect_match(.x, 'Uniop op="log"')
+  expect_match(.x, 'Binop op="plus"')
+
+  .x <- .rxToPharmml(quote(expm1(a)))
+  expect_match(.x, 'Uniop op="exp"')
+  expect_match(.x, 'Binop op="minus"')
+})
+
+test_that(".rxToPharmml handles two-argument functions", {
+  expect_match(.rxToPharmml(quote(atan2(a, b))), 'Binop op="atan2"')
+  expect_match(.rxToPharmml(quote(max(a, b))),   'Binop op="max"')
+  expect_match(.rxToPharmml(quote(min(a, b))),   'Binop op="min"')
+})
+
+test_that(".rxToPharmml handles parenthesised expressions transparently", {
+  expect_equal(.rxToPharmml(quote((a))), '<ct:SymbRef symbIdRef="a"/>')
+  expect_match(.rxToPharmml(quote((a + b) * c)), 'op="times"')
+})
+
+test_that(".rxToPharmml nests correctly and preserves precedence", {
+  .x <- .rxToPharmml(quote(ka * depot - cl / v * central))
+  expect_match(.x, "^<math:Binop op=\"minus\">")
+  expect_equal(lengths(regmatches(.x, gregexpr("math:Binop", .x))), 8L)
+})

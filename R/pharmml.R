@@ -87,11 +87,89 @@
   NA_character_
 }
 
+# R binary operators -> math:Binop/@op
+.rxPmlBinop <- c("+" = "plus", "-" = "minus", "*" = "times",
+                 "/" = "divide", "^" = "power")
+
+# Two-argument R functions -> math:Binop/@op
+.rxPmlBinopF <- c(atan2 = "atan2", max = "max", min = "min")
+
+# One-argument R functions mapping straight onto math:Uniop/@op.  PharmML's
+# Uniop vocabulary is far richer than Monolix's, so most rxode2 functions land
+# here rather than needing a rewrite.
+.rxPmlUniop <- c(
+  "-" = "minus",
+  abs = "abs", exp = "exp", log = "log", log2 = "log2", log10 = "log10",
+  sqrt = "sqrt", floor = "floor", ceiling = "ceiling", sign = "sign",
+  factorial = "factorial", lfactorial = "factln",
+  gammafn = "gamma", lgammafn = "gammaln", lgamma = "gammaln",
+  loggamma = "gammaln",
+  logit = "logit", expit = "logistic", probit = "probit",
+  pnorm = "normcdf", phi = "normcdf",
+  sin = "sin", cos = "cos", tan = "tan",
+  asin = "arcsin", acos = "arccos", atan = "arctan",
+  sinh = "sinh", cosh = "cosh", tanh = "tanh",
+  asinh = "arcsinh", acosh = "arccosh", atanh = "arctanh"
+)
+
+# One-argument R functions with no direct Uniop; rewritten as an equivalent
+# expression before translation.
+.rxPmlRewrite <- list(
+  log1p = function(a) bquote(log(1 + .(a))),
+  expm1 = function(a) bquote(exp(.(a)) - 1),
+  cospi = function(a) bquote(cos(pi * .(a))),
+  sinpi = function(a) bquote(sin(pi * .(a))),
+  tanpi = function(a) bquote(tan(pi * .(a))),
+  log1pexp = function(a) bquote(log(1 + exp(.(a)))),
+  lgamma1p = function(a) bquote(lgamma(1 + .(a)))
+)
+
 #' @noRd
 .rxToPharmmlCall <- function(x, ui = NULL, indent = 0L) {
   .fn <- as.character(x[[1]])
+  .nargs <- length(x) - 1L
+
   if (.fn %in% .rxPmlBadF) {
     stop("'", .fn, "()' has no PharmML equivalent", call. = FALSE)
   }
+
+  # ( a ) is transparent
+  if (.fn == "(") return(.rxToPharmml(x[[2]], ui, indent))
+
+  # unary minus/plus
+  if (.fn %in% c("-", "+") && .nargs == 1L) {
+    if (.fn == "+") return(.rxToPharmml(x[[2]], ui, indent))
+    return(.pmlNode("math:Uniop", attrs = c(op = "minus"),
+                    children = .rxToPharmml(x[[2]], ui),
+                    indent = indent))
+  }
+
+  if (.fn %in% names(.rxPmlBinop) && .nargs == 2L) {
+    return(.pmlNode("math:Binop",
+                    attrs = c(op = .rxPmlBinop[[.fn]]),
+                    children = c(.rxToPharmml(x[[2]], ui),
+                                 .rxToPharmml(x[[3]], ui)),
+                    indent = indent))
+  }
+
+  if (.fn %in% names(.rxPmlBinopF) && .nargs == 2L) {
+    return(.pmlNode("math:Binop",
+                    attrs = c(op = .rxPmlBinopF[[.fn]]),
+                    children = c(.rxToPharmml(x[[2]], ui),
+                                 .rxToPharmml(x[[3]], ui)),
+                    indent = indent))
+  }
+
+  if (.fn %in% names(.rxPmlRewrite) && .nargs == 1L) {
+    return(.rxToPharmml(.rxPmlRewrite[[.fn]](x[[2]]), ui, indent))
+  }
+
+  if (.fn %in% names(.rxPmlUniop) && .nargs == 1L) {
+    return(.pmlNode("math:Uniop",
+                    attrs = c(op = .rxPmlUniop[[.fn]]),
+                    children = .rxToPharmml(x[[2]], ui),
+                    indent = indent))
+  }
+
   stop("cannot translate '", deparse1(x), "' to PharmML", call. = FALSE)
 }
