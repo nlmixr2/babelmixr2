@@ -52,7 +52,8 @@ Imports:
     monolix2rx (>= 0.0.3),
     methods,
     rex,
-    rxode2 (>= 4.1.0)
+    rxode2 (>= 4.1.0),
+    xml2
 Roxygen: list(markdown = TRUE)
 Config/testthat/edition: 3
 LinkingTo:
