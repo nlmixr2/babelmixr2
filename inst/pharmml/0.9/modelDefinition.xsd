@@ -1,0 +1,2628 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2013-2016 European Molecular Biology Laboratory, Heidelberg,
+Germany and Novo Nordisk A/S, Bagsvaerd, Denmark.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you
+may not use this file except in compliance with the License.  You may
+obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+     
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing
+permissions and limitations under the License.
+-->    
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:mdef="http://www.pharmml.org/pharmml/0.9/ModelDefinition"
+    xmlns:ct="http://www.pharmml.org/pharmml/0.9/CommonTypes"
+    xmlns:math="http://www.pharmml.org/pharmml/0.9/Maths" 
+    xmlns:distrib="http://www.uncertml.org/3.0"
+    xmlns:po="http://www.pharmml.org/probonto/ProbOnto"
+    targetNamespace="http://www.pharmml.org/pharmml/0.9/ModelDefinition" version="0.9"
+    elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <!--
+        Imports
+        -->
+    <xs:import namespace="http://www.pharmml.org/pharmml/0.9/CommonTypes"
+        schemaLocation="commonTypes.xsd"/>
+    
+    <xs:import namespace="http://www.pharmml.org/pharmml/0.9/Maths"
+        schemaLocation="maths.xsd"/>
+    
+    <xs:import namespace="http://www.uncertml.org/3.0" 
+        schemaLocation="uncertweb/UncertML30.xsd"/>
+
+    <xs:import namespace="http://www.pharmml.org/probonto/ProbOnto" 
+        schemaLocation="probOnto.xsd"/>
+
+    <!--
+        Simple Types
+        -->
+    <xs:simpleType name="MixtureModelTypeType">
+        <xs:annotation>
+            <xs:documentation>Defines mixture model type attribute.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="wsmm"/>
+            <xs:enumeration value="bsmmSupervised"/>
+            <xs:enumeration value="bsmmUnsupervised"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="AutoCorrModelType">
+        <xs:annotation>
+            <xs:documentation>Defines autocorrelation model type attribute.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="independent"/>
+            <xs:enumeration value="unstructured"/>
+            <xs:enumeration value="exchangeable"/>
+            <xs:enumeration value="oneDependent1"/>
+            <xs:enumeration value="oneDependent2"/>
+            <xs:enumeration value="twoDependent"/>
+            <xs:enumeration value="AR1"/>
+            <xs:enumeration value="exponential"/>
+            <xs:enumeration value="gaussian"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="ReferenceCategoryType">
+        <xs:annotation>
+            <xs:documentation>
+                The type defining the reference category in the covariate model.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:boolean"/>
+    </xs:simpleType>
+    <xs:simpleType name="ReferenceLevelType">
+        <xs:annotation>
+            <xs:documentation>
+                The type defining the reference level in the variability model.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:boolean"/>
+    </xs:simpleType>
+    <xs:simpleType name="VariabilityType">
+        <xs:annotation>
+            <xs:documentation>
+                The type defining the type of variability of the variability model.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:NCName">
+            <xs:enumeration value="residualError">
+                <xs:annotation>
+                    <xs:documentation>
+                        Residual error variability.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="parameterVariability">
+                <xs:annotation>
+                    <xs:documentation>
+                        Parameter variability - random effects.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="CovariateType">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="timeDependent">
+                <xs:annotation>
+                    <xs:documentation>Time-dependent covariate (regressor).</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="occasionDependent">
+                <xs:annotation>
+                    <xs:documentation>Occasion-dependent covariate.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="constant">
+                <xs:annotation>
+                    <xs:documentation>Constant covariate.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="latent">
+                <xs:annotation>
+                    <xs:documentation>Latent covariate.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <!--
+        Complex Types
+        -->
+    
+    <xs:complexType name="LHSTransformationType">
+        <xs:annotation>
+            <xs:documentation>
+                A type defining possible transformation functions that may be applied
+                on left hand side of a model.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="Parameter" type="ct:StandardAssignType"/>
+                </xs:sequence>
+                <xs:attribute name="type" use="required" type="mdef:transformationType"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>    
+    
+    <xs:complexType name="LRHSTransformationType">
+        <xs:annotation>
+            <xs:documentation>
+                A type defining possible transformation functions that may be applied
+                on both sides of a model.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="Parameter" type="ct:StandardAssignType"/>
+                    <xs:element minOccurs="0" ref="math:FunctionCall"/>
+                </xs:sequence>
+                <xs:attribute name="type" use="required" type="mdef:transformationType"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:simpleType name="transformationType">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="BoxCox">
+                <xs:annotation>
+                    <xs:documentation>BoxCox transformation with parameter lambda.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="BoxCox2">
+                <xs:annotation>
+                    <xs:documentation>BoxCox transformation with parameter lambda1, lambda2.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="identity">
+                <xs:annotation>
+                    <xs:documentation>Identity transformation.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="log">
+                <xs:annotation>
+                    <xs:documentation>Natural log transformation.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="logit">
+                <xs:annotation>
+                    <xs:documentation>Logit transformation.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="probit">
+                <xs:annotation>
+                    <xs:documentation>Probit transformation.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="userDefined">
+                <xs:annotation>
+                    <xs:documentation>User defined transformation.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+ 
+    <xs:complexType name="VariabilityLevelDefnType">
+        <xs:annotation>
+            <xs:documentation>Defines the variability level.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Name"/>
+                    <xs:element minOccurs="0" name="ParentLevel" type="mdef:ParentLevelType">
+                        <xs:annotation>
+                            <xs:documentation>Parent variability level.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="referenceLevel" type="mdef:ReferenceLevelType"/>
+                <xs:attributeGroup ref="ct:SymbolDefinitionGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="ParentLevelType">
+        <xs:annotation>
+            <xs:documentation>Parent level type.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>References the parent level.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="VariabilityDefnBlock">
+        <xs:annotation>
+            <xs:documentation>Type defining a block defining a variability model.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Name"/>
+                    <xs:element maxOccurs="unbounded" name="Level"
+                        type="mdef:VariabilityLevelDefnType">
+                        <xs:annotation>
+                            <xs:documentation>A variability level within the model.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attributeGroup ref="ct:BlockDefnGroup"/>
+                <xs:attribute name="type" type="mdef:VariabilityType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>Defines the type of the variability model.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CommonParameterModelType" abstract="true">
+        <xs:annotation>
+            <xs:documentation>Abstract type defining common parameter model.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Name"/>
+                    <xs:choice maxOccurs="unbounded">
+                        <xs:sequence>
+                            <xs:element minOccurs="0" ref="math:ConditionalStatement"/>
+                            <xs:element minOccurs="0" ref="mdef:CommonParameterElement"/>
+                            <xs:element minOccurs="0" ref="ct:AssignStatement"/>
+                            <xs:element minOccurs="0" name="Correlation"
+                                type="mdef:CorrelationType">
+                                <xs:annotation>
+                                    <xs:documentation>Defines the correlation between the random effects.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:choice>
+                </xs:sequence>
+                <xs:attributeGroup ref="ct:BlockDefnGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CommonObservationModelType" abstract="true">
+        <xs:annotation>
+            <xs:documentation>Abstract type defining common observation model.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Name"/>
+                    <xs:choice maxOccurs="unbounded">
+                        <xs:sequence>
+                            <xs:element maxOccurs="unbounded" minOccurs="0"
+                                ref="mdef:CommonParameterElement"/>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" ref="ct:AssignStatement"/>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" ref="math:ConditionalStatement"/>
+                            <xs:element  minOccurs="0" maxOccurs="unbounded" ref="ct:Variable">
+                                <xs:annotation>
+                                    <xs:documentation>A variable definition.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" name="Correlation"
+                                type="mdef:CorrelationType">
+                                <xs:annotation>
+                                    <xs:documentation>Defines the correlation between the random effects.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element minOccurs="0" ref="mdef:Autocorrelation">
+                                <xs:annotation>
+                                    <xs:documentation>Definition of the autocorrelation model.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element minOccurs="0" ref="mdef:MixtureModel">
+                                <xs:annotation>
+                                    <xs:documentation>Definition of a mixture of structural models.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="ParameterModelType">
+        <xs:annotation>
+            <xs:documentation>The type defining a parameter model.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="mdef:CommonParameterModelType"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CorrelatedRandomVarType">
+        <xs:annotation>
+            <xs:documentation>Type defining a correlated random variable.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the (transformed) random variable.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="CorrelationType">
+        <xs:annotation>
+            <xs:documentation>Type defining a correlation between random effects.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:VariabilityReference"/>
+                    <xs:choice>
+                        <xs:element name="Pairwise" type="mdef:PairwiseType"/>
+                        <xs:sequence>
+                            <xs:element minOccurs="0" ref="ct:Assign"/>
+                            <xs:element name="Matrix" type="ct:MatrixType"/>
+                        </xs:sequence>
+                    </xs:choice>                    
+                </xs:sequence>
+                <xs:attribute name="deviationMatrixType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Optional attribute if correlation/covariance is defined using a matrix.</xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:Name">
+                            <xs:enumeration value="CovMatrix"/>
+                            <xs:enumeration value="CorrMatrix"/>
+                            <xs:enumeration value="StDevCorrMatrix"/>
+                            <xs:enumeration value="Cholesky"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="AutocorrelationType">
+        <xs:annotation>
+            <xs:documentation>Autocorrelation type for use wth residual errors.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="TimeStepNumber" minOccurs="0" type="ct:StandardAssignType">
+                        <xs:annotation>
+                            <xs:documentation>The nmber of time steps.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="CorrParameters" minOccurs="0" type="ct:StandardAssignType">
+                        <xs:annotation>
+                            <xs:documentation>The parameters of the model.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="type" type="mdef:AutoCorrModelType" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="MixtureModelType">
+        <xs:annotation>
+            <xs:documentation>Mixture model type.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="StructuralModels" type="mdef:StructuralModelsType"/>
+                    <xs:choice>
+                        <xs:element name="Proportions" type="mdef:ProportionsType"/>
+                        <xs:element name="GroupLabel" type="ct:StandardAssignType"/>
+                        <xs:element name="GroupProbabilities" type="mdef:GroupProbabilitiesType"/>
+                    </xs:choice>
+                </xs:sequence>
+                <xs:attribute name="symbId" type="ct:SymbolIdType">
+                    <xs:annotation>
+                        <xs:documentation>The symbol id used to define the mixture model.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="type" use="optional" type="mdef:MixtureModelTypeType"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="StructuralModelsType">
+        <xs:annotation>
+            <xs:documentation>Structural models type.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="Model" maxOccurs="unbounded" type="ct:StandardAssignType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="ProportionsType">
+        <xs:annotation>
+            <xs:documentation>Proportions type.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="Proportion" maxOccurs="unbounded" type="ct:StandardAssignType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="GroupProbabilitiesType">
+        <xs:annotation>
+            <xs:documentation>Group probabilities type.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="GroupProbability" maxOccurs="unbounded" type="ct:StandardAssignType"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="PairwiseType">
+        <xs:annotation>
+            <xs:documentation>Type defining pairwise correlations.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="RandomVariable1" type="mdef:CorrelatedRandomVarType">
+                        <xs:annotation>
+                            <xs:documentation>The first correlated parameter.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="RandomVariable2" type="mdef:CorrelatedRandomVarType">
+                        <xs:annotation>
+                            <xs:documentation>The second correlated parameter.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:choice>
+                        <xs:element name="CorrelationCoefficient" type="ct:StandardAssignType">
+                            <xs:annotation>
+                                <xs:documentation>The correlation co-efficient variable.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="Covariance" type="ct:StandardAssignType">
+                            <xs:annotation>
+                                <xs:documentation>The covariance for both parameters.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="ContinuousObservationModelType">
+        <xs:annotation>
+            <xs:documentation>Type defining the observation model.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="mdef:CommonObservationModelType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" ref="mdef:ObservationError"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="DiscreteType">
+        <xs:annotation>
+            <xs:documentation>Type defining the observation model.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element  name="CategoricalData" type="mdef:CategoricalDataType">
+                        <xs:annotation>
+                            <xs:documentation>The nominal/ordered categorical data models.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element  name="CountData" type="mdef:CountDataType">
+                        <xs:annotation>
+                            <xs:documentation>The count data models.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element  name="TimeToEventData" type="mdef:TimeToEventDataType">
+                        <xs:annotation>
+                            <xs:documentation>The time-to-event data models.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="CommonDiscreteVariableType">
+        <xs:annotation>
+            <xs:documentation>Type defining the common state/category variables in discrete data models.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attribute name="symbId" type="ct:SymbolIdType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The symbol id for this parameter.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="DependanceType">
+        <xs:annotation>
+            <xs:documentation>Type defining the discrete/continuous Markov dependency.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attribute name="type" type="ct:DependanceAttributeType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>Dependancy attribute type.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="CommonDiscreteStateType">
+        <xs:annotation>
+            <xs:documentation>Type defining a discrete state: current, previous and a general condition.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="math:LogicBinop"/>
+                    <xs:element ref="math:LogicUniop"/>            
+                </xs:choice>
+                <xs:attribute name="MarkovOrder" type="ct:MarkovOrderType"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="ProbabilityType">
+        <xs:annotation>
+            <xs:documentation>Type defining the probability definition.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:choice minOccurs="0">
+                        <xs:element ref="math:LogicBinop"/>
+                        <xs:element ref="math:LogicUniop"/>
+                    </xs:choice>
+                    <xs:element name="CurrentState" minOccurs="0" type="mdef:CommonDiscreteStateType">
+                        <xs:annotation>
+                            <xs:documentation>Definition of the current state.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="PreviousState" minOccurs="0" maxOccurs="unbounded" type="mdef:CommonDiscreteStateType">
+                        <xs:annotation>
+                            <xs:documentation>Definition of the previous state.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Condition" minOccurs="0" maxOccurs="unbounded" type="mdef:CommonDiscreteStateType">
+                        <xs:annotation>
+                            <xs:documentation>Definition of a general condition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="symbId" type="ct:SymbolIdType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>The symbol id for the probability.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="linkFunction" type="ct:LinkFunctionType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Type of the link function applied to a probability.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="ProbabilityAssignmentType">
+        <xs:annotation>
+            <xs:documentation>Type defining probability assignment element.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:choice>
+                        <xs:element ref="math:LogicBinop"/>
+                        <xs:element name="Probability" minOccurs="0" maxOccurs="unbounded" type="mdef:ProbabilityType">
+                            <xs:annotation>
+                                <xs:documentation>Probability definition for categories/conditions etc.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="TransitionRate" minOccurs="0" maxOccurs="unbounded" type="mdef:TransitionRateType">
+                            <xs:annotation>
+                                <xs:documentation>Transition rate definition for continuous markov models.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                    <xs:element minOccurs="0" ref="ct:Assign"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="TransitionRateType">
+        <xs:annotation>
+            <xs:documentation>Type defining the transition rate for continuous Markov models.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="CurrentState" minOccurs="0" type="mdef:CommonDiscreteStateType">
+                        <xs:annotation>
+                            <xs:documentation>Definition of the current state.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="PreviousState" minOccurs="0" maxOccurs="unbounded" type="mdef:CommonDiscreteStateType">
+                        <xs:annotation>
+                            <xs:documentation>Definition of the previous state.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Condition" minOccurs="0" maxOccurs="unbounded" type="mdef:CommonDiscreteStateType">
+                        <xs:annotation>
+                            <xs:documentation>Definition of a general condition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="CategoricalPMFType">
+        <xs:annotation>
+            <xs:documentation>
+                Type specifies a PMF for categorical data models.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element name="Distribution" type="mdef:DistributionType"/>
+                </xs:choice>
+                <xs:attribute name="transform" type="ct:PMFtransformType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Type of the link function applied to the PMF.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="CountPMFType">
+        <xs:annotation>
+            <xs:documentation>
+                Type specifies a PMF for count data models.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" ref="math:LogicBinop"/>
+                        <xs:element minOccurs="0" ref="math:LogicUniop"/>
+                        <xs:element name="CurrentState" minOccurs="0" type="mdef:CommonDiscreteStateType">
+                            <xs:annotation>
+                                <xs:documentation>Definition of the current state.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="PreviousState" minOccurs="0" maxOccurs="unbounded" type="mdef:CommonDiscreteStateType">
+                            <xs:annotation>
+                                <xs:documentation>Definition of the previous state.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="Condition" minOccurs="0" maxOccurs="unbounded" type="mdef:CommonDiscreteStateType">
+                            <xs:annotation>
+                                <xs:documentation>Definition of a general condition.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:choice>
+                        <xs:choice>
+                            <xs:element name="Distribution" type="mdef:DistributionType"/>
+                        </xs:choice>
+                        <xs:element ref="ct:Assign"/>
+                    </xs:choice>
+                </xs:sequence>
+                <xs:attribute name="transform" type="ct:PMFtransformType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Type of the link function applied to the PMF.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="TTEFunctionType">
+        <xs:annotation>
+            <xs:documentation>
+                Type specifies functions for TTE data models.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element name="Distribution" type="mdef:DistributionType"/>
+                    <xs:element ref="ct:Assign"/>
+                </xs:choice>
+                <xs:attribute name="symbId" type="ct:SymbolIdType" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="CensoringType">
+        <xs:annotation>
+            <xs:documentation>
+                Type for censoring for TTE data models.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="IntervalLength" minOccurs="0" maxOccurs="unbounded" type="ct:StandardAssignType">
+                        <xs:annotation>
+                            <xs:documentation>Censoring interval definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="LeftCensoringTime" minOccurs="0" maxOccurs="unbounded" type="ct:StandardAssignType">
+                        <xs:annotation>
+                            <xs:documentation>Left censoring time definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="RightCensoringTime" minOccurs="0" maxOccurs="unbounded" type="ct:StandardAssignType">
+                        <xs:annotation>
+                            <xs:documentation>Left censoring time definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="censoringType" use="optional">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:Name">
+                            <xs:enumeration value="intervalCensored"/>
+                            <xs:enumeration value="rightCensored"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+        
+    <xs:complexType name="CategoricalDataType">
+        <xs:annotation>
+            <xs:documentation>Type defining nominal and ordered categorical data models.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="mdef:CommonObservationModelType">
+                <xs:sequence>
+                    <xs:element name="ListOfCategories" type="mdef:ListOfCategoriesType">
+                        <xs:annotation>
+                            <xs:documentation>List of categories in the data set.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="CategoryVariable" maxOccurs="unbounded" type="mdef:CommonDiscreteVariableType">
+                        <xs:annotation>
+                            <xs:documentation>Name of the category variable - usually 'y' in MLXTRAN and 'DV' in NMTRAN</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="InitialStateVariable" minOccurs="0" maxOccurs="unbounded" type="mdef:CommonDiscreteVariableType">
+                        <xs:annotation>
+                            <xs:documentation>Name of the initial state - usually 'y_1' or 'yinit' in MLXTRAN.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="PreviousStateVariable" minOccurs="0" maxOccurs="unbounded" type="mdef:CommonDiscreteVariableType">
+                        <xs:annotation>
+                            <xs:documentation>Name of the previous state - usually 'yp' in MLXTRAN.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Dependance" minOccurs="0" type="mdef:DependanceType">
+                        <xs:annotation>
+                            <xs:documentation>Type of dependency, discrete or continuous Markov.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="TransitionMatrix" minOccurs="0" type="mdef:TransitionMatrixType"/>
+                    <xs:element name="ProbabilityAssignment" minOccurs="0" maxOccurs="unbounded" type="mdef:ProbabilityAssignmentType">
+                        <xs:annotation>
+                            <xs:documentation>Probability assignment element - provides space for basic probability definitions
+                                and more complex probability expressions, such as logit, reference category models etc.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="PMF" minOccurs="0" maxOccurs="unbounded" type="mdef:CategoricalPMFType">
+                        <xs:annotation>
+                            <xs:documentation>UncertML defined PMF for categories - it can be one of the discrete uni/multi-variate
+                            or categorical uni/multi-variate PMFs as provided by UncertML.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="ordered" type="ct:OrderedAttributeType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Specifies whether the following model deals with nominal or ordered data.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="CountDataType">
+        <xs:annotation>
+            <xs:documentation>Type defining count data models.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="mdef:CommonObservationModelType">
+                <xs:sequence>
+                    <xs:element name="CountVariable" maxOccurs="unbounded" type="mdef:CommonDiscreteVariableType">
+                        <xs:annotation>
+                            <xs:documentation>Name of the count variable, usually Y.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="NumberCounts" minOccurs="0" maxOccurs="unbounded" type="mdef:CommonDiscreteVariableType">
+                        <xs:annotation>
+                            <xs:documentation>Symbol for the count number - usually 'k' in MLXTRAN and 'DV' in NMTRAN</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="PreviousCountVariable" minOccurs="0" maxOccurs="unbounded" type="mdef:CommonDiscreteVariableType">
+                        <xs:annotation>
+                            <xs:documentation>Name of the previous count variable - used in models with Markov dependency.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="InitialCountVariable" minOccurs="0" maxOccurs="unbounded" type="mdef:CommonDiscreteVariableType">
+                        <xs:annotation>
+                            <xs:documentation>Name of the initial count variable - used in models with Markov dependency.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Dependance" minOccurs="0" type="mdef:DependanceType">
+                        <xs:annotation>
+                            <xs:documentation>Type of dependency, discrete or continuous Markov.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element maxOccurs="unbounded" ref="mdef:PMF">
+                        <xs:annotation>
+                            <xs:documentation>PMF declaration.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="TimeToEventDataType">
+        <xs:annotation>
+            <xs:documentation>Type defining TTE data models.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="mdef:CommonObservationModelType">
+                <xs:sequence>
+                    <xs:element name="EventVariable" type="mdef:CommonDiscreteVariableType">
+                        <xs:annotation>
+                            <xs:documentation>Name of the event variable.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="HazardFunction" minOccurs="0" maxOccurs="unbounded" type="mdef:TTEFunctionType">
+                        <xs:annotation>
+                            <xs:documentation>Hazard function definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="SurvivalFunction" minOccurs="0" maxOccurs="unbounded" type="mdef:TTEFunctionType">
+                        <xs:annotation>
+                            <xs:documentation>Survival function definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Censoring" minOccurs="0" maxOccurs="unbounded" type="mdef:CensoringType">
+                        <xs:annotation>
+                            <xs:documentation>Censoring definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="MaximumNumberEvents" minOccurs="0" maxOccurs="unbounded" type="ct:StandardAssignType">
+                        <xs:annotation>
+                            <xs:documentation>Maximum number of events definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="TransitionMatrixType">
+        <xs:annotation>
+            <xs:documentation>Transition matrix type</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:Matrix"/>
+                </xs:sequence>
+                <xs:attribute name="type" type="ct:TransitionMatrixAttrType"/>
+                <xs:attribute name="symbId" type="ct:SymbolIdType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>The symbol id for the matrix.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="DiscreteDataParameterType">
+        <xs:annotation>
+            <xs:documentation>Type defining the parameters in count data models.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:Assign"/>                    
+                </xs:sequence>
+                <xs:attribute name="symbId" type="ct:SymbolIdType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The symbol id for this parameter.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="ListOfCategoriesType">
+        <xs:annotation>
+            <xs:documentation>Type definig the list of categories. Categories can be assinged automatically by a tool.
+                The mapping between their names and symbols used in a dataset happens in the ModellingSteps/DataSet. 
+                This keeps categories definition uncoupled from the data</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="Category" maxOccurs="unbounded" type="mdef:CommonDiscreteVariableType"/>            
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="ObservationModelType">
+        <xs:annotation>
+            <xs:documentation>Type defining the observation model.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element name="ContinuousData" type="mdef:ContinuousObservationModelType">
+                        <xs:annotation>
+                            <xs:documentation>The continuous data models.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element  name="Discrete" type="mdef:DiscreteType">
+                        <xs:annotation>
+                            <xs:documentation>The discrete data models.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+                <xs:attributeGroup ref="ct:BlockDefnGroup"/> 
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="ObservationErrorType" abstract="true">
+        <xs:annotation>
+            <xs:documentation>Base observation error type. This defines the name of the variable
+            assigned with the result of the residual error.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Symbol"/>
+                </xs:sequence>
+                <xs:attribute name="symbId" type="ct:SymbolIdType">
+                    <xs:annotation>
+                        <xs:documentation>The symbol id for this observation model.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="symbIdRef" type="ct:SymbolIdType">
+                    <xs:annotation>
+                        <xs:documentation>The symbol reference for this observation - used for assignments of previously declared variables.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <!-- u(y) = u(f) + g*eps -->
+    <xs:complexType name="StructuredObsError">
+        <xs:annotation>
+            <xs:documentation>Structured (e.g. Gaussian) residual error definition. Definition is of the form: u(y) = u(f) + g * eps.
+            The type dependen on the distribution of 'eps' - can be Normal or Student-T distribtion.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="mdef:ObservationErrorType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="Transformation"
+                        type="mdef:LRHSTransformationType">
+                        <xs:annotation>
+                            <xs:documentation>Defines the transformation (u) applied to both sides, i.e. to y and f, of equation.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Output">
+                        <xs:annotation>
+                            <xs:documentation>The output variable from the structural model.</xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element ref="ct:SymbRef"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="ErrorModel">
+                        <xs:annotation>
+                            <xs:documentation>The error model (g) to apply to the residual error.</xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element ref="ct:Assign"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="ResidualError">
+                        <xs:annotation>
+                            <xs:documentation>The residual error (eps).</xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element ref="ct:SymbRef"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="GeneralObsError">
+        <xs:annotation>
+            <xs:documentation>The general and distribution tyeps of observation errors.
+                Type 2. General model                                   - no VariabilityReference required, LHS optional
+                h(y) = H(f, xi, eps)               
+                
+                Type 3. Distribution type model (eps-free notation)     - VariabilityReference required, LHS optional
+                u(y) ~ distribution(parameter1, parameter2, ...) e.g. log(y) ~ N(log(f), sigma)
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="mdef:ObservationErrorType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" ref="ct:VariabilityReference">
+                        <xs:annotation>
+                            <xs:documentation>The level of random variability and its connection
+                                to variance/stdev as defined when using the distribution.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element> 
+                    <xs:element minOccurs="0" name="LHSTransformation" type="mdef:LHSTransformationType">
+                        <xs:annotation>
+                            <xs:documentation>Defines a left-hand-side transformation.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:choice>
+                        <xs:element ref="ct:Assign">
+                            <xs:annotation>
+                                <xs:documentation>This assignment defines the RHS of the residual error.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="Distribution" type="mdef:DistributionType">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Definition using a distribution.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+        
+    <xs:complexType abstract="true" name="CommonParameterType">
+        <xs:annotation>
+            <xs:documentation>Abstract type defining the common properties of a parameter definition.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Symbol"/>
+                </xs:sequence>
+                <xs:attribute name="symbId" type="ct:SymbolIdType">
+                    <xs:annotation>
+                        <xs:documentation>The symbol id for this parameter.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="symbIdRef" type="ct:SymbolIdType">
+                    <xs:annotation>
+                        <xs:documentation>The symbol reference for this parameter - used for assignments of previously declared parameters/random variables.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="IndividualParameterType">
+        <xs:annotation>
+            <xs:documentation>Describes an individual parameter. Three encodings of a parameter model are available:
+                Type 1. explicit equation type of parameter model
+                psi_i = H(beta, c_i, eta_i)
+                
+                Type 2. Structured (e.g. Gaussian) model with general covariate model
+                h(psi_i) = H(beta, c_i) + eta_i [if eta_i ~ N()]
+                
+                Type 3. Structured (e.g. Gaussian) model with linear covariate model
+                h(psi_i) = h(psi_pop) + beta c_i + eta_i [if eta_i ~ N()]
+                
+                Type 4. Generic parameter model using distribution, i.e. so called eta-free notation 
+                h(psi_i) ~ distribution(parameter1, parameter2, ...) e.g. log(psi_i) ~ N(log(psi_pop) + beta c_i, omega_psi)
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="mdef:CommonParameterType">
+                    <xs:choice minOccurs="0">
+                        <!-- types 2 & 3 -->
+                        <xs:element name="StructuredModel" type="mdef:StructuredModelType">
+                            <xs:annotation>
+                                <xs:documentation>Defines a structured model with arbitrary distribution of random 
+                                    effects and with either linear or non-linear covariates. For eta_i ~ N() it is 
+                                    then a Gaussian one.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <!-- types 1 & 4 -->
+                        <xs:sequence>
+                            <xs:element minOccurs="0" name="LHSTransformation" type="mdef:LHSTransformationType">
+                                <xs:annotation>
+                                    <xs:documentation>Defines a transformation applied to the left-hand-side.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:choice>
+                                <xs:element minOccurs="1" ref="ct:Assign">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The explicit, type 1, definition of an individual parameter. This defines H and can 
+                                            contain references to one or more random variables.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:element>
+                                <xs:sequence>
+                                    <xs:element minOccurs="0" maxOccurs="unbounded" ref="ct:VariabilityReference">
+                                        <xs:annotation>
+                                            <xs:documentation>The level of random variability and its connection
+                                                to variance/stdev as defined when using the distribution.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element> 
+                                    <xs:element name="Distribution" type="mdef:DistributionType">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Distribution definition using either UncertML or ProbOnto.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                </xs:sequence>
+                            </xs:choice>
+                        </xs:sequence>
+                    </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="StructuredModelType">
+        <xs:annotation>
+            <xs:documentation>Defines the structured model type.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="Transformation"
+                        type="mdef:LRHSTransformationType">
+                        <xs:annotation>
+                            <xs:documentation>The transformation (h) applied to both sides of the equation.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:choice>
+                        <xs:element name="PopulationValue">
+                            <xs:annotation>
+                                <xs:documentation>The population/typical value: psi_pop.</xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                                <xs:complexContent>
+                                    <xs:extension base="ct:PharmMLRootType">
+                                        <xs:sequence>
+                                            <xs:element ref="ct:Assign"/>
+                                        </xs:sequence>
+                                    </xs:extension>
+                                </xs:complexContent>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="LinearCovariate">
+                            <xs:annotation>
+                                <xs:documentation>Defines the linear covariate model: h(psi_pop) + beta c_i</xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                                <xs:complexContent>
+                                    <xs:extension base="ct:PharmMLRootType">
+                                        <xs:sequence>
+                                            <xs:element name="PopulationValue">
+                                                <xs:annotation>
+                                                    <xs:documentation>The population/typical value: psi_pop.</xs:documentation>
+                                                </xs:annotation>
+                                                <xs:complexType>
+                                                    <xs:complexContent>
+                                                        <xs:extension base="ct:PharmMLRootType">
+                                                            <xs:sequence>
+                                                                <xs:element ref="ct:Assign"/>
+                                                            </xs:sequence>
+                                                        </xs:extension>
+                                                    </xs:complexContent>
+                                                </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="Covariate" maxOccurs="unbounded" minOccurs="0" type="mdef:CovariateRelationType">
+                                                <xs:annotation>
+                                                    <xs:documentation>Defines the covariate terms: beta * c_i</xs:documentation>
+                                                </xs:annotation>
+                                            </xs:element>
+                                        </xs:sequence>
+                                    </xs:extension>
+                                </xs:complexContent>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="GeneralCovariate">
+                            <xs:annotation>
+                                <xs:documentation>A general covariate model definition. This can be used to define a non-linear covariate model.
+                                    This equates to H in the above definitions.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                                <xs:complexContent>
+                                    <xs:extension base="ct:PharmMLRootType">
+                                        <xs:sequence>
+                                            <xs:element ref="ct:Assign">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        The general covariate definition. Note that this should NOT contain references to a random variable. You should use an explicit (type 3) parameter definition to do that.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:element>
+                                        </xs:sequence>
+                                    </xs:extension>
+                                </xs:complexContent>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:choice>
+                    <xs:element name="RandomEffects" minOccurs="0" maxOccurs="unbounded"
+                        type="mdef:ParameterRandomEffectType">
+                        <xs:annotation>
+                            <xs:documentation>The random effects (eta) used in the gaussian parameter model.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="PopulationParameterType">
+        <xs:annotation>
+            <xs:documentation>Describes an population parameter.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="mdef:CommonParameterType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="LHSTransformation" type="mdef:LHSTransformationType">
+                        <xs:annotation>
+                            <xs:documentation>Defines a transformation applied to the left-hand-side.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:choice minOccurs="0">
+                        <xs:element ref="ct:Assign">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The explicit definition of an population parameter.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:sequence>
+                            <xs:element minOccurs="0" maxOccurs="unbounded" ref="ct:VariabilityReference">
+                                <xs:annotation>
+                                    <xs:documentation>The level of random variability and its connection
+                                        to variance/stdev as defined when using the Distribution.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element> 
+                            <xs:element name="Distribution" type="mdef:DistributionType">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Definition using a distribution.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="DesignParameterType">
+        <xs:annotation>
+            <xs:documentation>
+                This defines a design parameter.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="mdef:CommonParameterType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>Initialises the parameter.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="SimpleParameterType">
+        <xs:annotation>
+            <xs:documentation>
+                This defines a design parameter.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="mdef:CommonParameterType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>Initialises the basic parameter.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="ParameterRandomVariableType">
+        <xs:annotation>
+            <xs:documentation>
+                Type specifies a random variable definition.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="mdef:CommonParameterType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" ref="ct:VariabilityReference">
+                        <xs:annotation>
+                            <xs:documentation>The level of random variability that describes this random variable.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element> 
+                    <xs:element minOccurs="0" name="LHSTransformation" type="mdef:LHSTransformationType">
+                        <xs:annotation>
+                            <xs:documentation>Defines a transformation applied to the left-hand-side.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:choice>
+                        <xs:element minOccurs="0" name="Distribution" type="mdef:DistributionType"/>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="DistributionType">
+        <xs:annotation>
+            <xs:documentation>Type defining a distribution.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element name="UncertML" type="mdef:UncertMLType"/>
+                    <xs:element ref="po:ProbOnto"/>
+                    <xs:element minOccurs="0" ref="math:Piecewise">
+                        <xs:annotation>
+                            <xs:documentation>Defines a piecewise expression - for conditional mapping.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="UserDefDistribution" type="mdef:UserDefDistributionType"/>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:simpleType name="distFctType">
+        <xs:annotation>
+            <xs:documentation>
+                Type specifying the types of distribution function. 
+            </xs:documentation>
+        </xs:annotation>
+        <xs:union>
+            <xs:simpleType>
+                <xs:restriction base="ct:SymbolIdType">
+                    <xs:enumeration value="CDF"/>
+                    <xs:enumeration value="PDF"/>
+                    <xs:enumeration value="PMF"/>
+                    <xs:enumeration value="HF"/>
+                    <xs:enumeration value="SF"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:union>
+    </xs:simpleType>
+    
+    <xs:complexType name="UserDefDistributionType">
+        <xs:annotation>
+            <xs:documentation>
+                Any user-defined distribution is allowed.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Assign"/>
+                </xs:sequence>
+                <xs:attribute name="type" use="required" type="mdef:distFctType"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="RealisationType">
+        <xs:annotation>
+            <xs:documentation>Type defining a single realisation from a distribution.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element name="UncertML" type="mdef:UncertMLType"/>
+                    <xs:element ref="po:ProbOnto"/>
+                    <xs:element name="Piecewise" type="math:PiecewiseType">
+                        <xs:annotation>
+                            <xs:documentation>Defines a piecewise expression.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="UncertMLType">
+        <xs:annotation>
+            <xs:documentation>Type for UncertML distributions.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="distrib:AbstractContinuousUnivariateDistribution">
+                        <xs:annotation>
+                            <xs:documentation>
+                                A continuous univariate probability distribution, defined by UncertML. 
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="distrib:AbstractContinuousMultivariateDistribution">
+                        <xs:annotation>
+                            <xs:documentation>
+                                A continuous multivariate probability distribution, defined by UncertML. 
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="distrib:AbstractCategoricalUnivariateDistribution">
+                        <xs:annotation> 
+                            <xs:documentation>
+                                A categorical univariate probability distribution as defined by UncertML. 
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="distrib:AbstractCategoricalMultivariateDistribution">
+                        <xs:annotation>
+                            <xs:documentation>
+                                A categorical multivariate probability distribution as defined by UncertML. 
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="distrib:AbstractDiscreteUnivariateDistribution">
+                        <xs:annotation>
+                            <xs:documentation>
+                                A discrete univariate probability distribution as defined by UncertML. 
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="distrib:AbstractDiscreteMultivariateDistribution">
+                        <xs:annotation>
+                            <xs:documentation>
+                                A discrete multivariate probability distribution as defined by UncertML. 
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="DistributionBoundType">
+        <xs:annotation>
+            <xs:documentation>Type for specifying truncation bounds of a distribution.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Assign"/>
+                </xs:sequence>
+                <xs:attribute name="type" default="closed">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="closed"/>
+                            <xs:enumeration value="open"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>      
+    
+    <xs:complexType name="CovariateRelationType">
+        <xs:annotation>
+            <xs:documentation>Type defining the relationship between the covariate and a fixed effect parameter. Typically this defines a linear relationships.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>The covariate to be related.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="FixedEffect" minOccurs="0" maxOccurs="unbounded" type="mdef:FixedEffectRelationType">
+                        <xs:annotation>
+                            <xs:documentation>The fixed effect relating the parameter and covariate.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="FixedEffectRelationType">
+        <xs:annotation>
+            <xs:documentation>Defines a fixed effect.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:Assign"/>
+                    <xs:element minOccurs="0" ref="ct:CatRef"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CategoricalRelationType">
+        <xs:annotation>
+            <xs:documentation>Type specifying a relationship to a specific category value in a categorical covariate.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attribute name="catId" type="ct:CatIdType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Specifies the category value of the covariate to which this relationship applies.
+                            For example if a covariate is sex then the Female category may be specified as catId="F". 
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="ParameterRandomEffectType">
+        <xs:annotation>
+            <xs:documentation>Type defining a Random effect using a reference to a Random variable.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:Assign"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CovariateDefinitionType">
+        <xs:annotation>
+            <xs:documentation>Type that specifies a covariate definition.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Symbol"/>
+                    <xs:choice>
+                        <xs:element name="Continuous" type="mdef:ContinuousCovariateType">
+                            <xs:annotation>
+                                <xs:documentation>Specifies a continuous covariate.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="Categorical" type="mdef:CategoricalCovariateType">
+                            <xs:annotation>
+                                <xs:documentation>Specifies a categorical covariate.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+                <xs:attributeGroup ref="ct:SymbolDefinitionGroup"/>
+                <xs:attribute use="optional" name="type" type="mdef:CovariateType"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="CovariateTransformationType">
+        <xs:annotation>
+            <xs:documentation>Type defines how the covariate is transformed when used.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="TransformedCovariate" type="mdef:TransformedCovariateType">
+                        <xs:annotation>
+                            <xs:documentation>Name of the transformed covariate.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The transformation is defined as an expression that must include 
+                                a reference to the covariate variable, defined by the parent of this element.  
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="ContinuousCovariateType">
+        <xs:annotation>
+            <xs:documentation>Type defines a continuous covariate.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="Distribution" minOccurs="0" type="mdef:DistributionType"/>
+                    <xs:element name="Realisation" minOccurs="0" type="mdef:RealisationType"/>
+                    <xs:element name="Transformation" type="mdef:CovariateTransformationType" minOccurs="0" maxOccurs="unbounded">
+                        <xs:annotation>
+                            <xs:documentation>The transformation to be applied when the covariate is used.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Interpolation" minOccurs="0"/>
+                    <xs:element ref="ct:Assign" minOccurs="0"/>
+                    <xs:element name="Criteria" minOccurs="0" maxOccurs="unbounded" type="mdef:CovariateCriteriaType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CovariateCriteriaType">
+        <xs:annotation>
+            <xs:documentation>General covariate criteria declaration type.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="math:LogicBinop"/>
+                </xs:sequence>
+                <xs:attribute name="type" use="required">
+                    <xs:annotation>
+                        <xs:documentation>Exclusive or inclusive criterium type attribute.</xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:Name">
+                            <xs:enumeration value="exclusive"/>
+                            <xs:enumeration value="inclusive"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CategoricalCovariateType">
+        <xs:annotation>
+            <xs:documentation>
+                Type defines a categorical covariate.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" ref="ct:VariabilityReference">
+                        <xs:annotation>
+                            <xs:documentation>The level of random variability associated with a categorical 
+                                covariate defined in the trial design.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element> 
+                    <xs:element maxOccurs="unbounded" minOccurs="0" name="Category" type="mdef:CategoryType">
+                        <xs:annotation>
+                            <xs:documentation>A category of the categorical covariate.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Assign" minOccurs="0"/>
+                    <xs:element name="Distribution" minOccurs="0" type="mdef:DistributionType"/>
+                    <xs:element name="Realisation" minOccurs="0" type="mdef:RealisationType"/>
+                    <xs:element name="NumberOfCategories" minOccurs="0" type="ct:StandardAssignType"/>
+                    <xs:element name="Criteria" minOccurs="0" maxOccurs="unbounded" type="mdef:CovariateCriteriaType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CategoryType">
+        <xs:annotation>
+            <xs:documentation>Type defines a category in a categorical covariate.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence minOccurs="1">
+            <xs:element minOccurs="0" ref="ct:Name"/>
+            <xs:element minOccurs="0" ref="ct:Description"/>
+            <xs:element minOccurs="0" name="Probability" type="ct:Rhs">
+                <xs:annotation>
+                    <xs:documentation>The definition of the probability associated with this category.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:choice>
+                <xs:element name="InterventionRef" minOccurs="0" maxOccurs="1" type="ct:OidRefType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Refers to one(!) intervention which will be treated as covariate. 
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="InterventionSequence" minOccurs="0" type="mdef:InterventionSequenceType"/>
+                <xs:element name="OccasionRef" minOccurs="0" type="ct:OidRefType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Refers to the occasion which will be treated as covariate.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="0" maxOccurs="unbounded" ref="ct:CatRef"/>
+                <xs:element ref="ct:Assign" minOccurs="0"/>
+            </xs:choice>
+        </xs:sequence>
+        <xs:attribute name="referenceCategory" type="mdef:ReferenceCategoryType"/>
+        <xs:attribute name="catId" type="ct:CatIdType" use="required">
+            <xs:annotation>
+                <xs:documentation>The identifier of the category.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    
+    <xs:complexType name="DSCovariateDefinitionType">
+        <xs:annotation>
+            <xs:documentation>Type that specifies a covariate definition.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Symbol"/>
+                    <xs:choice>
+                        <xs:element name="Continuous" type="mdef:ContinuousCovariateType">
+                            <xs:annotation>
+                                <xs:documentation>Specifies a continuous covariate.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="Categorical" type="mdef:DSCategoricalCovariateType">
+                            <xs:annotation>
+                                <xs:documentation>Specifies a categorical covariate.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+                <xs:attributeGroup ref="ct:CovariateAttributeGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+ 
+    <xs:complexType name="DSCategoricalCovariateType">
+        <xs:annotation>
+            <xs:documentation>
+                Type defines a categorical covariate for desing space.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" minOccurs="1" name="Category" type="mdef:DSCategoryType">
+                        <xs:annotation>
+                            <xs:documentation>A category of the categorical covariate in design space.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="DSCategoryType">
+        <xs:annotation>
+            <xs:documentation>Type for design space definition for probabilities of 
+                categories of categorical covariate.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="Probability" type="ct:Rhs">
+                        <xs:annotation>
+                            <xs:documentation>The definition of the probability space associated with 
+                                this category.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="catId" type="ct:CatIdType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The identifier of the category.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="InterventionSequenceType">
+        <xs:annotation>
+            <xs:documentation>Type defining a intervention sequence to be treated as covariate.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="InterventionRef" maxOccurs="unbounded" type="ct:OidRefType">
+                        <xs:annotation>
+                            <xs:documentation>Refers to as least two interventions which sequence will be treated as a covariate.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="TransformedCovariateType">
+        <xs:annotation>
+            <xs:documentation>Type defining a transformed covariate symbol.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attribute name="symbId" type="ct:SymbolIdType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The symbol id for this parameter.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="StructuralModelType">
+        <xs:annotation>
+            <xs:documentation>
+                Type that specifies a structural model.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Name"/>
+                    <xs:choice maxOccurs="unbounded">
+                        <xs:sequence>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" ref="mdef:PopulationParameter">
+                                <xs:annotation>
+                                    <xs:documentation>A parameter definition of the population type.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" ref="mdef:IndividualParameter">
+                                <xs:annotation>
+                                    <xs:documentation>A parameter definition of the individual type.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" ref="mdef:Parameter">
+                                <xs:annotation>
+                                    <xs:documentation>A parameter definition of the basic type.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" ref="ct:CommonVariable">
+                                <xs:annotation>
+                                    <xs:documentation>A variable definition.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="PKmacros" minOccurs="0" type="mdef:PKmacroType">
+                                <xs:annotation>
+                                    <xs:documentation>A macro definition.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" ref="ct:AssignStatement"/>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" ref="math:ConditionalStatement"/>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" ref="ct:DE"/>
+                        </xs:sequence>
+                    </xs:choice>
+                </xs:sequence>
+                <xs:attributeGroup ref="ct:BlockDefnGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CovariateModelType">
+        <xs:annotation>
+            <xs:documentation>
+                A type defining a covariate model.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="CovariateModelRef" minOccurs="0" type="ct:CovariateModelRefType">
+                        <xs:annotation>
+                            <xs:documentation>Reference to a covariate model from which the current model
+                                inherits its features.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" ref="ct:Name"/>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" ref="mdef:PopulationParameter">
+                        <xs:annotation>
+                            <xs:documentation>The definition of parameters in the covariate block. 
+                                Typically these will define parameters used by the covariate definitions.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" ref="mdef:Parameter">
+                        <xs:annotation>
+                            <xs:documentation>A parameter definition of the basic type.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" ref="ct:AssignStatement"/>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" ref="math:ConditionalStatement"/>
+                    <xs:element maxOccurs="unbounded" name="Covariate" type="mdef:CovariateDefinitionType">
+                        <xs:annotation>
+                            <xs:documentation>Defines a covariate.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attributeGroup ref="ct:BlockDefnGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="ModelDefinitionType">
+        <xs:annotation>
+            <xs:documentation>Type that specifies the model definition section of the PharmML document.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="VariabilityModel"
+                        type="mdef:VariabilityDefnBlock" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>A variability level.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="CovariateModel" maxOccurs="unbounded"
+                        type="mdef:CovariateModelType">
+                        <xs:annotation>
+                            <xs:documentation>A covariate model.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" name="ParameterModel"
+                        type="mdef:ParameterModelType">
+                        <xs:annotation>
+                            <xs:documentation>A parameter model.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element maxOccurs="unbounded"  minOccurs="0" ref="mdef:StructuralModel">
+                        <xs:annotation>
+                            <xs:documentation>A structural model.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="ObservationModel" maxOccurs="unbounded"
+                        type="mdef:ObservationModelType">
+                        <xs:annotation>
+                            <xs:documentation>An observations model.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="PKmacroType">
+        <xs:annotation>
+            <xs:documentation>Type defines a PK macro.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence maxOccurs="unbounded">
+                    <xs:element name="Absorption" minOccurs="0" maxOccurs="unbounded" type="mdef:AbsorptionOralMacroType">
+                        <xs:annotation>
+                            <xs:documentation>An absorption macro definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Compartment" minOccurs="0" maxOccurs="unbounded" type="mdef:CompartmentMacroType">
+                        <xs:annotation>
+                            <xs:documentation>A compartment macro definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Depot" minOccurs="0" maxOccurs="unbounded" type="mdef:DepotMacroType">
+                        <xs:annotation>
+                            <xs:documentation>An depot macro definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Effect" minOccurs="0" maxOccurs="unbounded" type="mdef:EffectMacroType">
+                        <xs:annotation>
+                            <xs:documentation>An effect macro definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Elimination" minOccurs="0" maxOccurs="unbounded" type="mdef:EliminationMacroType">
+                        <xs:annotation>
+                            <xs:documentation>An elimination macro definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="IV" minOccurs="0" maxOccurs="unbounded" type="mdef:IVMacroType">
+                        <xs:annotation>
+                            <xs:documentation>An iv macro definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Oral" minOccurs="0" maxOccurs="unbounded" type="mdef:AbsorptionOralMacroType">
+                        <xs:annotation>
+                            <xs:documentation>An oral macro definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Peripheral" minOccurs="0" maxOccurs="unbounded" type="mdef:PeripheralMacroType">
+                        <xs:annotation>
+                            <xs:documentation>A peripheral macro definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Transfer" minOccurs="0" maxOccurs="unbounded" type="mdef:TransferMacroType">
+                        <xs:annotation>
+                            <xs:documentation>An transfer macro definition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="CompartmentMacroType">
+        <xs:annotation>
+            <xs:documentation>Type defines a compartment macro.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="Value" type="mdef:CompartmentMacroValueType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="CompartmentMacroValueType">
+        <xs:annotation>
+            <xs:documentation>Type defines a compartment macro value.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>Initialise the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the variable which is assigned to the 'name' attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Scalar">
+                        <xs:annotation>
+                            <xs:documentation>The value of the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>                    
+                </xs:choice>
+                <xs:attribute name="argument" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Name of the argument belonging to the macro.</xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:Name">
+                            <xs:enumeration value="cmt"/>
+                            <xs:enumeration value="amount"/>
+                            <xs:enumeration value="volume"/>
+                            <xs:enumeration value="concentration"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="PeripheralMacroType">
+        <xs:annotation>
+            <xs:documentation>Type defines a peripheral macro.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="Value" type="mdef:PeripheralMacroValueType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="PeripheralMacroValueType">
+        <xs:annotation>
+            <xs:documentation>Type defines a peripheral macro value.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>Initialise the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the variable which is assigned to the 'name' attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Scalar">
+                        <xs:annotation>
+                            <xs:documentation>The value of the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>                    
+                </xs:choice>
+                <xs:attribute name="argument" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Name of the argument belonging to the macro.</xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:union>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:Name">
+                                    <xs:enumeration value="amount"/>
+                                    <xs:enumeration value="volume"/>
+                                    <xs:enumeration value="concentration"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:pattern value="k[0-9][0-9]"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:pattern value="k[0-9][0-9][0-9][0-9]"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:pattern value="k_[0-9]_[0-9]"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:pattern value="k_[0-9][0-9]_[0-9][0-9]"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:union>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="IVMacroType">
+        <xs:annotation>
+            <xs:documentation>Type defines a iv macro.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="Value" type="mdef:IVMacroValueType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="IVMacroValueType">
+        <xs:annotation>
+            <xs:documentation>Type defines a iv macro value.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>Initialise the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the variable which is assigned to the 'name' attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Scalar">
+                        <xs:annotation>
+                            <xs:documentation>The value of the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>                    
+                </xs:choice>
+                <xs:attribute name="argument" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Name of the argument belonging to the macro.</xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:Name">
+                            <xs:enumeration value="cmt"/>
+                            <xs:enumeration value="type"/>
+                            <xs:enumeration value="adm"/>
+                            <xs:enumeration value="Tlag"/>
+                            <xs:enumeration value="p"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="TransferMacroType">
+        <xs:annotation>
+            <xs:documentation>Type defines a transfer macro.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="Value" type="mdef:TransferMacroValueType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="TransferMacroValueType">
+        <xs:annotation>
+            <xs:documentation>Type defines a transfer macro value.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>Initialise the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the variable which is assigned to the 'name' attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Scalar">
+                        <xs:annotation>
+                            <xs:documentation>The value of the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>                    
+                </xs:choice>
+                <xs:attribute name="argument" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Name of the argument belonging to the macro.</xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:Name">
+                            <xs:enumeration value="from"/>
+                            <xs:enumeration value="to"/>
+                            <xs:enumeration value="kt"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="EliminationMacroType">
+        <xs:annotation>
+            <xs:documentation>Type defines an elimination macro.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="Value" type="mdef:EliminationMacroValueType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="EliminationMacroValueType">
+        <xs:annotation>
+            <xs:documentation>Type defines an elimination macro value.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>Initialise the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the variable which is assigned to the 'name' attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Scalar">
+                        <xs:annotation>
+                            <xs:documentation>The value of the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>                    
+                </xs:choice>
+                <xs:attribute name="argument" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Name of the argument belonging to the macro.</xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:Name">
+                            <xs:enumeration value="cmt"/>
+                            <xs:enumeration value="V"/>
+                            <xs:enumeration value="k"/>
+                            <xs:enumeration value="CL"/>
+                            <xs:enumeration value="Vm"/>
+                            <xs:enumeration value="Km"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="AbsorptionOralMacroType">
+        <xs:annotation>
+            <xs:documentation>Type defines an absorption/oral macro.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="Value" type="mdef:AbsorptionOralMacroValueType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="AbsorptionOralMacroValueType">
+        <xs:annotation>
+            <xs:documentation>Type defines a oral macro.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>Initialise the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the variable which is assigned to the 'name' attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Scalar">
+                        <xs:annotation>
+                            <xs:documentation>The value of the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>                    
+                </xs:choice>
+                <xs:attribute name="argument" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Name of the argument belonging to the macro.</xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:Name">
+                            <xs:enumeration value="cmt"/>
+                            <xs:enumeration value="type"/>
+                            <xs:enumeration value="adm"/>
+                            <xs:enumeration value="Tlag"/>
+                            <xs:enumeration value="p"/>
+                            <xs:enumeration value="Tk0"/>
+                            <xs:enumeration value="ka"/>
+                            <xs:enumeration value="Ktr"/>
+                            <xs:enumeration value="Mtt"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="EffectMacroType">
+        <xs:annotation>
+            <xs:documentation>Type defines an effect macro.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="Value" type="mdef:EffectMacroValueType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="EffectMacroValueType">
+        <xs:annotation>
+            <xs:documentation>Type defines an effect macro value.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>Initialise the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the variable which is assigned to the 'name' attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Scalar">
+                        <xs:annotation>
+                            <xs:documentation>The value of the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>                    
+                </xs:choice>
+                <xs:attribute name="argument" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Name of the argument belonging to the macro.</xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:Name">
+                            <xs:enumeration value="cmt"/>
+                            <xs:enumeration value="ke0"/>
+                            <xs:enumeration value="concentration"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="DepotMacroType">
+        <xs:annotation>
+            <xs:documentation>Type defines an depot macro.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="Value" type="mdef:DepotMacroValueType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="DepotMacroValueType">
+        <xs:annotation>
+            <xs:documentation>Type defines an depot macro value.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>Initialise the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the variable which is assigned to the 'name' attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Scalar">
+                        <xs:annotation>
+                            <xs:documentation>The value of the name attribute.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>                    
+                </xs:choice>
+                <xs:attribute name="argument" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Name of the argument belonging to the macro.</xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:Name">
+                            <xs:enumeration value="type"/>
+                            <xs:enumeration value="adm"/>
+                            <xs:enumeration value="Tlag"/>
+                            <xs:enumeration value="p"/>
+                            <xs:enumeration value="target"/>
+                            <xs:enumeration value="Tk0"/>
+                            <xs:enumeration value="ka"/>
+                            <xs:enumeration value="Ktr"/>
+                            <xs:enumeration value="Mtt"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    
+    <!--
+        Elements 
+        -->
+    <xs:element name="PMF" type="mdef:CountPMFType">
+        <xs:annotation>
+            <xs:documentation>PMF declaration.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="MixtureModel" type="mdef:MixtureModelType">
+        <xs:annotation>
+            <xs:documentation>Structural mixture model.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Autocorrelation" type="mdef:AutocorrelationType">
+        <xs:annotation>
+            <xs:documentation>Autocorrelation element.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Probability" type="mdef:ProbabilityType">
+        <xs:annotation>
+            <xs:documentation>Defines a probability statement.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="ObservationError" type="mdef:ObservationErrorType" abstract="true">
+        <xs:annotation>
+            <xs:documentation>Abstract element defining an observation error.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Standard" substitutionGroup="mdef:ObservationError"
+        type="mdef:StructuredObsError">
+        <xs:annotation>
+            <xs:documentation>Defines standard error model.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="General" substitutionGroup="mdef:ObservationError" type="mdef:GeneralObsError">
+        <xs:annotation>
+            <xs:documentation>Defines general error model.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Parameter" substitutionGroup="mdef:CommonParameterElement"
+        type="mdef:SimpleParameterType">
+        <xs:annotation>
+            <xs:documentation>Defines a basic parameter with assignment only.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="DesignParameter" substitutionGroup="mdef:CommonParameterElement"
+        type="mdef:DesignParameterType">
+        <xs:annotation>
+            <xs:documentation>Defines a design parameter.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="IndividualParameter" substitutionGroup="mdef:CommonParameterElement"
+        type="mdef:IndividualParameterType">
+        <xs:annotation>
+            <xs:documentation>Defines an individual parameter.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="PopulationParameter" substitutionGroup="mdef:CommonParameterElement"
+        type="mdef:PopulationParameterType">
+        <xs:annotation>
+            <xs:documentation>Defines an population parameter.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="RandomVariable" type="mdef:ParameterRandomVariableType"
+        substitutionGroup="mdef:CommonParameterElement">
+        <xs:annotation>
+            <xs:documentation>Defines a random variable.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="CommonParameterElement" abstract="true" type="mdef:CommonParameterType">
+        <xs:annotation>
+            <xs:documentation>Abstract element defining parameters used in the model.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="StructuralModel" type="mdef:StructuralModelType">
+        <xs:annotation>
+            <xs:documentation>Defines a structural model.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="ModelDefinition" type="mdef:ModelDefinitionType">
+        <xs:annotation>
+            <xs:documentation>This is the top element defining the defintion of the pharmacometric model. This contains the variability model, covariate model, parameter model, structural model and observations model.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+</xs:schema>

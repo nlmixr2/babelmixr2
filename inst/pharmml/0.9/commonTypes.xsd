@@ -1,0 +1,2018 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2013-2016 European Molecular Biology Laboratory, Heidelberg,
+Germany and Novo Nordisk A/S, Bagsvaerd, Denmark.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you
+may not use this file except in compliance with the License.  You may
+obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+     
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing
+permissions and limitations under the License.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:ct="http://www.pharmml.org/pharmml/0.9/CommonTypes"
+    targetNamespace="http://www.pharmml.org/pharmml/0.9/CommonTypes"
+    xmlns:distrib="http://www.uncertml.org/3.0"
+    xmlns:mdef="http://www.pharmml.org/pharmml/0.9/ModelDefinition"
+    xmlns:math="http://www.pharmml.org/pharmml/0.9/Maths"
+    xmlns:design="http://www.pharmml.org/pharmml/0.9/TrialDesign"
+    version="0.9" 
+    elementFormDefault="qualified" attributeFormDefault="unqualified">
+    
+    <xs:import namespace="http://www.pharmml.org/pharmml/0.9/Maths"
+        schemaLocation="maths.xsd"/>
+    
+    <xs:import namespace="http://www.pharmml.org/pharmml/0.9/ModelDefinition"
+        schemaLocation="modelDefinition.xsd"/>
+    
+    <xs:import namespace="http://www.pharmml.org/pharmml/0.9/TrialDesign"
+        schemaLocation="trialDesign.xsd"/>
+    
+    
+    <!--
+        Simple Types
+      -->    
+    <xs:simpleType name="BCType">
+        <xs:annotation>
+            <xs:documentation>Defines the boundary condition type attribute.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="Cauchy"/>
+            <xs:enumeration value="Dirichlet"/>
+            <xs:enumeration value="Neumann"/>
+            <xs:enumeration value="Robin"/>
+            <xs:enumeration value="Mixed"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="DEType">
+        <xs:annotation>
+            <xs:documentation>Defines the transition matrix type attribute.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="dde"/>
+            <xs:enumeration value="ode"/>
+            <xs:enumeration value="odeStiff"/>
+            <xs:enumeration value="odeLinear"/>
+            <xs:enumeration value="pde"/>
+            <xs:enumeration value="pdeElliptic"/>
+            <xs:enumeration value="pdeHyperbolic"/>
+            <xs:enumeration value="pdeParabolic"/>
+            <xs:enumeration value="pdeMixed"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="TransitionMatrixAttrType">
+        <xs:annotation>
+            <xs:documentation>Defines the transition matrix type attribute.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="leftStochastic"/>
+            <xs:enumeration value="rightStochastic"/>
+            <xs:enumeration value="doublyStochastic"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="MissingDataAttributeType">
+        <xs:annotation>
+            <xs:documentation>Defines the missing data attribute.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="NA"/>
+            <xs:enumeration value="NaN"/>
+            <xs:enumeration value="minusInf"/>
+            <xs:enumeration value="plusInf"/>
+            <xs:enumeration value="ALQ"/>
+            <xs:enumeration value="BLQ"/>
+            <!-- extandable with other type if necessary -->
+        </xs:restriction>
+    </xs:simpleType>    
+    <xs:simpleType name="ToolNameType">
+        <xs:annotation>
+            <xs:documentation>Defines the tool names attribute.</xs:documentation>
+        </xs:annotation>
+        <xs:union>
+            <xs:simpleType>
+                <xs:restriction base="xs:token">
+                    <xs:enumeration value="BUGS"/>
+                    <xs:enumeration value="Monolix"/>
+                    <xs:enumeration value="NONMEM"/>
+                </xs:restriction>
+            </xs:simpleType>
+            <!-- any string allowed without whitespaces -->
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:pattern value="[^\s]+"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:union>
+    </xs:simpleType>    
+    <xs:simpleType name="SymbolTypeType">
+        <xs:annotation>
+            <xs:documentation>Defines the symbol types. Restricted to the available types.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="int"/>
+            <xs:enumeration value="real"/>
+            <xs:enumeration value="boolean"/>
+            <xs:enumeration value="string"/>
+            <xs:enumeration value="id"/>
+        </xs:restriction>
+    </xs:simpleType>    
+    <xs:simpleType name="DependanceAttributeType">
+        <xs:annotation>
+            <xs:documentation>Defines the dependency attrbute type.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="discreteMarkov"/>
+            <xs:enumeration value="continuousMarkov"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="OrderedAttributeType">
+        <xs:annotation>
+            <xs:documentation>Defines the type for ordered attrbute for categorical data.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="yes"/>
+            <xs:enumeration value="no"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="RegressorType">
+        <xs:annotation>
+            <xs:documentation>Defines the type of variable - either common variable or regressor.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="yes"/>
+            <xs:enumeration value="no"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="PMFtransformType">
+        <xs:annotation>
+            <xs:documentation>Defines the type of optional transform for PMF.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="identity"/>
+            <xs:enumeration value="log"/>
+            <xs:enumeration value="logit"/>
+            <xs:enumeration value="probit"/>
+            <xs:enumeration value="loglog"/>
+            <xs:enumeration value="comploglog"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="LinkFunctionType">
+        <xs:annotation>
+            <xs:documentation>Defines the type of link function for discrete data models.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="identity"/>
+            <xs:enumeration value="log"/>
+            <xs:enumeration value="logit"/>
+            <xs:enumeration value="probit"/>
+            <xs:enumeration value="loglog"/>
+            <xs:enumeration value="comploglog"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="MarkovOrderType">
+        <xs:annotation>
+            <xs:documentation>Defines the Markov order attribute type.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:int"/>        
+    </xs:simpleType>
+    <xs:simpleType name="SymbolIdType">
+        <xs:annotation>
+            <xs:documentation>Type for symbols identifiers.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:NCName"/>
+    </xs:simpleType>
+    <xs:simpleType name="CategoryIdType">
+        <xs:annotation>
+            <xs:documentation>Type for category identifiers.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="([a-zA-Z0-9])[a-zA-Z0-9\\_]*"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="CatIdType">
+        <xs:annotation>
+            <xs:documentation>Type for symbols identifiers.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="([a-zA-Z0-9])[a-zA-Z0-9\\_]*"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="BlockIdType">
+        <xs:annotation>
+            <xs:documentation>Type for block identifiers.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:NCName"/>
+    </xs:simpleType>
+    <xs:simpleType name="oidType">
+        <xs:annotation>
+            <xs:documentation>Type for OID identifiers.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:NCName"/>
+    </xs:simpleType>
+    <xs:simpleType name="IdType">
+        <xs:annotation>
+            <xs:documentation>Type of the element identifier.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:NCName"/>
+    </xs:simpleType>
+        
+    <!-- 
+        Complex Types
+     -->
+    <xs:complexType name="IntValueType">
+        <xs:annotation>
+            <xs:documentation>Integer value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:int">
+                <xs:attributeGroup ref="ct:RootAttributesGroup"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="RealValueType">
+        <xs:annotation>
+            <xs:documentation>Real value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:double">
+                <xs:attributeGroup ref="ct:RootAttributesGroup"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="StringValueType">
+        <xs:annotation>
+            <xs:documentation>String value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attributeGroup ref="ct:RootAttributesGroup"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="MissingValueType">
+        <xs:annotation>
+            <xs:documentation>String value.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:restriction base="ct:PharmMLRootType">
+                <xs:attributeGroup ref="ct:RootAttributesGroup"/>
+            </xs:restriction>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="BooleanType" abstract="true">
+        <xs:annotation>
+            <xs:documentation>
+                A Boolean type.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="TrueBooleanType">
+        <xs:annotation>
+            <xs:documentation>A literal Boolean value for true.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:BooleanType">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="FalseBooleanType">
+        <xs:annotation>
+            <xs:documentation>A literal Boolean value for false.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:BooleanType">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="IdValueType">
+        <xs:annotation>
+            <xs:documentation>
+                A literal Id value. This has a type of `id'.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:NCName">
+                <xs:attributeGroup ref="ct:RootAttributesGroup"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType abstract="true" name="PharmMLRootType">
+        <xs:annotation>
+            <xs:documentation>Root type of all elements and types defining elements in PharmML.</xs:documentation>
+        </xs:annotation>
+        <xs:group ref="ct:RootElementGroup"/>
+        <xs:attributeGroup ref="ct:RootAttributesGroup"/>
+    </xs:complexType>
+    <xs:complexType name="OidRefType">
+        <xs:annotation>
+            <xs:documentation>Type used by element referencing an OID.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attributeGroup ref="ct:OidRefGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CovariateModelRefType">
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attribute name="blkIdRef" type="ct:BlockIdType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Type for referencing a covariate model.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="oidRef" type="ct:oidType" use="optional"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="SymbolRefType">
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attribute name="blkIdRef" type="ct:BlockIdType">
+                    <xs:annotation>
+                        <xs:documentation>ID referencing a Block.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="symbIdRef" type="ct:SymbolIdType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>ID referencing a Symbol.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="CategoryRefType">
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attribute name="blkIdRef" type="ct:BlockIdType">
+                    <xs:annotation>
+                        <xs:documentation>ID referencing a Block.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="symbIdRef" type="ct:SymbolIdType">
+                    <xs:annotation>
+                        <xs:documentation>ID referencing a Symbol.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="catIdRef" type="ct:CategoryIdType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>ID referencing a Category.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType block="" mixed="false" name="AnnotationType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attributeGroup ref="ct:RootAttributesGroup"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="Rhs">
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="math:Constant"/>
+                    <xs:element ref="ct:Scalar"/>
+                    <xs:element ref="ct:SymbRef"/>
+                    <xs:element ref="ct:CatRef"/>
+                    <xs:element ref="design:Action"/>
+                    <xs:element ref="design:Combination"/>
+                    <xs:element ref="design:Intervention"/>
+                    <xs:element ref="design:Observation"/>
+                    <xs:element ref="design:Occasion"/>
+                    <xs:element ref="design:StudyArm"/>
+                    <xs:element ref="ct:OidRef"/>
+                    <xs:element ref="ct:Sequence"/>
+                    <xs:element ref="ct:Interval"/>
+                    <xs:element ref="ct:Vector"/>
+                    <xs:element ref="ct:Matrix"/>
+                    <xs:element ref="ct:Interpolation"/>
+                    <xs:element name="Realisation" type="mdef:RealisationType"/>
+                    <xs:element ref="math:PDF"/>
+                    <xs:element ref="math:CDF"/>
+                    <xs:element ref="math:HF"/>
+                    <xs:element ref="math:SF"/>
+                    <xs:element ref="math:Statsop"/>
+                    <xs:element ref="math:Naryop"/>
+                    <xs:element ref="math:ArrayDim"/>
+                    <xs:element ref="math:Binop"/>
+                    <xs:element ref="math:Uniop"/>
+                    <xs:element ref="math:Piecewise"/>
+                    <xs:element ref="math:FunctionCall"/>
+                    <xs:element ref="ct:Sum"/>
+                    <xs:element ref="ct:Product"/>
+                    <xs:element ref="ct:Delay"/>
+                    <xs:element ref="ct:VectorSelector"/>
+                    <xs:element ref="ct:MatrixSelector"/>
+                    <xs:element ref="math:VectorCalcOp"/>
+                    <xs:element ref="math:MatrixUniop"/>
+                    <xs:element ref="mdef:Probability"/>
+                    <xs:element ref="math:Diff"/>
+                    <xs:element ref="math:PartialDiff"/>
+                    <xs:element ref="math:Integral"/>
+                    <xs:element ref="ct:InitialValue"/>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="SequenceType">
+        <xs:annotation>
+            <xs:documentation>The definition of a uniform sequence of numbers. It has two forms
+                1. Begin:StepSize:End or
+                2. Begin:StepSize:StepNumber
+                3. Begin:StepNumber:End
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="Begin" type="ct:Rhs">
+                        <xs:annotation>
+                            <xs:documentation>The initial value of the sequence.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="StepSize" minOccurs="0" type="ct:Rhs">
+                        <xs:annotation>
+                            <xs:documentation>The increment between steps. The step size can be negative</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="StepNumber" minOccurs="0" type="ct:Rhs">
+                        <xs:annotation>
+                            <xs:documentation>The number of steps to occur in the sequence.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="End" minOccurs="0" type="ct:Rhs">
+                            <xs:annotation>
+                                <xs:documentation>The maximum possible value of the sequence.</xs:documentation>
+                            </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="StandardAssignType">
+        <xs:annotation>
+            <xs:documentation>Type defining one option only: Assign.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:Assign"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="StandardExtAssignType">
+        <xs:annotation>
+            <xs:documentation>Type defining one option only: Assign but can be empty as well.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Assign"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="IntervalType">
+        <xs:annotation>
+            <xs:documentation>The definition of a range of numbers.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element name="IntervalLength" type="ct:StandardAssignType">
+                        <xs:annotation>
+                            <xs:documentation>The dosing period.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:sequence>
+                        <xs:element name="LeftEndpoint" type="ct:EndpointType">
+                            <xs:annotation>
+                                <xs:documentation>The left endpoint of the range.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="RightEndpoint" type="ct:EndpointType">
+                            <xs:annotation>
+                                <xs:documentation>The right endpoint of the range.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="EndpointType">
+        <xs:annotation>
+            <xs:documentation>The definition of a range of numbers.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:StandardAssignType">
+                <xs:attribute name="type" default="closed">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="closed"/>
+                            <xs:enumeration value="open"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    
+    <xs:complexType name="CommonVariableDefinitionType" abstract="true">
+        <xs:annotation>
+            <xs:documentation>
+                An abstract type defining the comment properties of a variable definition.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Symbol"/>
+                </xs:sequence>
+                <xs:attribute name="symbId" type="ct:SymbolIdType">
+                    <xs:annotation>
+                        <xs:documentation>The symbol id used to define the variable.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="symbIdRef" type="ct:SymbolIdType">
+                    <xs:annotation>
+                        <xs:documentation>The symbol reference for this variable - used for assignments of previously declared (derivative) variables.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="VariableDefinitionType">
+        <xs:annotation>
+            <xs:documentation>A standard variable definition. Elements defined unsing this XML Schema Type have a Symbol type
+                in addition to other common variable definition properties.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:CommonVariableDefinitionType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>Initialise the variable.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="symbolType" type="ct:SymbolTypeType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>The type of the variable.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="regressor" type="ct:RegressorType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>The type of the variable.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="IndependentVariableReferenceType">
+        <xs:annotation>
+            <xs:documentation>References the independent variable.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>References the independent variable symbol.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="InitialConditionType">
+        <xs:annotation>
+            <xs:documentation>The initial condition of the derivative variable.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="ConditionVariable" minOccurs="0" type="ct:ConditionVariableType">
+                        <xs:annotation>
+                            <xs:documentation>Variable for the condition. Defaults to independent 
+                            variable if not specified otherwise.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" ref="ct:InitialValue">
+                        <xs:annotation>
+                            <xs:documentation>The initial value of the ODE</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="InitialTime" type="ct:StandardAssignType">
+                        <xs:annotation>
+                            <xs:documentation>The value of the initial condition time.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="HistoryType">
+        <xs:annotation>
+            <xs:documentation>The history for DDEs.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="HistoryValue" type="ct:StandardAssignType">
+                        <xs:annotation>
+                            <xs:documentation>The history value of the ODE</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="HistoryTime" type="ct:StandardAssignType">
+                        <xs:annotation>
+                            <xs:documentation>The value of the history value time.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="BoundaryConditionType">
+        <xs:annotation>
+            <xs:documentation>Boundary condition type for DEs</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="ConditionVariable" minOccurs="0" type="ct:ConditionVariableType">
+                        <xs:annotation>
+                            <xs:documentation>Variable for the condition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="BoundaryValue" type="ct:StandardAssignType">
+                        <xs:annotation>
+                            <xs:documentation>The boundary value condition equation.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:AssignStatement"/>
+                </xs:sequence>
+                <xs:attribute name="type" type="ct:BCType" use="optional"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="ConditionVariableType">
+        <xs:annotation>
+            <xs:documentation>
+                Condition variable type
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the condition variabel.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="DelayType">
+        <xs:annotation>
+            <xs:documentation>
+                The delay type for delay elements.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the variable for which a delay is defined.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="DelayVariable" type="ct:DelayVariableType">
+                        <xs:annotation>
+                            <xs:documentation>Delay variable, usually 'tau'.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:element name="Delay" type="ct:DelayType">
+        <xs:annotation>
+            <xs:documentation>
+                Delay element for DDEs.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:complexType name="DelayVariableType">
+        <xs:annotation>
+            <xs:documentation>
+                The type for delay variable.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="ct:Scalar">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the delay value.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>                    
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>Reference to the variable for a delay variable.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="DerivativeVariableType">
+        <xs:annotation>
+            <xs:documentation>The type specifying a derivative variable.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:CommonVariableDefinitionType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>The symbol id used to define the variable.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="IndependentVariable"
+                        type="ct:IndependentVariableReferenceType">
+                        <xs:annotation>
+                            <xs:documentation>The independent variable of the derivative.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="InitialCondition" type="ct:InitialConditionType">
+                        <xs:annotation>
+                            <xs:documentation>The definition of the initial condition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="History" type="ct:HistoryType">
+                        <xs:annotation>
+                            <xs:documentation>The definition of the history for delay differential equations.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="symbolType" type="ct:SymbolTypeType" use="optional" fixed="real">
+                    <xs:annotation>
+                        <xs:documentation>The symbol type of a derivative variable is always set to be a real.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="FunctionDefinitionType">
+        <xs:annotation>
+            <xs:documentation>
+                This defines a function that can be used elsewhere in the PharmML document.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" name="FunctionArgument"
+                        type="ct:FuncParameterDefinitionType">
+                        <xs:annotation>
+                            <xs:documentation>The argument (parameter) to the function.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="Definition" type="ct:StandardAssignType">
+                        <xs:annotation>
+                            <xs:documentation>The body of the function defintion.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="symbolType" type="ct:SymbolTypeType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The type of the function definition.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="symbId" type="ct:SymbolIdType" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="FuncParameterDefinitionType">
+        <xs:annotation>
+            <xs:documentation>Defines a function argument defintion type. The function argument has a symbol identifier, an optional name and a type.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attribute name="symbolType" type="ct:SymbolTypeType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The type of the function definition.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="symbId" type="ct:SymbolIdType" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="LevelReferenceType">
+        <xs:annotation>
+            <xs:documentation>
+                A reference to a variability level.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:SymbRef"/>
+                    <xs:element name="RandomEffectMapping" minOccurs="0" type="ct:RandomEffectMappingType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="RandomEffectMappingType">
+        <xs:annotation>
+            <xs:documentation>Type defining the stdev or variance to be referenced
+                in the VariabilityReference element.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:SymbRef"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="SymbolNameType">
+        <xs:annotation>
+            <xs:documentation>Type defining the name of the symbol in a form suitable for display. Currently this should be plain text and not include any markup.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="ct:SymbolIdType">
+                <xs:attributeGroup ref="ct:RootAttributesGroup"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="NameType">
+        <xs:annotation>
+            <xs:documentation>Type specifying a descriptive name that
+                can be displayed and so sshould be human readable.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attributeGroup ref="ct:RootAttributesGroup"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="VariableAssignmentType">
+        <xs:annotation>
+            <xs:documentation>A type that specifies a variable assignment.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>The variable to be assigned to.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>The right-hand side of the assignment.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="InterpolationIVType">
+        <xs:annotation>
+            <xs:documentation>
+                Type that defines Interpolation Independent Variable.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The symbol reference to map to.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:element name="Interpolation" type="ct:InterpolationType">
+        <xs:annotation>
+            <xs:documentation>
+                Element specifies the interpolation algorithms.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    
+    <xs:complexType name="InterpolationType">
+        <xs:annotation>
+            <xs:documentation>This is an interpolation algorithm definition element.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:annotation>
+                        <xs:documentation>The type specifying interpolation algorithm. Can be applied for covariates or other data.</xs:documentation>
+                    </xs:annotation>
+                    <xs:element name="Algorithm">
+                        <xs:simpleType>
+                            <xs:restriction base="xs:token">
+                                <xs:enumeration value="constant">
+                                    <xs:annotation>
+                                        <xs:documentation>Constant interpolation</xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="nearest">
+                                    <xs:annotation>
+                                        <xs:documentation>Nearest-neighbor interpolation</xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="linear">
+                                    <xs:annotation>
+                                        <xs:documentation>Linear interpolation</xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="spline">
+                                    <xs:annotation>
+                                        <xs:documentation>Spline interpolation</xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="pchip">
+                                    <xs:annotation>
+                                        <xs:documentation>Piecewise Cubic Hermite Interpolating Polynomial interpolation</xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="cubic">
+                                    <xs:annotation>
+                                        <xs:documentation>Cubic Polynomial interpolation</xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="lastValue">
+                                    <xs:annotation>
+                                        <xs:documentation>Last value interpolation</xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:element> 
+                    <xs:element name="InterpIndepVar" minOccurs="0" type="ct:InterpolationIVType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+
+    <xs:complexType name="MatrixType">
+        <xs:annotation>
+            <xs:documentation>
+                The type specifies the content of a matrix.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="RowNames" minOccurs="0" type="ct:MatrixColumnRowNames">
+                        <xs:annotation>
+                            <xs:documentation>Names of the matrix rows.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="ColumnNames" minOccurs="0" type="ct:MatrixColumnRowNames">
+                        <xs:annotation>
+                            <xs:documentation>Names of the matrix columns.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:choice minOccurs="0" maxOccurs="unbounded">
+                        
+                        <xs:element name="MatrixColumn" type="ct:MatrixColumnType" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>A column in the matrix.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    
+                        <xs:element name="MatrixRow" type="ct:MatrixRowType" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>A row in the matrix.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="MatrixCell" type="ct:MatrixCellType" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>Single matrix element with indexes.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="MatrixBlock" type="ct:MatrixBlockType" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>Matrix block (submatrix) with indexes.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+                <xs:attribute name="diagDefault" type="xs:double" default="0">
+                    <xs:annotation>
+                        <xs:documentation>The default diagonal value.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="offDiagDefault" type="xs:double" default="0">
+                    <xs:annotation>
+                        <xs:documentation>The default off-diagonal value.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="numbCols" type="xs:int">
+                    <xs:annotation>
+                        <xs:documentation>The number of columns.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="numbRows" type="xs:int">
+                    <xs:annotation>
+                        <xs:documentation>The number of rows.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="matrixType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>Mathematical type of the matrix.</xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:Name">
+                            <xs:enumeration value="Any"/>
+                            <xs:enumeration value="Diagonal"/>
+                            <xs:enumeration value="LowerTriangular"/>
+                            <xs:enumeration value="UpperTriangular"/>
+                            <xs:enumeration value="Symmetric"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="MatrixColumnRowNames">
+        <xs:annotation>
+            <xs:documentation>
+                Type specifying names of the row and columns.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice maxOccurs="unbounded">
+                    <xs:element ref="ct:String">
+                        <xs:annotation>
+                            <xs:documentation>A string.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>A variable reference.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="MatrixCellType">
+        <xs:annotation>
+            <xs:documentation>
+                This type specifies a matrix cell - with indexes.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="CellRow" type="ct:MatrixVectorIndexType"/>
+                    <xs:element name="CellColumn" type="ct:MatrixVectorIndexType"/>
+                    <xs:choice maxOccurs="unbounded">
+                        <xs:element ref="ct:Scalar">
+                            <xs:annotation>
+                                <xs:documentation>A scalar value to be inserted into the matrix cell.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element ref="ct:SymbRef"/>
+                        <xs:element ref="ct:Assign">
+                            <xs:annotation>
+                                <xs:documentation>A mathematical expression.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="MatrixRowType">
+        <xs:annotation>
+            <xs:documentation>This type specifies a row of values in a matrix. The row can contain indexed cells or 
+                scalars/symbols filling the whole row. Index of the matrix row is optoinal. If cells are defined inside rows, 
+                the cells will be indexed relative to the row.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="RowIndex" minOccurs="0" type="ct:MatrixVectorIndexType"/>
+                    <xs:choice minOccurs="0" maxOccurs="unbounded">
+                        <xs:element ref="ct:Scalar">
+                            <xs:annotation>
+                                <xs:documentation>A scalar value to be inserted into the vector at this point.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element ref="ct:Sequence">
+                            <xs:annotation>
+                                <xs:documentation>A sequence (or uniform series) of numbers to be inserted into the vector at this point.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element ref="ct:SymbRef"/>
+                        <xs:element ref="ct:Assign">
+                            <xs:annotation>
+                                <xs:documentation>A mathematical expression.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+                <xs:attribute name="default" type="xs:double" default="0">
+                    <xs:annotation>
+                        <xs:documentation>The default row value - overwrites the matrix default.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    
+    <xs:complexType name="MatrixColumnType">
+        <xs:annotation>
+            <xs:documentation>This type specifies a column of values in a matrix. The column can contain 
+                indexed cells or scalars/symbols filling the whole column. Index of the matrix column is optional. 
+                If cells are defined inside column, the cells will be indexed relative to the column.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="ColumnIndex" minOccurs="0" type="ct:MatrixVectorIndexType"/>
+                    <xs:choice minOccurs="0" maxOccurs="unbounded">
+                        <xs:element ref="ct:Scalar">
+                            <xs:annotation>
+                                <xs:documentation>A scalar value to be inserted into the vector at this point.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element ref="ct:Sequence">
+                            <xs:annotation>
+                                <xs:documentation>A sequence (or uniform series) of numbers to be inserted into the vector at this point.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element ref="ct:SymbRef"/>
+                        <xs:element ref="ct:Assign">
+                            <xs:annotation>
+                                <xs:documentation>A mathematical expression.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+                <xs:attribute name="default" type="xs:double" default="0">
+                    <xs:annotation>
+                        <xs:documentation>The default column value - overwrites the matrix default.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    
+    <xs:complexType name="MatrixBlockType">
+        <xs:annotation>
+            <xs:documentation>
+                The type specifies the content of a block/submatrix of a matrix.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="BlockStartRow" type="ct:MatrixVectorIndexType">
+                        <xs:annotation>
+                            <xs:documentation>The row index.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="BlockStartColumn" type="ct:MatrixVectorIndexType">
+                        <xs:annotation>
+                            <xs:documentation>The column index.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:choice>
+                        <xs:element name="BlockRow" type="ct:MatrixRowType" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>A row in the matrix.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="BlockCell" type="ct:MatrixCellType" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>Single matrix element with indexes relative to the block start coordinates.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+                <xs:attribute name="diagDefault" type="xs:double" default="0">
+                    <xs:annotation>
+                        <xs:documentation>The default diagonal value.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="offDiagDefault" type="xs:double" default="0">
+                    <xs:annotation>
+                        <xs:documentation>The default off-diagonal value.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="numbCols" type="xs:int">
+                    <xs:annotation>
+                        <xs:documentation>The number of columns.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="numbRows" type="xs:int">
+                    <xs:annotation>
+                        <xs:documentation>The number of rows.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="MatrixBlockSelectorType">
+        <xs:annotation>
+            <xs:documentation>
+                This type specifies a block selector for a matrix.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="BlockStartRow" type="ct:MatrixVectorIndexType"/>
+                    <xs:element name="BlockStartColumn" type="ct:MatrixVectorIndexType"/>
+                    <xs:element name="RowsNumber" type="ct:MatrixVectorIndexType"/>
+                    <xs:element name="ColumnsNumber" type="ct:MatrixVectorIndexType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="MatrixCellSelectorType">
+        <xs:annotation>
+            <xs:documentation>
+                This type specifies cell selector for a matrix.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="RowIndex" type="ct:MatrixVectorIndexType"/>
+                    <xs:element name="ColumnIndex" type="ct:MatrixVectorIndexType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="MatrixSelectorType">
+        <xs:annotation>
+            <xs:documentation>
+                Type for matrix selector.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:SymbRef"/>
+                    <xs:choice>
+                        <xs:element name="Cell" type="ct:MatrixCellSelectorType"/>
+                        <xs:element name="Block" type="ct:MatrixBlockSelectorType"/>                            
+                        <xs:element name="Row" type="ct:MatrixVectorIndexType"/>
+                        <xs:element name="Column" type="ct:MatrixVectorIndexType"/>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:element name="MatrixSelector" type="ct:MatrixSelectorType">
+        <xs:annotation>
+            <xs:documentation>
+                Allows to select a choosen matrix element/row/column/block.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    
+    
+    <xs:complexType name="MatrixVectorIndexType">
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>A mathematical expression.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Int">
+                        <xs:annotation>
+                            <xs:documentation>An integer value.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>A variable reference.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:EndIndex"/>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="SumProductIndexType">
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>A variable reference.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="SumIndexSetType">
+        <xs:annotation>
+            <xs:documentation>Type for sum index set.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:Vector">
+                        <xs:annotation>
+                            <xs:documentation>Sum index is defined by a vector</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="SumType">
+        <xs:annotation>
+            <xs:documentation>Type defining summation.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:choice>
+                        <xs:element ref="ct:SymbRef">
+                            <xs:annotation>
+                                <xs:documentation>A variable reference.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element ref="ct:Assign">
+                            <xs:annotation>
+                                <xs:documentation>A mathematical expression.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                    <xs:element name="SumIndex" type="ct:SumProductIndexType"/>
+                    <xs:choice>
+                        <xs:sequence>
+                            <xs:element name="LowLimit" type="ct:LowUpLimitType">
+                                <xs:annotation>
+                                    <xs:documentation>Defining first index in the sum.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="UpLimit" type="ct:LowUpLimitType">
+                                <xs:annotation>
+                                    <xs:documentation>Defining last index in the sum.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:element name="SumIndexSet" type="ct:SumIndexSetType">
+                            <xs:annotation>
+                                <xs:documentation>Definig a set of indexes for summation, i.e. if non-consequtive
+                                    element are to be considered.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="ProductType">
+        <xs:annotation>
+            <xs:documentation>Type defining product.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:choice>
+                        <xs:element ref="ct:SymbRef">
+                            <xs:annotation>
+                                <xs:documentation>A variable reference.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element ref="ct:Assign">
+                            <xs:annotation>
+                                <xs:documentation>A mathematical expression.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                    <xs:element name="ProductIndex" type="ct:SumProductIndexType"/>
+                    <xs:element name="LowLimit" type="ct:LowUpLimitType">
+                        <xs:annotation>
+                            <xs:documentation>Defining first index in the sum.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="UpLimit" type="ct:LowUpLimitType">
+                        <xs:annotation>
+                            <xs:documentation>Defining last index in the sum.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>            
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    
+    <xs:complexType name="LowUpLimitType">
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>A mathematical expression.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Int">
+                        <xs:annotation>
+                            <xs:documentation>An integer value.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:SymbRef">
+                        <xs:annotation>
+                            <xs:documentation>A variable reference.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    
+    <xs:complexType name="VectorType">
+        <xs:annotation>
+            <xs:documentation>
+                Traditional vector, with numerical values only and facultative index.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice minOccurs="0">
+                    <xs:element name="VectorElements" type="ct:VectorElementsType">
+                        <xs:annotation>
+                            <xs:documentation>Basic vector element - numerical value or symbolRef.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:choice maxOccurs="unbounded">
+                        <xs:element name="VectorCell" type="ct:VectorCellType" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>Single vector element with index.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="VectorSegment" type="ct:VectorSegmentType" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>Consecutive vector elements with start index and segment length.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:choice>
+                <xs:attribute name="length" type="xs:int">
+                    <xs:annotation>
+                        <xs:documentation>The length of the vector - optional.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="default" type="xs:double" default="0">
+                    <xs:annotation>
+                        <xs:documentation>Default value of vector - set to 0.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="VectorElementsType">
+        <xs:annotation>
+            <xs:documentation>
+                This type specifies a vector element - without indexes.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice maxOccurs="unbounded">
+                    <xs:element ref="ct:Scalar">
+                        <xs:annotation>
+                            <xs:documentation>A scalar value to be inserted into the vector at this point.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:Sequence">
+                        <xs:annotation>
+                            <xs:documentation>A sequence (or uniform series) of numbers to be inserted into the vector at this point.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element ref="ct:SymbRef"/>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>A mathematical expression.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="VectorCellType">
+        <xs:annotation>
+            <xs:documentation>
+                This type specifies a vector cell - with index.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="CellIndex" type="ct:MatrixVectorIndexType"/>
+                    <xs:choice>
+                        <xs:element ref="ct:Scalar">
+                            <xs:annotation>
+                                <xs:documentation>A scalar value to be inserted into the vector at this point.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element ref="ct:SymbRef"/>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="VectorSegmentType">
+        <xs:annotation>
+            <xs:documentation>
+                A segment of a vector with numerical values or variables and facultative index.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="SegmentStartIndex" type="ct:MatrixVectorIndexType">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Index indicating the segment's first element position in the vector.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="SegmentLength" type="ct:MatrixVectorIndexType">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Segment length.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="VectorElements" minOccurs="0" type="ct:VectorElementsType">
+                        <xs:annotation>
+                            <xs:documentation>Basic vector element - numerical value or symbolRef.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="default" type="xs:double" default="0">
+                    <xs:annotation>
+                        <xs:documentation>Default value of vector set to 0.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="VectorSegmentSelectorType">
+        <xs:annotation>
+            <xs:documentation>
+                This type specifies a vector segment.
+            </xs:documentation>            
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence maxOccurs="unbounded">
+                    <xs:element name="StartIndex" type="ct:MatrixVectorIndexType"/>
+                    <xs:choice>
+                        <xs:element name="SegmentLength" type="ct:MatrixVectorIndexType"/>
+                        <xs:element ref="ct:EndIndex"/>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="VectorSelectorType">
+        <xs:annotation>
+            <xs:documentation>
+                Type for vector selector.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:SymbRef"/>
+                    <xs:element name="Head" minOccurs="0" type="ct:MatrixVectorIndexType"/>
+                    <xs:choice maxOccurs="unbounded">
+                        <xs:element name="Cell" minOccurs="0" maxOccurs="unbounded" type="ct:MatrixVectorIndexType"/>
+                        <xs:element name="Segment" minOccurs="0" maxOccurs="unbounded" type="ct:VectorSegmentSelectorType"/>                            
+                    </xs:choice>
+                    <xs:element name="Tail" minOccurs="0" type="ct:MatrixVectorIndexType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:element name="VectorSelector" type="ct:VectorSelectorType">
+        <xs:annotation>
+            <xs:documentation>
+                Allows to select a choosen vector element.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    
+    <xs:complexType name="DifferentialEquationType">
+        <xs:annotation>
+            <xs:documentation>Generic type for DEs</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:AssignStatement"/>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="InitialCondition" type="ct:InitialConditionType">
+                        <xs:annotation>
+                            <xs:documentation>The definition of the initial condition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="BoundaryCondition" type="ct:BoundaryConditionType">
+                        <xs:annotation>
+                            <xs:documentation>The definition of the boundary condition.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="History" type="ct:HistoryType">
+                        <xs:annotation>
+                            <xs:documentation>The definition of the history for delay differential equations.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="type" type="ct:DEType" use="optional"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <!--
+        Attribute Groups
+        -->
+    
+    <xs:attributeGroup name="BlockDefnGroup">
+        <xs:annotation>
+            <xs:documentation>Grouping of attributes used to define a block.</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="blkId" type="ct:BlockIdType" use="required"/>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="SymbolDefinitionGroup">
+        <xs:annotation>
+            <xs:documentation>Grouping of attributes used to define a symbol.</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="symbId" type="ct:SymbolIdType" use="required"/>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="OidDefnGroup">
+        <xs:annotation>
+            <xs:documentation>Grouping of attributed used to define an OID.</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="oid" type="ct:oidType" use="required"/>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="OidRefGroup">
+        <xs:annotation>
+            <xs:documentation>Grouping of attributes used to reference an OID.</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="oidRef" type="ct:oidType" use="required"/>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="RootAttributesGroup">
+        <xs:annotation>
+            <xs:documentation>Grouping of attributes to be found in all elements in the schema.</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="id" type="ct:IdType">
+            <xs:annotation>
+                <xs:documentation>The element identifier.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>    
+    
+    <xs:attributeGroup name="CovariateAttributeGroup">
+        <xs:attribute name="symbIdRef" type="ct:SymbolIdType" use="required">
+            <xs:annotation>
+                <xs:documentation>ID referencing a Symbol.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    
+    
+    <!--
+        Element Groups
+        -->
+    
+    <xs:group name="RootElementGroup">
+        <xs:annotation>
+            <xs:documentation>Grouping of elements to be found as children of all elements in the schema.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element minOccurs="0" ref="ct:Description"/>
+        </xs:sequence>
+    </xs:group>
+
+
+    <!--
+        Elements
+        -->
+    <xs:element name="InitialValue" type="ct:StandardAssignType">
+        <xs:annotation>
+            <xs:documentation>Element allowing specification or access to the initial value
+                of a ODE-defined variable.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="DE" type="ct:DifferentialEquationType">
+        <xs:annotation>
+            <xs:documentation>
+                Generic DE type.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="AssignStatement" type="math:LogicBinOpType">
+        <xs:annotation>
+            <xs:documentation>
+                Generic assignment statement.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Sum" type="ct:SumType">
+        <xs:annotation>
+            <xs:documentation>Sigma sum element.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Product" type="ct:ProductType">
+        <xs:annotation>
+            <xs:documentation>Product element.</xs:documentation>
+        </xs:annotation>
+    </xs:element>    
+    <xs:element name="Matrix" type="ct:MatrixType">
+        <xs:annotation>
+            <xs:documentation>Element defines a matrix</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Vector" type="ct:VectorType" substitutionGroup="ct:Arrays">
+        <xs:annotation>
+            <xs:documentation>Element defines a vector type, scalars and sequences</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="EndIndex"/>
+    
+    <xs:element name="Interval" type="ct:IntervalType">
+        <xs:annotation>
+            <xs:documentation>Element defines an interval with length or endpoints definiton.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:element name="OidRef" type="ct:OidRefType">
+        <xs:annotation>
+            <xs:documentation>
+                An element that provides a reference to an OID.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Scalar" abstract="true">
+        <xs:annotation>
+            <xs:documentation>
+                An element that defines a scalar value. This element is abstract the specific scalar elements are specified by the
+                substitution group.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Int" substitutionGroup="ct:Scalar" type="ct:IntValueType">
+        <xs:annotation>
+            <xs:documentation>
+                The element defines an integer value. It is a scalar.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Real" substitutionGroup="ct:Scalar" type="ct:RealValueType">
+        <xs:annotation>
+            <xs:documentation>
+                The element defines an real value. It is a scalar.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="String" substitutionGroup="ct:Scalar" type="ct:StringValueType">
+        <xs:annotation>
+            <xs:documentation>
+                The element defines an string value. It is a scalar.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Id" substitutionGroup="ct:Scalar" type="ct:IdValueType">
+        <xs:annotation>
+            <xs:documentation>
+                Element defines a value of type Id.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    
+    <xs:element name="NA" substitutionGroup="ct:Scalar" type="ct:MissingValueType">
+        <xs:annotation>
+            <xs:documentation>
+                Element defines not available/missing data.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="NaN" substitutionGroup="ct:Scalar" type="ct:MissingValueType">
+        <xs:annotation>
+            <xs:documentation>
+                Element defines a not a number - impossible value (e.g., dividing by zero).
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="plusInf" substitutionGroup="ct:Scalar" type="ct:MissingValueType">
+        <xs:annotation>
+            <xs:documentation>
+                Element defines a positive infinity data item.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="minusInf" substitutionGroup="ct:Scalar" type="ct:MissingValueType">
+        <xs:annotation>
+            <xs:documentation>
+                Element defines a negative infinity data item.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="BLQ" substitutionGroup="ct:Scalar" type="ct:MissingValueType">
+        <xs:annotation>
+            <xs:documentation>
+                Element defines bellow level of quantification data item.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="ALQ" substitutionGroup="ct:Scalar" type="ct:MissingValueType">
+        <xs:annotation>
+            <xs:documentation>
+                Element defines a above level of quantification data item.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:element name="Boolean" type="ct:BooleanType"  substitutionGroup="ct:Scalar" abstract="true">
+        <xs:annotation>
+            <xs:documentation>
+                This abstract element defines an Booelan value.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="True" type="ct:TrueBooleanType" substitutionGroup="ct:Boolean">
+        <xs:annotation>
+            <xs:documentation>
+                This element defines a TRUE Booelan value.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="False" type="ct:FalseBooleanType" substitutionGroup="ct:Boolean">
+        <xs:annotation>
+            <xs:documentation>
+                This element defines a FALSE Booelan value.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Symbol" type="ct:SymbolNameType">
+        <xs:annotation>
+            <xs:documentation>Element defining the name of the symbol.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="SymbRef" type="ct:SymbolRefType">
+        <xs:annotation>
+            <xs:documentation>Element references a symbol defined elsewhere in the document.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    
+    <xs:element name="CatRef" type="ct:CategoryRefType">
+        <xs:annotation>
+            <xs:documentation>Element references a symbol defined elsewhere in the document.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:element name="Description" type="ct:AnnotationType">
+        <xs:annotation>
+            <xs:documentation>Element provides additional documentation about its parent element.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Name" type="ct:NameType">
+        <xs:annotation>
+            <xs:documentation>Element defines a human readable/display name for its parent element.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element abstract="true" name="Arrays">
+        <xs:annotation>
+            <xs:documentation>An abstract element that defines an array of values.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Sequence" type="ct:SequenceType" substitutionGroup="ct:Arrays">
+        <xs:annotation>
+            <xs:documentation>Element defines a uniform sequence of values.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element abstract="true" name="CommonVariable" type="ct:CommonVariableDefinitionType">
+        <xs:annotation>
+            <xs:documentation>An abstract element that defines a variety of variable declarations. The possible variable declarations are
+                defined by the substitution group.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Variable" type="ct:VariableDefinitionType" substitutionGroup="ct:CommonVariable">
+        <xs:annotation>
+            <xs:documentation>Element specifies a standard variable definition.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="DerivativeVariable" substitutionGroup="ct:CommonVariable" type="ct:DerivativeVariableType">
+        <xs:annotation>
+            <xs:documentation>Element specifies a derivative variable definition.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="VariableAssignment" type="ct:VariableAssignmentType">
+        <xs:annotation>
+            <xs:documentation>Element specifies a variable assignment.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Assign" type="ct:Rhs">
+        <xs:annotation>
+            <xs:documentation>This element indicates that the value(s) or equation defined by its child elements are to be assigned to its parent element.
+                It is the equivalent of an assignment operator.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="VariabilityReference" type="ct:LevelReferenceType">
+        <xs:annotation>
+            <xs:documentation>The element provides a reference to a variability level. It associates its parent element with the reference variability level.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="FunctionDefinition" type="ct:FunctionDefinitionType">
+        <xs:annotation>
+            <xs:documentation>This element defines a function within the PharmML document.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+</xs:schema>

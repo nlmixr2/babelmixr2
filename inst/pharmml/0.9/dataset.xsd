@@ -1,0 +1,796 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2013-2016 European Molecular Biology Laboratory, Heidelberg,
+Germany and Novo Nordisk A/S, Bagsvaerd, Denmark.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you
+may not use this file except in compliance with the License.  You may
+obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+     
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing
+permissions and limitations under the License.
+-->    
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns="http://www.pharmml.org/pharmml/0.9/Dataset"
+    xmlns:ds="http://www.pharmml.org/pharmml/0.9/Dataset"
+    xmlns:ct="http://www.pharmml.org/pharmml/0.9/CommonTypes"
+    xmlns:math="http://www.pharmml.org/pharmml/0.9/Maths"
+    targetNamespace="http://www.pharmml.org/pharmml/0.9/Dataset" 
+    version="0.9" elementFormDefault="qualified">
+    
+    <xs:import namespace="http://www.pharmml.org/pharmml/0.9/Maths"
+        schemaLocation="maths.xsd"/>
+
+    <xs:import namespace="http://www.pharmml.org/pharmml/0.9/CommonTypes"
+        schemaLocation="commonTypes.xsd"/>
+    <xs:annotation>
+        <xs:documentation>The schema defines the dataset and it related structures used in a PharmML document.</xs:documentation>
+    </xs:annotation>    
+   
+    <!--
+        Simple Types
+        -->
+    <xs:simpleType name="IgnoreSymbolType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[^\s]{1,5}"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="ColumnValueTypeType">
+        <xs:annotation>
+            <xs:documentation>
+                Type specifying the permitted column types. 
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="ct:SymbolTypeType">
+            <xs:annotation>
+                <xs:documentation>
+                    The permitted column types are the same as the permitted symbol types.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="HeaderTypeType">
+        <xs:annotation>
+            <xs:documentation>
+                Type specifying the types of headers. 
+            </xs:documentation>
+        </xs:annotation>
+        <xs:union>
+            <xs:simpleType>
+                <xs:restriction base="ct:SymbolIdType">
+                    <xs:enumeration value="mainHeader">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The main header in the datafile.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="subHeader">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The sub header in the datafile.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="userDefined">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The user-defined header in the datafile.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:union>
+    </xs:simpleType>
+    
+    <!--
+        Complex Types
+        -->
+    <xs:complexType name="ColumnRefType">
+        <xs:annotation>
+            <xs:documentation>
+                Type specified a reference to a column in a dataset.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="ds:ColumnRef">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Refers to a column in a table. 
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="columnIdRef" type="ct:SymbolIdType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>Refers to a column in a dataset.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="transformIdRef" type="ct:SymbolIdType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Refers to a column of a transformed column associated with the current one and the same administration process.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:element name="ExternalFile" type="ExternalFileType">
+        <xs:annotation>
+            <xs:documentation>
+                Element specifies the details for the import data file.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:complexType name="ExternalFileType">
+        <xs:annotation>
+            <xs:documentation>This is a data type for external data files.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>                                 
+                    <xs:element name="path" type="xs:string">    
+                        <xs:annotation>
+                            <xs:documentation>
+                                The URL of the import data file.
+                            </xs:documentation>
+                        </xs:annotation>                        
+                    </xs:element>
+                    <xs:element name="format" minOccurs="0" type="xs:string" fixed="CSV">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Only CSV format is allowed with Tab, Comma or Space as delimiters.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="delimiter" type="DelimiterType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Tab, Comma, Space, Semicolon as delimiters are predefined plus other strings allowed.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="MissingData" minOccurs="0" maxOccurs="unbounded" type="MissingDataMapType">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The mapping of symbols used in dataset and allowed missing categories.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>         
+                <xs:attributeGroup ref="ct:OidDefnGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:simpleType name="DelimiterType">
+        <xs:annotation>
+            <xs:documentation>
+                Type specifying the types of delimiters, a predifined set plus any string. 
+            </xs:documentation>
+        </xs:annotation>
+        <xs:union>
+            <xs:simpleType>
+                <xs:restriction base="ct:SymbolIdType">
+                    <xs:enumeration value="TAB">
+                        <xs:annotation>
+                            <xs:documentation>Tab '\t' as delimiter</xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="SPACE">
+                        <xs:annotation>
+                            <xs:documentation>Space ' ' as delimiter</xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="COMMA">
+                        <xs:annotation>
+                            <xs:documentation>Comma ',' as delimiter</xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="SEMICOLON">
+                        <xs:annotation>
+                            <xs:documentation>Semicolon ';' as delimiter</xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                </xs:restriction>
+            </xs:simpleType>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:pattern value="[^\s]+"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:union>
+    </xs:simpleType>
+    
+    <xs:element name="ImportTargetData" type="ImportTargetDataType">
+        <xs:annotation>
+            <xs:documentation>
+                Element specifies the details for the import target data file.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+ 
+    <xs:complexType name="ImportTargetDataType">
+        <xs:annotation>
+            <xs:documentation>This is a data type for external data files.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="path" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The URL of the import data file.
+                            </xs:documentation>
+                        </xs:annotation>                        
+                    </xs:element>
+                    <xs:element name="format" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Any dataformat is allowed.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                                <xs:pattern value="([a-zA-Z0-9])[a-zA-Z0-9\\_]*"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="delimiter" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Only Tab, Comma or Space as delimiters are allowed.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleType>
+                            <xs:restriction base="xs:token">
+                                <xs:enumeration value="TAB">
+                                    <xs:annotation>
+                                        <xs:documentation>Tab '\t' as delimiter</xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="SPACE">
+                                    <xs:annotation>
+                                        <xs:documentation>Space ' ' as delimiter</xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="COMMA">
+                                    <xs:annotation>
+                                        <xs:documentation>Comma ',' as delimiter</xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="SEMICOLON">
+                                    <xs:annotation>
+                                        <xs:documentation>Semicolon ';' as delimiter</xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:element>
+                </xs:sequence>         
+                <xs:attributeGroup ref="ct:OidDefnGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="DataSetTableType">
+        <xs:annotation>
+            <xs:documentation>
+                The type specifies the content of a dataset.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="HeaderRow" type="ds:HeaderRowType" minOccurs="0" maxOccurs="unbounded">
+                        <xs:annotation>
+                            <xs:documentation>
+                                A header in the dataset.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Row" type="ds:DatasetRowType" maxOccurs="unbounded">
+                        <xs:annotation>
+                            <xs:documentation>
+                                A row in the dataset.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="DataSetType">
+        <xs:annotation>
+            <xs:documentation>
+                The type specifying the dataset. The dataset is decribed in more detail in the Language Overview section of the specification.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="Definition"/>
+                    <xs:choice>
+                        <xs:element ref="ds:ExternalFile" maxOccurs="1">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Import datafile
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element ref="ds:Table" maxOccurs="1">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Defines a data table.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="TargetToolDataSetType">
+        <xs:annotation>
+            <xs:documentation>
+                The type specifying the dataset for target tools. This type has optional 'Definition', otherwise identical with 'DataSetType'.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="Definition"/>
+                    <xs:choice>
+                        <xs:element ref="ds:ImportTargetData" maxOccurs="1">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Import datafile
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element ref="ds:Table" maxOccurs="1">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Defines a data table.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="HeaderColumnsDefinitionType">
+        <xs:annotation>
+            <xs:documentation>
+                Type specifies the headers and columns in a dataset.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" name="Header" type="ds:HeaderDefnType">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Defines a header in the dataset.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element maxOccurs="unbounded" name="Column" type="ds:ColumnDefnType">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Defines a column in the dataset.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="IgnoreLine" type="ds:IgnoreLineType">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Defines an ignore character in the dataset.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="IgnoreLineType">
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element minOccurs="0" ref="math:Condition"/>
+                </xs:sequence>
+                <xs:attribute name="symbol" type="ds:IgnoreSymbolType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>The ignore character symbol.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="ColumnDefnType">
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                
+                <xs:attribute name="columnId" type="ct:SymbolIdType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The name to give the column.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                
+                <xs:attribute name="columnType" type="ds:ColumnTypeType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>The column type for this column. Optional if mapping of this
+                        column is defined then it is not required. This helps avoiding redundancies or
+                        inconsistencies.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                
+                <xs:attribute name="level" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Optional attribute to identify var level in SO.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                
+                <xs:attribute name="valueType" type="ds:ColumnValueTypeType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The column number in the reosurce to use for this column.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="columnNum" type="xs:int" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The column number in the reosurce to use for this column.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="HeaderDefnType">
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attribute name="name" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The name of the header.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="headerType" type="ds:HeaderTypeType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The type of the header.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="rowNumber" type="xs:int" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The row number for this header.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="DatasetRowType">
+        <xs:annotation>
+            <xs:documentation>
+                This type specifies a row of values in the dataset. The row contains a cell which is
+                a scalar value.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice maxOccurs="unbounded">
+                    <xs:element maxOccurs="1" ref="ct:Scalar">
+                        <xs:annotation>
+                            <xs:documentation>A cell with a scalar value.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+        
+    <xs:complexType name="HeaderRowType">
+        <xs:annotation>
+            <xs:documentation>
+                This type specifies a header in the dataset.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:choice maxOccurs="unbounded">
+                    <xs:element maxOccurs="1" ref="ct:Scalar">
+                        <xs:annotation>
+                            <xs:documentation>A cell with a scalar value.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+                <xs:attribute name="order" type="xs:int" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Specifies the order of the header rows.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="ColumnMappingType">
+        <xs:annotation>
+            <xs:documentation>
+                The type that defines column mapping.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:choice>
+                        <xs:element ref="ds:ColumnRef">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The column reference to map to.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                    <xs:choice>
+                        <xs:sequence>
+                            <xs:element minOccurs="0" ref="ct:Assign"/>
+                            <xs:element minOccurs="0" ref="ct:SymbRef">
+                                <xs:annotation>
+                                    <xs:documentation>Reference to the symbol to map the column data to.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element minOccurs="0" ref="math:Piecewise">
+                                <xs:annotation>
+                                    <xs:documentation>Defines a piecewise expression - for conditional mapping.</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="CategoryMapping" minOccurs="0" maxOccurs="unbounded" type="ds:CategoryMappingType">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Defines mapping for categorical covariates and data. 
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:element name="TargetMapping" maxOccurs="unbounded" type="ds:TargetMappingType">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Defines mapping for dosing targets defined e.g. by PK macros 
+                                    (see 'Datasets mapping' in PK macros chapter or 'Mapping Rules' report). 
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="CategoryMappingType">
+        <xs:annotation>
+            <xs:documentation>
+                The type that defines category mapping - for categorical covariates and categorical data.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="Map" type="ds:MapType" minOccurs="1" maxOccurs="unbounded">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The maping between data and model symbols.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="TargetMappingType">
+        <xs:annotation>
+            <xs:documentation>
+                The type that defines mapping between targets in the structural model and the data.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element name="Map" type="ds:MapType" minOccurs="1" maxOccurs="unbounded">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The maping between data and model symbols used in input definitions.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="blkIdRef" type="ct:BlockIdType">
+                    <xs:annotation>
+                        <xs:documentation>ID referencing a Block.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="MapType">
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attribute name="dataSymbol" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Symbol in the data set.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="modelSymbol" type="ct:SymbolIdType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>ID referencing a Symbol in the model.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="admNumber" type="xs:int" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>Number referencing adm/type macro attribute.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:simpleType name="ColumnTypeType">
+        <xs:annotation>
+            <xs:documentation>
+                Type for attribute columnType = id, dv, covariate etc.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:list>
+            <xs:simpleType>
+                <xs:restriction base="xs:Name">
+                    <xs:enumeration value="addl"/>
+                    <xs:enumeration value="adm"/>
+                    <xs:enumeration value="arm"/>
+                    <xs:enumeration value="censoring"/>
+                    <xs:enumeration value="cmt"/>
+                    <xs:enumeration value="covariate"/>
+                    <xs:enumeration value="date"/>
+                    <xs:enumeration value="dat1"/>
+                    <xs:enumeration value="dat2"/>
+                    <xs:enumeration value="dat3"/>
+                    <xs:enumeration value="dose"/>
+                    <xs:enumeration value="duration"/>
+                    <xs:enumeration value="dv"/>
+                    <xs:enumeration value="dvid"/>
+                    <xs:enumeration value="epoch"/>
+                    <xs:enumeration value="evid"/>
+                    <xs:enumeration value="id"/>
+                    <xs:enumeration value="idv"/>
+                    <xs:enumeration value="ii"/>
+                    <xs:enumeration value="limit"/>
+                    <xs:enumeration value="mdv"/>
+                    <xs:enumeration value="occasion"/>
+                    <xs:enumeration value="rate"/>
+                    <xs:enumeration value="reg"/>
+                    <xs:enumeration value="replicate"/>
+                    <xs:enumeration value="ss"/>
+                    <xs:enumeration value="ssEndTime"/>
+                    <xs:enumeration value="ssPeriod"/>
+                    <xs:enumeration value="time"/>
+                    <xs:enumeration value="undefined"/>
+                    <xs:enumeration value="varLevel"/>
+                    <xs:enumeration value="ytype"/>
+                    <!-- SO related -->
+                    <xs:enumeration value="indivParameter"/>
+                    <xs:enumeration value="popParameter"/>
+                    <xs:enumeration value="randEffect"/>
+                    <xs:enumeration value="residual"/>
+                    <xs:enumeration value="statPrecision"/>
+                    <xs:enumeration value="strataVariable"/>
+                    <xs:enumeration value="structParameter"/>
+                    <xs:enumeration value="varParameter"/>
+                    <xs:enumeration value="variance"/>
+                    <xs:enumeration value="stdev"/>
+                    <xs:enumeration value="covariance"/>
+                    <xs:enumeration value="correlation"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:list>
+    </xs:simpleType>
+    
+    <xs:complexType name="ColumnTransformationType">
+        <xs:annotation>
+            <xs:documentation>Type defines how the column is transformed when used.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:sequence>
+                    <xs:element ref="ct:Assign">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The transformation is defined as an expression that must include 
+                                a reference to the column, defined by the parent of this element.  
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="transformId" type="ct:SymbolIdType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The name to give the transformation.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="MissingDataMapType">
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attribute name="dataCode" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>Symbol using in the data set.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="missingDataType" type="ct:MissingDataAttributeType" use="required">
+                    <xs:annotation>
+                        <xs:documentation>Allowed missing data categories.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <!--
+        Elements
+        -->
+    <xs:element name="ColumnRef" type="ds:ColumnRefType">
+        <xs:annotation>
+            <xs:documentation>
+                Element to a column in a dataset. 
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Table" type="ds:DataSetTableType">
+        <xs:annotation>
+            <xs:documentation>
+                Element specifies the content of the dataset.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>    
+    <xs:element name="Definition" type="HeaderColumnsDefinitionType">
+        <xs:annotation>
+            <xs:documentation>
+                Defines the headers and columns in a dataset.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="DataSet" type="ds:DataSetType">
+        <xs:annotation>
+            <xs:documentation>
+                This element specifies a dataset in PharmML. Its children define its structure and the
+                data associate with it.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>    
+    <xs:element name="TargetToolData" type="ds:TargetToolDataSetType">
+        <xs:annotation>
+            <xs:documentation>
+                This element specifies a target tool dataset in PharmML. Its children define its structure and the
+                data associate with it. 
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+</xs:schema>
