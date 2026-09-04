@@ -1,5 +1,16 @@
 # babelmixr2 0.1.11.9000
 
+## Internal
+
+- The build now tracks header dependencies.  R's rules rebuild an object only
+  when its own source is newer, so an incremental build silently kept objects
+  that had been compiled against an earlier version of a header they include.
+  That reaches across packages: a `LinkingTo` package's headers are just
+  another include path, so a struct whose layout changes there leaves objects
+  here compiled to the old layout and the resulting shared library mixes both
+  -- a corrupt binary rather than a compile error.  `src/Makevars*` now
+  compiles with `-MMD -MP` and reads back the generated `.d` files.
+
 * The PopED model translation no longer drops the `if ()` condition that
   guards an adaptive dosing call (`evid_()`, `bolus()`, `infuse()`,
   `infuseDur()`, `reset()`, ...).  The branch pruner used to flatten the
