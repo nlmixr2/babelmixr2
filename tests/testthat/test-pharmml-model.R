@@ -271,3 +271,65 @@ test_that("the observation model is schema-valid", {
     expect_true(pharmmlValidate(.doc), info = deparse1(.e))
   }
 })
+
+.pharmmlTestUiCov <- function() {
+  .f <- function() {
+    ini({
+      tka <- log(1.57); tcl <- log(2.72); tv <- log(31.5)
+      wt.cl <- 0.75
+      eta.ka ~ 0.6; eta.cl ~ 0.3; eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + wt.cl * logWT70 + eta.cl)
+      vc <- exp(tv + eta.v)
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / vc * center
+      cp <- center / vc
+      cp ~ add(add.sd)
+    })
+  }
+  rxode2::rxUiDecompress(.f())
+}
+
+test_that("the covariate model declares each covariate", {
+  .x <- .pharmmlCovariateModel(.pharmmlTestUiCov())
+  expect_match(.x, 'blkId="cm1"')
+  expect_match(.x, '<mdef:Covariate symbId="logWT70">')
+  expect_match(.x, "<mdef:Continuous/>")
+})
+
+test_that("the covariate model is empty when the model has no covariates", {
+  expect_equal(.pharmmlCovariateModel(.pharmmlTestUiOneCmt()), "")
+})
+
+test_that("a covariate effect becomes a LinearCovariate with a FixedEffect", {
+  .x <- .pharmmlParameterModel(.pharmmlTestUiCov())
+  expect_match(.x, "<mdef:LinearCovariate>")
+  expect_match(.x, '<ct:SymbRef blkIdRef="cm1" symbIdRef="logWT70"/>')
+  expect_match(.x, "<mdef:FixedEffect>")
+  expect_match(.x, '<mdef:PopulationParameter symbId="wt.cl"/>')
+})
+
+# Wrap an already-complete <mdef:ModelDefinition> element.
+.pharmmlWrapMdefRaw <- function(x) {
+  paste0(
+    '<?xml version="1.0" encoding="UTF-8"?>\n',
+    '<PharmML xmlns="http://www.pharmml.org/pharmml/0.9/PharmML"\n',
+    '    xmlns:ct="http://www.pharmml.org/pharmml/0.9/CommonTypes"\n',
+    '    xmlns:math="http://www.pharmml.org/pharmml/0.9/Maths"\n',
+    '    xmlns:mdef="http://www.pharmml.org/pharmml/0.9/ModelDefinition"\n',
+    '    xmlns:po="http://www.pharmml.org/probonto/ProbOnto"\n',
+    '    writtenVersion="0.9" id="i1">\n',
+    '  <ct:Name>fixture</ct:Name>\n',
+    '  <IndependentVariable symbId="t"/>\n', x, '\n</PharmML>\n')
+}
+
+test_that("the assembled ModelDefinition is schema-valid", {
+  for (.ui in list(.pharmmlTestUiOneCmt(), .pharmmlTestUiCorr(), .pharmmlTestUiCov())) {
+    .doc <- .pharmmlWrapMdefRaw(.pharmmlModelDefinition(.ui))
+    expect_true(pharmmlValidate(.doc))
+  }
+})
+
