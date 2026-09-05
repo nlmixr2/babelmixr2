@@ -72,22 +72,6 @@ test_that("the variability model omits vm1 when the model has no etas", {
   expect_match(.x, 'type="residualError"')
 })
 
-# Wrap a ModelDefinition fragment in the smallest valid document.
-.pharmmlWrapMdef <- function(x) {
-  paste0(
-    '<?xml version="1.0" encoding="UTF-8"?>\n',
-    '<PharmML xmlns="http://www.pharmml.org/pharmml/0.9/PharmML"\n',
-    '    xmlns:ct="http://www.pharmml.org/pharmml/0.9/CommonTypes"\n',
-    '    xmlns:math="http://www.pharmml.org/pharmml/0.9/Maths"\n',
-    '    xmlns:mdef="http://www.pharmml.org/pharmml/0.9/ModelDefinition"\n',
-    '    xmlns:po="http://www.pharmml.org/probonto/ProbOnto"\n',
-    '    writtenVersion="0.9" id="i1">\n',
-    '  <ct:Name>fixture</ct:Name>\n',
-    '  <IndependentVariable symbId="t"/>\n',
-    '  <mdef:ModelDefinition>\n', x, '\n  </mdef:ModelDefinition>\n',
-    '</PharmML>\n')
-}
-
 test_that("the parameter model declares thetas, omegas, etas and individual parameters", {
   .ui <- .pharmmlTestUiOneCmt()
   .x <- .pharmmlParameterModel(.ui)
@@ -311,20 +295,6 @@ test_that("a covariate effect becomes a LinearCovariate with a FixedEffect", {
   expect_match(.x, "<mdef:FixedEffect>")
   expect_match(.x, '<mdef:PopulationParameter symbId="wt.cl"/>')
 })
-
-# Wrap an already-complete <mdef:ModelDefinition> element.
-.pharmmlWrapMdefRaw <- function(x) {
-  paste0(
-    '<?xml version="1.0" encoding="UTF-8"?>\n',
-    '<PharmML xmlns="http://www.pharmml.org/pharmml/0.9/PharmML"\n',
-    '    xmlns:ct="http://www.pharmml.org/pharmml/0.9/CommonTypes"\n',
-    '    xmlns:math="http://www.pharmml.org/pharmml/0.9/Maths"\n',
-    '    xmlns:mdef="http://www.pharmml.org/pharmml/0.9/ModelDefinition"\n',
-    '    xmlns:po="http://www.pharmml.org/probonto/ProbOnto"\n',
-    '    writtenVersion="0.9" id="i1">\n',
-    '  <ct:Name>fixture</ct:Name>\n',
-    '  <IndependentVariable symbId="t"/>\n', x, '\n</PharmML>\n')
-}
 
 test_that("the assembled ModelDefinition is schema-valid", {
   for (.ui in list(.pharmmlTestUiOneCmt(), .pharmmlTestUiCorr(), .pharmmlTestUiCov())) {

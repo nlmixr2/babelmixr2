@@ -149,28 +149,6 @@ test_that(".rxToPharmml handles nested ifelse()", {
   expect_equal(lengths(regmatches(.x, gregexpr("<math:Piecewise>", .x))), 2L)
 })
 
-# Wrap a math subtree in the smallest document the schema will accept, so the
-# walker's output can be validated in isolation.
-.pharmmlWrapMath <- function(x) {
-  paste0(
-    '<?xml version="1.0" encoding="UTF-8"?>\n',
-    '<PharmML xmlns="http://www.pharmml.org/pharmml/0.9/PharmML"\n',
-    '    xmlns:ct="http://www.pharmml.org/pharmml/0.9/CommonTypes"\n',
-    '    xmlns:math="http://www.pharmml.org/pharmml/0.9/Maths"\n',
-    '    xmlns:mdef="http://www.pharmml.org/pharmml/0.9/ModelDefinition"\n',
-    '    writtenVersion="0.9" id="i1">\n',
-    '  <ct:Name>math walker fixture</ct:Name>\n',
-    '  <IndependentVariable symbId="t"/>\n',
-    '  <mdef:ModelDefinition>\n',
-    '    <mdef:StructuralModel blkId="sm1">\n',
-    '      <ct:Variable symbId="y" symbolType="real">\n',
-    '        <ct:Assign>\n', x, '\n</ct:Assign>\n',
-    '      </ct:Variable>\n',
-    '    </mdef:StructuralModel>\n',
-    '  </mdef:ModelDefinition>\n',
-    '</PharmML>\n')
-}
-
 test_that("the math walker emits schema-valid PharmML", {
   .exprs <- list(
     quote(a + b),

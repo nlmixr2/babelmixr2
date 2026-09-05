@@ -84,9 +84,9 @@
       stop("PharmML translation of the '", .dist,
            "' residual distribution is not supported", call. = FALSE)
     }
-    if (isTRUE(.line[["linCmt"]])) {
-      stop("linCmt() translation is not supported yet", call. = FALSE)
-    }
+    # A linCmt() endpoint is fine: the structural model emits PK macros, and the
+    # Compartment macro's `concentration` argument names the prediction, so the
+    # Output reference below resolves the same way as for an ODE model.
     .eps <- paste0("eps_", .cond)
     .popPars <- vapply(setNames(.pharmmlErrParams(ui, .cond), NULL),
                        function(.p) {

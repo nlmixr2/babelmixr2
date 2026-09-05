@@ -193,3 +193,69 @@ test_that("the numerical check can actually fail", {
     expect_gt(max(abs(.lin$cp - .bad$cp)) / max(abs(.bad$cp)), 1e-3)
   }
 })
+
+# --- macro emission -------------------------------------------------------
+
+test_that("a 1-compartment IV clearance model emits the expected macros", {
+  .ui <- .pharmmlLinCmtUi(c("cl", "v"))
+  .x <- .pharmmlPkMacros(.ui)
+
+  expect_match(.x, "<mdef:PKmacros>")
+  expect_match(.x, '<mdef:Value argument="amount">')
+  expect_match(.x, '<ct:SymbRef symbIdRef="central"/>')
+  expect_match(.x, '<mdef:Value argument="volume">')
+  expect_match(.x, '<ct:SymbRef blkIdRef="pm1" symbIdRef="v"/>')
+  expect_match(.x, "<mdef:IV>")
+  expect_match(.x, '<mdef:Value argument="CL">')
+  expect_false(grepl("<mdef:Oral>", .x, fixed = TRUE))
+  expect_false(grepl("<mdef:Peripheral>", .x, fixed = TRUE))
+})
+
+test_that("a rate-parameterised model emits k rather than CL", {
+  .x <- .pharmmlPkMacros(.pharmmlLinCmtUi(c("kel", "v")))
+  expect_match(.x, '<mdef:Value argument="k">')
+  expect_false(grepl('argument="CL"', .x, fixed = TRUE))
+})
+
+test_that("first-order absorption becomes an Oral macro with ka", {
+  .x <- .pharmmlPkMacros(.pharmmlLinCmtUi(c("ka", "cl", "v")))
+  expect_match(.x, "<mdef:Oral>")
+  expect_match(.x, '<mdef:Value argument="ka">')
+  expect_match(.x, '<ct:SymbRef blkIdRef="pm1" symbIdRef="ka"/>')
+  expect_false(grepl("<mdef:IV>", .x, fixed = TRUE))
+})
+
+test_that("a Q/Vp peripheral is emitted as micro-constants", {
+  .x <- .pharmmlPkMacros(.pharmmlLinCmtUi(c("cl", "v", "q", "vp")))
+  expect_match(.x, "<mdef:Peripheral>")
+  # k12 = q/v and k21 = q/vp, emitted through the math walker
+  expect_match(.x, 'math:Binop op="divide"')
+  expect_match(.x, '<ct:SymbRef symbIdRef="peripheral1"/>')
+})
+
+test_that("a k12/k21 peripheral is emitted directly", {
+  .x <- .pharmmlPkMacros(.pharmmlLinCmtUi(c("k", "v", "k12", "k21")))
+  expect_match(.x, '<ct:SymbRef blkIdRef="pm1" symbIdRef="k12"/>')
+  expect_match(.x, '<ct:SymbRef blkIdRef="pm1" symbIdRef="k21"/>')
+  expect_false(grepl('op="divide"', .x, fixed = TRUE))
+})
+
+test_that("three compartments emit two peripherals", {
+  .x <- .pharmmlPkMacros(.pharmmlLinCmtUi(c("cl", "v", "q", "vp", "q2", "vp2")))
+  expect_equal(lengths(regmatches(.x, gregexpr("<mdef:Peripheral>", .x))), 2L)
+  expect_match(.x, '<ct:SymbRef symbIdRef="peripheral2"/>')
+})
+
+test_that("the structural model of a linCmt model is macros, not derivatives", {
+  .x <- .pharmmlStructuralModel(.pharmmlLinCmtUi(c("ka", "cl", "v")))
+  expect_match(.x, "<mdef:PKmacros>")
+  expect_false(grepl("DerivativeVariable", .x, fixed = TRUE))
+})
+
+test_that("a linCmt model produces a schema-valid ModelDefinition", {
+  for (.c in .pharmmlLinCmtCases) {
+    .ui <- .pharmmlLinCmtUi(.c$pars)
+    .doc <- .pharmmlWrapMdefRaw(.pharmmlModelDefinition(.ui))
+    expect_true(pharmmlValidate(.doc), info = paste(.c$pars, collapse = "/"))
+  }
+})

@@ -144,6 +144,14 @@
 #'
 #' @noRd
 .pharmmlStructuralModel <- function(ui, indent = 0L) {
+  if (.pharmmlIsLinCmt(ui)) {
+    # A solved model is expressed as PK macros rather than derivatives, which
+    # keeps the structure the model was written in.
+    return(.pmlNode("mdef:StructuralModel",
+                    attrs = c(blkId = .pmlBlk[["structural"]]),
+                    children = .pharmmlPkMacros(ui),
+                    indent = indent))
+  }
   .init <- .pharmmlInitialConditions(ui)
   .children <- character(0)
 
