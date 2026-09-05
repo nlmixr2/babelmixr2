@@ -188,3 +188,86 @@ test_that("the structural model is schema-valid", {
     expect_true(pharmmlValidate(.doc))
   }
 })
+
+# Build a one-endpoint model with the given residual line.  `iniExtra` must
+# declare exactly the error parameters the line uses -- nlmixr2 rejects an ini
+# entry that the model body never references.
+.pharmmlTestUiErr <- function(errLine, iniExtra) {
+  .f <- eval(bquote(function() {
+    ini({
+      tcl <- log(2.72)
+      eta.cl ~ 0.3
+      .(iniExtra)
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      d/dt(center) <- -cl * center
+      cp <- center
+      .(errLine)
+    })
+  }))
+  rxode2::rxUiDecompress(.f())
+}
+
+.pharmmlErrAdd  <- quote(add.sd <- 0.7)
+.pharmmlErrProp <- quote(prop.sd <- 0.1)
+.pharmmlErrBoth <- quote({ add.sd <- 0.7; prop.sd <- 0.1 })
+
+test_that("the observation model wires output, error model and residual", {
+  .x <- .pharmmlObservationModel(.pharmmlTestUiOneCmt())
+
+  expect_match(.x, 'blkId="om1"')
+  expect_match(.x, "<mdef:ContinuousData>")
+  expect_match(.x, '<mdef:PopulationParameter symbId="add.sd"/>')
+  expect_match(.x, '<ct:SymbRef blkIdRef="vm2" symbIdRef="residual"/>')
+  expect_match(.x, '<po:ProbOnto name="StandardNormal1"/>')
+  expect_match(.x, '<ct:SymbRef blkIdRef="sm1" symbIdRef="cp"/>')
+  expect_match(.x, "<mdef:ErrorModel>")
+  expect_match(.x, "<mdef:ResidualError>")
+})
+
+test_that("the additive error model is a bare constant", {
+  .x <- .pharmmlObservationModel(.pharmmlTestUiErr(quote(cp ~ add(add.sd)), .pharmmlErrAdd))
+  expect_match(.x, '<ct:SymbRef symbIdRef="add.sd"/>')
+  expect_false(grepl('op="times"', .x, fixed = TRUE))
+})
+
+test_that("the proportional error model multiplies by the prediction", {
+  .x <- .pharmmlObservationModel(.pharmmlTestUiErr(quote(cp ~ prop(prop.sd)), .pharmmlErrProp))
+  expect_match(.x, 'math:Binop op="times"')
+  expect_match(.x, '<ct:SymbRef symbIdRef="prop.sd"/>')
+})
+
+test_that("combined1 is a + b*f and combined2 is sqrt(a^2 + (b*f)^2)", {
+  .ui <- .pharmmlTestUiErr(quote(cp ~ add(add.sd) + prop(prop.sd)), .pharmmlErrBoth)
+
+  rxode2::rxAssignControlValue(.ui, "addProp", "combined1")
+  .x1 <- .pharmmlObservationModel(.ui)
+  expect_match(.x1, 'math:Binop op="plus"')
+  expect_false(grepl('Uniop op="sqrt"', .x1, fixed = TRUE))
+
+  rxode2::rxAssignControlValue(.ui, "addProp", "combined2")
+  .x2 <- .pharmmlObservationModel(.ui)
+  expect_match(.x2, 'Uniop op="sqrt"')
+  expect_match(.x2, 'math:Binop op="power"')
+})
+
+test_that("unsupported residual distributions error by name", {
+  expect_error(.pharmmlObservationModel(
+    .pharmmlTestUiErr(quote(cp ~ pow(prop.sd, add.sd)), .pharmmlErrBoth)), "pow")
+})
+
+test_that("the observation model is schema-valid", {
+  .cases <- list(list(quote(cp ~ add(add.sd)), .pharmmlErrAdd),
+                 list(quote(cp ~ prop(prop.sd)), .pharmmlErrProp),
+                 list(quote(cp ~ add(add.sd) + prop(prop.sd)), .pharmmlErrBoth))
+  for (.case in .cases) {
+    .e <- .case[[1]]
+    .ui <- .pharmmlTestUiErr(.e, .case[[2]])
+    .doc <- .pharmmlWrapMdef(paste(.pharmmlVariabilityModel(.ui),
+                                   .pharmmlParameterModel(.ui),
+                                   .pharmmlStructuralModel(.ui),
+                                   .pharmmlObservationModel(.ui), sep = "\n"))
+    expect_true(pharmmlValidate(.doc), info = deparse1(.e))
+  }
+})
