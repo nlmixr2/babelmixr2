@@ -136,3 +136,55 @@ test_that("the parameter model is schema-valid", {
     expect_true(pharmmlValidate(.doc))
   }
 })
+
+test_that("the structural model emits derivative and assignment variables", {
+  .x <- .pharmmlStructuralModel(.pharmmlTestUiOneCmt())
+
+  expect_match(.x, 'blkId="sm1"')
+  expect_match(.x, '<ct:DerivativeVariable symbId="depot" symbolType="real">')
+  expect_match(.x, '<ct:DerivativeVariable symbId="center" symbolType="real">')
+  expect_match(.x, '<ct:Variable symbId="cp" symbolType="real">')
+
+  # every derivative declares its independent variable and initial condition
+  expect_match(.x, "<ct:IndependentVariable>")
+  expect_match(.x, "<ct:InitialCondition>")
+  expect_match(.x, "<ct:InitialValue>")
+})
+
+test_that("the structural model does not emit the error-model helper lines", {
+  .x <- .pharmmlStructuralModel(.pharmmlTestUiOneCmt())
+  expect_false(grepl("rx_pred_", .x, fixed = TRUE))
+})
+
+test_that("the structural model qualifies parameter references with their block", {
+  .x <- .pharmmlStructuralModel(.pharmmlTestUiOneCmt())
+  # ka/cl/vc are individual parameters, so they live in pm1
+  expect_match(.x, '<ct:SymbRef blkIdRef="pm1" symbIdRef="ka"/>')
+  expect_match(.x, '<ct:SymbRef blkIdRef="pm1" symbIdRef="cl"/>')
+  # states are local to the structural model, so they carry no blkIdRef
+  expect_match(.x, '<ct:SymbRef symbIdRef="depot"/>')
+})
+
+test_that("the structural model honours explicit initial conditions", {
+  .f <- function() {
+    ini({ tcl <- log(2.72); eta.cl ~ 0.3; add.sd <- 0.7 })
+    model({
+      cl <- exp(tcl + eta.cl)
+      center(0) <- 100
+      d/dt(center) <- -cl * center
+      cp <- center
+      cp ~ add(add.sd)
+    })
+  }
+  .x <- .pharmmlStructuralModel(rxode2::rxUiDecompress(.f()))
+  expect_match(.x, "<ct:Real>100</ct:Real>")
+})
+
+test_that("the structural model is schema-valid", {
+  for (.ui in list(.pharmmlTestUiOneCmt(), .pharmmlTestUiCorr())) {
+    .doc <- .pharmmlWrapMdef(paste(.pharmmlVariabilityModel(.ui),
+                                   .pharmmlParameterModel(.ui),
+                                   .pharmmlStructuralModel(.ui), sep = "\n"))
+    expect_true(pharmmlValidate(.doc))
+  }
+})

@@ -78,13 +78,22 @@
 
 #' Which PharmML block a symbol belongs to
 #'
+#' Individual parameters live in the ParameterModel block and covariates in the
+#' CovariateModel block; everything else -- states, local assignments, the
+#' independent variable -- is local to the block referencing it and takes no
+#' `blkIdRef`.
+#'
 #' @param n symbol name
 #' @param ui rxode2 UI or NULL
 #' @return block id, or NA_character_ when unresolvable
 #' @noRd
 .rxToPharmmlBlockOf <- function(n, ui = NULL) {
-  # Stage 3 populates this from the ui; with no ui there is nothing to resolve.
-  NA_character_
+  if (is.null(ui)) return(NA_character_)
+  .map <- .pharmmlBlockMap(ui)
+  # `[[` on a named character vector errors on a missing name rather than
+  # returning NULL, so check membership first.
+  if (!(n %in% names(.map))) return(NA_character_)
+  setNames(.map[[n]], NULL)
 }
 
 # R binary operators -> math:Binop/@op
