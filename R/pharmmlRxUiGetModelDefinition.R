@@ -16,12 +16,20 @@
 #' @author Matthew L. Fidler
 #'
 #' @noRd
-.pharmmlCovariateModel <- function(ui, indent = 0L) {
+.pharmmlCovariateModel <- function(ui, data = NULL, indent = 0L) {
   .covs <- ui$allCovs
   if (length(.covs) == 0L) return("")
+  .info <- .pharmmlCovariateInfo(ui, data)
   .children <- vapply(.covs, function(.c) {
-    .pmlNode("mdef:Covariate", attrs = c(symbId = .c),
-             children = .pmlNode("mdef:Continuous"))
+    .body <- if (identical(.info[[.c]]$type, "categorical")) {
+      .pmlNode("mdef:Categorical",
+               children = vapply(.info[[.c]]$levels, function(.l) {
+                 .pmlNode("mdef:Category", attrs = c(catId = .l))
+               }, character(1), USE.NAMES = FALSE))
+    } else {
+      .pmlNode("mdef:Continuous")
+    }
+    .pmlNode("mdef:Covariate", attrs = c(symbId = .c), children = .body)
   }, character(1), USE.NAMES = FALSE)
   .pmlNode("mdef:CovariateModel",
            attrs = c(blkId = .pmlBlk[["covariate"]]),
@@ -68,10 +76,10 @@ attr(rxUiGet.pharmmlCovariateModel, "rstudio") <- "character"
 #' @author Matthew L. Fidler
 #'
 #' @noRd
-.pharmmlModelDefinition <- function(ui, indent = 0L) {
+.pharmmlModelDefinition <- function(ui, data = NULL, indent = 0L) {
   .pharmmlAssertUi(ui)
   .blocks <- c(.pharmmlVariabilityModel(ui),
-               .pharmmlCovariateModel(ui),
+               .pharmmlCovariateModel(ui, data),
                .pharmmlParameterModel(ui),
                .pharmmlStructuralModel(ui),
                .pharmmlObservationModel(ui))
