@@ -992,6 +992,43 @@ if (requireNamespace("PopED", quietly=TRUE) &&
                                                    cmt=c("depot", "cp"))),
                  NA)
 
+    # a linCmt() model numbers its compartments differently from
+    # rxModelVars()$state, so its numbers must not be placed by position
+    pLin <- function() {
+      ini({
+        tKA <- log(0.8)
+        tCL <- log(15)
+        tV <- log(100)
+        tKe0 <- log(0.5)
+        eta.KA ~ 0.25
+        prop.sd <- sqrt(0.04)
+      })
+      model({
+        ka <- exp(tKA + eta.KA)
+        cl <- exp(tCL)
+        v <- exp(tV)
+        ke0 <- exp(tKe0)
+        cp <- linCmt()
+        d/dt(ce) <- ke0*(cp - ce)
+        eff <- ce
+        eff ~ prop(prop.sd)
+      })
+    }
+
+    pLin <- pLin()
+
+    expect_true(.popedHasLinCmt(pLin))
+    expect_false(.popedHasLinCmt(p))
+
+    # $state is c("ce", "depot", "central") but cmt=1 is the depot, so
+    # the number is left for rxode2 to resolve rather than mapped to "ce"
+    expect_equal(rxode2::rxModelVars(pLin)$state, c("ce", "depot", "central"))
+
+    expect_equal(.popedFixDataCmt(pLin, data.frame(cmt=c("depot", "1")))$cmt,
+                 c("depot", "1"))
+
+    expect_error(.popedAssertDoseCmt(pLin, data.frame(evid=1, cmt="1")), NA)
+
   })
 
   test_that("a numeric cmt works for a multiple endpoint design (#201)", {

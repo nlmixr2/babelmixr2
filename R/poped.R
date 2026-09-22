@@ -2065,6 +2065,27 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   ret
 }
 
+#' Does this model use linCmt()?
+#'
+#' The compartment *numbers* of a `linCmt()` model do not follow the
+#' order of `rxModelVars(ui)$state`: rxode2 shuffles the solved
+#' compartments to the front of the event numbering (see `getCmtNum()` in
+#' rxode2's etTrans.cpp), so `cmt=1` is the depot even when `$state`
+#' starts with an ODE.  PopED rejects `linCmt()` models anyway
+#' (`.popedRxModel()` stops with "could not figure out linCmt() model"),
+#' so rather than guess at the mapping here, leave those datasets alone
+#' and let that error be the one the user sees.
+#'
+#' @param ui rxode2 ui function
+#' @return TRUE when the model has a solved linear compartment
+#' @noRd
+#' @author Matthew L. Fidler
+.popedHasLinCmt <- function(ui) {
+  .flags <- rxode2::rxModelVars(ui)$flags
+  if (!any(names(.flags) == "linCmtFlg")) return(FALSE)
+  !identical(as.integer(.flags[["linCmtFlg"]]), 0L)
+}
+
 #' Translate a numeric compartment given as a string back to a number
 #'
 #' `et()` keeps `cmt` as a character column, so a design dataset built
@@ -2108,6 +2129,8 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
     data[[.wcmt]] <- .int
     return(data)
   }
+  # the numbers cannot be placed by position for a linCmt() model
+  if (.popedHasLinCmt(ui)) return(data)
   .state <- rxode2::rxModelVars(ui)$state
   # rxode2 doses cmt=0 into the default (first) compartment
   .cmt[which(.isNum & .num == 0L)] <- .state[1]
@@ -2144,6 +2167,9 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   # evid=3 resets the system; rxode2 ignores its compartment
   .cmt <- data[[.wcmt]][which(data[[.wevid]] != 0 & data[[.wevid]] != 3)]
   if (length(.cmt) == 0L) return(invisible())
+  # a linCmt() model numbers its compartments differently, and PopED
+  # rejects it with a clearer error a moment later
+  if (.popedHasLinCmt(ui)) return(invisible())
   .state <- rxode2::rxModelVars(ui)$state
   if (is.factor(.cmt)) .cmt <- as.character(.cmt)
   if (is.character(.cmt)) {
