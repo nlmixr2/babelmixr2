@@ -894,6 +894,13 @@ if (requireNamespace("PopED", quietly=TRUE) &&
                  model_prediction(nlmixr2(f, evName2, "poped",
                                           popedControl(groupsize=20)))$PRED)
 
+    # rxode2 doses cmt=0 into the default compartment
+    evZero <- et(amt=180, rate=180, ii=24, addl=3, cmt=0) |> et(tms)
+
+    expect_equal(model_prediction(nlmixr2(f, evZero, "poped",
+                                          popedControl(groupsize=20)))$PRED,
+                 predName)
+
     # a column that mixes compartment names and numbers still has to
     # translate the numbers
     evMix <- et(amt=180, cmt="depot") |>
@@ -950,10 +957,11 @@ if (requireNamespace("PopED", quietly=TRUE) &&
                  c(1L, NA_integer_, 1L, 1L, -2L))
 
     # a column that mixes names and numbers stays character; a negative
-    # compartment (evid=2 turns it off) keeps its sign
-    expect_equal(.popedFixDataCmt(p, data.frame(cmt=c("depot", "2", "-2",
+    # compartment (evid=2 turns it off) keeps its sign, and cmt=0 is the
+    # default compartment rather than a missing one
+    expect_equal(.popedFixDataCmt(p, data.frame(cmt=c("depot", "0", "2", "-2",
                                                       NA, "5")))$cmt,
-                 c("depot", "central", "-central", NA, "5"))
+                 c("depot", "depot", "central", "-central", NA, "5"))
 
     # a factor is normalized too
     expect_equal(.popedFixDataCmt(p, data.frame(cmt=factor(c("depot", "2"))))$cmt,
@@ -971,6 +979,12 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 1),
                                                    cmt=c(1L, 99L))),
                  "not in the model")
+
+    # rxode2 doses cmt=0 into the default compartment, so it is not an
+    # unmatched compartment
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 1),
+                                                   cmt=c(0L, 1L))),
+                 NA)
 
     # observation records are not checked; a multiple endpoint design
     # names the endpoint there

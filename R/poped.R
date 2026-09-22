@@ -2109,6 +2109,8 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
     return(data)
   }
   .state <- rxode2::rxModelVars(ui)$state
+  # rxode2 doses cmt=0 into the default (first) compartment
+  .cmt[which(.isNum & .num == 0L)] <- .state[1]
   # a leading "-" turns the compartment off (evid=2)
   .w <- which(.isNum & abs(.num) >= 1L & abs(.num) <= length(.state))
   # ifelse() evaluates both branches, so both have to index with abs()
@@ -2149,8 +2151,9 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
     .bad <- .cmt[!is.na(.cmt) &
                    !(sub("^-", "", .cmt) %in% c(.state, "(default)", "(obs)"))]
   } else {
+    # cmt=0 is the default compartment for rxode2, not a missing one
     .n <- abs(as.integer(.cmt))
-    .bad <- .cmt[!is.na(.n) & (.n < 1L | .n > length(.state))]
+    .bad <- .cmt[!is.na(.n) & .n > length(.state)]
   }
   .bad <- unique(.bad)
   if (length(.bad) == 0L) return(invisible())
