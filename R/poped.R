@@ -2152,6 +2152,9 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
 #' the FIM is degenerate, which reads as "your design is bad" instead of
 #' "your dose was thrown away" (nlmixr2/babelmixr2#201).
 #'
+#' Only `evid=1`/`evid=4` records are checked; see the comment in the
+#' body for why the other event types are left alone.
+#'
 #' @param ui rxode2 ui function
 #' @param data babelmixr2 design data (after `.popedFixDataCmt()`)
 #' @return nothing, called for the error it throws
@@ -2164,8 +2167,14 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   .wevid <- which(.nd == "evid")
   # without evid every record is a design point (see .popedDataToDesignSpace())
   if (length(.wevid) != 1L) return(invisible())
-  # evid=3 resets the system; rxode2 ignores its compartment
-  .cmt <- data[[.wcmt]][which(data[[.wevid]] != 0 & data[[.wevid]] != 3)]
+  # Only the records that actually administer a dose are checked: evid=1
+  # and evid=4 (reset and dose).  evid=2 turns a compartment on or off
+  # and evid=3 resets the system; neither has to name an ODE state (a
+  # design can point an evid=2 record at an endpoint such as cmt="cp"),
+  # and an evid the check does not recognize is left alone rather than
+  # risk rejecting a design that works.
+  .evid <- data[[.wevid]]
+  .cmt <- data[[.wcmt]][which(.evid == 1 | .evid == 4)]
   if (length(.cmt) == 0L) return(invisible())
   # a linCmt() model numbers its compartments differently, and PopED
   # rejects it with a clearer error a moment later

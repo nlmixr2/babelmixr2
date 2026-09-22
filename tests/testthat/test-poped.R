@@ -976,6 +976,16 @@ if (requireNamespace("PopED", quietly=TRUE) &&
                                                    cmt=c(1L, 99L))),
                  NA)
 
+    # neither does an evid=2 record, which turns a compartment on or off
+    # and may point at an endpoint rather than an ODE state
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 2),
+                                                   cmt=c("depot", "cp"))),
+                 NA)
+
+    # evid=4 does dose, so it is checked
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid=4, cmt=99L)),
+                 "not in the model")
+
     expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 1),
                                                    cmt=c(1L, 99L))),
                  "not in the model")
