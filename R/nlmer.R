@@ -104,6 +104,7 @@
     stickyRecalcN   = control$stickyRecalcN,
     maxOdeRecalc    = control$maxOdeRecalc,
     odeRecalcFactor = control$odeRecalcFactor,
+    indTolRelax     = control$indTolRelax,
     optExpression   = control$optExpression,
     sumProd         = control$sumProd,
     solveType       = "grad",

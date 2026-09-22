@@ -49,7 +49,9 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
                                             calcTables = .saemixControl$calcTables,
                                             compress = .saemixControl$compress,
                                             ci = .saemixControl$ci,
-                                            sigdigTable = .saemixControl$sigdigTable)
+                                            sigdigTable = .saemixControl$sigdigTable,
+                                            indTolRelax = .saemixControl$indTolRelax,
+                                            eventSens = .saemixControl$eventSens)
   if (assign) env$control <- .foceiControl
   .foceiControl
 }
