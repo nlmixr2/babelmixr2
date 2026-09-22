@@ -982,9 +982,12 @@ if (requireNamespace("PopED", quietly=TRUE) &&
                                                    cmt=c("depot", "cp"))),
                  NA)
 
-    # evid=4 does dose, so it is checked
-    expect_error(.popedAssertDoseCmt(p, data.frame(evid=4, cmt=99L)),
-                 "not in the model")
+    # evid=4 (reset and dose), 5 (replace) and 6 (multiply) all put an
+    # amount into a compartment, so they are checked
+    for (.evid in c(1, 4, 5, 6)) {
+      expect_error(.popedAssertDoseCmt(p, data.frame(evid=.evid, cmt=99L)),
+                   "not in the model")
+    }
 
     expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 1),
                                                    cmt=c(1L, 99L))),

@@ -15,7 +15,9 @@
   (`cmt="cp"`, `cmt="eff"`) instead of `dvid`.  The `cmt` fallback was
   already written but unreachable: a dataset without a `dvid` column
   stopped with `attempt to select less than one element in get1index`
-  before it was tried.
+  before it was tried.  This applies to the usual design space; a design
+  that gives per-`ID` sampling through `popedControl(a=)` still needs
+  `dvid`.
 
 * The PopED model translation no longer drops the `if ()` condition that
   guards an adaptive dosing call (`evid_()`, `bolus()`, `infuse()`,
