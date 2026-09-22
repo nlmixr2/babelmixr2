@@ -873,8 +873,8 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
     tms <- c(0.25, 0.5, 1, 2, 3, 6, 8, 12, 24)
 
-    evName <- et(amt=180, rate=180, ii=24, addl=3, cmt="depot") %>% et(tms)
-    evNum <- et(amt=180, rate=180, ii=24, addl=3, cmt=1) %>% et(tms)
+    evName <- et(amt=180, rate=180, ii=24, addl=3, cmt="depot") |> et(tms)
+    evNum <- et(amt=180, rate=180, ii=24, addl=3, cmt=1) |> et(tms)
 
     predName <- model_prediction(nlmixr2(f, evName, "poped",
                                          popedControl(groupsize=20)))$PRED
@@ -886,8 +886,8 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     expect_equal(predNum, predName)
 
     # dosing into the second compartment is also honored
-    evNum2 <- et(amt=180, rate=180, ii=24, addl=3, cmt=2) %>% et(tms)
-    evName2 <- et(amt=180, rate=180, ii=24, addl=3, cmt="central") %>% et(tms)
+    evNum2 <- et(amt=180, rate=180, ii=24, addl=3, cmt=2) |> et(tms)
+    evName2 <- et(amt=180, rate=180, ii=24, addl=3, cmt="central") |> et(tms)
 
     expect_equal(model_prediction(nlmixr2(f, evNum2, "poped",
                                           popedControl(groupsize=20)))$PRED,
@@ -896,11 +896,11 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
     # a column that mixes compartment names and numbers still has to
     # translate the numbers
-    evMix <- et(amt=180, cmt="depot") %>%
-      et(amt=50, time=2, cmt=2) %>%
+    evMix <- et(amt=180, cmt="depot") |>
+      et(amt=50, time=2, cmt=2) |>
       et(tms)
-    evMixName <- et(amt=180, cmt="depot") %>%
-      et(amt=50, time=2, cmt="central") %>%
+    evMixName <- et(amt=180, cmt="depot") |>
+      et(amt=50, time=2, cmt="central") |>
       et(tms)
 
     expect_equal(model_prediction(nlmixr2(f, evMix, "poped",
@@ -910,11 +910,11 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
     # a dose that cannot be matched to a compartment is an error instead
     # of a silently empty design
-    expect_error(nlmixr2(f, et(amt=180, cmt=5) %>% et(tms), "poped",
+    expect_error(nlmixr2(f, et(amt=180, cmt=5) |> et(tms), "poped",
                          popedControl(groupsize=20)),
                  "not in the model")
 
-    expect_error(nlmixr2(f, et(amt=180, cmt="matt") %>% et(tms), "poped",
+    expect_error(nlmixr2(f, et(amt=180, cmt="matt") |> et(tms), "poped",
                          popedControl(groupsize=20)),
                  "not in the model")
 
@@ -1013,7 +1013,7 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     # the design points name the endpoint with dvid, the dose names the
     # compartment
     .mkData <- function(doseCmt) {
-      .d <- as.data.frame(et(amt=180, cmt=doseCmt) %>% et(tms))
+      .d <- as.data.frame(et(amt=180, cmt=doseCmt) |> et(tms))
       .d$id <- 1
       .obs1 <- .d[.d$evid == 0, ]
       .obs1$dvid <- 1
@@ -1033,8 +1033,8 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     # the dose can still use a compartment number, which makes the cmt
     # column a mix of names and numbers
     .mkCmtData <- function(doseCmt) {
-      .d <- as.data.frame(et(amt=180, cmt=doseCmt) %>%
-                            et(time=tms, cmt="cp") %>%
+      .d <- as.data.frame(et(amt=180, cmt=doseCmt) |>
+                            et(time=tms, cmt="cp") |>
                             et(time=tms, cmt="eff"))
       .d$id <- 1
       .d
