@@ -266,6 +266,12 @@ withr::with_tempdir({
     # ... and on the first omega blocks
     expect_error(.ui(prior(eta.ka) ~ invWishart(3))$nonmemModel,
                  "move the eta\\(s\\) with a prior \\('eta.ka'\\) before the one\\(s\\) without \\('eta.cl', 'eta.v'\\)")
+    # a second prior on a block that already has one is not dropped
+    expect_error(.ui({
+      prior(eta.cl) ~ invWishart(10)
+      prior(eta.v) ~ invWishart(20)
+    })$nonmemModel,
+    "already covered by the prior 'invWishart\\(10\\)'")
     # no Cauchy analogue
     expect_error(.ui(prior(tcl) ~ dcauchy(0, 1))$nonmemModel,
                  "'dcauchy\\(\\)' is not a normal prior")

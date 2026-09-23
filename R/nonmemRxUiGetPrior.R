@@ -106,11 +106,23 @@
   .blocks <- .nonmemOmegaBlocks(ui)
   .blockNames <- lapply(.blocks, function(b) dimnames(b)[[1]])
   .blockDf <- rep(NA_real_, length(.blocks))
-  .done <- character(0)
+  # the prior each parameter is already covered by; a block or joint
+  # prior is stored on every member, but a second, different prior on a
+  # covered parameter would otherwise be silently dropped
+  .done <- setNames(character(0), character(0))
+  .mark <- function(names, prior) {
+    .done[names] <<- prior
+  }
   for (.i in seq_along(.p$name)) {
     .name <- .p$name[.i]
     .prior <- .p$prior[.i]
-    if (.name %in% .done) next
+    if (.name %in% names(.done)) {
+      if (!identical(.done[[.name]], .prior)) {
+        .nonmemPriorStop(.name, .prior,
+                         paste0("it is already covered by the prior '", .done[[.name]], "'"))
+      }
+      next
+    }
     .e <- try(str2lang(.prior), silent=TRUE)
     if (inherits(.e, "try-error") || !is.call(.e)) {
       .nonmemPriorStop(.name, .prior, "the prior could not be parsed")
@@ -145,17 +157,17 @@
                                 .dim - 1))
       }
       .blockDf[.b] <- .nu
-      .done <- c(.done, .blockNames[[.b]])
+      .mark(.blockNames[[.b]], .prior)
       next
     }
     if (.fn == "dnorm") {
       .mean[.name] <- .nonmemPriorEval(.args[[1]], .name, .prior)
       .var[.name, .name] <- .nonmemPriorEval(.args[[2]], .name, .prior)^2
-      .done <- c(.done, .name)
+      .mark(.name, .prior)
     } else if (.fn == "stdNormal") {
       .mean[.name] <- 0
       .var[.name, .name] <- 1
-      .done <- c(.done, .name)
+      .mark(.name, .prior)
     } else if (.fn == "multiNormal") {
       .cov <- .args[[2]]
       if (!(is.call(.cov) && identical(.cov[[1]], quote(`lotri`)))) {
@@ -174,7 +186,7 @@
       .mu <- .nonmemPriorEval(.args[[1]], .nm, .prior)
       .mean[.nm] <- rep_len(.mu, length(.nm))
       .var[.nm, .nm] <- .cov[.nm, .nm]
-      .done <- c(.done, .nm)
+      .mark(.nm, .prior)
     } else {
       .nonmemPriorStop(.name, .prior,
                        paste0("'", .fn, "()' is not a normal prior, which is ",
