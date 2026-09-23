@@ -12,17 +12,12 @@
   if (.dim[1] > 1L) {
     .ret <- paste0(rec, " BLOCK(", .dim[1], ") ; ",
                    paste(dimnames(om0)[[1]], collapse=" "), "\n")
-    .vec <- om0[lower.tri(om0,TRUE)]
-    .i <- .j <- 1
-    .ret <- paste0(.ret, "  ")
-    for (k in .vec) {
-      .ret <- paste0(.ret, " ", signif(k, .sigdig))
-      if (.i == .j) {
-        .i <- 1
-        .j <- .j + 1
-        .ret <- paste0(.ret, "\n  ")
-      }
-    }
+    # NONMEM reads a block row by row down the lower triangle
+    .ret <- paste0(.ret,
+                   paste(vapply(seq_len(.dim[1]), function(i) {
+                     paste0("  ", paste0(" ", signif(om0[i, seq_len(i)], .sigdig),
+                                         collapse=""))
+                   }, character(1), USE.NAMES=FALSE), collapse="\n"))
     if (.fix) .ret <- paste(.ret, " FIX")
     return(paste0(.ret, "\n"))
   } else {
