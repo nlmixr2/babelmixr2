@@ -11,9 +11,9 @@ test_that("nonmemControl(est=) emits the matching $ESTIMATION method (#211)", {
       cp ~ add(add.sd)
     })
   }
-  .ui <- function(est) {
+  .ui <- function(est, ...) {
     .ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    assign("control", nonmemControl(est=est), envir=.ui)
+    assign("control", nonmemControl(est=est, ...), envir=.ui)
     list(.ui)
   }
   .check <- function(est, method, ofvType) {
@@ -26,8 +26,11 @@ test_that("nonmemControl(est=) emits the matching $ESTIMATION method (#211)", {
   .check("imp", "IMP", "nonmem imp")
   .check("focei", "1", "nonmem focei")
   .check("posthoc", "0", "nonmem focei")
-  expect_equal(rxUiGet.nonmemEst(.ui("its")),
-               "$ESTIMATION METHOD=ITS INTERACTION PRINT=1 NITER=100 NOABORT\n")
-  # ITS must not carry the importance sampling options
-  expect_false(grepl("SEED|ISAMPLE|IACCEPT|ISCALE_MIN|ISCALE_MAX|DF=|MAPITER", rxUiGet.nonmemEst(.ui("its"))))
+  .its <- "$ESTIMATION METHOD=ITS INTERACTION PRINT=1 NITER=100 NOABORT\n"
+  expect_equal(rxUiGet.nonmemEst(.ui("its")), .its)
+  # the importance sampling options do not apply to ITS
+  expect_equal(rxUiGet.nonmemEst(.ui("its", seed=1, isample=5000, iaccept=0.5,
+                                     iscaleMin=0.2, iscaleMax=5, df=2,
+                                     mapiter=3)),
+               .its)
 })
