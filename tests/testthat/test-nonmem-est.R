@@ -11,13 +11,21 @@ test_that("nonmemControl(est=) emits the matching $ESTIMATION method (#211)", {
       cp ~ add(add.sd)
     })
   }
-  .estRecord <- function(est) {
+  .ui <- function(est) {
     .ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
     assign("control", nonmemControl(est=est), envir=.ui)
-    rxUiGet.nonmemEst(list(.ui))
+    list(.ui)
   }
-  expect_match(.estRecord("its"), "^\\$ESTIMATION METHOD=ITS ")
-  expect_match(.estRecord("imp"), "^\\$ESTIMATION METHOD=IMP ")
-  expect_match(.estRecord("focei"), "^\\$ESTIMATION METHOD=1 ")
-  expect_match(.estRecord("posthoc"), "^\\$ESTIMATION METHOD=0 ")
+  .check <- function(est, method, ofvType) {
+    .x <- .ui(est)
+    expect_match(rxUiGet.nonmemEst(.x),
+                 paste0("^\\$ESTIMATION METHOD=", method, " "))
+    expect_equal(rxUiGet.nonmemObjfType(.x), ofvType)
+  }
+  .check("its", "ITS", "nonmem its")
+  .check("imp", "IMP", "nonmem imp")
+  .check("focei", "1", "nonmem focei")
+  .check("posthoc", "0", "nonmem focei")
+  # ITS must not carry the importance sampling options
+  expect_false(grepl("ISAMPLE|IACCEPT|MAPITER", rxUiGet.nonmemEst(.ui("its"))))
 })
