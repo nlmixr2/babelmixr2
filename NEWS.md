@@ -20,12 +20,10 @@
   `yeoJohnson()`, a logit/probit transformation, `lnorm() + prop()` or a
   non-normal residual distribution now stops with an error, as does a
   fixed residual error or between-subject variability, which saemix
-  would otherwise estimate anyway.  The checks
-  use the new rxode2 assertions `assertRxUiTransform()`,
-  `assertRxUiErrType()`, `assertRxUiAddProp()`,
-  `assertRxUiNoFixedResiduals()` and `assertRxUiNoFixedOmega()`, so this
-  requires
-  rxode2 5.1.8 (#212).
+  would otherwise estimate anyway.  The checks use the new rxode2
+  assertions `assertRxUiTransform()`, `assertRxUiErrType()`,
+  `assertRxUiAddProp()`, `assertRxUiNoFixedResiduals()` and
+  `assertRxUiNoFixedOmega()`, so this requires rxode2 5.1.8 (#212).
 
 * `est="saemix"` now fits `lnorm()` residual errors with saemix's
   exponential error model; they were previously fit as an additive error
