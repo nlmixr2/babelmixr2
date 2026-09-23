@@ -20,7 +20,11 @@
 #' If \code{runCommand} is \code{NA}, \code{nlmixr()} will stop after writing
 #' the model files and without starting NONMEM.
 #'
-#' @param est NONMEM estimation method
+#' @param est NONMEM estimation method: \code{"focei"} (\code{METHOD=1
+#'   INTER}), \code{"imp"} (importance sampling, \code{METHOD=IMP
+#'   INTERACTION}), \code{"its"} (iterative two stage, \code{METHOD=ITS
+#'   INTERACTION}) or \code{"posthoc"} (\code{METHOD=0 MAXEVALS=0
+#'   POSTHOC})
 #' @param advanOde The ODE solving method for NONMEM
 #' @param cov The NONMEM covariance method
 #' @param maxeval NONMEM's maxeval (for non posthoc methods)
@@ -46,8 +50,8 @@
 #'   simulations
 #' @param mapiter the number of map iterations for IMP method
 #' @param niter number of iterations in NONMEM estimation methods
-#' @param isample Isample argument for NONMEM ITS estimation method
-#' @param iaccept Iaccept for NONMEM ITS estimation methods
+#' @param isample Isample argument for NONMEM IMP estimation method
+#' @param iaccept Iaccept for NONMEM IMP estimation method
 #' @param iscaleMin parameter for IMP NONMEM method (ISCALE_MIN)
 #' @param iscaleMax parameter for IMP NONMEM method (ISCALE_MAX)
 #' @param df degrees of freedom for IMP method
