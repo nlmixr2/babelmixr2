@@ -10,11 +10,21 @@
   individual etas after the fit failed with `invalid subscript type
   'list'` (#212).
 
-* `est="saemix"` now fits models with more than one endpoint.  Each
-  observation's endpoint was looked up in a `YTYPE` column that the
-  processed data does not have, so every prediction was zero and the
-  fit silently ignored the model; the endpoint is now matched on the
-  observation's compartment (#212).
+* `est="saemix"` now refuses a model it cannot fit, instead of fitting it
+  with a different residual error.  saemix fits one endpoint with an
+  `add()`, `prop()`, `add() + prop()` (`combined2`, the only combination
+  saemix has) or `lnorm()` residual error, or an `ll()` likelihood.  A
+  model with more than one endpoint (previously fit against predictions of
+  zero), a `combined1` `add() + prop()`, `pow()`, `boxCox()`,
+  `yeoJohnson()`, a logit/probit transformation, `lnorm() + prop()` or a
+  non-normal residual distribution now stops with an error.  The checks
+  use the new rxode2 assertions `assertRxUiTransform()`,
+  `assertRxUiErrType()` and `assertRxUiAddProp()`, so this requires
+  rxode2 5.1.8 (#212).
+
+* `est="saemix"` now fits `lnorm()` residual errors with saemix's
+  exponential error model; they were previously fit as an additive error
+  with a missing starting value (#212).
 
 * A PopED design dataset that gives `cmt` as a compartment *number*
   (`et(amt=180, cmt=1)`) now doses the right compartment.  `et()` keeps
