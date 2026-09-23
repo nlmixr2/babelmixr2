@@ -52,6 +52,10 @@ withr::with_tempdir({
                          nonmemControl(modelName="test_nm", runCommand=NA)),
                  NA)
 
+    # $PROBLEM carries the model name (#209)
+    expect_equal(readLines(file.path("test_nm-nonmem", "test_nm.nmctl"), n=1),
+                 "$PROBLEM test_nm translated from babelmixr2")
+
   })
   withr::with_options(list(babelmixr2.protectZeros=FALSE), {
     test_that("NONMEM dsl, individual lines", {
@@ -219,7 +223,7 @@ withr::with_tempdir({
         ui$nonmemModel,
         paste(
           c(
-            "$PROBLEM  translated from babelmixr2",
+            "$PROBLEM one.cmt translated from babelmixr2",
             "; comments show mu referenced model in ui$getSplitMuModel",
             "",
             "$DATA one.cmt.csv IGNORE=@",

@@ -1,5 +1,11 @@
 # babelmixr2 0.1.11.9000
 
+* The `$PROBLEM` record of a generated NONMEM control stream now carries
+  the model name (`$PROBLEM one.cmt translated from babelmixr2`).  It read
+  a misspelled getter and was always blank (#209).  Because the control
+  stream changes, an existing NONMEM export that has a `.md5` hash file
+  will not match and is re-run once in a new numbered directory.
+
 * A PopED design dataset that gives `cmt` as a compartment *number*
   (`et(amt=180, cmt=1)`) now doses the right compartment.  `et()` keeps
   `cmt` as a character column, so `rxode2::etTrans()` read `"1"` as a
