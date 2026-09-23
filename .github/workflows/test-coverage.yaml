@@ -9,6 +9,11 @@ name: test-coverage.yaml
 
 permissions: read-all
 
+# a new commit on a pull request cancels that pull request's earlier run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test-coverage:
     runs-on: ubuntu-latest
@@ -39,7 +44,6 @@ jobs:
             nlmixr2/nlmixr2est
             nlmixr2/nlmixr2extra
             nlmixr2/nlmixr2plot
-            nlmixr2/nlmixr2
             nlmixr2/nonmem2rx
             nlmixr2/monolix2rx
             lixoftConnectors=?ignore
