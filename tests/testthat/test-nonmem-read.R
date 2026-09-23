@@ -92,9 +92,9 @@ test_that("warfarin NONMEM reading", {
     # In addition to dropping the problematic parameters, this will
     # restart the fit at the final initial estimates
 
-    f2 <- f %>% model(ktr <- exp(tktr)) %>%
-      model(ka <- exp(tka)) %>%
-      model(emax = expit(temax)) %>%
+    f2 <- f |> model(ktr <- exp(tktr)) |>
+      model(ka <- exp(tka)) |>
+      model(emax = expit(temax)) |>
       .nlmixr(data=nlmixr2data::warfarin, est="nonmem",
              control=nonmemControl(readRounding=FALSE,
                                    modelName="pk.turnover.emax4")) ->
@@ -247,10 +247,10 @@ test_that("wbc NONMEM reading", {
     expect_true(inherits(f, "nlmixr2FitData"))
 
     # One way to take care of this is by removing the 100% shrinkage etas:
-    f2 <-f %>%
-      model(SLOPU =  exp(log_SLOPU)) %>%
-      model(MTT =  exp(log_MTT)) %>%
-      .nlmixr2(., nlmixr2data::wbcSim, "nonmem",
+    f2 <- f |>
+      model(SLOPU =  exp(log_SLOPU)) |>
+      model(MTT =  exp(log_MTT)) |>
+      .nlmixr2(nlmixr2data::wbcSim, "nonmem",
               control=nonmemControl(modelName="wbc2"))
 
     expect_true(inherits(f, "nlmixr2FitData"))

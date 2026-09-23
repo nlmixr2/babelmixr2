@@ -203,7 +203,7 @@ attr(rxUiGet.nonmemEtaObf, "rstudio") <- NA
   .ef <- NULL
   .iniDf <- ui$iniDf
   for (.i in seq_along(.e0)) {
-    for (.j in seq(1, .i)) {
+    for (.j in seq_len(.i)) {
       if (.i == .j) {
         .ef <- c(.ef, .e0[.i])
       } else {
