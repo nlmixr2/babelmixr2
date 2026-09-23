@@ -32,8 +32,10 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
 #' saemix fits a single endpoint with an additive ("constant"),
 #' proportional, combined (`sqrt(a^2 + b^2*f^2)`, nlmixr2's
 #' `combined2`) or exponential (`lnorm()`) residual error, or a
-#' likelihood (`ll()`) endpoint.  Any other model is refused instead of
-#' being fit with a different error model.
+#' likelihood (`ll()`) endpoint, and always estimates the residual
+#' error and between-subject variability.  Any other model is refused
+#' instead of being fit with a different error model or with fixed
+#' parameters silently estimated.
 #'
 #' @param ui rxode2 ui
 #' @return nothing, called for the assertions
@@ -45,6 +47,9 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
   rxode2::assertRxUiRandomOnIdOnly(ui, .extra, .var.name = .n)
   rxode2::assertRxUiSingleEndpoint(ui, .extra, .var.name = .n)
   rxode2::assertRxUiEstimatedResiduals(ui, .extra, .var.name = .n)
+  # saemix estimates every residual error and omega; it cannot fix them
+  rxode2::assertRxUiNoFixedResiduals(ui, .extra, .var.name = .n)
+  rxode2::assertRxUiNoFixedOmega(ui, .extra, .var.name = .n)
   if (ui$predDf$distribution == "LL") return(invisible())
   rxode2::assertRxUiTransformNormal(ui, .extra, .var.name = .n)
   rxode2::assertRxUiTransform(ui, c("untransformed", "lnorm"), .extra, .var.name = .n)

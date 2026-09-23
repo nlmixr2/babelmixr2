@@ -281,6 +281,11 @@ test_that("saemix refuses models it would fit with a different error model (#212
   })
   .fitErr(mod(quote(prop(prop.sd) + dt(nu))))
 
+  # saemix cannot fix a residual error or a between-subject variability
+  .addProp <- mod(quote(add(add.sd) + prop(prop.sd)))
+  .fitErr(rxode2::ini(.addProp, add.sd = fix(0.7)))
+  .fitErr(rxode2::ini(.addProp, eta.ka ~ fix(0.6)))
+
   # more than one endpoint
   linPd <- function() {
     ini({
@@ -330,4 +335,47 @@ test_that("saemix fits lnorm() with its exponential error model (#212)", {
   expect_equal(fitSaemix$theta, fitFocei$theta, tolerance = 0.05)
   expect_equal(diag(fitSaemix$omega)[c("eta.ka", "eta.cl")],
                diag(fitFocei$omega)[c("eta.ka", "eta.cl")], tolerance = 0.05)
+})
+
+test_that("saemix prop() and add() + prop() match focei (#212)", {
+  skip_on_cran()
+
+  mod <- function(err) {
+    .errPar <- list(add.sd = 0.3, prop.sd = 0.1)
+    .errPar <- .errPar[names(.errPar) %in% all.vars(err)]
+    .ini <- c(list(quote(`{`), quote(tka <- 0.45), quote(tv <- 3.45),
+                   quote(tcl <- 1), quote(eta.ka ~ 0.6), quote(eta.v ~ 0.1),
+                   quote(eta.cl ~ 0.3)),
+              lapply(names(.errPar), function(n) {
+                bquote(.(as.name(n)) <- .(.errPar[[n]]))
+              }))
+    f <- function() {
+      ini(INI)
+      model({
+        ka <- exp(tka + eta.ka)
+        v  <- exp(tv + eta.v)
+        cl <- exp(tcl + eta.cl)
+        linCmt() ~ ERR
+      })
+    }
+    body(f) <- do.call(substitute, list(body(f), list(INI = as.call(.ini), ERR = err)))
+    f
+  }
+
+  # the time 0 observations have a prediction of 0 (no proportional error)
+  d <- nlmixr2data::theo_sd
+  d <- d[!(d$EVID == 0 & d$TIME == 0), ]
+  ctl <- saemixControl(seed = 632545, nbiter.saemix = c(300, 100),
+                       fim = FALSE, warnings = FALSE)
+
+  for (err in list(quote(prop(prop.sd)), quote(add(add.sd) + prop(prop.sd)))) {
+    .ui <- mod(err)
+    fitSaemix <- nlmixr2(.ui, d, est = "saemix", ctl)
+    fitFocei <- suppressMessages(nlmixr2(.ui, d, est = "focei",
+                                         foceiControl(print = 0)))
+    # each residual parameter is written back to its own name
+    expect_equal(fitSaemix$theta, fitFocei$theta, tolerance = 0.1,
+                 label = deparse(err))
+  }
+  expect_equal(fitSaemix$saemix@model@error.model, "combined")
 })
