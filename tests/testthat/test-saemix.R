@@ -228,4 +228,39 @@ test_that("saemix fits linCmt() models and thetas without etas (#212)", {
   expect_equal(fitFixed$theta[["tv"]], 3.45)
   expect_equal(colnames(fitFixed$eta), c("ID", "eta.ka", "eta.cl"))
   expect_true(all(is.finite(fitFixed$theta)))
+
+  # linCmt() as one of several endpoints
+  linPd <- function() {
+    ini({
+      tka <- 0.45; tv <- 3.45; tcl <- 1
+      eta.ka ~ 0.6; eta.cl ~ 0.3
+      add.sd <- 0.7; add.pd <- 0.5
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v  <- exp(tv)
+      cl <- exp(tcl + eta.cl)
+      linCmt() ~ add(add.sd)
+      eff <- 10 * cl / v
+      eff ~ add(add.pd)
+    })
+  }
+
+  d <- nlmixr2data::theo_sd
+  obs <- d[d$EVID == 0, ]
+  obsPd <- obs
+  obsPd$DV <- 0.9
+  obs$DVID <- 1
+  obsPd$DVID <- 2
+  dose <- d[d$EVID != 0, ]
+  dose$DVID <- NA
+  dPd <- rbind(dose, obs, obsPd)
+  dPd <- dPd[order(dPd$ID, dPd$TIME, -dPd$EVID), ]
+  dPd$CMT <- ifelse(dPd$EVID != 0, 1, NA)
+
+  fitPd <- nlmixr2(linPd, dPd, est = "saemix", ctl)
+  expect_s3_class(fitPd, "nlmixr2FitData")
+  expect_true(all(is.finite(fitPd$theta)))
+  # each endpoint is predicted from its own column
+  expect_equal(fitPd$IPRED[fitPd$CMT == "eff"], fitPd$eff[fitPd$CMT == "eff"])
 })
