@@ -137,6 +137,42 @@ test_that("pheno NONMEM reading", {
   })
 })
 
+test_that("pheno NONMEM reading with NWPRI priors (#205)", {
+
+  pheno <- function() {
+    ini({
+      tcl <- log(0.008)
+      tv <-  log(0.6)
+      eta.cl + eta.v ~ c(1,
+                         0.01, 1)
+      add.err <- 0.1
+      prior(tcl) ~ dnorm(-4.8, 1)
+      prior(eta.cl, eta.v) ~ invWishart(10)
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      ke <- cl / v
+      d/dt(A1) = - ke * A1
+      cp = A1 / v
+      cp ~ add(add.err)
+    })
+  }
+
+  skip_if_not(file.exists("pheno-nonmem.zip"))
+  .path <- normalizePath("pheno-nonmem.zip")
+  withr::with_tempdir({
+    unzip(.path)
+    f <- .nlmixr(pheno, nlmixr2data::pheno_sd, "nonmem",
+                 control=nonmemControl(modelName="pheno"))
+    expect_true(inherits(f, "nlmixr2FitData"))
+    # NONMEM's objective includes the prior
+    expect_equal(row.names(f$objDf), "nonmem focei nwpri")
+    expect_equal(names(fixef(f)), c("tcl", "tv", "add.err"))
+    expect_equal(dimnames(f$omega), list(c("eta.cl", "eta.v"), c("eta.cl", "eta.v")))
+  })
+})
+
 test_that("wbc NONMEM reading", {
 
   wbc <- function() {

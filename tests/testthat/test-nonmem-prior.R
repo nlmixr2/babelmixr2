@@ -200,6 +200,41 @@ withr::with_tempdir({
     expect_true(grepl("ETAS(1:LAST)", ui$nonmemModel, fixed=TRUE))
   })
 
+  test_that("$OMEGA and $OMEGAP blocks are written row by row (#205)", {
+    block3 <- function() {
+      ini({
+        tka <- 0.45
+        tcl <- 1
+        tv <- 3.45
+        add.sd <- 0.7
+        eta.ka + eta.cl + eta.v ~ c(1,
+                                    0.1, 2,
+                                    0.2, 0.3, 3)
+        prior(eta.ka, eta.cl, eta.v) ~ invWishart(10)
+      })
+      model({
+        ka <- exp(tka + eta.ka)
+        cl <- exp(tcl + eta.cl)
+        v <- exp(tv + eta.v)
+        d/dt(depot) <- -ka * depot
+        d/dt(central) <- ka * depot - cl/v * central
+        cp <- central / v
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- suppressMessages(block3())
+    expect_equal(ui$nonmemOmega,
+                 paste0("$OMEGA BLOCK(3) ; eta.ka eta.cl eta.v\n",
+                        "   1\n",
+                        "   0.1 2\n",
+                        "   0.2 0.3 3\n"))
+    expect_true(grepl(paste0("$OMEGAP BLOCK(3) ; eta.ka eta.cl eta.v\n",
+                             "   1\n",
+                             "   0.1 2\n",
+                             "   0.2 0.3 3  FIX\n"),
+                      ui$nonmemPriorRecords, fixed=TRUE))
+  })
+
   base <- function() {
     ini({
       tcl <- 1.0
