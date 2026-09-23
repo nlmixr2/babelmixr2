@@ -27,5 +27,5 @@ test_that("nonmemControl(est=) emits the matching $ESTIMATION method (#211)", {
   .check("focei", "1", "nonmem focei")
   .check("posthoc", "0", "nonmem focei")
   # ITS must not carry the importance sampling options
-  expect_false(grepl("ISAMPLE|IACCEPT|MAPITER", rxUiGet.nonmemEst(.ui("its"))))
+  expect_false(grepl("SEED|ISAMPLE|IACCEPT|ISCALE_MIN|ISCALE_MAX|DF=|MAPITER", rxUiGet.nonmemEst(.ui("its"))))
 })
