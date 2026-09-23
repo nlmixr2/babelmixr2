@@ -97,3 +97,77 @@ test_that("fmeMcmc chain is determined by control's seed", {
   # ... and a different seed explores a different chain
   expect_false(isTRUE(all.equal(.fit(42), .fit(7))))
 })
+
+test_that("fmeMcmc samples with ini({}) priors (#208)", {
+  skip_if_not_installed("FME")
+  skip_on_cran()
+  skip_if_not(exists("rxPriorLogDensity", envir=asNamespace("rxode2")),
+              "rxode2 does not support ini({}) priors")
+
+  dsn <- rxode2::rxWithSeed(42, {
+    .d <- data.frame(i=1:1000)
+    .d$time <- exp(rnorm(1000))
+    .d$DV <- rbinom(1000, 1, exp(-1+.d$time)/(1+exp(-1+.d$time)))
+    .d
+  })
+
+  # a tight prior far from where the data put E0 (~ -0.5)
+  mod <- function() {
+    ini({
+      E0 <- 0.5
+      Em <- 0.5
+      E50 <- 2
+      g <- fix(2)
+      prior(E0) ~ dnorm(5, 0.01)
+      prior(Em) ~ dnorm(0.5, 2)
+    })
+    model({
+      v <- E0+Em*time^g/(E50^g+time^g)
+      ll(bin) ~ DV * v - log(1 + exp(v))
+    })
+  }
+
+  # the prior is evaluated on the natural scale, so it pulls the chain to the
+  # same place whether or not FME samples a rescaled space
+  for (.scaleType in c("none", "nlmixr2")) {
+    fit <- suppressMessages(nlmixr(mod, dsn, est="fmeMcmc",
+                                   control=fmeMcmcControl(print=0,
+                                                          scaleType=.scaleType)))
+    expect_s3_class(fit, "nlmixr2.fmeMcmc")
+    .pars <- fit$fmeMcmc$pars
+    .e0 <- .pars[seq(nrow(.pars) %/% 2L, nrow(.pars)), "E0"]
+    expect_equal(mean(.e0), 5, tolerance=0.02)
+    # FME stores -2*log(prior) for each sample; it is the joint declared prior
+    .n <- nrow(.pars)
+    expect_equal(fit$fmeMcmc$prior[.n],
+                 -2 * (stats::dnorm(.pars[[.n, "E0"]], 5, 0.01, log=TRUE) +
+                         stats::dnorm(.pars[[.n, "Em"]], 0.5, 2, log=TRUE)),
+                 tolerance=1e-6)
+  }
+
+  # supplying both an ini({}) prior and fmeMcmcControl(prior=) is an error
+  expect_error(nlmixr(mod, dsn, est="fmeMcmc",
+                      control=fmeMcmcControl(print=0, prior=function(p) 0)),
+               "fmeMcmcControl\\(prior=\\)")
+
+  # an omega prior never reaches the prior kernel: the model is refused as
+  # not population-only first
+  modEta <- function() {
+    ini({
+      E0 <- 0.5
+      Em <- 0.5
+      E50 <- 2
+      g <- fix(2)
+      eta.E0 ~ 0.1
+      prior(E0) ~ dnorm(0, 10)
+      prior(eta.E0) ~ dnorm(0.1, 0.01)
+    })
+    model({
+      v <- E0+eta.E0+Em*time^g/(E50^g+time^g)
+      ll(bin) ~ DV * v - log(1 + exp(v))
+    })
+  }
+  expect_error(nlmixr(modEta, dsn, est="fmeMcmc",
+                      control=fmeMcmcControl(print=0)),
+               "population estimates")
+})

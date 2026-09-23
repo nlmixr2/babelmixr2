@@ -49,7 +49,11 @@ nonmemControl(
 )
 }
 \arguments{
-\item{est}{NONMEM estimation method}
+\item{est}{NONMEM estimation method: \code{"focei"} (\code{METHOD=1
+INTER}), \code{"imp"} (importance sampling, \code{METHOD=IMP
+INTERACTION}), \code{"its"} (iterative two stage, \code{METHOD=ITS
+INTERACTION}) or \code{"posthoc"} (\code{METHOD=0 MAXEVALS=0
+POSTHOC})}
 
 \item{advanOde}{The ODE solving method for NONMEM}
 
@@ -101,9 +105,9 @@ due to an apparent failed optimization}
 
 \item{niter}{number of iterations in NONMEM estimation methods}
 
-\item{isample}{Isample argument for NONMEM ITS estimation method}
+\item{isample}{Isample argument for NONMEM IMP estimation method}
 
-\item{iaccept}{Iaccept for NONMEM ITS estimation methods}
+\item{iaccept}{Iaccept for NONMEM IMP estimation method}
 
 \item{iscaleMin}{parameter for IMP NONMEM method (ISCALE_MIN)}
 
