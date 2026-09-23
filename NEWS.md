@@ -1,5 +1,13 @@
 # babelmixr2 0.1.11.9000
 
+* `est="fmeMcmc"` now uses priors declared in the model's `ini({})` block
+  (for example `prior(tka) ~ dnorm(0, 10)`) instead of refusing the model.
+  They become the `prior` function `FME::modMCMC()` samples with,
+  evaluated with rxode2's shared prior kernel on the natural parameter
+  scale, even when `scaleType` makes FME sample a rescaled space.
+  Supplying `fmeMcmcControl(prior=)` as well is an error rather than
+  silently preferring one of them (#208).
+
 * A PopED design dataset that gives `cmt` as a compartment *number*
   (`et(amt=180, cmt=1)`) now doses the right compartment.  `et()` keeps
   `cmt` as a character column, so `rxode2::etTrans()` read `"1"` as a
