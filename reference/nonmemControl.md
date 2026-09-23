@@ -54,7 +54,10 @@ nonmemControl(
 
 - est:
 
-  NONMEM estimation method
+  NONMEM estimation method: `"focei"` (`METHOD=1 INTER`), `"imp"`
+  (importance sampling, `METHOD=IMP INTERACTION`), `"its"` (iterative
+  two stage, `METHOD=ITS INTERACTION`) or `"posthoc"`
+  (`METHOD=0 MAXEVALS=0 POSTHOC`)
 
 - advanOde:
 
@@ -150,11 +153,11 @@ nonmemControl(
 
 - isample:
 
-  Isample argument for NONMEM ITS estimation method
+  Isample argument for NONMEM IMP estimation method
 
 - iaccept:
 
-  Iaccept for NONMEM ITS estimation methods
+  Iaccept for NONMEM IMP estimation method
 
 - iscaleMin:
 

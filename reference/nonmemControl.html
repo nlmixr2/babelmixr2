@@ -96,7 +96,11 @@
 
 
 <dl><dt id="arg-est">est<a class="anchor" aria-label="anchor" href="#arg-est"></a></dt>
-<dd><p>NONMEM estimation method</p></dd>
+<dd><p>NONMEM estimation method: <code>"focei"</code> (<code>METHOD=1
+INTER</code>), <code>"imp"</code> (importance sampling, <code>METHOD=IMP
+INTERACTION</code>), <code>"its"</code> (iterative two stage, <code>METHOD=ITS
+INTERACTION</code>) or <code>"posthoc"</code> (<code>METHOD=0 MAXEVALS=0
+POSTHOC</code>)</p></dd>
 
 
 <dt id="arg-advanode">advanOde<a class="anchor" aria-label="anchor" href="#arg-advanode"></a></dt>
@@ -192,11 +196,11 @@ due to an apparent failed optimization</p></dd>
 
 
 <dt id="arg-isample">isample<a class="anchor" aria-label="anchor" href="#arg-isample"></a></dt>
-<dd><p>Isample argument for NONMEM ITS estimation method</p></dd>
+<dd><p>Isample argument for NONMEM IMP estimation method</p></dd>
 
 
 <dt id="arg-iaccept">iaccept<a class="anchor" aria-label="anchor" href="#arg-iaccept"></a></dt>
-<dd><p>Iaccept for NONMEM ITS estimation methods</p></dd>
+<dd><p>Iaccept for NONMEM IMP estimation method</p></dd>
 
 
 <dt id="arg-iscalemin">iscaleMin<a class="anchor" aria-label="anchor" href="#arg-iscalemin"></a></dt>
