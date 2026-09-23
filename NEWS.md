@@ -1,5 +1,10 @@
 # babelmixr2 0.1.11.9000
 
+* `nonmemControl(est="its")` now writes `$ESTIMATION METHOD=ITS
+  INTERACTION` (iterative two stage).  It wrote `METHOD=IMP`, so NONMEM
+  ran importance sampling while the returned fit was labelled with the
+  `nonmem its` objective function type (#211).
+
 * A PopED design dataset that gives `cmt` as a compartment *number*
   (`et(amt=180, cmt=1)`) now doses the right compartment.  `et()` keeps
   `cmt` as a character column, so `rxode2::etTrans()` read `"1"` as a

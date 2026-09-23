@@ -17,7 +17,7 @@ rxUiGet.nonmemEst <- function(x, ...) {
            ifelse(rxode2::rxGetControl(.ui, "noabort", TRUE),
                   " NOABORT", ""), "\n")
   } else if (.est == "its") {
-    paste0("$ESTIMATION METHOD=IMP INTERACTION PRINT=", rxode2::rxGetControl(.ui, "print", 1),
+    paste0("$ESTIMATION METHOD=ITS INTERACTION PRINT=", rxode2::rxGetControl(.ui, "print", 1),
            " NITER=",sprintf("%d", rxode2::rxGetControl(.ui, "niter", 100)),
            ifelse(rxode2::rxGetControl(.ui, "noabort", TRUE),
                   " NOABORT", ""), "\n")
