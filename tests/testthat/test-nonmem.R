@@ -966,6 +966,7 @@ test_that("nonmem model creation without running", {
             nonmemControl(runCommand=NA, modelName="staleTest"))
 
     expect_true(file.exists(file.path("staleTest-002-nonmem", "staleTest.nmctl")))
+    expect_true(file.exists(file.path("staleTest-002-nonmem", "staleTest.md5")))
     unlink(c("staleTest-nonmem", "staleTest-001-nonmem", "staleTest-002-nonmem"),
            recursive=TRUE)
 
