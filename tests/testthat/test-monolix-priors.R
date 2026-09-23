@@ -83,6 +83,12 @@ test_that("normal priors become Monolix MAP estimation", {
                 regexpr("[INDIVIDUAL]", .mod, fixed=TRUE))
 })
 
+test_that("a normal prior written with named arguments is read the same", {
+  .u <- ini(.monolixPriorUi(), prior(tka) ~ dnorm(mean=log(1.5), sd=0.5))
+  expect_equal(.mlxLines(.u$mlxtranModelPopulation, "^ka_pop "),
+               "ka_pop = {distribution=logNormal, typical=1.5, sd=0.5}")
+})
+
 test_that("a fixed parameter keeps FIXED and has no prior definition", {
   .u <- ini(.monolixPriorUi(), prior(tka) ~ dnorm(log(1.5), 0.5))
   .u <- ini(.u, tka=fix(0.45))
