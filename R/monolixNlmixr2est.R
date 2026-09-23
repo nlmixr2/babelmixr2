@@ -360,6 +360,7 @@ nlmixr2Est.monolix <- function(env, ...) {
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
+  .mlxtranPriorInfo(.ui) # refuse priors Monolix cannot represent before running
   .monolixFamilyControl(env, ...)
   nlmixr2est::nmObjUiSetCompressed(FALSE)
 
@@ -373,6 +374,9 @@ nlmixr2Est.monolix <- function(env, ...) {
 attr(nlmixr2Est.monolix, "covPresent") <- TRUE
 attr(nlmixr2Est.monolix, "type") <- "External"
 attr(nlmixr2Est.monolix, "description") <- "Monolix (external software, SAEM)"
+## normal priors, written as Monolix MAP estimation (see R/monolixPriors.R);
+## omega normal priors are then refused by `.mlxtranPriorInfo()`
+attr(nlmixr2Est.monolix, "nlmixr2Priors") <- "tnpri"
 attr(nlmixr2Est.monolix, "mu") <- function(control) {
   isTRUE(control$muRefCovAlg)
 }

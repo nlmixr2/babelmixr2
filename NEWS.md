@@ -1,5 +1,20 @@
 # babelmixr2 0.1.11.9000
 
+* `est="monolix"` now accepts normal priors from `ini({})` and writes them
+  as Monolix MAP estimation (#207).  A parameter with a prior is estimated
+  with `method=MAP`, and its prior is written to a `[POPULATION]` section
+  of `<MODEL>`.  Monolix's prior on a typical value has the same
+  distribution as the parameter itself, with its `sd` in the Gaussian
+  space, so the prior mean is back-transformed like the estimate
+  (`exp()`, `expit()`, `probitInv()`) while the prior sd is written as is:
+  `prior(tka) ~ dnorm(log(1.5), 0.5)` becomes
+  `ka_pop = {distribution=logNormal, typical=1.5, sd=0.5}`, the same
+  distribution with no approximation.  Covariate effects and residual
+  error parameters get a `normal` prior.  Priors Monolix cannot represent
+  are errors rather than being dropped: priors on omega or correlation
+  elements, multivariate normal priors, non-normal priors, and priors on
+  a residual error parameter estimated as a variance.
+
 * A PopED design dataset that gives `cmt` as a compartment *number*
   (`et(amt=180, cmt=1)`) now doses the right compartment.  `et()` keeps
   `cmt` as a character column, so `rxode2::etTrans()` read `"1"` as a
