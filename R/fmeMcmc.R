@@ -372,6 +372,8 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
   }
   .logDensity <- get("rxPriorLogDensity", envir=.ns)
   .unscalePar <- get("nlmUnscalePar", envir=asNamespace("nlmixr2est"))
+  # `p` holds only the estimated parameters; that is every parameter a prior
+  # can be on, since rxode2 refuses a prior on a `fix()`ed parameter.
   .parNames <- env$thetaNames
   .ui <- ui
   .f <- function(p) {
