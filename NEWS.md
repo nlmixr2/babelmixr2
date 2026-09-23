@@ -5,6 +5,9 @@
   a misspelled getter and was always blank (#209).  Because the control
   stream changes, an existing NONMEM export that has a `.md5` hash file
   will not match and is re-run once in a new numbered directory.
+  Moving past a second stale export (`-001-nonmem` also not matching) no
+  longer hangs: the export directory kept its cached number and the
+  hash check looped forever.
 
 * A PopED design dataset that gives `cmt` as a compartment *number*
   (`et(amt=180, cmt=1)`) now doses the right compartment.  `et()` keeps

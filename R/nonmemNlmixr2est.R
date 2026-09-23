@@ -177,6 +177,8 @@
       } else {
         .num <- rxode2::rxGetControl(.ui, ".modelNumber", 0) + 1
         rxode2::rxAssignControlValue(.ui, ".modelNumber", .num)
+        # nonmemExportPath caches the number in the ui
+        assign(".num", .num, envir=.ui)
         .hashFile <- file.path(.ui$nonmemExportPath, .ui$nonmemHashFile)
       }
     }
