@@ -103,10 +103,14 @@
 
 
 <dt id="arg-prior">prior<a class="anchor" aria-label="anchor" href="#arg-prior"></a></dt>
-<dd><p>-2*log(parameter prior probability), either a function
-    that is called as <code>prior(p)</code> or <code>NULL</code>; in the latter case
-    a non-informative prior is used (i.e. all parameters are equally
-    likely, depending on <code>lower</code> and <code>upper</code> within min and max bounds).</p></dd>
+<dd><p>-2 * log(prior parameter probability), either a function
+called as <code>prior(p)</code> with the parameter vector <code><a href="https://rdrr.io/pkg/FME/man/modMCMC.html" class="external-link">FME::modMCMC()</a></code>
+samples (which is the scaled space when <code>scaleType</code> rescales the
+parameters), or <code>NULL</code> for a non-informative prior.  When the model
+declares priors in its <code>ini({})</code> block (for example
+<code>prior(tka) ~ dnorm(0, 10)</code>) this function is generated from them,
+evaluated on the natural (unscaled) parameter scale, and <code>prior</code> must
+be left <code>NULL</code>; supplying both is an error.</p></dd>
 
 
 <dt id="arg-niter">niter<a class="anchor" aria-label="anchor" href="#arg-niter"></a></dt>
@@ -435,10 +439,10 @@ jumps; <code>"fd"</code> falls back to Shi2021 finite differences.  See
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">── Time (sec </span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>              setup   optimize covariance preprocess postprocess table compress</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> elapsed 0.03212292 0.00221218  7.211e-06      0.061       0.012  0.03    0.029</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              setup    optimize covariance preprocess postprocess table compress</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> elapsed 0.02634263 0.001985853  6.261e-06       0.06       0.009 0.028    0.022</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            other</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> elapsed 1.913658</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> elapsed 1.826665</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">── (</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

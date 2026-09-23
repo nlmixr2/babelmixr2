@@ -60,10 +60,15 @@ fmeMcmcControl(
 
 - prior:
 
-  -2\*log(parameter prior probability), either a function that is called
-  as `prior(p)` or `NULL`; in the latter case a non-informative prior is
-  used (i.e. all parameters are equally likely, depending on `lower` and
-  `upper` within min and max bounds).
+  -2 \* log(prior parameter probability), either a function called as
+  `prior(p)` with the parameter vector
+  [`FME::modMCMC()`](https://rdrr.io/pkg/FME/man/modMCMC.html) samples
+  (which is the scaled space when `scaleType` rescales the parameters),
+  or `NULL` for a non-informative prior. When the model declares priors
+  in its `ini({})` block (for example `prior(tka) ~ dnorm(0, 10)`) this
+  function is generated from them, evaluated on the natural (unscaled)
+  parameter scale, and `prior` must be left `NULL`; supplying both is an
+  error.
 
 - niter:
 
@@ -380,10 +385,10 @@ print(fit2)
 #> 
 #> ── Time (sec $time): ──
 #> 
-#>              setup   optimize covariance preprocess postprocess table compress
-#> elapsed 0.03212292 0.00221218  7.211e-06      0.061       0.012  0.03    0.029
+#>              setup    optimize covariance preprocess postprocess table compress
+#> elapsed 0.02634263 0.001985853  6.261e-06       0.06       0.009 0.028    0.022
 #>            other
-#> elapsed 1.913658
+#> elapsed 1.826665
 #> 
 #> ── ($parFixed or $parFixedDf): ──
 #> 

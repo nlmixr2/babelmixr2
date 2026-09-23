@@ -2,6 +2,16 @@
 
 ## babelmixr2 0.1.11.9000
 
+- `est="fmeMcmc"` now uses priors declared in the model’s `ini({})`
+  block (for example `prior(tka) ~ dnorm(0, 10)`) instead of refusing
+  the model. They become the `prior` function
+  [`FME::modMCMC()`](https://rdrr.io/pkg/FME/man/modMCMC.html) samples
+  with, evaluated with rxode2’s shared prior kernel on the natural
+  parameter scale, even when `scaleType` makes FME sample a rescaled
+  space. Supplying `fmeMcmcControl(prior=)` as well is an error rather
+  than silently preferring one of them
+  ([\#208](https://github.com/nlmixr2/babelmixr2/issues/208)).
+
 - `nonmemControl(est="its")` now writes
   `$ESTIMATION METHOD=ITS INTERACTION` (iterative two stage). It wrote
   `METHOD=IMP`, so NONMEM ran importance sampling while the returned fit
