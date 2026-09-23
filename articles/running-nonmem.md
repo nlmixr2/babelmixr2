@@ -194,8 +194,8 @@ print(f)
 #> 
 #> ── Time (sec $time): ──
 #> 
-#>            setup preprocess postprocess table compress NONMEM
-#> elapsed 0.877928      0.032       0.023 0.044    0.015 320.27
+#>             setup preprocess postprocess table compress NONMEM
+#> elapsed 0.9008227      0.037       0.023 0.044    0.016 320.27
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 
