@@ -233,6 +233,9 @@ withr::with_tempdir({
                              "   0.1 2\n",
                              "   0.2 0.3 3  FIX\n"),
                       ui$nonmemPriorRecords, fixed=TRUE))
+    # an omega prior alone: no theta prior records
+    expect_false(grepl("THETAP", ui$nonmemModel, fixed=TRUE))
+    expect_true(grepl("$OMEGAPD (10 FIX) ; eta.ka eta.cl eta.v", ui$nonmemModel, fixed=TRUE))
   })
 
   base <- function() {
@@ -272,12 +275,39 @@ withr::with_tempdir({
       prior(eta.v) ~ invWishart(20)
     })$nonmemModel,
     "already covered by the prior 'invWishart\\(10\\)'")
+    # a prior whose parameters cannot be read back
+    expect_error(.ui(prior(tcl) ~ dnorm(undefinedVariable, 0.2))$nonmemModel,
+                 "its parameters could not be read back")
     # no Cauchy analogue
     expect_error(.ui(prior(tcl) ~ dcauchy(0, 1))$nonmemModel,
                  "'dcauchy\\(\\)' is not a normal prior")
     # a normal prior on an omega element is TNPRI, not NWPRI
     expect_error(.nonmemPriorSpec(.ui(prior(eta.cl) ~ dnorm(0.3, 0.1))),
                  "only 'invWishart\\(nu\\)' can be given to an omega block")
+  })
+
+  test_that("a joint normal prior reaching an omega element is refused (#205)", {
+    # rxode2's omega-normal assertion does not see a joint block, so
+    # this is the only thing refusing it
+    joint <- function() {
+      ini({
+        tcl <- 1
+        tv <- 3
+        add.sd <- 0.7
+        eta.cl ~ 0.1
+        tcl + om.eta.cl ~ c(0.1,
+                            0.01, 0.2)
+      })
+      model({
+        cl <- exp(tcl + eta.cl)
+        v <- exp(tv)
+        d/dt(central) <- - cl/v * central
+        cp <- central/v
+        cp ~ add(add.sd)
+      })
+    }
+    expect_error(suppressMessages(joint())$nonmemModel,
+                 "a joint normal prior can only be on population parameters")
   })
 
   test_that("nlmixr(est='nonmem') refuses priors before writing files (#205)", {
