@@ -50,9 +50,10 @@ nonmemControl(
 }
 \arguments{
 \item{est}{NONMEM estimation method: \code{"focei"} (\code{METHOD=1
-INTER}), \code{"imp"} (importance sampling, \code{METHOD=IMP}),
-\code{"its"} (iterative two stage, \code{METHOD=ITS}) or
-\code{"posthoc"} (\code{METHOD=0 MAXEVALS=0 POSTHOC})}
+INTER}), \code{"imp"} (importance sampling, \code{METHOD=IMP
+INTERACTION}), \code{"its"} (iterative two stage, \code{METHOD=ITS
+INTERACTION}) or \code{"posthoc"} (\code{METHOD=0 MAXEVALS=0
+POSTHOC})}
 
 \item{advanOde}{The ODE solving method for NONMEM}
 
