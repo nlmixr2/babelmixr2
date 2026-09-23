@@ -11,9 +11,6 @@ nlmixr2Est.saemix <- function(env, ...) {
     assign("ui", rxode2::rxUiCompress(env$ui), envir = env)
   }, add = TRUE)
 
-  # Assertions
-  .saemixAssertUi(.ui)
-
   # Setup control
   .saemixFamilyControl(env, ...)
   on.exit({
@@ -21,6 +18,10 @@ nlmixr2Est.saemix <- function(env, ...) {
       rm("control", envir = .ui)
     }
   }, add = TRUE)
+
+  # Assertions (after the control is in the ui, so saemixControl(addProp=)
+  # decides what a default add() + prop() endpoint is)
+  .saemixAssertUi(.ui)
 
   .saemixFamilyFit(env, ...)
 }

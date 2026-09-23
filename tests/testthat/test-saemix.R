@@ -276,9 +276,12 @@ test_that("saemix refuses models it would fit with a different error model (#212
   .fitErr(mod(quote(add(add.sd) + pow(prop.sd, pow.exp))))
   .fitErr(mod(quote(lnorm(add.sd) + prop(prop.sd))))
   .fitErr(mod(quote(add(add.sd) + prop(prop.sd) + combined1())))
-  withr::with_options(list(rxode2.addProp = "combined1"), {
-    .fitErr(mod(quote(add(add.sd) + prop(prop.sd))))
-  })
+  # saemixControl(addProp=) decides what a default add() + prop() is
+  expect_error(nlmixr2(mod(quote(add(add.sd) + prop(prop.sd))), d, est = "saemix",
+                       saemixControl(seed = 632545, nbiter.saemix = c(10, 5),
+                                     fim = FALSE, warnings = FALSE,
+                                     addProp = "combined1")),
+               "cannot use 'combined1'")
   .fitErr(mod(quote(prop(prop.sd) + dt(nu))))
 
   # saemix cannot fix a residual error or a between-subject variability

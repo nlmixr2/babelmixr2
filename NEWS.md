@@ -15,11 +15,16 @@
   `add()`, `prop()`, `add() + prop()` (`combined2`, the only combination
   saemix has) or `lnorm()` residual error, or an `ll()` likelihood.  A
   model with more than one endpoint (previously fit against predictions of
-  zero), a `combined1` `add() + prop()`, `pow()`, `boxCox()`,
+  zero), a `combined1` `add() + prop()` (including
+  `saemixControl(addProp="combined1")`), `pow()`, `boxCox()`,
   `yeoJohnson()`, a logit/probit transformation, `lnorm() + prop()` or a
-  non-normal residual distribution now stops with an error.  The checks
+  non-normal residual distribution now stops with an error, as does a
+  fixed residual error or between-subject variability, which saemix
+  would otherwise estimate anyway.  The checks
   use the new rxode2 assertions `assertRxUiTransform()`,
-  `assertRxUiErrType()` and `assertRxUiAddProp()`, so this requires
+  `assertRxUiErrType()`, `assertRxUiAddProp()`,
+  `assertRxUiNoFixedResiduals()` and `assertRxUiNoFixedOmega()`, so this
+  requires
   rxode2 5.1.8 (#212).
 
 * `est="saemix"` now fits `lnorm()` residual errors with saemix's
