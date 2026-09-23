@@ -104,9 +104,9 @@ due to an apparent failed optimization}
 
 \item{niter}{number of iterations in NONMEM estimation methods}
 
-\item{isample}{Isample argument for NONMEM ITS estimation method}
+\item{isample}{Isample argument for NONMEM IMP estimation method}
 
-\item{iaccept}{Iaccept for NONMEM ITS estimation methods}
+\item{iaccept}{Iaccept for NONMEM IMP estimation method}
 
 \item{iscaleMin}{parameter for IMP NONMEM method (ISCALE_MIN)}
 

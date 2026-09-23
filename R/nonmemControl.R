@@ -49,8 +49,8 @@
 #'   simulations
 #' @param mapiter the number of map iterations for IMP method
 #' @param niter number of iterations in NONMEM estimation methods
-#' @param isample Isample argument for NONMEM ITS estimation method
-#' @param iaccept Iaccept for NONMEM ITS estimation methods
+#' @param isample Isample argument for NONMEM IMP estimation method
+#' @param iaccept Iaccept for NONMEM IMP estimation method
 #' @param iscaleMin parameter for IMP NONMEM method (ISCALE_MIN)
 #' @param iscaleMax parameter for IMP NONMEM method (ISCALE_MAX)
 #' @param df degrees of freedom for IMP method
