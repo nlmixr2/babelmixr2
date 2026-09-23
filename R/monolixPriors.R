@@ -22,10 +22,13 @@
 ##
 ## What Monolix cannot express is refused rather than dropped:
 ##
-## - a prior on an omega or correlation element (Monolix's own MAP prior
+## - a prior on an omega element, or on an omega block (lotri stores a
+##   block prior on the block's first diagonal element; Monolix's own MAP prior
 ##   on a standard deviation is an inverse Wishart, not a normal on the
 ##   value nlmixr2 describes)
 ## - a multivariate normal prior (Monolix priors are one per parameter)
+## - a prior on a `probitInv()` parameter with bounds other than (0, 1),
+##   since Monolix's `probitNormal` has no `min=`/`max=`
 ## - a prior on a residual error parameter nlmixr2 estimates as a
 ##   variance, since Monolix estimates its square root and the normal
 ##   prior does not survive that transform
@@ -131,6 +134,12 @@
       .low <- if (length(.wc) == 1L) .curEval$low[.wc] else NA_real_
       .hi <- if (length(.wc) == 1L) .curEval$hi[.wc] else NA_real_
       if (is.na(.low) && !is.na(.hi)) .low <- 0
+      if (.ce == "probitInv" &&
+            !(isTRUE(all.equal(.low, 0)) && isTRUE(all.equal(.hi, 1)))) {
+        # Monolix's probitNormal is on (0, 1); the bounds are not written
+        stop("the prior on '", .name, "' is on a probitInv() parameter with bounds other than (0, 1), ",
+             "which cannot be written for Monolix", call.=FALSE)
+      }
       .dist <- paste(c(.mlxTranCurEvalToDistribution(.ce),
                        .mlxTranGetLimits(.ce, .low, .hi)), collapse=", ")
       .typical <- .getNonMonolixParameterIni(.mv[1], .name, .curEval, .ui)
