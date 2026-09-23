@@ -70,6 +70,8 @@
 #' @noRd
 #' @author Matthew L. Fidler
 .nonmemOmegaBlocks <- function(ui) {
+  .iniDf <- ui$iniDf
+  if (!any(!is.na(.iniDf$neta1))) return(list())
   lotri::lotriMatInv(lotri::lotriEst(lotri::as.lotri(ui$iniDf), drop=TRUE))
 }
 

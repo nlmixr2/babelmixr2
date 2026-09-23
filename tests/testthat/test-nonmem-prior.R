@@ -199,6 +199,28 @@ withr::with_tempdir({
     expect_true(grepl("ETAS(1:LAST)", ui$nonmemModel, fixed=TRUE))
   })
 
+  test_that("theta priors on a model without etas (#205)", {
+    # babelmixr2 cannot yet write $OMEGA for a model without etas, but the
+    # prior records and $TABLE do not assume there is one
+    noEta <- function() {
+      ini({
+        tcl <- 1.0
+        add.sd <- 0.7
+        prior(tcl) ~ dnorm(1, 0.5)
+      })
+      model({
+        cl <- exp(tcl)
+        d/dt(central) <- - cl * central
+        cp <- central
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- suppressMessages(noEta())
+    expect_equal(ui$nonmemPriorRecords,
+                 "$THETAP (1 FIX) ; 1 - tcl\n\n$THETAPV 0.25 FIX ; tcl\n\n")
+    expect_match(ui$nonmemTable, "ETAS(1:LAST)", fixed=TRUE)
+  })
+
   test_that("$OMEGA and $OMEGAP blocks are written row by row (#205)", {
     block3 <- function() {
       ini({
@@ -277,6 +299,9 @@ withr::with_tempdir({
     # a prior whose parameters cannot be read back
     expect_error(.ui(prior(tcl) ~ dnorm(undefinedVariable, 0.2))$nonmemModel,
                  "its parameters could not be read back")
+    # NWPRI's scale is the block's own initial estimate
+    expect_error(.ui(prior(eta.cl, eta.v) ~ invWishart(200, lotri(eta.cl + eta.v ~ c(0.1, 0, 0.1))))$nonmemModel,
+                 "only 'invWishart\\(nu\\)' is supported")
     # no Cauchy analogue
     expect_error(.ui(prior(tcl) ~ dcauchy(0, 1))$nonmemModel,
                  "'dcauchy\\(\\)' is not a normal prior")

@@ -5,7 +5,8 @@ rxUiGet.nonmemTable <- function(x, ...) {
     # NWPRI's own prior variances are OMEGAs after the model's, so
     # LAST would output etas that are not in the model
     .iniDf <- x[[1]]$iniDf
-    .etas <- paste(sum(!is.na(.iniDf$neta1) & .iniDf$neta1 == .iniDf$neta2))
+    .nEta <- sum(!is.na(.iniDf$neta1) & .iniDf$neta1 == .iniDf$neta2)
+    if (.nEta > 0L) .etas <- paste(.nEta)
   }
   paste(c("$TABLE ID ETAS(1:", .etas, ") OBJI FIRSTONLY ONEHEADER NOPRINT\n",
           "     FORMAT=s1PE17.9 NOAPPEND FILE=",
