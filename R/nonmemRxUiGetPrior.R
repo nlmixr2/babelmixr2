@@ -261,18 +261,15 @@ rxUiGet.nonmemPriorRecords <- function(x, ...) {
   }
   .no <- length(.spec$omega)
   if (.no > 0L) {
+    # each block's $OMEGAP is followed by its own $OMEGAPD, the way the
+    # NONMEM examples write them
     .ret <- c(.ret,
-              paste0(paste(vapply(.spec$omega, .nonmemHandleOneOmega,
-                                  character(1), ui=.ui, rec="$OMEGAP", fix=TRUE,
-                                  USE.NAMES=FALSE),
-                           collapse=""), "\n"))
-    .t0 <- .nonmemThetaPad(c("$OMEGAPD", rep("", .no - 1L)))
-    .t1 <- .nonmemThetaPad(paste0(signif(.spec$omegaDf, .sigdig), " FIX"))
-    .t2 <- vapply(.spec$omega, function(b) paste(dimnames(b)[[1]], collapse=" "),
-                  character(1), USE.NAMES=FALSE)
-    .ret <- c(.ret,
-              paste0(paste(paste0(.t0, " (", .t1, ") ; ", .t2), collapse="\n"),
-                     "\n\n"))
+              paste0(paste(vapply(seq_len(.no), function(i) {
+                .b <- .spec$omega[[i]]
+                paste0(.nonmemHandleOneOmega(.b, .ui, rec="$OMEGAP", fix=TRUE),
+                       "$OMEGAPD (", signif(.spec$omegaDf[i], .sigdig), " FIX) ; ",
+                       paste(dimnames(.b)[[1]], collapse=" "), "\n")
+              }, character(1), USE.NAMES=FALSE), collapse=""), "\n"))
   }
   paste(.ret, collapse="")
 }
