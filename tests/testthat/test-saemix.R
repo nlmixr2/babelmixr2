@@ -209,4 +209,23 @@ test_that("saemix fits linCmt() models and thetas without etas (#212)", {
   expect_equal(colnames(fitNoEta$eta), c("ID", "eta.ka", "eta.cl"))
   expect_equal(dimnames(fitNoEta$omega), list(c("eta.ka", "eta.cl"), c("eta.ka", "eta.cl")))
   expect_true(all(is.finite(fitNoEta$theta)))
+
+  linFixedV <- function() {
+    ini({
+      tka <- 0.45; tv <- fixed(3.45); tcl <- 1
+      eta.ka ~ 0.6; eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v  <- exp(tv)
+      cl <- exp(tcl + eta.cl)
+      linCmt() ~ add(add.sd)
+    })
+  }
+
+  fitFixed <- nlmixr2(linFixedV, nlmixr2data::theo_sd, est = "saemix", ctl)
+  expect_equal(fitFixed$theta[["tv"]], 3.45)
+  expect_equal(colnames(fitFixed$eta), c("ID", "eta.ka", "eta.cl"))
+  expect_true(all(is.finite(fitFixed$theta)))
 })

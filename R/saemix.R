@@ -226,7 +226,7 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
       }
       # linCmt() endpoints (rxLinCmt) are not output columns of the
       # solved model; use the individual prediction instead
-      predCols[!(predCols %in% names(res))] <- "ipredSim"
+      predCols[predCols == "rxLinCmt"] <- "ipredSim"
 
       if (length(predCols) == 1) {
         predictions <- res[[predCols]][matchedIdx]
