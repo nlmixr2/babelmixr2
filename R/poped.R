@@ -1285,10 +1285,16 @@ attr(rxUiGet.popedNotfixedSigma, "rstudio") <- 0L
                                                       .data[[.wevid]] == 0, ]
                                      .time <- .data[[.wtime]]
                                      .env$mt <- max(c(.time, .env$mt))
-                                     .wd <- which(.data[[.wdvid]] == i)
-                                     if (length(.wd) == 0) {
-                                       .wd <- which(.data[[.wdvid]] ==
-                                                      ui$predDf$cond[i])
+                                     # without a dvid column the cmt
+                                     # fallback below is the only way to
+                                     # match the design points
+                                     .wd <- integer(0)
+                                     if (length(.wdvid) == 1L) {
+                                       .wd <- which(.data[[.wdvid]] == i)
+                                       if (length(.wd) == 0) {
+                                         .wd <- which(.data[[.wdvid]] ==
+                                                        ui$predDf$cond[i])
+                                       }
                                      }
                                      if (length(.wd) > 0) {
                                        .time <- .time[.wd]
@@ -2059,6 +2065,145 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   ret
 }
 
+#' Does this model use linCmt()?
+#'
+#' The compartment *numbers* of a `linCmt()` model do not follow the
+#' order of `rxModelVars(ui)$state`: rxode2 shuffles the solved
+#' compartments to the front of the event numbering (see `getCmtNum()` in
+#' rxode2's etTrans.cpp), so `cmt=1` is the depot even when `$state`
+#' starts with an ODE.  PopED rejects `linCmt()` models anyway
+#' (`.popedRxModel()` stops with "could not figure out linCmt() model"),
+#' so rather than guess at the mapping here, leave those datasets alone
+#' and let that error be the one the user sees.
+#'
+#' @param ui rxode2 ui function
+#' @return TRUE when the model has a solved linear compartment
+#' @noRd
+#' @author Matthew L. Fidler
+.popedHasLinCmt <- function(ui) {
+  .flags <- rxode2::rxModelVars(ui)$flags
+  if (!any(names(.flags) == "linCmtFlg")) return(FALSE)
+  !identical(as.integer(.flags[["linCmtFlg"]]), 0L)
+}
+
+#' Translate a numeric compartment given as a string back to a number
+#'
+#' `et()` keeps `cmt` as a character column, so a design dataset built
+#' with a compartment *number* (`et(amt=180, cmt=1)`) arrives here with
+#' the string `"1"`.  `rxode2::etTrans()` reads a character `cmt` as a
+#' compartment *name*; `"1"` matches no state, so the record is assigned
+#' to an extra compartment and the dose is silently dropped from the
+#' design (nlmixr2/babelmixr2#201).  `rxode2` converts these back to
+#' integers before solving (`.etFixCmtForSolve()`); do the same here.
+#'
+#' A multiple endpoint design names the endpoint on its observation
+#' records (`cmt="cp"`, `cmt="eff"`), so the column can hold both names
+#' and numbers.  Such a column has to stay character; the numbers are
+#' replaced by the compartment they refer to instead.
+#'
+#' @param ui rxode2 ui function
+#' @param data babelmixr2 design data
+#' @return design data where the numeric compartments of a character
+#'   `cmt` column have been translated; anything else is returned
+#'   unchanged
+#' @noRd
+#' @author Matthew L. Fidler
+.popedFixDataCmt <- function(ui, data) {
+  .nd <- tolower(names(data))
+  .wcmt <- which(.nd == "cmt")
+  if (length(.wcmt) != 1L) return(data)
+  .cmt <- data[[.wcmt]]
+  if (is.factor(.cmt)) .cmt <- as.character(.cmt)
+  if (!is.character(.cmt)) return(data)
+  .isNa <- is.na(.cmt)
+  # "(default)"/"(obs)" are the rxode2 sentinels for "no compartment given"
+  .isSentinel <- !.isNa & (.cmt == "(default)" | .cmt == "(obs)")
+  .num <- suppressWarnings(as.integer(.cmt))
+  .isNum <- !.isNa & !.isSentinel & !is.na(.num)
+  if (all(.isNa | .isSentinel | .isNum)) {
+    # no compartment names at all, so the column can become integer
+    .int <- integer(length(.cmt))
+    .int[.isNa] <- NA_integer_
+    .int[.isSentinel] <- 1L
+    .int[.isNum] <- .num[.isNum]
+    data[[.wcmt]] <- .int
+    return(data)
+  }
+  # the numbers cannot be placed by position for a linCmt() model
+  if (.popedHasLinCmt(ui)) return(data)
+  .state <- rxode2::rxModelVars(ui)$state
+  # rxode2 doses cmt=0 into the default (first) compartment
+  .cmt[which(.isNum & .num == 0L)] <- .state[1]
+  # a leading "-" turns the compartment off (evid=2)
+  .w <- which(.isNum & abs(.num) >= 1L & abs(.num) <= length(.state))
+  # ifelse() evaluates both branches, so both have to index with abs()
+  .cmt[.w] <- ifelse(.num[.w] < 0L,
+                     paste0("-", .state[abs(.num[.w])]),
+                     .state[abs(.num[.w])])
+  # anything left over is out of range; .popedAssertDoseCmt() complains
+  data[[.wcmt]] <- .cmt
+  data
+}
+
+#' Make sure every dosing record can be matched to a model compartment
+#'
+#' A dose that cannot be matched is dropped by `rxode2::etTrans()`, which
+#' gives a design with no doses at all; every prediction is then zero and
+#' the FIM is degenerate, which reads as "your design is bad" instead of
+#' "your dose was thrown away" (nlmixr2/babelmixr2#201).
+#'
+#' Only the records that put an amount into a compartment are checked;
+#' see the comment in the body for why the other event types are left
+#' alone.
+#'
+#' @param ui rxode2 ui function
+#' @param data babelmixr2 design data (after `.popedFixDataCmt()`)
+#' @return nothing, called for the error it throws
+#' @noRd
+#' @author Matthew L. Fidler
+.popedAssertDoseCmt <- function(ui, data) {
+  .nd <- tolower(names(data))
+  .wcmt <- which(.nd == "cmt")
+  if (length(.wcmt) != 1L) return(invisible())
+  .wevid <- which(.nd == "evid")
+  # without evid every record is a design point (see .popedDataToDesignSpace())
+  if (length(.wevid) != 1L) return(invisible())
+  # Only the records that put an amount into a compartment are checked:
+  # evid=1 (dose), 4 (reset and dose), 5 (replace) and 6 (multiply).
+  # Each of those has to name a real compartment, and rxode2 quietly
+  # ignores them when it cannot match one.  evid=2 turns a compartment on
+  # or off and evid=3 resets the system; neither has to name an ODE state
+  # (a design can point an evid=2 record at an endpoint such as
+  # cmt="cp"), so they are left alone, as is any evid the check does not
+  # recognize -- rejecting a design that works is worse than missing one
+  # that does not.
+  .evid <- data[[.wevid]]
+  .cmt <- data[[.wcmt]][which(.evid == 1 | .evid == 4 |
+                                .evid == 5 | .evid == 6)]
+  if (length(.cmt) == 0L) return(invisible())
+  # a linCmt() model numbers its compartments differently, and PopED
+  # rejects it with a clearer error a moment later
+  if (.popedHasLinCmt(ui)) return(invisible())
+  .state <- rxode2::rxModelVars(ui)$state
+  if (is.factor(.cmt)) .cmt <- as.character(.cmt)
+  if (is.character(.cmt)) {
+    # a leading "-" turns the compartment off (evid=2)
+    .bad <- .cmt[!is.na(.cmt) &
+                   !(sub("^-", "", .cmt) %in% c(.state, "(default)", "(obs)"))]
+  } else {
+    # cmt=0 is the default compartment for rxode2, not a missing one
+    .n <- abs(as.integer(.cmt))
+    .bad <- .cmt[!is.na(.n) & .n > length(.state)]
+  }
+  .bad <- unique(.bad)
+  if (length(.bad) == 0L) return(invisible())
+  stop("the dosing records of the design dataset use compartment(s) not in the model: ",
+       paste0("'", .bad, "'", collapse=", "),
+       "\nthe model compartments are: ",
+       paste0("'", .state, "'", collapse=", "),
+       call.=FALSE)
+}
+
 #' Setup the poped database
 #'
 #' @param ui rxode2 ui function
@@ -2091,6 +2236,8 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   # - model -- rxode2 model (setup with .popedDataToDesignSpace)
   # - data -- rxode2 data (setup with .popedDataToDesignSpace)
   .ui <- rxode2::rxUiDecompress(rxode2::assertRxUi(ui))
+  data <- .popedFixDataCmt(.ui, data)
+  .popedAssertDoseCmt(.ui, data)
   # Set control options to be used within functions
   .ctl <- control
   class(.ctl) <- NULL
