@@ -50,7 +50,8 @@
 #' Read the mean and sd of a univariate normal prior
 #'
 #' `lotri` stores normal priors positionally (`dnorm(mean, sd)`) or as
-#' `stdNormal()`; the arguments may still be expressions like `log(2)`.
+#' `stdNormal()`; the arguments may still be expressions like `log(2)`
+#' or `logit(0.6)`.
 #'
 #' @param prior prior as stored in the `prior` column
 #' @param name parameter name (for the error)
@@ -66,8 +67,14 @@
   }
   if (.fn %in% c("dnorm", "normal") && length(.e) == 3L &&
         all(names(as.list(.e))[-1] %in% c("", NA_character_))) {
+    # the prior is data, so it is evaluated with base R plus the rxode2
+    # transforms a prior mean is naturally written with (ie `logit(0.6)`)
+    .env <- new.env(parent=baseenv())
+    for (.f in c("logit", "expit", "probit", "probitInv")) {
+      assign(.f, getExportedValue("rxode2", .f), envir=.env)
+    }
     .v <- try(vapply(as.list(.e)[-1], function(a) {
-      as.double(eval(a, envir=baseenv()))
+      as.double(eval(a, envir=.env))
     }, double(1), USE.NAMES=FALSE), silent=TRUE)
     if (!inherits(.v, "try-error") && all(is.finite(.v)) && .v[2] > 0) {
       return(.v)

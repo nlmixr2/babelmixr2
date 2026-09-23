@@ -89,6 +89,12 @@ test_that("a normal prior written with named arguments is read the same", {
                "ka_pop = {distribution=logNormal, typical=1.5, sd=0.5}")
 })
 
+test_that("a prior mean written with an rxode2 transform is evaluated", {
+  .u <- ini(.monolixPriorUi(), prior(temax) ~ dnorm(logit(0.6), 0.01))
+  expect_equal(.mlxLines(.u$mlxtranModelPopulation, "^emax_pop "),
+               "emax_pop = {distribution=logitNormal, min=0, max=1, typical=0.6, sd=0.01}")
+})
+
 test_that("a fixed parameter keeps FIXED and has no prior definition", {
   .u <- ini(.monolixPriorUi(), prior(tka) ~ dnorm(log(1.5), 0.5))
   .u <- ini(.u, tka=fix(0.45))
