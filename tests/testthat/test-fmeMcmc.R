@@ -146,4 +146,25 @@ test_that("fmeMcmc samples with ini({}) priors (#208)", {
   expect_error(nlmixr(mod, dsn, est="fmeMcmc",
                       control=fmeMcmcControl(print=0, prior=function(p) 0)),
                "fmeMcmcControl\\(prior=\\)")
+
+  # an omega prior never reaches the prior kernel: the model is refused as
+  # not population-only first
+  modEta <- function() {
+    ini({
+      E0 <- 0.5
+      Em <- 0.5
+      E50 <- 2
+      g <- fix(2)
+      eta.E0 ~ 0.1
+      prior(E0) ~ dnorm(0, 10)
+      prior(eta.E0) ~ dnorm(0.1, 0.01)
+    })
+    model({
+      v <- E0+eta.E0+Em*time^g/(E50^g+time^g)
+      ll(bin) ~ DV * v - log(1 + exp(v))
+    })
+  }
+  expect_error(nlmixr(modEta, dsn, est="fmeMcmc",
+                      control=fmeMcmcControl(print=0)),
+               "population estimates")
 })

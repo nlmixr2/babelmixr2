@@ -348,7 +348,10 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
 #' `FME::modMCMC()` samples the internal *scaled* parameter space, so every
 #' proposed vector is unscaled back to the natural scale before the prior is
 #' evaluated; a prior evaluated on the scaled vector would be a different
-#' prior than the one the model declares.
+#' prior than the one the model declares.  No Jacobian term is needed for
+#' that change of variables: every nlm scaling is a per-parameter affine map
+#' with constants fixed for the whole run, so its Jacobian is a constant that
+#' cancels in the Metropolis-Hastings acceptance ratio.
 #'
 #' @param ui rxode2 ui
 #' @param prior the user-supplied `fmeMcmcControl(prior=)`
