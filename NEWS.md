@@ -20,6 +20,27 @@
   written column by column, so NONMEM started from the wrong initial
   omega values.
 
+* The `$PROBLEM` record of a generated NONMEM control stream now carries
+  the model name (`$PROBLEM one.cmt translated from babelmixr2`).  It read
+  a misspelled getter and was always blank (#209).  Because the control
+  stream changes, an existing NONMEM export that has a `.md5` hash file
+  will not match and is re-run once in a new numbered directory.
+  Moving past a second stale export (`-001-nonmem` also not matching) no
+  longer hangs: the export directory kept its cached number and the
+  hash check looped forever.
+* `est="fmeMcmc"` now uses priors declared in the model's `ini({})` block
+  (for example `prior(tka) ~ dnorm(0, 10)`) instead of refusing the model.
+  They become the `prior` function `FME::modMCMC()` samples with,
+  evaluated with rxode2's shared prior kernel on the natural parameter
+  scale, even when `scaleType` makes FME sample a rescaled space.
+  Supplying `fmeMcmcControl(prior=)` as well is an error rather than
+  silently preferring one of them (#208).
+
+* `nonmemControl(est="its")` now writes `$ESTIMATION METHOD=ITS
+  INTERACTION` (iterative two stage).  It wrote `METHOD=IMP`, so NONMEM
+  ran importance sampling while the returned fit was labelled with the
+  `nonmem its` objective function type (#211).
+
 * A PopED design dataset that gives `cmt` as a compartment *number*
   (`et(amt=180, cmt=1)`) now doses the right compartment.  `et()` keeps
   `cmt` as a character column, so `rxode2::etTrans()` read `"1"` as a

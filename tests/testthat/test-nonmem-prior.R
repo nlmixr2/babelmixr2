@@ -35,7 +35,7 @@ withr::with_tempdir({
       ui$nonmemModel,
       paste(
         c(
-          "$PROBLEM  translated from babelmixr2",
+          "$PROBLEM one.cmt translated from babelmixr2",
           "; comments show mu referenced model in ui$getSplitMuModel",
           "",
           "$DATA one.cmt.csv IGNORE=@",
