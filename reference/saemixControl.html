@@ -84,6 +84,8 @@
 <span>  stickyRecalcN <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  maxOdeRecalc <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  odeRecalcFactor <span class="op">=</span> <span class="fl">10</span><span class="op">^</span><span class="op">(</span><span class="fl">0.5</span><span class="op">)</span>,</span>
+<span>  indTolRelax <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  eventSens <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"jump"</span>, <span class="st">"fd"</span><span class="op">)</span>,</span>
 <span>  useColor <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  printNcol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  normType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rescale2"</span>, <span class="st">"mean"</span>, <span class="st">"rescale"</span>, <span class="st">"std"</span>, <span class="st">"len"</span>, <span class="st">"constant"</span><span class="op">)</span>,</span>
@@ -263,6 +265,19 @@ ODE solve.</p></dd>
 solving goes bad, this is the factor the rtol/atol is reduced</p></dd>
 
 
+<dt id="arg-indtolrelax">indTolRelax<a class="anchor" aria-label="anchor" href="#arg-indtolrelax"></a></dt>
+<dd><p>when <code>TRUE</code> (default) a subject whose ODE solve had to
+be retried with a relaxed tolerance keeps that relaxed tolerance for the
+rest of the fit instead of resetting it every evaluation</p></dd>
+
+
+<dt id="arg-eventsens">eventSens<a class="anchor" aria-label="anchor" href="#arg-eventsens"></a></dt>
+<dd><p>method used for the dosing-parameter (alag/F/rate/dur)
+sensitivities when the final tables are built: <code>"jump"</code> routes them
+through rxode2's analytic event jumps; <code>"fd"</code> falls back to Shi2021
+finite differences.  See <code><a href="https://nlmixr2.github.io/nlmixr2est/reference/foceiControl.html" class="external-link">nlmixr2est::foceiControl()</a></code>.</p></dd>
+
+
 <dt id="arg-usecolor">useColor<a class="anchor" aria-label="anchor" href="#arg-usecolor"></a></dt>
 <dd><p>Logical (or `NULL`) emit ANSI bold/color escapes in the
 iteration print. `NULL` (default) defers to [crayon::has_color()].</p></dd>
@@ -352,11 +367,19 @@ If not specified, then it matches the significant digits in the
 
 
 <dt id="arg-sigdig">sigdig<a class="anchor" aria-label="anchor" href="#arg-sigdig"></a></dt>
-<dd><p>Optimization significant digits; controls the inner/outer
-optimization tolerance (<code>10^-sigdig</code>), ODE solver tolerance
-(<code>0.5*10^(-sigdig-2)</code>, or <code>0.5*10^(-sigdig-1.5)</code> for
-sensitivity/steady-state with liblsoda), and boundary check tolerance
-(<code>5*10^(-sigdig+1)</code>).</p></dd>
+<dd><p>Optimization significant digits.  One value drives, with a single
+consistent formula, the inner/outer optimizer convergence tolerance
+(<code>10^-sigdig</code>), the boundary check tolerance (<code>5*10^(-sigdig+1)</code>),
+and the ODE solver tolerances: the <code>rtol</code> exponent IS <code>sigdig</code> and
+<code>atol</code> sits three orders below, so <code>rtol = 10^-sigdig</code>,
+<code>atol = 10^(-sigdig-3)</code> for every solver (stiff, non-stiff or
+auto-switching).  The sensitivity (<code>atolSens</code>/<code>rtolSens</code>)
+tolerances match the main solve (the outer gradient and covariance are built
+from them); the steady-state (<code>ssAtol</code>/<code>ssRtol</code>) tolerances run one
+order looser.
+Keying the optimizer to the same <code>10^-sigdig</code> means it converges to
+exactly the precision the solve supports.  At the default <code>sigdig = 3</code>
+this is <code>atol = 1e-6</code>, <code>rtol = 1e-3</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

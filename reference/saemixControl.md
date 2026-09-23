@@ -43,6 +43,8 @@ saemixControl(
   stickyRecalcN = 4,
   maxOdeRecalc = 5,
   odeRecalcFactor = 10^(0.5),
+  indTolRelax = TRUE,
+  eventSens = c("jump", "fd"),
   useColor = NULL,
   printNcol = NULL,
   normType = c("rescale2", "mean", "rescale", "std", "len", "constant"),
@@ -226,6 +228,20 @@ saemixControl(
   The ODE recalculation factor when ODE solving goes bad, this is the
   factor the rtol/atol is reduced
 
+- indTolRelax:
+
+  when `TRUE` (default) a subject whose ODE solve had to be retried with
+  a relaxed tolerance keeps that relaxed tolerance for the rest of the
+  fit instead of resetting it every evaluation
+
+- eventSens:
+
+  method used for the dosing-parameter (alag/F/rate/dur) sensitivities
+  when the final tables are built: `"jump"` routes them through rxode2's
+  analytic event jumps; `"fd"` falls back to Shi2021 finite differences.
+  See
+  [`nlmixr2est::foceiControl()`](https://nlmixr2.github.io/nlmixr2est/reference/foceiControl.html).
+
 - useColor:
 
   Logical (or \`NULL\`) emit ANSI bold/color escapes in the iteration
@@ -313,10 +329,18 @@ saemixControl(
 
 - sigdig:
 
-  Optimization significant digits; controls the inner/outer optimization
-  tolerance (`10^-sigdig`), ODE solver tolerance (`0.5*10^(-sigdig-2)`,
-  or `0.5*10^(-sigdig-1.5)` for sensitivity/steady-state with liblsoda),
-  and boundary check tolerance (`5*10^(-sigdig+1)`).
+  Optimization significant digits. One value drives, with a single
+  consistent formula, the inner/outer optimizer convergence tolerance
+  (`10^-sigdig`), the boundary check tolerance (`5*10^(-sigdig+1)`), and
+  the ODE solver tolerances: the `rtol` exponent IS `sigdig` and `atol`
+  sits three orders below, so `rtol = 10^-sigdig`,
+  `atol = 10^(-sigdig-3)` for every solver (stiff, non-stiff or
+  auto-switching). The sensitivity (`atolSens`/`rtolSens`) tolerances
+  match the main solve (the outer gradient and covariance are built from
+  them); the steady-state (`ssAtol`/`ssRtol`) tolerances run one order
+  looser. Keying the optimizer to the same `10^-sigdig` means it
+  converges to exactly the precision the solve supports. At the default
+  `sigdig = 3` this is `atol = 1e-6`, `rtol = 1e-3`.
 
 - ...:
 

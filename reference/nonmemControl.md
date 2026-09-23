@@ -701,7 +701,7 @@ nonmemControl()
 #> [1] 5
 #> 
 #> $useLinCmt
-#> [1] TRUE
+#> [1] FALSE
 #> 
 #> $file
 #> NULL
@@ -750,6 +750,9 @@ nonmemControl()
 #> 
 #> $priorSigmaEl
 #> NULL
+#> 
+#> $linCmtSensPhi
+#> [1] 2
 #> 
 #> attr(,"class")
 #> [1] "rxControl"

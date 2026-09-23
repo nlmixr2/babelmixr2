@@ -21,6 +21,7 @@ fmeMcmcControl(
   stickyRecalcN = 4,
   maxOdeRecalc = 5,
   odeRecalcFactor = 10^(0.5),
+  indTolRelax = TRUE,
   useColor = NULL,
   printNcol = NULL,
   print = 1L,
@@ -43,6 +44,7 @@ fmeMcmcControl(
   ci = 0.95,
   sigdig = 4,
   sigdigTable = NULL,
+  eventSens = c("jump", "fd"),
   ...
 )
 ```
@@ -131,6 +133,12 @@ fmeMcmcControl(
 
   The ODE recalculation factor when ODE solving goes bad, this is the
   factor the rtol/atol is reduced
+
+- indTolRelax:
+
+  when `TRUE` (default) a subject whose ODE solve had to be retried with
+  a relaxed tolerance keeps that relaxed tolerance for the rest of the
+  fit instead of resetting it every evaluation
 
 - useColor:
 
@@ -241,14 +249,15 @@ fmeMcmcControl(
 
 - covMethod:
 
-  Method for calculating the covariance. `"analytic"` (the default) uses
-  the exact analytic observed-information R-matrix (reported as
-  \\R^{-1}\\) and additionally returns the residual and `Omega` standard
-  errors; it covers FOCEI/FOCE fits with additive, proportional, or
-  combined error, mu-referenced/covariate/other structural parameters
-  (and non-mu-referenced etas), and SD-scale inter-occasion variability,
-  and emits a message and falls back to the finite-difference Hessian
-  for anything out of scope (FO, `nAGQ > 1`, censoring, DV-transformed
+  Method for calculating the covariance. `"r,s"` (the default) is the
+  sandwich estimator (see below). `"analytic"` uses the exact analytic
+  observed-information R-matrix (reported as \\R^{-1}\\) and
+  additionally returns the residual and `Omega` standard errors; it
+  covers FOCEI/FOCE fits with additive, proportional, or combined error,
+  mu-referenced/covariate/other structural parameters (and
+  non-mu-referenced etas), and SD-scale inter-occasion variability, and
+  emits a message and falls back to the finite-difference Hessian for
+  anything out of scope (FO, `nAGQ > 1`, censoring, DV-transformed
   error, bounded-parameter transforms, a structural theta shared by two
   etas, non-SD `iovXform`, or a pure-proportional variance that vanishes
   at a near-zero prediction). The finite-difference methods use R (the
@@ -256,6 +265,10 @@ fmeMcmcControl(
   empirical Bayes estimates): `"r,s"` sandwich
   (`solve(R)%*%S%*%solve(R)`), `"r"` Hessian-based (`solve(R)`), `"s"`
   cross-product-based (`solve(S)`), or `""` to skip the covariance step.
+  `"sa"` (SAEM Louis stochastic-approximation FIM) and `"imp"`
+  (importance-sampling Monte-Carlo observed information) are also
+  accepted for any method; they are computed post-fit at the converged
+  estimates by the decoupled recompute engine.
 
 - adjObf:
 
@@ -270,16 +283,31 @@ fmeMcmcControl(
 
 - sigdig:
 
-  Optimization significant digits; controls the inner/outer optimization
-  tolerance (`10^-sigdig`), ODE solver tolerance (`0.5*10^(-sigdig-2)`,
-  or `0.5*10^(-sigdig-1.5)` for sensitivity/steady-state with liblsoda),
-  and boundary check tolerance (`5*10^(-sigdig+1)`).
+  Optimization significant digits. One value drives, with a single
+  consistent formula, the inner/outer optimizer convergence tolerance
+  (`10^-sigdig`), the boundary check tolerance (`5*10^(-sigdig+1)`), and
+  the ODE solver tolerances: the `rtol` exponent IS `sigdig` and `atol`
+  sits three orders below, so `rtol = 10^-sigdig`,
+  `atol = 10^(-sigdig-3)` for every solver (stiff, non-stiff or
+  auto-switching). The sensitivity (`atolSens`/`rtolSens`) tolerances
+  match the main solve (the outer gradient and covariance are built from
+  them); the steady-state (`ssAtol`/`ssRtol`) tolerances run one order
+  looser. Keying the optimizer to the same `10^-sigdig` means it
+  converges to exactly the precision the solve supports. At the default
+  `sigdig = 3` this is `atol = 1e-6`, `rtol = 1e-3`.
 
 - sigdigTable:
 
   Significant digits in the final output table. If not specified, then
   it matches the significant digits in the \`sigdig\` optimization
   algorithm. If \`sigdig\` is NULL, use 3.
+
+- eventSens:
+
+  method used for the dosing-parameter (alag/F/rate/dur) sensitivities:
+  `"jump"` routes them through rxode2's analytic event jumps; `"fd"`
+  falls back to Shi2021 finite differences. See
+  [`nlmixr2est::nlmControl()`](https://nlmixr2.github.io/nlmixr2est/reference/nlmControl.html).
 
 - ...:
 
@@ -326,9 +354,8 @@ fit2 <- nlmixr(mod, dsn, est="fmeMcmc")
 #> ℹ Need to run with the source intact to parse comments
 #> → pruning branches (`if`/`else`) of population log-likelihood model...
 #> ✔ done
-#> → loading llik model into symengine environment...
+#> → loading into symengine environment...
 #> → finding duplicate expressions in population log-likelihood model...
-#> → optimizing duplicate expressions in population log-likelihood model...
 #> ✔ done
 #>  
 #>  
@@ -336,7 +363,6 @@ fit2 <- nlmixr(mod, dsn, est="fmeMcmc")
 #> → pruning branches (`if`/`else`) of full model...
 #> ✔ done
 #> → finding duplicate expressions in EBE model...
-#> → optimizing duplicate expressions in EBE model...
 #> → compiling EBE model...
 #>  
 #>  
@@ -355,9 +381,9 @@ print(fit2)
 #> ── Time (sec $time): ──
 #> 
 #>              setup    optimize covariance preprocess postprocess table compress
-#> elapsed 0.02682374 0.002070893  6.777e-06      0.044       0.006 0.026    0.018
+#> elapsed 0.02275874 0.001699493  5.749e-06      0.057       0.008 0.026    0.018
 #>            other
-#> elapsed 2.090099
+#> elapsed 1.480536
 #> 
 #> ── ($parFixed or $parFixedDf): ──
 #> 
@@ -368,6 +394,11 @@ print(fit2)
 #> g     2.000  FIXED FIXED                     2.000
 #>  
 #>   Covariance Type ($covMethod): mcmc
+#>   Some strong fixed parameter correlations exist ($cor) :
+#>      cor:Em,E0 cor:E50,E0 cor:E50,Em 
+#>    -0.848    0.00652       0.439  
+#>  
+#> 
 #>   Censoring ($censInformation): No censoring
 #> 
 #> ── Fit Data (object is a modified tibble): ──

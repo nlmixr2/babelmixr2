@@ -50,12 +50,13 @@
 <span>  npop <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  numiter <span class="op">=</span> <span class="fl">10000</span>,</span>
 <span>  centroid <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  varleft <span class="op">=</span> <span class="fl">1e-08</span>,</span>
+<span>  varleft <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  returnPseudoOptim <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  stickyRecalcN <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  maxOdeRecalc <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  odeRecalcFactor <span class="op">=</span> <span class="fl">10</span><span class="op">^</span><span class="op">(</span><span class="fl">0.5</span><span class="op">)</span>,</span>
+<span>  indTolRelax <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  useColor <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  printNcol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  print <span class="op">=</span> <span class="fl">1L</span>,</span>
@@ -78,6 +79,7 @@
 <span>  ci <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  sigdig <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  sigdigTable <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  eventSens <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"jump"</span>, <span class="st">"fd"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -104,8 +106,11 @@ parameter vector.  The default is 3.</p></dd>
 
 
 <dt id="arg-varleft">varleft<a class="anchor" aria-label="anchor" href="#arg-varleft"></a></dt>
-<dd><p>relative variation remaining; if below this value,
-the algorithm stops.  Defaults to 1e-8.</p></dd>
+<dd><p>relative variation remaining; if below this value, the
+algorithm stops.  When <code>NULL</code> (the default) it is derived from <code>sigdig</code>,
+keeping the <code><a href="https://rdrr.io/pkg/FME/man/pseudoOptim.html" class="external-link">FME::pseudoOptim()</a></code> default of <code>1e-8</code> at the default
+<code>sigdig = 4</code> and tightening/loosening it one order of magnitude per
+significant digit.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -132,6 +137,12 @@ ODE solve.</p></dd>
 <dt id="arg-oderecalcfactor">odeRecalcFactor<a class="anchor" aria-label="anchor" href="#arg-oderecalcfactor"></a></dt>
 <dd><p>The ODE recalculation factor when ODE
 solving goes bad, this is the factor the rtol/atol is reduced</p></dd>
+
+
+<dt id="arg-indtolrelax">indTolRelax<a class="anchor" aria-label="anchor" href="#arg-indtolrelax"></a></dt>
+<dd><p>when <code>TRUE</code> (default) a subject whose ODE solve had to
+be retried with a relaxed tolerance keeps that relaxed tolerance for the
+rest of the fit instead of resetting it every evaluation</p></dd>
 
 
 <dt id="arg-usecolor">useColor<a class="anchor" aria-label="anchor" href="#arg-usecolor"></a></dt>
@@ -247,8 +258,9 @@ will calculate tables. By default this is <code>TRUE</code></p></dd>
 
 
 <dt id="arg-covmethod">covMethod<a class="anchor" aria-label="anchor" href="#arg-covmethod"></a></dt>
-<dd><p>Method for calculating the covariance.  <code>"analytic"</code> (the
-default) uses the exact analytic observed-information R-matrix (reported as
+<dd><p>Method for calculating the covariance.  <code>"r,s"</code> (the
+default) is the sandwich estimator (see below).  <code>"analytic"</code>
+uses the exact analytic observed-information R-matrix (reported as
 \(R^{-1}\)) and additionally returns the residual and <code>Omega</code> standard
 errors; it covers FOCEI/FOCE fits with additive, proportional, or combined
 error, mu-referenced/covariate/other structural parameters (and
@@ -261,7 +273,11 @@ finite-difference methods use R (the Hessian) and S (the sum of individual
 gradient cross-products at the empirical Bayes estimates): <code>"r,s"</code> sandwich
 (<code>solve(R)%*%S%*%solve(R)</code>), <code>"r"</code> Hessian-based
 (<code>solve(R)</code>), <code>"s"</code> cross-product-based (<code>solve(S)</code>), or
-<code>""</code> to skip the covariance step.</p></dd>
+<code>""</code> to skip the covariance step.  <code>"sa"</code> (SAEM Louis
+stochastic-approximation FIM) and <code>"imp"</code> (importance-sampling
+Monte-Carlo observed information) are also accepted for any method; they
+are computed post-fit at the converged estimates by the decoupled
+recompute engine.</p></dd>
 
 
 <dt id="arg-adjobf">adjObf<a class="anchor" aria-label="anchor" href="#arg-adjobf"></a></dt>
@@ -276,17 +292,32 @@ function.  By default this is <code>TRUE</code></p></dd>
 
 
 <dt id="arg-sigdig">sigdig<a class="anchor" aria-label="anchor" href="#arg-sigdig"></a></dt>
-<dd><p>Optimization significant digits; controls the inner/outer
-optimization tolerance (<code>10^-sigdig</code>), ODE solver tolerance
-(<code>0.5*10^(-sigdig-2)</code>, or <code>0.5*10^(-sigdig-1.5)</code> for
-sensitivity/steady-state with liblsoda), and boundary check tolerance
-(<code>5*10^(-sigdig+1)</code>).</p></dd>
+<dd><p>Optimization significant digits.  One value drives, with a single
+consistent formula, the inner/outer optimizer convergence tolerance
+(<code>10^-sigdig</code>), the boundary check tolerance (<code>5*10^(-sigdig+1)</code>),
+and the ODE solver tolerances: the <code>rtol</code> exponent IS <code>sigdig</code> and
+<code>atol</code> sits three orders below, so <code>rtol = 10^-sigdig</code>,
+<code>atol = 10^(-sigdig-3)</code> for every solver (stiff, non-stiff or
+auto-switching).  The sensitivity (<code>atolSens</code>/<code>rtolSens</code>)
+tolerances match the main solve (the outer gradient and covariance are built
+from them); the steady-state (<code>ssAtol</code>/<code>ssRtol</code>) tolerances run one
+order looser.
+Keying the optimizer to the same <code>10^-sigdig</code> means it converges to
+exactly the precision the solve supports.  At the default <code>sigdig = 3</code>
+this is <code>atol = 1e-6</code>, <code>rtol = 1e-3</code>.</p></dd>
 
 
 <dt id="arg-sigdigtable">sigdigTable<a class="anchor" aria-label="anchor" href="#arg-sigdigtable"></a></dt>
 <dd><p>Significant digits in the final output table.
 If not specified, then it matches the significant digits in the
 `sigdig` optimization algorithm.  If `sigdig` is NULL, use 3.</p></dd>
+
+
+<dt id="arg-eventsens">eventSens<a class="anchor" aria-label="anchor" href="#arg-eventsens"></a></dt>
+<dd><p>method used for the dosing-parameter (alag/F/rate/dur)
+sensitivities: <code>"jump"</code> routes them through rxode2's analytic event
+jumps; <code>"fd"</code> falls back to Shi2021 finite differences.  See
+<code><a href="https://nlmixr2.github.io/nlmixr2est/reference/nlmControl.html" class="external-link">nlmixr2est::nlmControl()</a></code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -336,9 +367,8 @@ If not specified, then it matches the significant digits in the
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Need to run with the source intact to parse comments</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> → pruning branches (`if`/`else`) of population log-likelihood model...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> done</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> → loading llik model into <span style="color: #0000BB;">symengine</span> environment...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → loading into <span style="color: #0000BB;">symengine</span> environment...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> → finding duplicate expressions in population log-likelihood model...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> → optimizing duplicate expressions in population log-likelihood model...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> done</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>  </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>  </span>
@@ -348,7 +378,6 @@ If not specified, then it matches the significant digits in the
 <span class="r-msg co"><span class="r-pr">#&gt;</span> → pruning branches (`if`/`else`) of full model...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> done</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> → finding duplicate expressions in EBE model...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> → optimizing duplicate expressions in EBE model...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> → compiling EBE model...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>  </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>  </span>
@@ -367,19 +396,24 @@ If not specified, then it matches the significant digits in the
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">── Time (sec </span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              setup    optimize covariance preprocess postprocess table compress</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> elapsed 0.01941911 0.001968249   6.72e-06      0.042       0.005  0.02    0.028</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>            other</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> elapsed 1.189606</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> elapsed 0.01664547 0.001693385  5.588e-06      0.046       0.006 0.018    0.026</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             other</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> elapsed 0.7576556</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">── (</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        <span style="font-weight: bold;">Est.</span>     <span style="font-weight: bold;">SE</span>  <span style="font-weight: bold;">%RSE</span>   <span style="font-weight: bold;">Back-transformed(95%CI)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">E0</span>  -0.6405 0.2420 37.79 -0.6405 (-1.115, -0.1661)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Em</span>    5.490  2.385 43.44     5.490 (0.8161, 10.16)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">E50</span>   2.859  1.230 43.02     2.859 (0.4486, 5.270)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">g</span>     2.000  <span style="color: #00BB00; font-weight: bold;">FIXED</span> <span style="color: #00BB00; font-weight: bold;">FIXED</span>                     2.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        <span style="font-weight: bold;">Est.</span>     <span style="font-weight: bold;">SE</span>  <span style="font-weight: bold;">%RSE</span>    <span style="font-weight: bold;">Back-transformed(95%CI)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">E0</span>  -0.6405 0.1210 18.90 -0.6405 (-0.8777, -0.4033)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Em</span>    5.490  1.192 21.72       5.490 (3.153, 7.827)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">E50</span>   2.859 0.6150 21.51       2.859 (1.654, 4.065)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">g</span>     2.000  <span style="color: #00BB00; font-weight: bold;">FIXED</span> <span style="color: #00BB00; font-weight: bold;">FIXED</span>                      2.000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Covariance Type (<span style="color: #0000BB; font-weight: bold;">$covMethod</span>): <span style="font-weight: bold;">r</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Some strong fixed parameter correlations exist (<span style="color: #0000BB; font-weight: bold;">$cor</span>) :</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      cor:Em,E0 cor:E50,E0 cor:E50,Em </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     <span style="color: #00BB00; font-weight: bold;">0.353 </span>     <span style="color: #00BB00; font-weight: bold;">0.618 </span>     <span style="color: #BB0000; font-weight: bold;">0.914 </span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Censoring (<span style="color: #0000BB; font-weight: bold;">$censInformation</span>): No censoring</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">── Fit Data (object is a modified </span><span style="color: #0000BB; font-weight: bold;">tibble</span><span style="font-weight: bold;">): ──</span></span>

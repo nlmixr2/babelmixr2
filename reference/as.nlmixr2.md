@@ -109,7 +109,7 @@ mod <- nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
 #> ℹ read in nonmem input data (for model validation): /home/runner/work/_temp/Library/nonmem2rx/mods/cpt/Bolus_2CPT.csv
 #> ℹ ignoring lines that begin with a letter (IGNORE=@)
 #> ℹ applying names specified by $INPUT
-#> ℹ subsetting accept/ignore filters code: .data[-which((.data$SD == 0)),]
+#> ℹ ignore filter code: .data$SD == 0
 #> ℹ renaming 'ytype' to 'nmytype'
 #> ℹ done
 #>  
@@ -127,6 +127,8 @@ mod <- nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
 #>  
 #>  
 #> ℹ solving ipred problem
+#>  
+#>  
 #> ℹ done
 #> ℹ solving pred problem
 #> ℹ done
@@ -190,12 +192,11 @@ fit <- as.nlmixr2(new)
 #> → pruning branches (`if`/`else`) of full model...
 #> ✔ done
 #> → finding duplicate expressions in EBE model...
-#> → optimizing duplicate expressions in EBE model...
 #> → compiling EBE model...
 #>  
 #>  
 #> ✔ done
-#> rxode2 5.1.7 using 2 threads (see ?getRxThreads)
+#> rxode2 5.1.8 using 2 threads (see ?getRxThreads)
 #>   no cache: create with `rxCreateCache()`
 #> → Calculating residuals/tables
 #> ✔ done
@@ -211,7 +212,7 @@ print(fit)
 #> ── Time (sec $time): ──
 #> 
 #>             setup postprocess table compress NONMEM as.nlmixr2
-#> elapsed 0.5008874       0.013 0.049        0 100.95      1.555
+#> elapsed 0.7126344       0.013 0.034    0.001 100.95      0.902
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 
@@ -223,6 +224,7 @@ print(fit)
 #> RSV 0.196 0.00315  1.61    0.196 (0.190, 0.203)                     
 #>  
 #>   Covariance Type ($covMethod): nonmem2rx
+#>   Fixed parameter correlations in $cor
 #>   No correlations in between subject variability (BSV) matrix
 #>   Full BSV covariance ($omega) or correlation ($omegaR; diagonals=SDs) 
 #>   Distribution stats (mean/skewness/kurtosis/p-value) available in $shrink 

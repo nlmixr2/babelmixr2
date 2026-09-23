@@ -7,7 +7,7 @@ Control for nlmer estimation method in nlmixr2
 ``` r
 nlmixr2NlmerControl(
   optimizer = "bobyqa",
-  tolPwrss = 1e-07,
+  tolPwrss = NULL,
   optCtrl = list(),
   returnNlmer = FALSE,
   muRefCovAlg = TRUE,
@@ -18,6 +18,7 @@ nlmixr2NlmerControl(
   stickyRecalcN = 4,
   maxOdeRecalc = 5,
   odeRecalcFactor = 10^(0.5),
+  indTolRelax = TRUE,
   useColor = NULL,
   printNcol = NULL,
   print = 1L,
@@ -37,7 +38,7 @@ nlmixr2NlmerControl(
 
 nlmerControl(
   optimizer = "bobyqa",
-  tolPwrss = 1e-07,
+  tolPwrss = NULL,
   optCtrl = list(),
   returnNlmer = FALSE,
   muRefCovAlg = TRUE,
@@ -48,6 +49,7 @@ nlmerControl(
   stickyRecalcN = 4,
   maxOdeRecalc = 5,
   odeRecalcFactor = 10^(0.5),
+  indTolRelax = TRUE,
   useColor = NULL,
   printNcol = NULL,
   print = 1L,
@@ -79,7 +81,10 @@ nlmerControl(
   passed to
   [`lme4::nlmerControl()`](https://rdrr.io/pkg/lme4/man/lmerControl.html):
   tolerance for the penalized, weighted residual sum-of-squares (PWRSS)
-  inner iterations
+  inner iterations. When `NULL` (the default) it is derived from
+  `sigdig`, keeping the `lme4` default of `1e-7` at the default
+  `sigdig = 4` and tightening/loosening it one order of magnitude per
+  significant digit
 
 - optCtrl:
 
@@ -133,6 +138,12 @@ nlmerControl(
 - odeRecalcFactor:
 
   factor by which atol/rtol are relaxed on an ODE solve retry
+
+- indTolRelax:
+
+  when `TRUE` (default) a subject whose ODE solve had to be retried with
+  a relaxed tolerance keeps that relaxed tolerance for the rest of the
+  fit instead of resetting it every evaluation
 
 - useColor:
 
@@ -194,10 +205,18 @@ nlmerControl(
 
 - sigdig:
 
-  Optimization significant digits; controls the inner/outer optimization
-  tolerance (`10^-sigdig`), ODE solver tolerance (`0.5*10^(-sigdig-2)`,
-  or `0.5*10^(-sigdig-1.5)` for sensitivity/steady-state with liblsoda),
-  and boundary check tolerance (`5*10^(-sigdig+1)`).
+  Optimization significant digits. One value drives, with a single
+  consistent formula, the inner/outer optimizer convergence tolerance
+  (`10^-sigdig`), the boundary check tolerance (`5*10^(-sigdig+1)`), and
+  the ODE solver tolerances: the `rtol` exponent IS `sigdig` and `atol`
+  sits three orders below, so `rtol = 10^-sigdig`,
+  `atol = 10^(-sigdig-3)` for every solver (stiff, non-stiff or
+  auto-switching). The sensitivity (`atolSens`/`rtolSens`) tolerances
+  match the main solve (the outer gradient and covariance are built from
+  them); the steady-state (`ssAtol`/`ssRtol`) tolerances run one order
+  looser. Keying the optimizer to the same `10^-sigdig` means it
+  converges to exactly the precision the solve supports. At the default
+  `sigdig = 3` this is `atol = 1e-6`, `rtol = 1e-3`.
 
 - sigdigTable:
 
@@ -266,6 +285,9 @@ nlmerControl()
 #> $odeRecalcFactor
 #> [1] 3.162278
 #> 
+#> $indTolRelax
+#> [1] TRUE
+#> 
 #> $iterPrintControl
 #> $every
 #> [1] 1
@@ -683,7 +705,7 @@ nlmerControl()
 #> [1] 5
 #> 
 #> $useLinCmt
-#> [1] TRUE
+#> [1] FALSE
 #> 
 #> $file
 #> NULL
@@ -732,6 +754,9 @@ nlmerControl()
 #> 
 #> $priorSigmaEl
 #> NULL
+#> 
+#> $linCmtSensPhi
+#> [1] 2
 #> 
 #> attr(,"class")
 #> [1] "rxControl"
@@ -799,6 +824,9 @@ nlmixr2NlmerControl()
 #> $odeRecalcFactor
 #> [1] 3.162278
 #> 
+#> $indTolRelax
+#> [1] TRUE
+#> 
 #> $iterPrintControl
 #> $every
 #> [1] 1
@@ -1216,7 +1244,7 @@ nlmixr2NlmerControl()
 #> [1] 5
 #> 
 #> $useLinCmt
-#> [1] TRUE
+#> [1] FALSE
 #> 
 #> $file
 #> NULL
@@ -1265,6 +1293,9 @@ nlmixr2NlmerControl()
 #> 
 #> $priorSigmaEl
 #> NULL
+#> 
+#> $linCmtSensPhi
+#> [1] 2
 #> 
 #> attr(,"class")
 #> [1] "rxControl"

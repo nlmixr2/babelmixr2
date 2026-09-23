@@ -30,11 +30,11 @@ library(nlmixr2)
 #> ★ lotri           1.0.5           ◯ nlmixr2auto     1.0.0      
 #> ★ nlmixr2data     2.0.10          ◯ nlmixr2autoinit 1.0.1      
 #> ★ nlmixr2save     0.2.0           ◯ nlmixr2lib      0.3.2      
-#> ★ nlmixr2est      7.0.3           ◯ nlmixr2rpt      0.2.2      
-#> ★ nlmixr2extra    5.2.0           ◯ nlmixr2targets  0.1.0      
-#> ★ nlmixr2plot     5.1.0           ◯ nonmem2rx       0.1.10     
-#> ★ rxode2          5.1.7           ◯ pmxNODE         0.1.0      
-#> ◯ admixr2         0.2.0           ◯ PopED           0.7.0      
+#> ★ nlmixr2est      7.1.0           ◯ nlmixr2rpt      0.2.2      
+#> ★ nlmixr2extra    5.2.1           ◯ nlmixr2targets  0.1.0      
+#> ★ nlmixr2plot     5.1.0           ◯ nonmem2rx       0.1.11     
+#> ★ rxode2          5.1.8           ◯ pmxNODE         0.1.0      
+#> ◯ admixr2         0.4.1           ◯ PopED           0.7.0      
 #> ◯ babelmixr2      0.1.11.9000     ◯ posologyr       1.2.8      
 #> ◯ FME             1.3.6.4         ◯ shinyMixR       0.5.3      
 #> ◯ ggPMX           1.3.2           ◯ xpose.nlmixr2   0.4.2      
@@ -161,23 +161,10 @@ fit <- nlmixr(prepared, data = theo_sd, est = "focei", control = list(print = 0)
 #> → calculate ∂(R²)/∂(η)
 #> [====|====|====|====|====|====|====|====|====|====] 0:00:00
 #> → finding duplicate expressions in inner model...
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00
-#> → optimizing duplicate expressions in inner model...
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00 
-#> 
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00 
-#> 
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00
 #> → finding duplicate expressions in EBE model...
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00
-#> → optimizing duplicate expressions in EBE model...
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00
 #> → compiling inner model...
 #> ✔ done
 #> → finding duplicate expressions in FD model...
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00
-#> → optimizing duplicate expressions in FD model...
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00
 #> → compiling EBE model...
 #> ✔ done
 #> → compiling events FD model...
