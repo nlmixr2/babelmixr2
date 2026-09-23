@@ -1,12 +1,16 @@
-.nonmemHandleOneOmega <- function(om0, ui) {
+.nonmemHandleOneOmega <- function(om0, ui, rec="$OMEGA", fix=NULL) {
   .dim <- dim(om0)
   .dimn1 <- dimnames(om0)[[1]][1]
-  .w <- which(ui$iniDf$name == .dimn1)
-  .fix <- ui$iniDf$fix[.w]
+  if (is.null(fix)) {
+    .w <- which(ui$iniDf$name == .dimn1)
+    .fix <- ui$iniDf$fix[.w]
+  } else {
+    .fix <- fix
+  }
   .block <- ""
   .sigdig <- rxode2::rxGetControl(ui, "iniSigDig", 5)
   if (.dim[1] > 1L) {
-    .ret <- paste0("$OMEGA BLOCK(", .dim[1], ") ; ",
+    .ret <- paste0(rec, " BLOCK(", .dim[1], ") ; ",
                    paste(dimnames(om0)[[1]], collapse=" "), "\n")
     .vec <- om0[lower.tri(om0,TRUE)]
     .i <- .j <- 1
@@ -22,7 +26,7 @@
     if (.fix) .ret <- paste(.ret, " FIX")
     return(paste0(.ret, "\n"))
   } else {
-    paste0("$OMEGA ", signif(om0[1, 1], .sigdig), ifelse(.fix, " FIX", ""),
+    paste0(rec, " ", signif(om0[1, 1], .sigdig), ifelse(.fix, " FIX", ""),
            " ; ", .dimn1, "\n")
   }
 }
@@ -30,7 +34,7 @@
 #' @export
 rxUiGet.nonmemOmega <- function(x, ...) {
   .ui <- x[[1]]
-  .lst <- lotri::lotriMatInv(lotri::lotriEst(lotri::as.lotri(.ui$iniDf),drop=TRUE))
+  .lst <- .nonmemOmegaBlocks(.ui)
   paste(vapply(seq_along(.lst),
          function(m) {
            .nonmemHandleOneOmega(.lst[[m]], .ui)

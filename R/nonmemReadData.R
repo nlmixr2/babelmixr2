@@ -70,7 +70,13 @@ rxUiGet.nonmemFullTheta <- function(x, ...) {
   if (is.null(.ext$theta)) {
     stop('cannot locate NONMEM output', call.=FALSE)
   }
-  .ret <- setNames(.ext$theta, .getThetaNames(.ui))
+  .n <- .getThetaNames(.ui)
+  .theta <- .ext$theta
+  if (!exists("file", envir=.ui) && .nonmemHasPriors(.ui)) {
+    # NWPRI's own prior values are THETAs after the model's
+    .theta <- .theta[seq_along(.n)]
+  }
+  .ret <- setNames(.theta, .n)
   if (exists("file", envir=.ui)) {
     .iniDf <- .ui$iniDf
     # use same ordering of ui
@@ -122,6 +128,10 @@ rxUiGet.nonmemOutputOmega <- function(x, ...) {
   .n <- .getEtaNames(.ui)
   .ext <- rxUiGet.nonmemOutputLst(x, ...)
   .omega <- .ext$omega
+  if (!exists("file", envir=.ui) && .nonmemHasPriors(.ui)) {
+    # NWPRI's own prior variances are OMEGAs after the model's
+    .omega <- .omega[seq_along(.n), seq_along(.n), drop=FALSE]
+  }
   dimnames(.omega) <- list(.n, .n)
   if (exists("file", envir=.ui)) {
     # here we are unsure of the eta name order since it could have
@@ -173,10 +183,23 @@ rxUiGet.nonmemEtaObf <- function(x, ...) {
 }
 attr(rxUiGet.nonmemEtaObf, "rstudio") <- NA
 
-.getNonmemOrderNames <- function(ui) {
+.getNonmemOrderNames <- function(ui, cols=NULL) {
   .t <- .getThetaNames(ui)
   .s <- "_sigma"
   .e0 <- .getEtaNames(ui)
+  if (!is.null(cols) && !exists("file", envir=ui) && .nonmemHasPriors(ui)) {
+    # NWPRI's own prior values are THETAs and OMEGAs after the model's;
+    # name them so they are never mistaken for model parameters
+    .nt <- sum(grepl("^THETA", cols))
+    if (.nt > length(.t)) {
+      .t <- c(.t, paste0("_nwpri_theta", seq_len(.nt - length(.t))))
+    }
+    .no <- sum(grepl("^OMEGA", cols))
+    .ne <- round((sqrt(1 + 8 * .no) - 1) / 2)
+    if (.ne > length(.e0)) {
+      .e0 <- c(.e0, paste0("_nwpri_eta", seq_len(.ne - length(.e0))))
+    }
+  }
   .ef <- NULL
   .iniDf <- ui$iniDf
   for (.i in seq_along(.e0)) {
@@ -206,7 +229,7 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
     if (!file.exists(file.path(.exportPath, .covFile))) return(NULL)
     .ret <- as.matrix(withr::with_dir(.exportPath,
                                       nonmem2rx::nmcov(.covFile)))
-    .d <- .getNonmemOrderNames(.ui)
+    .d <- .getNonmemOrderNames(.ui, colnames(.ret))
     dimnames(.ret) <- list(.d, .d)
     .t <- .getThetaNames(.ui)
     .ret[.t, .t]
@@ -229,7 +252,7 @@ rxUiGet.nonmemParHistory <- function(x, ...) {
   .ret <- withr::with_dir(.exportPath,
                           nonmem2rx::nmtab(.ext))
   .ret <- .ret[.ret$NMREP ==1, names(.ret) != "NMREP"]
-  .d <- c("iter", .getNonmemOrderNames(.ui), "objf")
+  .d <- c("iter", .getNonmemOrderNames(.ui, names(.ret)), "objf")
   names(.ret) <- .d
   .ret <- .ret[.ret$iter > 0, names(.ret) != "_sigma"]
   .n <- c("iter", .ui$iniDf$name, "objf")
@@ -247,14 +270,20 @@ rxUiGet.nonmemObjfType <- function(x, ...) {
   }
   .est <- rxode2::rxGetControl(.ui, "est", "focei")
   if (.est %in% c("focei", "posthoc")) {
-    return("nonmem focei")
+    .ret <- "nonmem focei"
   } else if (.est %in% "imp") {
-    return("nonmem imp")
+    .ret <- "nonmem imp"
   } else if (.est %in% "its") {
-    return("nonmem its")
+    .ret <- "nonmem its"
   } else {
     stop("unknown objective type", call.=FALSE)
   }
+  if (.nonmemHasPriors(.ui)) {
+    # NONMEM's objective function includes the NWPRI prior, so it is
+    # not comparable to one without it
+    .ret <- paste(.ret, "nwpri")
+  }
+  .ret
 }
 attr(rxUiGet.nonmemObjfType, "rstudio") <- "nonmemObjfType"
 
