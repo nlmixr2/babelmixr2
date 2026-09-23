@@ -119,6 +119,7 @@ test_that("fmeMcmc samples with ini({}) priors (#208)", {
       E50 <- 2
       g <- fix(2)
       prior(E0) ~ dnorm(5, 0.01)
+      prior(Em) ~ dnorm(0.5, 2)
     })
     model({
       v <- E0+Em*time^g/(E50^g+time^g)
@@ -136,9 +137,11 @@ test_that("fmeMcmc samples with ini({}) priors (#208)", {
     .pars <- fit$fmeMcmc$pars
     .e0 <- .pars[seq(nrow(.pars) %/% 2L, nrow(.pars)), "E0"]
     expect_equal(mean(.e0), 5, tolerance=0.02)
-    # FME stores -2*log(prior) for each sample; it is the declared prior
-    expect_equal(fit$fmeMcmc$prior[nrow(.pars)],
-                 -2 * stats::dnorm(.pars[[nrow(.pars), "E0"]], 5, 0.01, log=TRUE),
+    # FME stores -2*log(prior) for each sample; it is the joint declared prior
+    .n <- nrow(.pars)
+    expect_equal(fit$fmeMcmc$prior[.n],
+                 -2 * (stats::dnorm(.pars[[.n, "E0"]], 5, 0.01, log=TRUE) +
+                         stats::dnorm(.pars[[.n, "Em"]], 0.5, 2, log=TRUE)),
                  tolerance=1e-6)
   }
 
