@@ -368,14 +368,17 @@ test_that("saemix prop() and add() + prop() match focei (#212)", {
   ctl <- saemixControl(seed = 632545, nbiter.saemix = c(300, 100),
                        fim = FALSE, warnings = FALSE)
 
-  for (err in list(quote(prop(prop.sd)), quote(add(add.sd) + prop(prop.sd)))) {
+  errs <- list(proportional = quote(prop(prop.sd)),
+               combined = quote(add(add.sd) + prop(prop.sd)))
+  for (errModel in names(errs)) {
+    err <- errs[[errModel]]
     .ui <- mod(err)
     fitSaemix <- nlmixr2(.ui, d, est = "saemix", ctl)
+    expect_equal(fitSaemix$saemix@model@error.model, errModel)
     fitFocei <- suppressMessages(nlmixr2(.ui, d, est = "focei",
                                          foceiControl(print = 0)))
     # each residual parameter is written back to its own name
     expect_equal(fitSaemix$theta, fitFocei$theta, tolerance = 0.1,
                  label = deparse(err))
   }
-  expect_equal(fitSaemix$saemix@model@error.model, "combined")
 })
