@@ -55,11 +55,14 @@ fmeMcmcControl(
     parameters. See details.
   }
 
-\item{prior}{-2*log(parameter prior probability), either a function
-    that is called as \code{prior(p)} or \code{NULL}; in the latter case
-    a non-informative prior is used (i.e. all parameters are equally
-    likely, depending on \code{lower} and \code{upper} within min and max bounds).
-  }
+\item{prior}{-2 * log(prior parameter probability), either a function
+called as \code{prior(p)} with the parameter vector \code{\link[FME:modMCMC]{FME::modMCMC()}}
+samples (which is the scaled space when \code{scaleType} rescales the
+parameters), or \code{NULL} for a non-informative prior.  When the model
+declares priors in its \code{ini({})} block (for example
+\code{prior(tka) ~ dnorm(0, 10)}) this function is generated from them,
+evaluated on the natural (unscaled) parameter scale, and \code{prior} must
+be left \code{NULL}; supplying both is an error.}
 
 \item{niter}{number of iterations for the MCMC.
   }
