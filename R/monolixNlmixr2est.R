@@ -187,12 +187,12 @@
   .et <- rxode2::etTrans(.ret$dataSav, .ui$mv0, addCmt=TRUE)
   .nTv <- attr(class(.et), ".rxode2.lst")$nTv
   if (is.null(.nTv)) {
-    .tv <- names(.et)[-seq(1, 6)]
+    .tv <- names(.et)[-seq_len(6)]
     .nTv <- length(.tv)
   } else {
     .tv <- character(0)
     if (.nTv != 0) {
-      .tv <- names(.et)[-seq(1, 6)]
+      .tv <- names(.et)[-seq_len(6)]
     }
   }
   .muRefCovariateDataFrame <- .ui$muRefCovariateDataFrame

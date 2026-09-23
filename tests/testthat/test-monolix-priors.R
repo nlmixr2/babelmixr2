@@ -102,17 +102,16 @@ test_that("priors Monolix cannot represent are refused", {
   expect_error(.u$mlxtranParameter, "prior on the omega")
 
   # a block prior is stored on the block's first diagonal element
-  .u <- .monolixPriorUi() %>% ini(eta.ka + eta.cl ~ c(0.6, 0.01, 0.3))
+  .u <- ini(.monolixPriorUi(), eta.ka + eta.cl ~ c(0.6, 0.01, 0.3))
   .u <- ini(.u, prior(eta.ka, eta.cl) ~ invWishart(4))
   expect_error(.u$mlxtranParameter, "prior on the omega")
 
   # Monolix's probitNormal is only on (0, 1)
-  .p <- rxode2::rxode2(.monolixPriorModel) %>%
-    model(emax <- probitInv(temax, 0, 100)) %>%
-    ini(temax=0)
+  .p <- model(rxode2::rxode2(.monolixPriorModel), emax <- probitInv(temax, 0, 100))
+  .p <- ini(.p, temax=0)
   expect_error(ini(.p, prior(temax) ~ dnorm(0, 1))$mlxtranParameter, "probitInv")
-  expect_equal(.mlxLines(ini(.p %>% model(emax <- probitInv(temax)),
-                             prior(temax) ~ dnorm(0, 1))$mlxtranModelPopulation,
+  .p01 <- model(.p, emax <- probitInv(temax))
+  expect_equal(.mlxLines(ini(.p01, prior(temax) ~ dnorm(0, 1))$mlxtranModelPopulation,
                          "^emax_pop "),
                "emax_pop = {distribution=probitNormal, typical=0.5, sd=1}")
 
@@ -123,7 +122,7 @@ test_that("priors Monolix cannot represent are refused", {
   expect_error(.u$mlxtranParameter, "univariate normal prior")
 
   .u <- ini(.monolixPriorUi(), prior(add.sd) ~ dnorm(0.7, 0.1))
-  .u2 <- try(.u %>% model(cp ~ add(add.sd) + var()), silent=TRUE)
+  .u2 <- try(model(.u, cp ~ add(add.sd) + var()), silent=TRUE)
   if (!inherits(.u2, "try-error")) {
     expect_error(.u2$mlxtranParameter, "on a variance")
   }
