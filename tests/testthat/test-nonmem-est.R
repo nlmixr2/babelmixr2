@@ -28,6 +28,8 @@ test_that("nonmemControl(est=) emits the matching $ESTIMATION method (#211)", {
   .check("posthoc", "0", "nonmem focei")
   .its <- "$ESTIMATION METHOD=ITS INTERACTION PRINT=1 NITER=100 NOABORT\n"
   expect_equal(rxUiGet.nonmemEst(.ui("its")), .its)
+  expect_equal(rxUiGet.nonmemEst(.ui("its", niter=50, print=5, noabort=FALSE)),
+               "$ESTIMATION METHOD=ITS INTERACTION PRINT=5 NITER=50\n")
   # the importance sampling options do not apply to ITS
   expect_equal(rxUiGet.nonmemEst(.ui("its", seed=1, isample=5000, iaccept=0.5,
                                      iscaleMin=0.2, iscaleMax=5, df=2,
