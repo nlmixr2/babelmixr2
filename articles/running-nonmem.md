@@ -195,7 +195,7 @@ print(f)
 #> ── Time (sec $time): ──
 #> 
 #>             setup preprocess postprocess table compress NONMEM
-#> elapsed 0.8371542      0.033       0.026 0.053    0.018 320.27
+#> elapsed 0.8365236      0.035       0.023 0.047    0.017 320.27
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 
@@ -285,7 +285,7 @@ getVarCov(f)
 #> → compiling events FD model...
 #> ✔ done
 #> calculating covariance matrix
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:15
+#> [====|====|====|====|====|====|====|====|====|====] 0:00:16
 #> Warning in foceiFitCpp_(.ret): using R matrix to calculate covariance, can
 #> check sandwich or S matrix with $covRS and $covS
 #> Warning in foceiFitCpp_(.ret): gradient problems with covariance; see
