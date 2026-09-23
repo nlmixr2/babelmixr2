@@ -83,6 +83,8 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
   # Precompute row indices and counts per ID for fast rebuilding of evExpanded inside .saemixModelFunction
   .ret$rowsById <- split(seq_len(nrow(.ret$dataSav)), .ret$dataSav$ID)
   .ret$subjectRowCount <- sapply(.ret$rowsById, length)
+  # Endpoint (predDf row) of each record, matched on the compartment
+  .ret$endpointIdx <- match(.ret$dataSav$CMT, .ui$predDf$cmt)
 
   # Check if likelihood model
   .isLikelihood <- any(.ui$predDf$distribution == "LL")
@@ -231,13 +233,12 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
       if (length(predCols) == 1) {
         predictions <- res[[predCols]][matchedIdx]
       } else {
-        # Locate ytype column in .ret$dataSav$origRow mapping
-        ytypeCol <- if ("YTYPE" %in% colnames(.ret$dataSav)) "YTYPE" else "ytype"
-        ytypeVec <- .ret$dataSav[[ytypeCol]][origRowCol]
+        # Each observation's endpoint is the predDf row with its compartment
+        endpointVec <- .ret$endpointIdx[origRowCol]
 
         predictions <- numeric(nrow(xidep))
-        for (yVal in unique(ytypeVec)) {
-          rows <- which(ytypeVec == yVal)
+        for (yVal in unique(endpointVec)) {
+          rows <- which(endpointVec == yVal)
           predCol <- predCols[yVal]
           predictions[rows] <- res[[predCol]][matchedIdx[rows]]
         }

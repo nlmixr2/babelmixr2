@@ -207,6 +207,10 @@ test_that("saemix fits linCmt() models and thetas without etas (#212)", {
   fitNoEta <- nlmixr2(odeNoEtaV, nlmixr2data::theo_sd, est = "saemix", ctl)
   expect_s3_class(fitNoEta, "nlmixr2FitData")
   expect_equal(colnames(fitNoEta$eta), c("ID", "eta.ka", "eta.cl"))
+  # the EBEs come from the matching saemix parameter, not by position
+  .mapEta <- fitNoEta$saemix@results@map.eta
+  expect_equal(fitNoEta$eta$eta.ka, unname(.mapEta[, "eta.tka"]))
+  expect_equal(fitNoEta$eta$eta.cl, unname(.mapEta[, "eta.tcl"]))
   expect_equal(dimnames(fitNoEta$omega), list(c("eta.ka", "eta.cl"), c("eta.ka", "eta.cl")))
   expect_true(all(is.finite(fitNoEta$theta)))
 
@@ -258,9 +262,31 @@ test_that("saemix fits linCmt() models and thetas without etas (#212)", {
   dPd <- dPd[order(dPd$ID, dPd$TIME, -dPd$EVID), ]
   dPd$CMT <- ifelse(dPd$EVID != 0, 1, NA)
 
+  odePd <- function() {
+    ini({
+      tka <- 0.45; tv <- 3.45; tcl <- 1
+      eta.ka ~ 0.6; eta.cl ~ 0.3
+      add.sd <- 0.7; add.pd <- 0.5
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v  <- exp(tv)
+      cl <- exp(tcl + eta.cl)
+      d/dt(depot)   <- -depot * ka
+      d/dt(central) <-  depot * ka - cl * central / v
+      cp <- central / v
+      cp ~ add(add.sd)
+      eff <- 10 * cl / v
+      eff ~ add(add.pd)
+    })
+  }
+
   fitPd <- nlmixr2(linPd, dPd, est = "saemix", ctl)
+  fitOdePd <- nlmixr2(odePd, dPd, est = "saemix", ctl)
   expect_s3_class(fitPd, "nlmixr2FitData")
-  expect_true(all(is.finite(fitPd$theta)))
-  # each endpoint is predicted from its own column
-  expect_equal(fitPd$IPRED[fitPd$CMT == "eff"], fitPd$eff[fitPd$CMT == "eff"])
+  expect_equal(fitPd$theta, fitOdePd$theta, tolerance = 1e-2)
+  expect_equal(diag(fitPd$omega), diag(fitOdePd$omega), tolerance = 1e-2)
+  # the PK endpoint is actually fit (not predicted as zero)
+  expect_equal(fitPd$theta[c("tka", "tv", "tcl")],
+               fitLin$theta[c("tka", "tv", "tcl")], tolerance = 0.05)
 })

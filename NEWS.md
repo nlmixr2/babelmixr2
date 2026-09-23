@@ -10,6 +10,12 @@
   individual etas after the fit failed with `invalid subscript type
   'list'` (#212).
 
+* `est="saemix"` now fits models with more than one endpoint.  Each
+  observation's endpoint was looked up in a `YTYPE` column that the
+  processed data does not have, so every prediction was zero and the
+  fit silently ignored the model; the endpoint is now matched on the
+  observation's compartment (#212).
+
 * A PopED design dataset that gives `cmt` as a compartment *number*
   (`et(amt=180, cmt=1)`) now doses the right compartment.  `et()` keeps
   `cmt` as a character column, so `rxode2::etTrans()` read `"1"` as a
