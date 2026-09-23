@@ -52,6 +52,10 @@ withr::with_tempdir({
                          nonmemControl(modelName="test_nm", runCommand=NA)),
                  NA)
 
+    # $PROBLEM carries the model name (#209)
+    expect_equal(readLines(file.path("test_nm-nonmem", "test_nm.nmctl"), n=1),
+                 "$PROBLEM test_nm translated from babelmixr2")
+
   })
   withr::with_options(list(babelmixr2.protectZeros=FALSE), {
     test_that("NONMEM dsl, individual lines", {
@@ -219,7 +223,7 @@ withr::with_tempdir({
         ui$nonmemModel,
         paste(
           c(
-            "$PROBLEM  translated from babelmixr2",
+            "$PROBLEM one.cmt translated from babelmixr2",
             "; comments show mu referenced model in ui$getSplitMuModel",
             "",
             "$DATA one.cmt.csv IGNORE=@",
@@ -926,6 +930,45 @@ test_that("nonmem model creation without running", {
       unlink(file.path("nonmemTest-nonmem", f))
     })
     unlink("nonmemTest-nonmem", recursive = TRUE)
+
+  })
+
+  test_that("a changed model moves past every stale numbered export (#209)", {
+
+    one.cmt <- function() {
+      ini({
+        tka <- 0.45
+        tcl <- log(c(0, 2.7, 100))
+        tv <- 3.45
+        eta.ka ~ 0.6
+        eta.cl ~ 0.3
+        eta.v ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        ka <- exp(tka + eta.ka)
+        cl <- exp(tcl + eta.cl)
+        v <- exp(tv + eta.v)
+        d/dt(depot) <- -ka * depot
+        d/dt(central) <- ka * depot - cl/v * central
+        cp <- central / v
+        cp ~ add(add.sd)
+      })
+    }
+
+    # two stale exports used to loop forever on the second (#209)
+    for (d in c("staleTest-nonmem", "staleTest-001-nonmem")) {
+      dir.create(d)
+      writeLines("stale", file.path(d, "staleTest.md5"))
+    }
+
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
+            nonmemControl(runCommand=NA, modelName="staleTest"))
+
+    expect_true(file.exists(file.path("staleTest-002-nonmem", "staleTest.nmctl")))
+    expect_true(file.exists(file.path("staleTest-002-nonmem", "staleTest.md5")))
+    unlink(c("staleTest-nonmem", "staleTest-001-nonmem", "staleTest-002-nonmem"),
+           recursive=TRUE)
 
   })
 })
