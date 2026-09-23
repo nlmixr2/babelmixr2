@@ -224,6 +224,9 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
       if (.isLikelihood) {
         predCols <- rep("pred", length(predCols))
       }
+      # linCmt() endpoints (rxLinCmt) are not output columns of the
+      # solved model; use the individual prediction instead
+      predCols[!(predCols %in% names(res))] <- "ipredSim"
 
       if (length(predCols) == 1) {
         predictions <- res[[predCols]][matchedIdx]
@@ -369,12 +372,13 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
   .ret$fullTheta <- .fullTheta
 
   # 2. etaObf
-  etaNamesFit <- colnames(fit@results@map.eta)
-  etaNamesUi <- sapply(etaNamesFit, function(name) {
-    thetaName <- sub("^eta\\.", "", name)
+  # map.eta has a column for every structural parameter; keep only
+  # the parameters that have a between-subject variability
+  etaThetaNames <- .thetaNames[.hasEta]
+  etaNamesUi <- vapply(etaThetaNames, function(thetaName) {
     .ui$muRefTable$eta[.ui$muRefTable$theta == thetaName]
-  })
-  etaObf <- as.data.frame(fit@results@map.eta)
+  }, character(1), USE.NAMES = FALSE)
+  etaObf <- as.data.frame(fit@results@map.eta)[, .hasEta, drop = FALSE]
   colnames(etaObf) <- etaNamesUi
   etaObf$ID <- unique(.ret$dataSav$ID)
   etaObf <- etaObf[, c("ID", etaNamesUi), drop = FALSE]

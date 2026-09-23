@@ -143,3 +143,70 @@ test_that("saemix discrete likelihood model comparison", {
 
   expect_equal(as.numeric(nlmixrEst), as.numeric(directEst), tolerance = 1e-3)
 })
+
+test_that("saemix fits linCmt() models and thetas without etas (#212)", {
+  skip_on_cran()
+
+  ctl <- saemixControl(seed = 632545, nbiter.saemix = c(10, 5),
+                       fim = FALSE, warnings = FALSE)
+
+  odeAll <- function() {
+    ini({
+      tka <- 0.45; tv <- 3.45; tcl <- 1
+      eta.ka ~ 0.6; eta.v ~ 0.1; eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v  <- exp(tv + eta.v)
+      cl <- exp(tcl + eta.cl)
+      d/dt(depot)   <- -depot * ka
+      d/dt(central) <-  depot * ka - cl * central / v
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+
+  linAll <- function() {
+    ini({
+      tka <- 0.45; tv <- 3.45; tcl <- 1
+      eta.ka ~ 0.6; eta.v ~ 0.1; eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v  <- exp(tv + eta.v)
+      cl <- exp(tcl + eta.cl)
+      linCmt() ~ add(add.sd)
+    })
+  }
+
+  fitOde <- nlmixr2(odeAll, nlmixr2data::theo_sd, est = "saemix", ctl)
+  fitLin <- nlmixr2(linAll, nlmixr2data::theo_sd, est = "saemix", ctl)
+  expect_s3_class(fitLin, "nlmixr2FitData")
+  expect_equal(fitLin$theta, fitOde$theta, tolerance = 1e-2)
+  expect_equal(diag(fitLin$omega), diag(fitOde$omega), tolerance = 1e-2)
+
+  odeNoEtaV <- function() {
+    ini({
+      tka <- 0.45; tv <- 3.45; tcl <- 1
+      eta.ka ~ 0.6; eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v  <- exp(tv)
+      cl <- exp(tcl + eta.cl)
+      d/dt(depot)   <- -depot * ka
+      d/dt(central) <-  depot * ka - cl * central / v
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+
+  fitNoEta <- nlmixr2(odeNoEtaV, nlmixr2data::theo_sd, est = "saemix", ctl)
+  expect_s3_class(fitNoEta, "nlmixr2FitData")
+  expect_equal(colnames(fitNoEta$eta), c("ID", "eta.ka", "eta.cl"))
+  expect_equal(dimnames(fitNoEta$omega), list(c("eta.ka", "eta.cl"), c("eta.ka", "eta.cl")))
+  expect_true(all(is.finite(fitNoEta$theta)))
+})

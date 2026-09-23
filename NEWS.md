@@ -1,5 +1,15 @@
 # babelmixr2 0.1.11.9000
 
+* `est="saemix"` now fits `linCmt()` models.  The prediction was looked
+  up in a column named after the endpoint (`rxLinCmt`), which the solved
+  model does not output, so saemix stopped with `non-numeric argument to
+  function` (#212).
+
+* `est="saemix"` now fits models where a structural theta has no
+  between-subject variability (e.g. `v <- exp(tv)`).  Collecting the
+  individual etas after the fit failed with `invalid subscript type
+  'list'` (#212).
+
 * A PopED design dataset that gives `cmt` as a compartment *number*
   (`et(amt=180, cmt=1)`) now doses the right compartment.  `et()` keeps
   `cmt` as a character column, so `rxode2::etTrans()` read `"1"` as a
