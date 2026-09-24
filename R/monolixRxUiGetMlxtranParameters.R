@@ -13,6 +13,30 @@
   diag(.cor) <- .sd2
   .cor
 }
+#' Is this a residual error parameter nlmixr2 estimates as a variance?
+#'
+#' Monolix estimates the standard deviation instead (like nlmixr2 saem)
+#'
+#' @param ui rxode2 ui
+#' @param name name of the parameter from nlmixr2
+#' @return `TRUE` when Monolix is given the square root of the estimate
+#' @noRd
+#' @author Matthew L. Fidler
+.mlxtranIsVarianceErr <- function(ui, name) {
+  .predDf <- ui$predDf
+  if (!any(names(.predDf) == "variance")) return(FALSE)
+  .iniDf <- ui$iniDf
+  .w <- which(.iniDf$name == name)
+  if (length(.w) != 1) return(FALSE)
+  .w2 <- which(.predDf$cond == .iniDf$condition[.w])
+  if (length(.w2) != 1) return(FALSE)
+  .predDf$variance[.w2] &&
+    .iniDf$err[.w] %in% c("add", "prop", "propT",
+                          "pow", "powT", "logn",
+                          "dlogn", "lnorm",
+                          "dlnorm", "logitNorm",
+                          "probitNorm")
+}
 #' This gets the monolix parameter ini based on monolix's naming structure
 #'
 #' This really is not where the saem starts, but it is the "standard" parameter
@@ -39,26 +63,9 @@
                   probitInv=rxode2::probitInv(est, .low, .high),
                   est))
   }
-  .predDf <- .ui$predDf
-  if (any(names(.predDf) == "variance")) {
-    # now lets check if the term is from a variance error term
-    .iniDf <- .ui$iniDf
-    .w <- which(.iniDf$name == name)
-    if (length(.w) == 1) {
-      .cond <- .iniDf$condition[.w]
-      .w2 <- which(.predDf$cond == .cond)
-      if (length(.w2) == 1) {
-        if (.predDf$variance[.w2] &&
-              .iniDf$err[.w] %in% c("add", "prop", "propT",
-                                   "pow", "powT", "logn",
-                                   "dlogn", "lnorm",
-                                   "dlnorm", "logitNorm",
-                                   "probitNorm")) {
-          # monolix estimates sd instead of variance (like nlmixr2 saem)
-          return(sqrt(est))
-        }
-      }
-    }
+  if (.mlxtranIsVarianceErr(.ui, name)) {
+    # monolix estimates sd instead of variance (like nlmixr2 saem)
+    return(sqrt(est))
   }
   return(est)
 }
@@ -72,6 +79,12 @@ rxUiGet.mlxtranParameter <- function(x, ...) {
   .iniDf <- .ui$iniDf
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
   .curEval <- .ui$muRefCurEval
+  .prior <- .mlxtranPriorInfo(.ui)$name
+  .method <- function(cur) {
+    if (cur$fix) return("FIXED")
+    if (cur$name %in% .prior) return("MAP")
+    "MLE"
+  }
   paste0("<PARAMETER>\n",paste(vapply(seq_along(.iniDf$name), function(i) {
     .cur <- .iniDf[i, ]
     if (is.na(.cur$neta1)) {
@@ -88,18 +101,18 @@ rxUiGet.mlxtranParameter <- function(x, ...) {
         }
         .est <- .getNonMonolixParameterIni(.cur$est, .cur$name, .curEval, .ui)
         return(paste0(.par, "={value=", .est, ", method=",
-                      ifelse(.cur$fix, "FIXED", "MLE"), "}"))
+                      .method(.cur), "}"))
       } else {
         .par <- eval(str2lang(paste0("rxToMonolix(", .cur$name, ", ui=.ui)")))
         .est <- .getNonMonolixParameterIni(.cur$est, .cur$name, .curEval, .ui)
         return(paste0(.par, "={value=", .est, ", method=",
-                      ifelse(.cur$fix, "FIXED", "MLE"), "}"))
+                      .method(.cur), "}"))
       }
     } else if (.cur$neta1 == .cur$neta2) {
       .par <- paste0("omega_", .mlxtranGetIndividualMuRefEtaMonolixName(.ui, .cur$neta1, .muRef))
       .est <- .r[.cur$name, .cur$name]
       return(paste0(.par, "={value=", .est, ", method=",
-                    ifelse(.cur$fix, "FIXED", "MLE"), "}"))
+                    .method(.cur), "}"))
     } else {
       .par <- paste0("corr_", .mlxtranGetIndividualMuRefEtaMonolixName(.ui, .cur$neta1, .muRef),"_",
                      .mlxtranGetIndividualMuRefEtaMonolixName(.ui, .cur$neta2, .muRef))
@@ -107,7 +120,7 @@ rxUiGet.mlxtranParameter <- function(x, ...) {
       .n2 <- .iniDf[which(.iniDf$neta1 == .cur$neta2 & .iniDf$neta2 == .cur$neta2), "name"]
       .est <- .r[.n1, .n2]
       return(paste0(.par, "={value=", .est, ", method=",
-                    ifelse(.cur$fix, "FIXED", "MLE"), "}"))
+                    .method(.cur), "}"))
     }
   }, character(1), USE.NAMES=FALSE), collapse="\n"))
 }
