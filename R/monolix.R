@@ -188,7 +188,8 @@
     .rxToMonolixUnIndent(ui)
   }
   .nindent <- rxode2::rxGetControl(ui, ".mIndent", 0)
-  paste(vapply(seq(1, .nindent), function(x) " ", character(1), USE.NAMES=FALSE), collapse="")
+  # top-level statements (.mIndent 0) are indented 2 spaces, like nested ones
+  strrep(" ", max(2, .nindent))
 }
 
 
@@ -548,7 +549,7 @@ rxToMonolix <- function(x, ui) {
     x <- substitute(x)
     if (length(.xc == 1)) {
       .found <- FALSE
-      .frames <- seq(1, sys.nframe())
+      .frames <- seq_len(sys.nframe())
       .frames <- .frames[.frames != 0]
       for (.f in .frames) {
         .env <- parent.frame(.f)
