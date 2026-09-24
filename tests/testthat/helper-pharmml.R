@@ -16,17 +16,23 @@
     '  <mdef:ModelDefinition>\n',
     '    <mdef:StructuralModel blkId="sm1">\n',
     '      <ct:Variable symbId="y" symbolType="real">\n',
-    '        <ct:Assign>\n', x, '\n</ct:Assign>\n',
+    '        <ct:Assign>\n',
+    x,
+    '\n</ct:Assign>\n',
     '      </ct:Variable>\n',
     '    </mdef:StructuralModel>\n',
     '  </mdef:ModelDefinition>\n',
-    '</PharmML>\n')
+    '</PharmML>\n'
+  )
 }
 
 # Wrap ModelDefinition *children* in the smallest valid document.
 .pharmmlWrapMdef <- function(x) {
-  .pharmmlWrapMdefRaw(paste0("  <mdef:ModelDefinition>\n", x,
-                             "\n  </mdef:ModelDefinition>"))
+  .pharmmlWrapMdefRaw(paste0(
+    "  <mdef:ModelDefinition>\n",
+    x,
+    "\n  </mdef:ModelDefinition>"
+  ))
 }
 
 # Wrap an already-complete <mdef:ModelDefinition> element.
@@ -40,5 +46,32 @@
     '    xmlns:po="http://www.pharmml.org/probonto/ProbOnto"\n',
     '    writtenVersion="0.9" id="i1">\n',
     '  <ct:Name>fixture</ct:Name>\n',
-    '  <IndependentVariable symbId="t"/>\n', x, '\n</PharmML>\n')
+    '  <IndependentVariable symbId="t"/>\n',
+    x,
+    '\n</PharmML>\n'
+  )
+}
+
+# Every `SymbRef` that names a block must name a symbol that block declares.
+# Returns the dangling references as "blk/symb", so a test can expect none.
+.pharmmlDanglingRefs <- function(doc) {
+  .x <- xml2::read_xml(as.character(doc))
+  .refs <- xml2::xml_find_all(.x, "//*[local-name()='SymbRef'][@blkIdRef]")
+  .ret <- vapply(
+    .refs,
+    function(.r) {
+      .blk <- xml2::xml_attr(.r, "blkIdRef")
+      .sym <- xml2::xml_attr(.r, "symbIdRef")
+      .found <- xml2::xml_find_all(
+        .x,
+        sprintf("//*[@blkId='%s']//*[@symbId='%s']", .blk, .sym)
+      )
+      if (length(.found) > 0L) {
+        return(NA_character_)
+      }
+      paste0(.blk, "/", .sym)
+    },
+    character(1)
+  )
+  unique(.ret[!is.na(.ret)])
 }

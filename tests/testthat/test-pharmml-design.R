@@ -9,17 +9,22 @@
 .pharmmlTestUiCovBoth <- function() {
   .f <- function() {
     ini({
-      tka <- log(1.57); tcl <- log(2.72); tv <- log(31.5)
-      wt.cl <- 0.75; sex.cl <- 0.1
-      eta.ka ~ 0.6; eta.cl ~ 0.3; eta.v ~ 0.1
+      tka <- log(1.57)
+      tcl <- log(2.72)
+      tv <- log(31.5)
+      wt.cl <- 0.75
+      sex.cl <- 0.1
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
       add.sd <- 0.7
     })
     model({
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + wt.cl * logWT70 + sex.cl * SEX + eta.cl)
       vc <- exp(tv + eta.v)
-      d/dt(depot) <- -ka * depot
-      d/dt(center) <- ka * depot - cl / vc * center
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / vc * center
       cp <- center / vc
       cp ~ add(add.sd)
     })
@@ -39,7 +44,7 @@ test_that("covariate classification separates continuous from categorical", {
 
 test_that("covariate classification treats numeric covariates as continuous", {
   .d <- .pharmmlTestData()
-  .d$SEX <- ifelse(.d$SEX == "M", 1, 0)  # already numerically coded
+  .d$SEX <- ifelse(.d$SEX == "M", 1, 0) # already numerically coded
   .info <- .pharmmlCovariateInfo(.pharmmlTestUiCovBoth(), .d)
   expect_equal(.info$SEX$type, "continuous")
 })
@@ -86,9 +91,15 @@ test_that("the trial design maps each dataset column to its model symbol", {
 })
 
 test_that("the trial design declares every column with a type and a number", {
-  .x <- .pharmmlTrialDesign(.pharmmlTestUiCovBoth(), .pharmmlTestData(),
-                            dataFile = "theo.csv")
-  expect_match(.x, '<ds:Column columnId="ID" columnType="id" valueType="int" columnNum="1"/>')
+  .x <- .pharmmlTrialDesign(
+    .pharmmlTestUiCovBoth(),
+    .pharmmlTestData(),
+    dataFile = "theo.csv"
+  )
+  expect_match(
+    .x,
+    '<ds:Column columnId="ID" columnType="id" valueType="int" columnNum="1"/>'
+  )
   expect_match(.x, 'columnId="TIME" columnType="idv" valueType="real"')
   expect_match(.x, 'columnId="DV" columnType="dv" valueType="real"')
   expect_match(.x, 'columnId="AMT" columnType="dose" valueType="real"')
@@ -98,22 +109,31 @@ test_that("the trial design declares every column with a type and a number", {
 })
 
 test_that("the trial design does not export the internal row-number column", {
-  .x <- .pharmmlTrialDesign(.pharmmlTestUiCovBoth(), .pharmmlTestData(),
-                            dataFile = "theo.csv")
+  .x <- .pharmmlTrialDesign(
+    .pharmmlTestUiCovBoth(),
+    .pharmmlTestData(),
+    dataFile = "theo.csv"
+  )
   expect_false(grepl("nlmixrRowNums", .x, fixed = TRUE))
 })
 
 test_that("a categorical covariate column carries a CategoricalMapping", {
-  .x <- .pharmmlTrialDesign(.pharmmlTestUiCovBoth(), .pharmmlTestData(),
-                            dataFile = "theo.csv")
+  .x <- .pharmmlTrialDesign(
+    .pharmmlTestUiCovBoth(),
+    .pharmmlTestData(),
+    dataFile = "theo.csv"
+  )
   expect_match(.x, "<ds:CategoryMapping>")
   expect_match(.x, '<ds:Map dataSymbol="1" modelSymbol="F"/>')
   expect_match(.x, '<ds:Map dataSymbol="2" modelSymbol="M"/>')
 })
 
 test_that("the trial design names the external data file", {
-  .x <- .pharmmlTrialDesign(.pharmmlTestUiCovBoth(), .pharmmlTestData(),
-                            dataFile = "theo.csv")
+  .x <- .pharmmlTrialDesign(
+    .pharmmlTestUiCovBoth(),
+    .pharmmlTestData(),
+    dataFile = "theo.csv"
+  )
   expect_match(.x, "<ds:path>theo.csv</ds:path>")
   expect_match(.x, "<ds:format>CSV</ds:format>")
   expect_match(.x, "<ds:delimiter>COMMA</ds:delimiter>")
@@ -126,8 +146,17 @@ test_that("the estimation step lists every estimated parameter", {
 
   expect_match(.x, "<mstep:EstimationStep")
   expect_match(.x, "<mstep:ParametersToEstimate>")
-  for (.p in c("tka", "tcl", "tv", "wt.cl", "sex.cl", "add.sd",
-               "omega_eta.ka", "omega_eta.cl", "omega_eta.v")) {
+  for (.p in c(
+    "tka",
+    "tcl",
+    "tv",
+    "wt.cl",
+    "sex.cl",
+    "add.sd",
+    "omega_eta.ka",
+    "omega_eta.cl",
+    "omega_eta.v"
+  )) {
     expect_match(.x, paste0('symbIdRef="', .p, '"'), info = .p)
   }
 })
@@ -141,12 +170,35 @@ test_that("the estimation step carries initial values and bounds", {
 
 test_that("a fixed parameter is declared fixed rather than estimated", {
   .f <- function() {
-    ini({ tcl <- fix(log(2.72)); eta.cl ~ 0.3; add.sd <- 0.7 })
-    model({ cl <- exp(tcl + eta.cl); d/dt(center) <- -cl * center
-            cp <- center; cp ~ add(add.sd) })
+    ini({
+      tcl <- fix(log(2.72))
+      eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      d / dt(center) <- -cl * center
+      cp <- center
+      cp ~ add(add.sd)
+    })
   }
   .x <- .pharmmlModellingSteps(rxode2::rxUiDecompress(.f()))
   expect_match(.x, 'fixed="true"')
+})
+
+test_that("the estimation step names the block each parameter is declared in", {
+  .x <- .pharmmlModellingSteps(.pharmmlTestUiCovBoth())
+  # residual-error parameters live in the ObservationModel, not the
+  # ParameterModel
+  expect_match(.x, '<ct:SymbRef blkIdRef="om1" symbIdRef="add.sd"/>')
+  expect_match(.x, '<ct:SymbRef blkIdRef="pm1" symbIdRef="tcl"/>')
+  expect_equal(
+    .pharmmlDanglingRefs(as.pharmml(
+      .pharmmlTestUiCovBoth(),
+      .pharmmlTestData()
+    )),
+    character(0)
+  )
 })
 
 # --- whole document -------------------------------------------------------
@@ -166,10 +218,14 @@ test_that("a complete PharmML document is schema-valid", {
     '    writtenVersion="0.9" id="i1">\n',
     '  <ct:Name>full document</ct:Name>\n',
     '  <IndependentVariable symbId="t"/>\n',
-    .pharmmlModelDefinition(.ui, data = .pharmmlTestData()), "\n",
-    .pharmmlTrialDesign(.ui, .pharmmlTestData(), dataFile = "theo.csv"), "\n",
-    .pharmmlModellingSteps(.ui), "\n",
-    '</PharmML>\n')
+    .pharmmlModelDefinition(.ui, data = .pharmmlTestData()),
+    "\n",
+    .pharmmlTrialDesign(.ui, .pharmmlTestData(), dataFile = "theo.csv"),
+    "\n",
+    .pharmmlModellingSteps(.ui),
+    "\n",
+    '</PharmML>\n'
+  )
   expect_true(pharmmlValidate(.doc))
 })
 
@@ -179,10 +235,11 @@ test_that("a category-code mismatch is an error, not a silent mis-mapping", {
   # in an obvious way, so the check must actually fire.
   .d <- .pharmmlTestData()
   .nmBad <- .pharmmlNonmemData(.pharmmlTestUiCovBoth(), .d)
-  .nmBad$SEX <- 3 - .nmBad$SEX          # swap the two codes
+  .nmBad$SEX <- 3 - .nmBad$SEX # swap the two codes
   expect_error(
     .pharmmlCovariateInfo(.pharmmlTestUiCovBoth(), .d, .nmBad),
-    "do not match the levels derived")
+    "do not match the levels derived"
+  )
 })
 
 test_that("the category-code check passes on the real conversion", {
