@@ -179,3 +179,17 @@ test_that("nlmixr2 refuses an omega prior for monolix before writing files", {
     expect_false(file.exists("monolixPrior-monolix.mlxtran"))
   })
 })
+
+test_that("the normal prior reader takes positional or named arguments", {
+  .b <- loadNamespace("babelmixr2")
+  expect_equal(.b$.mlxtranPriorNormal("dnorm(log(2), 0.5)", "x"), c(log(2), 0.5))
+  expect_equal(.b$.mlxtranPriorNormal("dnorm(mean=log(2), sd=0.5)", "x"), c(log(2), 0.5))
+  expect_equal(.b$.mlxtranPriorNormal("dnorm(sd=0.5, mean=1)", "x"), c(1, 0.5))
+  expect_equal(.b$.mlxtranPriorNormal("dnorm(1, sd=0.5)", "x"), c(1, 0.5))
+  expect_equal(.b$.mlxtranPriorNormal("normal(logit(0.6), 2)", "x"), c(logit(0.6), 2))
+  expect_equal(.b$.mlxtranPriorNormal("stdNormal()", "x"), c(0, 1))
+  expect_error(.b$.mlxtranPriorNormal("dnorm(1)", "x"), "univariate normal")
+  expect_error(.b$.mlxtranPriorNormal("dnorm(1, -1)", "x"), "univariate normal")
+  expect_error(.b$.mlxtranPriorNormal("dnorm(m=1, s=2, z=3)", "x"), "univariate normal")
+  expect_error(.b$.mlxtranPriorNormal("dnorm(1, nope(2))", "x"), "univariate normal")
+})

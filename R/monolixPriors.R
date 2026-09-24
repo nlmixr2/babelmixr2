@@ -65,15 +65,20 @@
   if (.fn %in% c("stdNormal", "std_normal") && length(.e) == 1L) {
     return(c(0, 1))
   }
-  if (.fn %in% c("dnorm", "normal") && length(.e) == 3L &&
-        all(names(as.list(.e))[-1] %in% c("", NA_character_))) {
+  if (.fn %in% c("dnorm", "normal") && length(.e) == 3L) {
+    # lotri stores these positionally, but accept `mean=`/`sd=` too
+    .e <- try(match.call(function(mean, sd) NULL, .e), silent=TRUE)
+  }
+  if (.fn %in% c("dnorm", "normal") && !inherits(.e, "try-error") &&
+        length(.e) == 3L && all(c("mean", "sd") %in% names(.e))) {
+    .args <- as.list(.e)[c("mean", "sd")]
     # the prior is data, so it is evaluated with base R plus the rxode2
     # transforms a prior mean is naturally written with (ie `logit(0.6)`)
     .env <- new.env(parent=baseenv())
     for (.f in c("logit", "expit", "probit", "probitInv")) {
       assign(.f, getExportedValue("rxode2", .f), envir=.env)
     }
-    .v <- try(vapply(as.list(.e)[-1], function(a) {
+    .v <- try(vapply(.args, function(a) {
       as.double(eval(a, envir=.env))
     }, double(1), USE.NAMES=FALSE), silent=TRUE)
     if (!inherits(.v, "try-error") && all(is.finite(.v)) && .v[2] > 0) {
