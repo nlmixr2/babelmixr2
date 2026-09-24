@@ -304,6 +304,8 @@ nlmixr2Est.nonmem <- function(env, ...) {
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
+  # refuse a prior NWPRI cannot express before anything is written
+  .nonmemPriorSpec(.ui)
   .nonmemFamilyControl(env, ...)
   on.exit({
     if (exists("control", envir=.ui)) {
@@ -314,6 +316,8 @@ nlmixr2Est.nonmem <- function(env, ...) {
 }
 attr(nlmixr2Est.nonmem, "covPresent") <- TRUE
 attr(nlmixr2Est.nonmem, "type") <- "External"
+# normal priors and omega degrees of freedom, through $PRIOR NWPRI
+attr(nlmixr2Est.nonmem, "nlmixr2Priors") <- "nwpri"
 attr(nlmixr2Est.nonmem, "description") <- "NONMEM (external software)"
 attr(nlmixr2Est.nonmem, "mu") <- function(control) {
   isTRUE(control$muRefCovAlg)
