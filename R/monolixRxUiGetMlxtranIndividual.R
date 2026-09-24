@@ -175,8 +175,7 @@
 #' @export
 rxUiGet.mlxtranModelIndividual <- function(x, ...) {
   .ui <- x[[1]]
-  .split <- .ui$getSplitMuModel
-  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  .muRef <- .monolixMuRef(.ui)
   assignInMyNamespace(".mlxTranInputForIndividual", NULL)
   .muRefCov <- .ui$saemMuRefCovariateDataFrame
   .def <- vapply(seq_along(.muRef), function(.i){
