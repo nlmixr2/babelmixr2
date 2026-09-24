@@ -479,6 +479,9 @@ rxUiGet.monolixCovariance <- function(x, ...) {
   .n <- vapply(dimnames(.j)[[1]], .monolixPopParName, character(1),
                muRef=.muRef, covDataFrame=.covDataFrame, USE.NAMES=FALSE)
   .cov <- .cov[.n, .n]
+  # nlmixr2's parameter names whichever Monolix version wrote the matrix
+  # (only the pre-2020/2021 conversion below used to rename it)
+  dimnames(.cov) <- dimnames(.j)
   .ui <- x[[1]]
   rxode2::rxAssignControlValue(.ui, ".covMethod", ifelse(.sa, "MonolixSA", "MonolixLin"))
   if (.monolixCovarianceNeedsConversion(x, .sa)) {

@@ -81,8 +81,11 @@ test_that("a Monolix 2024R1 export with a mu-referenced covariate is read", {
   .f <- .mlx2024Fit("mle")
   expect_true(inherits(.f, "nlmixr2FitData"))
   # the covariance used to look up 'NA_pop' for the covariate effect
-  expect_true(all(c("beta_cl_lWT", "ka_pop") %in% dimnames(.f$cov)[[1]]) ||
-                all(c("cl.wt", "tka") %in% dimnames(.f$cov)[[1]]))
+  # and it carries nlmixr2's names, not Monolix's
+  expect_equal(dimnames(.f$cov)[[1]], c("tka", "tcl", "tv", "tfr", "cl.wt"))
+  expect_equal(dimnames(.f$cov)[[2]], c("tka", "tcl", "tv", "tfr", "cl.wt"))
+  # on nlmixr2's (log) scale: sd(tka) ~ Monolix's se(ka_pop) / ka_pop
+  expect_equal(sqrt(.f$cov["tka", "tka"]), 0.309228983715958 / 1.56549133958774, tolerance=0.05)
   expect_equal(.f$theta[["cl.wt"]], 0.5653053, tolerance=1e-5)
   expect_equal(exp(.f$theta[["tka"]]), 1.565491, tolerance=1e-5)
 })

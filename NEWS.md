@@ -22,6 +22,9 @@
 
 * The "PRED absolute difference compared to Monolix PRED" line of a Monolix
   fit's message is now an absolute difference (it printed a relative one).
+  The covariance of a fit from Monolix 2020 or later now carries nlmixr2's
+  parameter names (`tka`, `cl.wt`) instead of Monolix's (`ka_pop`,
+  `beta_cl_lWT`), like fits from older Monolix versions already did.
 
 * Monolix projects with mu-referenced covariates (`cl <- exp(tcl + eta.cl +
   cl.wt * lWT)`) now load in Monolix.  The covariate was missing from the
