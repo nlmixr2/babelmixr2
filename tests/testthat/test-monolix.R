@@ -345,7 +345,7 @@ test_that("monolix treatment of +var()", {
 
   expect_equal(par, "add__sd={value=0.7, method=MLE}")
 
-  f2 <- try(f %>% model({cp~add(add.sd) + var()}), silent=TRUE)
+  f2 <- try(model(f, {cp~add(add.sd) + var()}), silent=TRUE)
   if (inherits(f2, "try-error")) {
     skip("rxode2 doesn't support + var()")
   } else {
