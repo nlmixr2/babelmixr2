@@ -1,0 +1,14 @@
+The XML Schema files under inst/pharmml/ are the PharmML schema definitions.
+
+Copyright 2013-2016 European Molecular Biology Laboratory, Heidelberg,
+Germany and Novo Nordisk A/S, Bagsvaerd, Denmark.
+Licensed under the Apache License, Version 2.0.
+
+The 0.9 schema set was obtained from https://github.com/rikardn/libpharmmlcpp
+(schema/0.9/).  Note that the libpharmmlcpp *repository* is LGPL-3, but the
+.xsd files carry their own Apache-2.0 headers, which govern here.
+
+The only local modification is that `xs:import/@schemaLocation` values were
+rewritten from absolute http://www.pharmml.org/... and
+http://www.uncertml.org/... URLs to relative filenames.  Those hosts no
+longer serve the schemas, and the rewrite is what allows offline validation.

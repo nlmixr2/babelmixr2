@@ -16,3 +16,6 @@ inst/doc
 /src/Makevars.win
 docs
 /.vexp/
+/pharmml-plan.md
+/pharmml-implementation-plan.md
+/pr-body.md

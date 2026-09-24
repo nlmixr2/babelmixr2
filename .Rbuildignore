@@ -14,3 +14,6 @@
 ^vignettes/articles$
 ^_pkgdown\.yml$
 ^\.vexp$
+^pharmml-plan\.md$
+^pharmml-implementation-plan\.md$
+^pr-body\.md$

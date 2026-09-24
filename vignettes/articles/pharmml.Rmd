@@ -1,0 +1,157 @@
+---
+title: "Exporting a model to PharmML"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Exporting a model to PharmML}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(babelmixr2)
+```
+
+PharmML is an XML description of a pharmacometric model: the parameter model,
+the structural model, the observation model, the trial design and the
+estimation step, all in one self-describing document. Exporting to it makes an
+`nlmixr2` model archivable and exchangeable without the receiving tool needing
+to understand `rxode2` syntax.
+
+Unlike the NONMEM and Monolix backends, this is a *writer*, not an estimation
+method: `babelmixr2` does not run PharmML, so there is no `est="pharmml"`.
+
+## Writing a model
+
+```{r model}
+one.cmt <- function() {
+  ini({
+    tka <- log(1.57); label("Ka")
+    tcl <- log(2.72); label("Cl")
+    tv  <- log(31.5); label("V")
+    eta.ka ~ 0.6
+    eta.cl ~ 0.3
+    eta.v  ~ 0.1
+    add.sd <- 0.7
+  })
+  model({
+    ka <- exp(tka + eta.ka)
+    cl <- exp(tcl + eta.cl)
+    vc <- exp(tv + eta.v)
+    d/dt(depot)  <- -ka * depot
+    d/dt(center) <-  ka * depot - cl / vc * center
+    cp <- center / vc
+    cp ~ add(add.sd)
+  })
+}
+```
+
+With no data, `as.pharmml()` writes just the model definition — a valid
+PharmML description of the model, with no trial design or estimation step:
+
+```{r modelOnly}
+xml <- as.pharmml(one.cmt)
+cat(substr(xml, 1, 600))
+```
+
+Pass the dataset as well and the document gains a `TrialDesign` and an
+`EstimationStep`:
+
+```{r withData}
+xml <- as.pharmml(one.cmt, nlmixr2data::theo_sd)
+```
+
+To write it to disk, give a `file`. A PharmML document refers to its dataset
+by path rather than embedding it, so the NONMEM-format CSV is written
+alongside the model:
+
+```{r write, eval = FALSE}
+as.pharmml(one.cmt, nlmixr2data::theo_sd, file = "one.cmt.xml")
+#> writes one.cmt.xml and one.cmt.csv
+```
+
+## Validation
+
+Every document is checked against the PharmML schema before it is returned, so
+a problem surfaces at the call rather than in whatever reads the file later.
+The schemas are vendored in the package — the upstream host no longer serves
+them — so validation is entirely offline.
+
+```{r validate}
+pharmmlValidate(xml)
+pharmmlVersions()
+```
+
+`pharmmlControl(validate = FALSE)` turns the check off, though it costs only a
+fraction of a second.
+
+## What is and is not translated
+
+PharmML's operator vocabulary is a close match for `rxode2`'s. `logit`,
+`probit`, `logistic` (`expit`), `normcdf`, `log2`, `log10` and `gammaln` are
+all native, so most model expressions map to a single operator.
+
+Solved models are exported as PharmML *PK macros* rather than being expanded
+to ODEs, so the structure the model was written in survives the round trip:
+
+```{r linCmt}
+solved <- function() {
+  ini({
+    tka <- log(1.57); tcl <- log(2.72); tv <- log(31.5)
+    eta.cl ~ 0.3
+    add.sd <- 0.7
+  })
+  model({
+    ka <- exp(tka)
+    cl <- exp(tcl + eta.cl)
+    v  <- exp(tv)
+    linCmt() ~ add(add.sd)
+  })
+}
+grepl("PKmacros", as.pharmml(solved))
+```
+
+Constructs PharmML cannot express raise an error naming the construct, rather
+than emitting a document that looks plausible but is wrong. Currently out of
+scope:
+
+| Construct | Status |
+|---|---|
+| `add()`, `prop()`, `add() + prop()` | supported |
+| `lnorm()` | supported, as a `log` transformation of both sides |
+| `pow()`, `add() + pow()`, `lnorm() + prop()` | error |
+| `boxCox()`, `yeoJohnson()`, `logitNorm()`, `probitNorm()` | error |
+| Non-normal residuals (`pois()`, `dbinom()`, `t()`, ordinal, `ll()`) | error |
+| Inter-occasion variability | error |
+| Mixture models (`mix()`) | error |
+| Michaelis-Menten or transit absorption via `linCmt()` | error |
+| Units | dropped |
+
+Categorical covariates are detected from the dataset: a character or factor
+column becomes a PharmML `Categorical` covariate with a category per level,
+and the column mapping records how the exported numeric codes correspond to
+those levels. Without a dataset there is no type information to go on, so
+covariates are written as continuous.
+
+## Translating a single expression
+
+`rxToPharmml()` is the expression-level translator, the PharmML counterpart of
+`rxToNonmem()` and `rxToMonolix()`:
+
+```{r expr}
+cat(rxToPharmml("ka * depot"))
+```
+
+## Reading PharmML
+
+There is no reader. `babelmixr2` writes PharmML but cannot import it, so the
+output is validated against the schema and compared structurally against the
+reference examples — it is never executed and read back. Importing PharmML
+would be a separate package, in the way `nonmem2rx` and `monolix2rx` are
+separate from the NONMEM and Monolix writers.

@@ -1,5 +1,41 @@
 # babelmixr2 0.1.11.9000
 
+* `babelmixr2` can now export a mu-referenced `nlmixr2` model to PharmML 0.9
+  with `as.pharmml()`.  PharmML is a standard XML description of a
+  pharmacometric model -- parameter model, structural model, observation
+  model, trial design and estimation step in one self-describing document --
+  so this makes an `nlmixr2` model archivable and exchangeable without the
+  receiving tool needing to understand `rxode2` syntax.  Unlike the NONMEM and
+  Monolix backends this is a writer rather than an estimation method, so there
+  is no `est="pharmml"`.
+
+  Supporting functions: `rxToPharmml()` translates a single expression (the
+  counterpart of `rxToNonmem()` and `rxToMonolix()`), `pharmmlControl()`
+  carries the options, and `pharmmlValidate()` checks a document against the
+  schema.  The schemas are vendored in the package because the upstream host
+  no longer serves them, so validation is entirely offline and never reaches
+  the network.
+
+  Solved (`linCmt()`) models are exported as PharmML PK macros rather than
+  being expanded to ODEs, which preserves the structure the model was written
+  in.  This is the one thing the PharmML writer can do that the NONMEM and
+  Monolix writers cannot -- both of those refuse `linCmt()` outright.
+
+  Categorical covariates are detected from the dataset: a character or factor
+  column becomes a PharmML `Categorical` covariate with a category per level,
+  and the column mapping records how the exported numeric codes correspond to
+  those levels.
+
+  `lnorm()` residual errors are written as a `log` transformation of both
+  sides of the observation model.
+
+  Models that PharmML cannot express -- non-normal residuals, power residual
+  error, `boxCox()`, `yeoJohnson()` and logit/probit residual
+  transformations, inter-occasion variability, mixture models, Michaelis-Menten or
+  transit absorption through `linCmt()` -- raise an error naming the construct
+  rather than emitting a document that looks plausible but is wrong.  Every
+  document is validated against the schema before it is returned.
+
 * `est="monolix"` now spells a mu-referenced parameter with a `.` in its
   name (like the tainted `rx__cl.wt`, or `ka.x <- exp(tka + eta.ka)`) the
   same way in every section of the Monolix model (#220).  The `EQUATION:`
