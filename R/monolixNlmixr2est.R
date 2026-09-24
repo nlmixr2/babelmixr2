@@ -276,13 +276,20 @@
       }
     } else {
       if (.hasLixoftConnectors()) {
+        # lixoftConnectors reports a failure by returning FALSE (with an
+        # [ERROR] message), not by signalling an R error; carrying on
+        # would wait forever for output Monolix never writes
         .x <- try(lixoftConnectors::loadProject(.mlxtran), silent=TRUE)
-        if (inherits(.x, "try-error")) {
-          stop("lixoftConnectors cannot load mlxtran",
+        if (inherits(.x, "try-error") || isFALSE(.x)) {
+          stop("lixoftConnectors cannot load '", .mlxtran, "' (see Monolix's [ERROR] above)",
                call.=FALSE)
         }
         .minfo("lixoftConnectors::runScenario()")
-        lixoftConnectors::runScenario()
+        .x <- lixoftConnectors::runScenario()
+        if (isFALSE(.x)) {
+          stop("lixoftConnectors::runScenario() failed for '", .mlxtran, "' (see Monolix's [ERROR] above)",
+               call.=FALSE)
+        }
         .minfo("done")
         .runLS <- TRUE
       } else if (dir.exists(.exportPath)) { # needs to skip for tests

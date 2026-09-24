@@ -355,3 +355,33 @@ test_that("monolix treatment of +var()", {
   }
 
 })
+
+test_that("mu-referenced covariates are [INDIVIDUAL] inputs", {
+  one.cmt <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- log(2.7)
+      tv <- 3.45
+      cl.wt <- 0
+      v.wt <- 0
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl + cl.wt * lWT)
+      v <- exp(tv + eta.v + v.wt * lWT)
+      d/dt(depot) <- -depot*ka
+      d/dt(central) <- depot*ka - cl*central/v
+      cp <- central/v
+      cp ~ add(add.sd)
+    })
+  }
+  f <- rxode2::rxode2(one.cmt)
+  ind <- strsplit(f$mlxtranModelIndividual, "\n")[[1]]
+  # without lWT here Monolix stops with "Undefined variable 'lWT'"
+  expect_equal(ind[grepl("^input=", ind)],
+               "input={ka_pop, omega_ka, cl_pop, lWT, beta_cl_lWT, omega_cl, v_pop, beta_v_lWT, omega_v}")
+})

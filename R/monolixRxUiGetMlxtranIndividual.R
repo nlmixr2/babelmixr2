@@ -72,8 +72,10 @@
   if (length(.covs$covariate) == 0) return(NULL)
   .cov <- paste0("covariate = {", paste(.covs$covariate, collapse=", "), "}")
   .coef <- paste0("beta_", var, "_", .covs$covariate)
+  # Monolix needs the covariates themselves as [INDIVIDUAL] inputs too,
+  # otherwise it stops with "Undefined variable"
   assignInMyNamespace(".mlxTranInputForIndividual",
-                      c(.mlxTranInputForIndividual, .coef))
+                      unique(c(.mlxTranInputForIndividual, .covs$covariate, .coef)))
   .coef <- paste0("coefficient = {", paste(.coef, collapse=", "), "}")
   c(.cov, .coef)
 }
