@@ -436,6 +436,14 @@ test_that("only non mu-referenced covariates are regressors in the Monolix model
   mod <- strsplit(f2$monolixModel, "\n")[[1]]
   expect_equal(mod[grepl("regressor", mod)], "CRCL= {use=regressor}")
   expect_equal(mod[grepl("^input=", mod)], "input={ka,cl,v,CRCL}")
+
+  # a covariate also used in the structural model is not mu-referenced, so
+  # it stays a regressor and a [LONGITUDINAL] input
+  f3 <- model(f, cp <- central / v * lWT)
+  expect_equal(nrow(f3$saemMuRefCovariateDataFrame[f3$saemMuRefCovariateDataFrame$covariate == "lWT", ]), 0L)
+  mod <- strsplit(f3$monolixModel, "\n")[[1]]
+  expect_true("lWT= {use=regressor}" %in% mod)
+  expect_true(grepl("lWT", mod[grepl("^input=", mod)]))
 })
 
 test_that("a Monolix project lixoftConnectors cannot load or run is an error", {
