@@ -40,16 +40,18 @@ rxUiGet.nonmemModel <- function(x, ...) {
   rxUiGetNonememModelEnv$rxS <- .ui$loadPrune
   .nonmemResetUi(.ui)
   .ret <- paste0(
-    "$PROBLEM ", .ui$nonmemNodelName, " translated from babelmixr2\n; comments show mu referenced model in ui$getSplitMuModel\n\n",
+    "$PROBLEM ", .ui$nonmemModelName, " translated from babelmixr2\n; comments show mu referenced model in ui$getSplitMuModel\n\n",
     "$DATA ", .ui$nonmemCsv, " IGNORE=@\n\n",
     rxUiGet.nonmemInput(x, ...), "\n",
     rxUiGet.nonmemSub(x, ...), "\n\n",
+    rxUiGet.nonmemPrior(x, ...),
     rxUiGet.nonmemMod(x, ...), "\n\n",
     rxUiGet.nonmemPkDesErr0(x, ...),
     rxUiGet.nonmemErrF(x, ...),"\n",
     rxUiGet.nonmemTheta(x, ...),"\n\n",
     rxUiGet.nonmemOmega(x, ...),"\n",
     "$SIGMA 1 FIX\n\n",
+    rxUiGet.nonmemPriorRecords(x, ...),
     rxUiGet.nonmemEst(x, ...),"\n",
     rxUiGet.nonmemCov(x, ...), "\n\n",
     rxUiGet.nonmemTable(x, ...))

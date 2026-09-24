@@ -143,3 +143,245 @@ test_that("saemix discrete likelihood model comparison", {
 
   expect_equal(as.numeric(nlmixrEst), as.numeric(directEst), tolerance = 1e-3)
 })
+
+test_that("saemix fits linCmt() models and thetas without etas (#212)", {
+  skip_on_cran()
+
+  ctl <- saemixControl(seed = 632545, nbiter.saemix = c(10, 5),
+                       fim = FALSE, warnings = FALSE)
+
+  odeAll <- function() {
+    ini({
+      tka <- 0.45; tv <- 3.45; tcl <- 1
+      eta.ka ~ 0.6; eta.v ~ 0.1; eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v  <- exp(tv + eta.v)
+      cl <- exp(tcl + eta.cl)
+      d/dt(depot)   <- -depot * ka
+      d/dt(central) <-  depot * ka - cl * central / v
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+
+  linAll <- function() {
+    ini({
+      tka <- 0.45; tv <- 3.45; tcl <- 1
+      eta.ka ~ 0.6; eta.v ~ 0.1; eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v  <- exp(tv + eta.v)
+      cl <- exp(tcl + eta.cl)
+      linCmt() ~ add(add.sd)
+    })
+  }
+
+  fitOde <- nlmixr2(odeAll, nlmixr2data::theo_sd, est = "saemix", ctl)
+  fitLin <- nlmixr2(linAll, nlmixr2data::theo_sd, est = "saemix", ctl)
+  expect_s3_class(fitLin, "nlmixr2FitData")
+  expect_equal(fitLin$theta, fitOde$theta, tolerance = 1e-2)
+  expect_equal(diag(fitLin$omega), diag(fitOde$omega), tolerance = 1e-2)
+
+  odeNoEtaV <- function() {
+    ini({
+      tka <- 0.45; tv <- 3.45; tcl <- 1
+      eta.ka ~ 0.6; eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v  <- exp(tv)
+      cl <- exp(tcl + eta.cl)
+      d/dt(depot)   <- -depot * ka
+      d/dt(central) <-  depot * ka - cl * central / v
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+
+  fitNoEta <- nlmixr2(odeNoEtaV, nlmixr2data::theo_sd, est = "saemix", ctl)
+  expect_s3_class(fitNoEta, "nlmixr2FitData")
+  expect_equal(colnames(fitNoEta$eta), c("ID", "eta.ka", "eta.cl"))
+  # the EBEs come from the matching saemix parameter, not by position
+  .mapEta <- fitNoEta$saemix@results@map.eta
+  expect_equal(fitNoEta$eta$eta.ka, unname(.mapEta[, "eta.tka"]))
+  expect_equal(fitNoEta$eta$eta.cl, unname(.mapEta[, "eta.tcl"]))
+  expect_equal(dimnames(fitNoEta$omega), list(c("eta.ka", "eta.cl"), c("eta.ka", "eta.cl")))
+  expect_true(all(is.finite(fitNoEta$theta)))
+
+  linFixedV <- function() {
+    ini({
+      tka <- 0.45; tv <- fixed(3.45); tcl <- 1
+      eta.ka ~ 0.6; eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v  <- exp(tv)
+      cl <- exp(tcl + eta.cl)
+      linCmt() ~ add(add.sd)
+    })
+  }
+
+  fitFixed <- nlmixr2(linFixedV, nlmixr2data::theo_sd, est = "saemix", ctl)
+  expect_equal(fitFixed$theta[["tv"]], 3.45)
+  expect_equal(colnames(fitFixed$eta), c("ID", "eta.ka", "eta.cl"))
+  expect_true(all(is.finite(fitFixed$theta)))
+})
+
+test_that("saemix refuses models it would fit with a different error model (#212)", {
+  skip_on_cran()
+
+  ctl <- saemixControl(seed = 632545, nbiter.saemix = c(10, 5),
+                       fim = FALSE, warnings = FALSE)
+  d <- nlmixr2data::theo_sd
+
+  # build a one compartment model with the residual error `err`; only
+  # the residual parameters it uses go in ini()
+  mod <- function(err, extra = NULL) {
+    .errPar <- list(add.sd = 0.7, prop.sd = 0.1, pow.exp = 0.5,
+                    lambda = 0.5, add.pd = 0.5, nu = 3)
+    .errPar <- .errPar[names(.errPar) %in% all.vars(err)]
+    .ini <- c(list(quote(`{`), quote(tka <- 0.45), quote(tv <- 3.45),
+                   quote(tcl <- 1), quote(eta.ka ~ 0.6), quote(eta.cl ~ 0.3)),
+              lapply(names(.errPar), function(n) {
+                bquote(.(as.name(n)) <- .(.errPar[[n]]))
+              }))
+    f <- function() {
+      ini(INI)
+      model({
+        ka <- exp(tka + eta.ka)
+        v  <- exp(tv)
+        cl <- exp(tcl + eta.cl)
+        linCmt() ~ ERR
+      })
+    }
+    body(f) <- do.call(substitute, list(body(f), list(INI = as.call(.ini), ERR = err)))
+    f
+  }
+
+  .fitErr <- function(f, data = d) {
+    expect_error(nlmixr2(f, data, est = "saemix", ctl),
+                 "for the estimation routine 'saemix'")
+  }
+
+  .fitErr(mod(quote(add(add.sd) + boxCox(lambda))))
+  .fitErr(mod(quote(add(add.sd) + yeoJohnson(lambda))))
+  .fitErr(mod(quote(logitNorm(add.sd))))
+  .fitErr(mod(quote(add(add.sd) + pow(prop.sd, pow.exp))))
+  .fitErr(mod(quote(lnorm(add.sd) + prop(prop.sd))))
+  .fitErr(mod(quote(add(add.sd) + prop(prop.sd) + combined1())))
+  # saemixControl(addProp=) decides what a default add() + prop() is
+  expect_error(nlmixr2(mod(quote(add(add.sd) + prop(prop.sd))), d, est = "saemix",
+                       saemixControl(seed = 632545, nbiter.saemix = c(10, 5),
+                                     fim = FALSE, warnings = FALSE,
+                                     addProp = "combined1")),
+               "cannot use 'combined1'")
+  .fitErr(mod(quote(prop(prop.sd) + dt(nu))))
+
+  # saemix cannot fix a residual error or a between-subject variability
+  .addProp <- mod(quote(add(add.sd) + prop(prop.sd)))
+  .fitErr(rxode2::ini(.addProp, add.sd = fix(0.7)))
+  .fitErr(rxode2::ini(.addProp, eta.ka ~ fix(0.6)))
+
+  # more than one endpoint
+  linPd <- function() {
+    ini({
+      tka <- 0.45; tv <- 3.45; tcl <- 1
+      eta.ka ~ 0.6; eta.cl ~ 0.3
+      add.sd <- 0.7; add.pd <- 0.5
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v  <- exp(tv)
+      cl <- exp(tcl + eta.cl)
+      linCmt() ~ add(add.sd)
+      eff <- 10 * cl / v
+      eff ~ add(add.pd)
+    })
+  }
+  .fitErr(linPd, d)
+})
+
+test_that("saemix fits lnorm() with its exponential error model (#212)", {
+  skip_on_cran()
+
+  linLnorm <- function() {
+    ini({
+      tka <- 0.45; tv <- 3.45; tcl <- 1
+      eta.ka ~ 0.6; eta.v ~ 0.1; eta.cl ~ 0.3
+      lsd <- 0.3
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v  <- exp(tv + eta.v)
+      cl <- exp(tcl + eta.cl)
+      linCmt() ~ lnorm(lsd)
+    })
+  }
+
+  # the time 0 observations have a prediction of 0 (-Inf on the log scale)
+  d <- nlmixr2data::theo_sd
+  d <- d[!(d$EVID == 0 & (d$DV <= 0 | d$TIME == 0)), ]
+
+  fitSaemix <- nlmixr2(linLnorm, d, est = "saemix",
+                       saemixControl(seed = 632545, nbiter.saemix = c(300, 100),
+                                     fim = FALSE, warnings = FALSE))
+  fitFocei <- suppressMessages(nlmixr2(linLnorm, d, est = "focei",
+                                       foceiControl(print = 0)))
+  expect_equal(fitSaemix$saemix@model@error.model, "exponential")
+  expect_equal(fitSaemix$theta, fitFocei$theta, tolerance = 0.05)
+  expect_equal(diag(fitSaemix$omega)[c("eta.ka", "eta.cl")],
+               diag(fitFocei$omega)[c("eta.ka", "eta.cl")], tolerance = 0.05)
+})
+
+test_that("saemix prop() and add() + prop() match focei (#212)", {
+  skip_on_cran()
+
+  mod <- function(err) {
+    .errPar <- list(add.sd = 0.3, prop.sd = 0.1)
+    .errPar <- .errPar[names(.errPar) %in% all.vars(err)]
+    .ini <- c(list(quote(`{`), quote(tka <- 0.45), quote(tv <- 3.45),
+                   quote(tcl <- 1), quote(eta.ka ~ 0.6), quote(eta.v ~ 0.1),
+                   quote(eta.cl ~ 0.3)),
+              lapply(names(.errPar), function(n) {
+                bquote(.(as.name(n)) <- .(.errPar[[n]]))
+              }))
+    f <- function() {
+      ini(INI)
+      model({
+        ka <- exp(tka + eta.ka)
+        v  <- exp(tv + eta.v)
+        cl <- exp(tcl + eta.cl)
+        linCmt() ~ ERR
+      })
+    }
+    body(f) <- do.call(substitute, list(body(f), list(INI = as.call(.ini), ERR = err)))
+    f
+  }
+
+  # the time 0 observations have a prediction of 0 (no proportional error)
+  d <- nlmixr2data::theo_sd
+  d <- d[!(d$EVID == 0 & d$TIME == 0), ]
+  ctl <- saemixControl(seed = 632545, nbiter.saemix = c(300, 100),
+                       fim = FALSE, warnings = FALSE)
+
+  errs <- list(proportional = quote(prop(prop.sd)),
+               combined = quote(add(add.sd) + prop(prop.sd)))
+  for (errModel in names(errs)) {
+    err <- errs[[errModel]]
+    .ui <- mod(err)
+    fitSaemix <- nlmixr2(.ui, d, est = "saemix", ctl)
+    expect_equal(fitSaemix$saemix@model@error.model, errModel)
+    fitFocei <- suppressMessages(nlmixr2(.ui, d, est = "focei",
+                                         foceiControl(print = 0)))
+    # each residual parameter is written back to its own name
+    expect_equal(fitSaemix$theta, fitFocei$theta, tolerance = 0.1,
+                 label = deparse(err))
+  }
+})

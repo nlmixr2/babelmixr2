@@ -139,12 +139,12 @@
   .et <- rxode2::etTrans(.ret$dataSav, .ui$mv0, addCmt=TRUE)
   .nTv <- attr(class(.et), ".rxode2.lst")$nTv
   if (is.null(.nTv)) {
-    .tv <- names(.et)[-seq(1, 6)]
+    .tv <- names(.et)[-seq_len(6)]
     .nTv <- length(.tv)
   } else {
     .tv <- character(0)
     if (.nTv != 0) {
-      .tv <- names(.et)[-seq(1, 6)]
+      .tv <- names(.et)[-seq_len(6)]
     }
   }
   .muRefCovariateDataFrame <- .ui$muRefCovariateDataFrame
@@ -177,6 +177,8 @@
       } else {
         .num <- rxode2::rxGetControl(.ui, ".modelNumber", 0) + 1
         rxode2::rxAssignControlValue(.ui, ".modelNumber", .num)
+        # nonmemExportPath caches the number in the ui
+        assign(".num", .num, envir=.ui)
         .hashFile <- file.path(.ui$nonmemExportPath, .ui$nonmemHashFile)
       }
     }
@@ -302,6 +304,8 @@ nlmixr2Est.nonmem <- function(env, ...) {
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
+  # refuse a prior NWPRI cannot express before anything is written
+  .nonmemPriorSpec(.ui)
   .nonmemFamilyControl(env, ...)
   on.exit({
     if (exists("control", envir=.ui)) {
@@ -312,6 +316,8 @@ nlmixr2Est.nonmem <- function(env, ...) {
 }
 attr(nlmixr2Est.nonmem, "covPresent") <- TRUE
 attr(nlmixr2Est.nonmem, "type") <- "External"
+# normal priors and omega degrees of freedom, through $PRIOR NWPRI
+attr(nlmixr2Est.nonmem, "nlmixr2Priors") <- "nwpri"
 attr(nlmixr2Est.nonmem, "description") <- "NONMEM (external software)"
 attr(nlmixr2Est.nonmem, "mu") <- function(control) {
   isTRUE(control$muRefCovAlg)

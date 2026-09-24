@@ -32,6 +32,114 @@
   rather than emitting a document that looks plausible but is wrong.  Every
   document is validated against the schema before it is returned.
 
+* `est="saemix"` now fits `linCmt()` models.  The prediction was looked
+  up in a column named after the endpoint (`rxLinCmt`), which the solved
+  model does not output, so saemix stopped with `non-numeric argument to
+  function` (#212).
+
+* `est="saemix"` now fits models where a structural theta has no
+  between-subject variability (e.g. `v <- exp(tv)`).  Collecting the
+  individual etas after the fit failed with `invalid subscript type
+  'list'` (#212).
+
+* `est="saemix"` now refuses a model it cannot fit, instead of fitting it
+  with a different residual error.  saemix fits one endpoint with an
+  `add()`, `prop()`, `add() + prop()` (`combined2`, the only combination
+  saemix has) or `lnorm()` residual error, or an `ll()` likelihood.  A
+  model with more than one endpoint (previously fit against predictions of
+  zero), a `combined1` `add() + prop()` (including
+  `saemixControl(addProp="combined1")`), `pow()`, `boxCox()`,
+  `yeoJohnson()`, a logit/probit transformation, `lnorm() + prop()` or a
+  non-normal residual distribution now stops with an error, as does a
+  fixed residual error or between-subject variability, which saemix
+  would otherwise estimate anyway.  The checks use the new rxode2
+  assertions `assertRxUiTransform()`, `assertRxUiErrType()`,
+  `assertRxUiAddProp()`, `assertRxUiNoFixedResiduals()` and
+  `assertRxUiNoFixedOmega()`, so this requires rxode2 5.1.8 (#212).
+
+* `est="saemix"` now fits `lnorm()` residual errors with saemix's
+  exponential error model; they were previously fit as an additive error
+  with a missing starting value (#212).
+* `est="monolix"` now accepts normal priors from `ini({})` and writes them
+  as Monolix MAP estimation (#207).  A parameter with a prior is estimated
+  with `method=MAP`, and its prior is written to a `[POPULATION]` section
+  of `<MODEL>`.  Monolix's prior on a typical value has the same
+  distribution as the parameter itself, with its `sd` in the Gaussian
+  space, so the prior mean is back-transformed like the estimate
+  (`exp()`, `expit()`, `probitInv()`) while the prior sd is written as is:
+  `prior(tka) ~ dnorm(log(1.5), 0.5)` becomes
+  `ka_pop = {distribution=logNormal, typical=1.5, sd=0.5}`, the same
+  distribution with no approximation.  Covariate effects get a `normal`
+  prior.  Checked with Monolix 2024R1: tight priors pin `ka_pop`,
+  `cl_pop`, a covariate effect and a logit-normal parameter at the prior
+  mean, and a vague prior leaves the estimate at the MLE.  Priors Monolix
+  cannot honour are errors rather than being dropped: priors on omega
+  elements or omega blocks, multivariate normal priors, non-normal
+  priors, priors on a `probitInv()` parameter with bounds other than
+  (0, 1), and priors on residual error parameters -- Monolix accepts a
+  MAP prior on `add__sd` but ignores it (every estimate identical to the
+  run without it).
+
+* The "PRED absolute difference compared to Monolix PRED" line of a Monolix
+  fit's message is now an absolute difference (it printed a relative one).
+  The covariance of a fit from Monolix 2020 or later now carries nlmixr2's
+  parameter names (`tka`, `cl.wt`) instead of Monolix's (`ka_pop`,
+  `beta_cl_lWT`), like fits from older Monolix versions already did.
+
+* Monolix projects with mu-referenced covariates (`cl <- exp(tcl + eta.cl +
+  cl.wt * lWT)`) now load in Monolix.  The covariate was missing from the
+  `[INDIVIDUAL]` inputs (Monolix: `Undefined variable 'lWT'`), and when
+  every covariate was mu-referenced the structural model got a regressor
+  line with no name (`= {use=regressor}`, a syntax error).  Reading the
+  results of such a fit back failed with `subscript out of bounds`: the
+  covariance looked up the covariate effect as `NA_pop` instead of
+  `beta_cl_lWT`.  The tests now replay Monolix 2024R1 runs, with and
+  without MAP priors.  When
+  lixoftConnectors cannot load or run the project, `nlmixr2()` now stops
+  with an error instead of waiting forever for output Monolix never
+  writes.
+
+* `est="nonmem"` now runs models with `ini({})` priors, translating them
+  to NONMEM's `$PRIOR NWPRI` (#205).  Normal priors on population
+  parameters (`dnorm()`, `stdNormal()`, the `tcl + tv ~ c(...)` joint
+  normal) become `$THETAP`/`$THETAPV`, and `invWishart(nu)` degrees of
+  freedom on an omega block become `$OMEGAP`/`$OMEGAPD`, with the block's
+  own initial estimate as the prior scale.  NWPRI gives its priors to the
+  first THETAs and the first omega blocks, so the parameters with a prior
+  have to come first in `ini({})`; otherwise, and for priors NWPRI cannot
+  express (`dcauchy()`, a normal prior directly on an omega element, which
+  is TNPRI), the model is refused before any file is written instead of
+  fitting a different prior.  When the output is read back, the prior
+  values NM-TRAN adds as extra THETAs and OMEGAs are dropped, and the
+  objective function type says `nwpri` because NONMEM's objective
+  includes the prior.
+
+* `$OMEGA BLOCK()` records of 3 or more etas are now written in the order
+  NONMEM reads them (row by row down the lower triangle).  They used to be
+  written column by column, so NONMEM started from the wrong initial
+  omega values.
+
+* The `$PROBLEM` record of a generated NONMEM control stream now carries
+  the model name (`$PROBLEM one.cmt translated from babelmixr2`).  It read
+  a misspelled getter and was always blank (#209).  Because the control
+  stream changes, an existing NONMEM export that has a `.md5` hash file
+  will not match and is re-run once in a new numbered directory.
+  Moving past a second stale export (`-001-nonmem` also not matching) no
+  longer hangs: the export directory kept its cached number and the
+  hash check looped forever.
+* `est="fmeMcmc"` now uses priors declared in the model's `ini({})` block
+  (for example `prior(tka) ~ dnorm(0, 10)`) instead of refusing the model.
+  They become the `prior` function `FME::modMCMC()` samples with,
+  evaluated with rxode2's shared prior kernel on the natural parameter
+  scale, even when `scaleType` makes FME sample a rescaled space.
+  Supplying `fmeMcmcControl(prior=)` as well is an error rather than
+  silently preferring one of them (#208).
+
+* `nonmemControl(est="its")` now writes `$ESTIMATION METHOD=ITS
+  INTERACTION` (iterative two stage).  It wrote `METHOD=IMP`, so NONMEM
+  ran importance sampling while the returned fit was labelled with the
+  `nonmem its` objective function type (#211).
+
 * A PopED design dataset that gives `cmt` as a compartment *number*
   (`et(amt=180, cmt=1)`) now doses the right compartment.  `et()` keeps
   `cmt` as a character column, so `rxode2::etTrans()` read `"1"` as a
