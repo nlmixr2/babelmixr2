@@ -1,16 +1,20 @@
 .pharmmlApiModel <- function() {
   one.cmt <- function() {
     ini({
-      tka <- log(1.57); tcl <- log(2.72); tv <- log(31.5)
-      eta.ka ~ 0.6; eta.cl ~ 0.3; eta.v ~ 0.1
+      tka <- log(1.57)
+      tcl <- log(2.72)
+      tv <- log(31.5)
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
       add.sd <- 0.7
     })
     model({
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       vc <- exp(tv + eta.v)
-      d/dt(depot) <- -ka * depot
-      d/dt(center) <- ka * depot - cl / vc * center
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / vc * center
       cp <- center / vc
       cp ~ add(add.sd)
     })
@@ -63,13 +67,19 @@ test_that("as.pharmml names the document after the model", {
   # the ui rather than hard-coding what the fixture happens to be called.
   .ui <- rxode2::rxUiDecompress(rxode2::assertRxUi(.pharmmlApiModel()))
   .x <- as.pharmml(.pharmmlApiModel())
-  expect_match(.x, paste0("<ct:Name>", .ui$modelName, "</ct:Name>"), fixed = TRUE)
+  expect_match(
+    .x,
+    paste0("<ct:Name>", .ui$modelName, "</ct:Name>"),
+    fixed = TRUE
+  )
   expect_match(.x, "translated to PharmML 0.9 by babelmixr2")
 })
 
 test_that("as.pharmml honours a supplied description", {
-  .x <- as.pharmml(.pharmmlApiModel(),
-                   control = pharmmlControl(description = "for the archive"))
+  .x <- as.pharmml(
+    .pharmmlApiModel(),
+    control = pharmmlControl(description = "for the archive")
+  )
   expect_match(.x, "<ct:Description>for the archive</ct:Description>")
 })
 
@@ -94,8 +104,12 @@ test_that("as.pharmml writes the model and its dataset to disk", {
 test_that("as.pharmml can skip writing the dataset", {
   .dir <- withr::local_tempdir()
   .f <- file.path(.dir, "theo.xml")
-  as.pharmml(.pharmmlApiModel(), nlmixr2data::theo_sd, file = .f,
-             control = pharmmlControl(writeData = FALSE))
+  as.pharmml(
+    .pharmmlApiModel(),
+    nlmixr2data::theo_sd,
+    file = .f,
+    control = pharmmlControl(writeData = FALSE)
+  )
   .ui <- rxode2::rxUiDecompress(rxode2::assertRxUi(.pharmmlApiModel()))
   expect_true(file.exists(.f))
   expect_false(file.exists(file.path(.dir, paste0(.ui$modelName, ".csv"))))
@@ -106,16 +120,27 @@ test_that("as.pharmml refuses a model PharmML cannot express", {
   # Standard error-model form, so it must be refused by name rather than
   # emitted as something plausible-looking.
   .f <- function() {
-    ini({ tcl <- log(2.72); eta.cl ~ 0.3; prop.sd <- 0.1; pw <- 0.8 })
-    model({ cl <- exp(tcl + eta.cl); d/dt(center) <- -cl * center
-            cp <- center; cp ~ pow(prop.sd, pw) })
+    ini({
+      tcl <- log(2.72)
+      eta.cl ~ 0.3
+      prop.sd <- 0.1
+      pw <- 0.8
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      d / dt(center) <- -cl * center
+      cp <- center
+      cp ~ pow(prop.sd, pw)
+    })
   }
-  expect_error(as.pharmml(.f), "not supported")
+  expect_error(as.pharmml(.f), "pow")
 })
 
 test_that("as.pharmml rejects a control object it did not make", {
-  expect_error(as.pharmml(.pharmmlApiModel(), control = list(version = "0.9")),
-               "pharmmlControl")
+  expect_error(
+    as.pharmml(.pharmmlApiModel(), control = list(version = "0.9")),
+    "pharmmlControl"
+  )
 })
 
 test_that("the document id is a valid NCName even for an awkward model name", {

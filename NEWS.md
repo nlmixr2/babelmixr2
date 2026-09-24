@@ -26,8 +26,12 @@
   and the column mapping records how the exported numeric codes correspond to
   those levels.
 
+  `lnorm()` residual errors are written as a `log` transformation of both
+  sides of the observation model.
+
   Models that PharmML cannot express -- non-normal residuals, power residual
-  error, inter-occasion variability, mixture models, Michaelis-Menten or
+  error, `boxCox()`, `yeoJohnson()` and logit/probit residual
+  transformations, inter-occasion variability, mixture models, Michaelis-Menten or
   transit absorption through `linCmt()` -- raise an error naming the construct
   rather than emitting a document that looks plausible but is wrong.  Every
   document is validated against the schema before it is returned.

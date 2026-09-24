@@ -3,20 +3,23 @@
 .pharmmlTestUiOneCmt <- function() {
   .f <- function() {
     ini({
-      tka <- log(1.57); label("Ka")
-      tcl <- log(2.72); label("Cl")
-      tv  <- log(31.5); label("V")
+      tka <- log(1.57)
+      label("Ka")
+      tcl <- log(2.72)
+      label("Cl")
+      tv <- log(31.5)
+      label("V")
       eta.ka ~ 0.6
       eta.cl ~ 0.3
-      eta.v  ~ 0.1
+      eta.v ~ 0.1
       add.sd <- 0.7
     })
     model({
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       vc <- exp(tv + eta.v)
-      d/dt(depot) <- -ka * depot
-      d/dt(center) <- ka * depot - cl / vc * center
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / vc * center
       cp <- center / vc
       cp ~ add(add.sd)
     })
@@ -30,17 +33,17 @@
     ini({
       tka <- log(1.57)
       tcl <- log(2.72)
-      tv  <- log(31.5)
+      tv <- log(31.5)
       eta.ka + eta.cl ~ c(0.6, 0.01, 0.3)
-      eta.v  ~ 0.1
+      eta.v ~ 0.1
       add.sd <- 0.7
     })
     model({
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       vc <- exp(tv + eta.v)
-      d/dt(depot) <- -ka * depot
-      d/dt(center) <- ka * depot - cl / vc * center
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / vc * center
       cp <- center / vc
       cp ~ add(add.sd)
     })
@@ -63,9 +66,16 @@ test_that("the variability model declares an id level and a residual level", {
 
 test_that("the variability model omits vm1 when the model has no etas", {
   .f <- function() {
-    ini({ tcl <- log(2.72); add.sd <- 0.7 })
-    model({ cl <- exp(tcl); d/dt(center) <- -cl * center
-            cp <- center; cp ~ add(add.sd) })
+    ini({
+      tcl <- log(2.72)
+      add.sd <- 0.7
+    })
+    model({
+      cl <- exp(tcl)
+      d / dt(center) <- -cl * center
+      cp <- center
+      cp ~ add(add.sd)
+    })
   }
   .x <- .pharmmlVariabilityModel(rxode2::rxUiDecompress(.f()))
   expect_false(grepl('type="parameterVariability"', .x, fixed = TRUE))
@@ -96,7 +106,11 @@ test_that("the parameter model declares thetas, omegas, etas and individual para
 test_that("the parameter model maps every mu-referenced parameter", {
   .x <- .pharmmlParameterModel(.pharmmlTestUiOneCmt())
   for (.v in c("ka", "cl", "vc")) {
-    expect_match(.x, paste0('<mdef:IndividualParameter symbId="', .v, '">'), info = .v)
+    expect_match(
+      .x,
+      paste0('<mdef:IndividualParameter symbId="', .v, '">'),
+      info = .v
+    )
   }
 })
 
@@ -115,8 +129,11 @@ test_that("the parameter model omits the correlation block when etas are diagona
 
 test_that("the parameter model is schema-valid", {
   for (.ui in list(.pharmmlTestUiOneCmt(), .pharmmlTestUiCorr())) {
-    .doc <- .pharmmlWrapMdef(paste(.pharmmlVariabilityModel(.ui),
-                                   .pharmmlParameterModel(.ui), sep = "\n"))
+    .doc <- .pharmmlWrapMdef(paste(
+      .pharmmlVariabilityModel(.ui),
+      .pharmmlParameterModel(.ui),
+      sep = "\n"
+    ))
     expect_true(pharmmlValidate(.doc))
   }
 })
@@ -151,11 +168,15 @@ test_that("the structural model qualifies parameter references with their block"
 
 test_that("the structural model honours explicit initial conditions", {
   .f <- function() {
-    ini({ tcl <- log(2.72); eta.cl ~ 0.3; add.sd <- 0.7 })
+    ini({
+      tcl <- log(2.72)
+      eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
     model({
       cl <- exp(tcl + eta.cl)
       center(0) <- 100
-      d/dt(center) <- -cl * center
+      d / dt(center) <- -cl * center
       cp <- center
       cp ~ add(add.sd)
     })
@@ -166,9 +187,12 @@ test_that("the structural model honours explicit initial conditions", {
 
 test_that("the structural model is schema-valid", {
   for (.ui in list(.pharmmlTestUiOneCmt(), .pharmmlTestUiCorr())) {
-    .doc <- .pharmmlWrapMdef(paste(.pharmmlVariabilityModel(.ui),
-                                   .pharmmlParameterModel(.ui),
-                                   .pharmmlStructuralModel(.ui), sep = "\n"))
+    .doc <- .pharmmlWrapMdef(paste(
+      .pharmmlVariabilityModel(.ui),
+      .pharmmlParameterModel(.ui),
+      .pharmmlStructuralModel(.ui),
+      sep = "\n"
+    ))
     expect_true(pharmmlValidate(.doc))
   }
 })
@@ -185,7 +209,7 @@ test_that("the structural model is schema-valid", {
     })
     model({
       cl <- exp(tcl + eta.cl)
-      d/dt(center) <- -cl * center
+      d / dt(center) <- -cl * center
       cp <- center
       .(errLine)
     })
@@ -193,9 +217,12 @@ test_that("the structural model is schema-valid", {
   rxode2::rxUiDecompress(.f())
 }
 
-.pharmmlErrAdd  <- quote(add.sd <- 0.7)
+.pharmmlErrAdd <- quote(add.sd <- 0.7)
 .pharmmlErrProp <- quote(prop.sd <- 0.1)
-.pharmmlErrBoth <- quote({ add.sd <- 0.7; prop.sd <- 0.1 })
+.pharmmlErrBoth <- quote({
+  add.sd <- 0.7
+  prop.sd <- 0.1
+})
 
 test_that("the observation model wires output, error model and residual", {
   .x <- .pharmmlObservationModel(.pharmmlTestUiOneCmt())
@@ -211,19 +238,28 @@ test_that("the observation model wires output, error model and residual", {
 })
 
 test_that("the additive error model is a bare constant", {
-  .x <- .pharmmlObservationModel(.pharmmlTestUiErr(quote(cp ~ add(add.sd)), .pharmmlErrAdd))
+  .x <- .pharmmlObservationModel(.pharmmlTestUiErr(
+    quote(cp ~ add(add.sd)),
+    .pharmmlErrAdd
+  ))
   expect_match(.x, '<ct:SymbRef symbIdRef="add.sd"/>')
   expect_false(grepl('op="times"', .x, fixed = TRUE))
 })
 
 test_that("the proportional error model multiplies by the prediction", {
-  .x <- .pharmmlObservationModel(.pharmmlTestUiErr(quote(cp ~ prop(prop.sd)), .pharmmlErrProp))
+  .x <- .pharmmlObservationModel(.pharmmlTestUiErr(
+    quote(cp ~ prop(prop.sd)),
+    .pharmmlErrProp
+  ))
   expect_match(.x, 'math:Binop op="times"')
   expect_match(.x, '<ct:SymbRef symbIdRef="prop.sd"/>')
 })
 
 test_that("combined1 is a + b*f and combined2 is sqrt(a^2 + (b*f)^2)", {
-  .ui <- .pharmmlTestUiErr(quote(cp ~ add(add.sd) + prop(prop.sd)), .pharmmlErrBoth)
+  .ui <- .pharmmlTestUiErr(
+    quote(cp ~ add(add.sd) + prop(prop.sd)),
+    .pharmmlErrBoth
+  )
 
   rxode2::rxAssignControlValue(.ui, "addProp", "combined1")
   .x1 <- .pharmmlObservationModel(.ui)
@@ -237,21 +273,72 @@ test_that("combined1 is a + b*f and combined2 is sqrt(a^2 + (b*f)^2)", {
 })
 
 test_that("unsupported residual distributions error by name", {
-  expect_error(.pharmmlObservationModel(
-    .pharmmlTestUiErr(quote(cp ~ pow(prop.sd, add.sd)), .pharmmlErrBoth)), "pow")
+  expect_error(
+    .pharmmlObservationModel(
+      .pharmmlTestUiErr(quote(cp ~ pow(prop.sd, add.sd)), .pharmmlErrBoth)
+    ),
+    "pow"
+  )
+})
+
+test_that("lnorm() is a log transformation of both sides with an additive error", {
+  .ui <- .pharmmlTestUiErr(quote(cp ~ lnorm(lnorm.sd)), quote(lnorm.sd <- 0.2))
+  .x <- .pharmmlObservationModel(.ui)
+  expect_match(.x, '<mdef:Transformation type="log"/>')
+  expect_match(.x, '<ct:SymbRef symbIdRef="lnorm.sd"/>')
+  expect_false(grepl('op="times"', .x, fixed = TRUE))
+  expect_true(pharmmlValidate(as.pharmml(.ui)))
+})
+
+test_that("residual transformations PharmML cannot express are refused", {
+  expect_error(
+    as.pharmml(.pharmmlTestUiErr(
+      quote(cp ~ add(add.sd) + boxCox(lambda)),
+      quote({
+        add.sd <- 0.7
+        lambda <- 0.5
+      })
+    )),
+    "boxCox"
+  )
+  expect_error(
+    as.pharmml(.pharmmlTestUiErr(
+      quote(cp ~ add(add.sd) + yeoJohnson(lambda)),
+      quote({
+        add.sd <- 0.7
+        lambda <- 0.5
+      })
+    )),
+    "yeoJohnson"
+  )
+  expect_error(
+    as.pharmml(.pharmmlTestUiErr(
+      quote(cp ~ lnorm(lnorm.sd) + prop(prop.sd)),
+      quote({
+        lnorm.sd <- 0.2
+        prop.sd <- 0.1
+      })
+    )),
+    "lnorm"
+  )
 })
 
 test_that("the observation model is schema-valid", {
-  .cases <- list(list(quote(cp ~ add(add.sd)), .pharmmlErrAdd),
-                 list(quote(cp ~ prop(prop.sd)), .pharmmlErrProp),
-                 list(quote(cp ~ add(add.sd) + prop(prop.sd)), .pharmmlErrBoth))
+  .cases <- list(
+    list(quote(cp ~ add(add.sd)), .pharmmlErrAdd),
+    list(quote(cp ~ prop(prop.sd)), .pharmmlErrProp),
+    list(quote(cp ~ add(add.sd) + prop(prop.sd)), .pharmmlErrBoth)
+  )
   for (.case in .cases) {
     .e <- .case[[1]]
     .ui <- .pharmmlTestUiErr(.e, .case[[2]])
-    .doc <- .pharmmlWrapMdef(paste(.pharmmlVariabilityModel(.ui),
-                                   .pharmmlParameterModel(.ui),
-                                   .pharmmlStructuralModel(.ui),
-                                   .pharmmlObservationModel(.ui), sep = "\n"))
+    .doc <- .pharmmlWrapMdef(paste(
+      .pharmmlVariabilityModel(.ui),
+      .pharmmlParameterModel(.ui),
+      .pharmmlStructuralModel(.ui),
+      .pharmmlObservationModel(.ui),
+      sep = "\n"
+    ))
     expect_true(pharmmlValidate(.doc), info = deparse1(.e))
   }
 })
@@ -259,17 +346,21 @@ test_that("the observation model is schema-valid", {
 .pharmmlTestUiCov <- function() {
   .f <- function() {
     ini({
-      tka <- log(1.57); tcl <- log(2.72); tv <- log(31.5)
+      tka <- log(1.57)
+      tcl <- log(2.72)
+      tv <- log(31.5)
       wt.cl <- 0.75
-      eta.ka ~ 0.6; eta.cl ~ 0.3; eta.v ~ 0.1
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
       add.sd <- 0.7
     })
     model({
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + wt.cl * logWT70 + eta.cl)
       vc <- exp(tv + eta.v)
-      d/dt(depot) <- -ka * depot
-      d/dt(center) <- ka * depot - cl / vc * center
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / vc * center
       cp <- center / vc
       cp ~ add(add.sd)
     })
@@ -297,9 +388,12 @@ test_that("a covariate effect becomes a LinearCovariate with a FixedEffect", {
 })
 
 test_that("the assembled ModelDefinition is schema-valid", {
-  for (.ui in list(.pharmmlTestUiOneCmt(), .pharmmlTestUiCorr(), .pharmmlTestUiCov())) {
+  for (.ui in list(
+    .pharmmlTestUiOneCmt(),
+    .pharmmlTestUiCorr(),
+    .pharmmlTestUiCov()
+  )) {
     .doc <- .pharmmlWrapMdefRaw(.pharmmlModelDefinition(.ui))
     expect_true(pharmmlValidate(.doc))
   }
 })
-

@@ -46,6 +46,11 @@
   .f <- str2lang(paste(predLine[["var"]]))
 
   if (.type == "add") {
+    # lnorm() is an additive error on the log scale; the log() itself is the
+    # observation model's Transformation, so the error term is the same.
+    if (paste(predLine[["transform"]]) == "lnorm") {
+      return(str2lang(.par[["lnorm"]]))
+    }
     return(str2lang(.par[["add"]]))
   }
   if (.type == "prop") {
@@ -59,8 +64,12 @@
     }
     return(bquote(sqrt(.(.a)^2 + (.(.b) * .(.f))^2)))
   }
-  stop("PharmML translation of the residual error type '", .type,
-       "' is not supported", call. = FALSE)
+  stop(
+    "PharmML translation of the residual error type '",
+    .type,
+    "' is not supported",
+    call. = FALSE
+  )
 }
 
 #' PharmML ObservationModel blocks, one per endpoint
@@ -76,55 +85,101 @@
 #' @noRd
 .pharmmlObservationModel <- function(ui, indent = 0L) {
   .predDf <- ui$predDf
-  .ret <- vapply(seq_len(nrow(.predDf)), function(.i) {
-    .line <- .predDf[.i, ]
-    .cond <- paste(.line[["cond"]])
-    .dist <- paste(.line[["distribution"]])
-    if (.dist != "norm") {
-      stop("PharmML translation of the '", .dist,
-           "' residual distribution is not supported", call. = FALSE)
-    }
-    # A linCmt() endpoint is fine: the structural model emits PK macros, and the
-    # Compartment macro's `concentration` argument names the prediction, so the
-    # Output reference below resolves the same way as for an ODE model.
-    .eps <- paste0("eps_", .cond)
-    .popPars <- vapply(setNames(.pharmmlErrParams(ui, .cond), NULL),
-                       function(.p) {
-                         .pmlNode("mdef:PopulationParameter", attrs = c(symbId = .p))
-                       }, character(1), USE.NAMES = FALSE)
+  .ret <- vapply(
+    seq_len(nrow(.predDf)),
+    function(.i) {
+      .line <- .predDf[.i, ]
+      .cond <- paste(.line[["cond"]])
+      .dist <- paste(.line[["distribution"]])
+      if (.dist != "norm") {
+        stop(
+          "PharmML translation of the '",
+          .dist,
+          "' residual distribution is not supported",
+          call. = FALSE
+        )
+      }
+      # A linCmt() endpoint is fine: the structural model emits PK macros, and the
+      # Compartment macro's `concentration` argument names the prediction, so the
+      # Output reference below resolves the same way as for an ODE model.
+      .eps <- paste0("eps_", .cond)
+      .popPars <- vapply(
+        setNames(.pharmmlErrParams(ui, .cond), NULL),
+        function(.p) {
+          .pmlNode("mdef:PopulationParameter", attrs = c(symbId = .p))
+        },
+        character(1),
+        USE.NAMES = FALSE
+      )
 
-    .pmlNode(
-      "mdef:ObservationModel",
-      attrs = c(blkId = paste0("om", .i)),
-      children = .pmlNode(
-        "mdef:ContinuousData",
-        children = c(
-          .popPars,
-          .pmlNode("mdef:RandomVariable", attrs = c(symbId = .eps),
-                   children = c(
-                     .pmlNode("ct:VariabilityReference",
-                              children = .pmlNode(
-                                "ct:SymbRef",
-                                attrs = c(blkIdRef = .pmlBlk[["variabilityResidual"]],
-                                          symbIdRef = "residual"))),
-                     .pmlNode("mdef:Distribution",
-                              children = .pmlNode("po:ProbOnto",
-                                                  attrs = c(name = "StandardNormal1"))))),
-          .pmlNode("mdef:Standard", attrs = c(symbId = paste0(.cond, "_obs")),
-                   children = c(
-                     .pmlNode("mdef:Output",
-                              children = .pmlNode(
-                                "ct:SymbRef",
-                                attrs = c(blkIdRef = .pmlBlk[["structural"]],
-                                          symbIdRef = paste(.line[["var"]])))),
-                     .pmlNode("mdef:ErrorModel",
-                              children = .pharmmlAssign(
-                                .rxToPharmml(.pharmmlErrorModelExpr(ui, .line)))),
-                     .pmlNode("mdef:ResidualError",
-                              children = .pmlNode("ct:SymbRef",
-                                                  attrs = c(symbIdRef = .eps))))))),
-      indent = indent)
-  }, character(1), USE.NAMES = FALSE)
+      .pmlNode(
+        "mdef:ObservationModel",
+        attrs = c(blkId = paste0("om", .i)),
+        children = .pmlNode(
+          "mdef:ContinuousData",
+          children = c(
+            .popPars,
+            .pmlNode(
+              "mdef:RandomVariable",
+              attrs = c(symbId = .eps),
+              children = c(
+                .pmlNode(
+                  "ct:VariabilityReference",
+                  children = .pmlNode(
+                    "ct:SymbRef",
+                    attrs = c(
+                      blkIdRef = .pmlBlk[["variabilityResidual"]],
+                      symbIdRef = "residual"
+                    )
+                  )
+                ),
+                .pmlNode(
+                  "mdef:Distribution",
+                  children = .pmlNode(
+                    "po:ProbOnto",
+                    attrs = c(name = "StandardNormal1")
+                  )
+                )
+              )
+            ),
+            .pmlNode(
+              "mdef:Standard",
+              attrs = c(symbId = paste0(.cond, "_obs")),
+              children = c(
+                # log(y) = log(f) + g*eps, i.e. lnorm()
+                if (paste(.line[["transform"]]) == "lnorm") {
+                  .pmlNode("mdef:Transformation", attrs = c(type = "log"))
+                },
+                .pmlNode(
+                  "mdef:Output",
+                  children = .pmlNode(
+                    "ct:SymbRef",
+                    attrs = c(
+                      blkIdRef = .pmlBlk[["structural"]],
+                      symbIdRef = paste(.line[["var"]])
+                    )
+                  )
+                ),
+                .pmlNode(
+                  "mdef:ErrorModel",
+                  children = .pharmmlAssign(
+                    .rxToPharmml(.pharmmlErrorModelExpr(ui, .line))
+                  )
+                ),
+                .pmlNode(
+                  "mdef:ResidualError",
+                  children = .pmlNode("ct:SymbRef", attrs = c(symbIdRef = .eps))
+                )
+              )
+            )
+          )
+        ),
+        indent = indent
+      )
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
   paste(.ret, collapse = "\n")
 }
 

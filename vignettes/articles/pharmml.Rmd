@@ -124,7 +124,9 @@ scope:
 | Construct | Status |
 |---|---|
 | `add()`, `prop()`, `add() + prop()` | supported |
-| `pow()`, `add() + pow()` | error |
+| `lnorm()` | supported, as a `log` transformation of both sides |
+| `pow()`, `add() + pow()`, `lnorm() + prop()` | error |
+| `boxCox()`, `yeoJohnson()`, `logitNorm()`, `probitNorm()` | error |
 | Non-normal residuals (`pois()`, `dbinom()`, `t()`, ordinal, `ll()`) | error |
 | Inter-occasion variability | error |
 | Mixture models (`mix()`) | error |

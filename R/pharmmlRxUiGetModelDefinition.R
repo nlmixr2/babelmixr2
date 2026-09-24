@@ -18,23 +18,39 @@
 #' @noRd
 .pharmmlCovariateModel <- function(ui, data = NULL, indent = 0L) {
   .covs <- ui$allCovs
-  if (length(.covs) == 0L) return("")
+  if (length(.covs) == 0L) {
+    return("")
+  }
   .info <- .pharmmlCovariateInfo(ui, data)
-  .children <- vapply(.covs, function(.c) {
-    .body <- if (identical(.info[[.c]]$type, "categorical")) {
-      .pmlNode("mdef:Categorical",
-               children = vapply(.info[[.c]]$levels, function(.l) {
-                 .pmlNode("mdef:Category", attrs = c(catId = .l))
-               }, character(1), USE.NAMES = FALSE))
-    } else {
-      .pmlNode("mdef:Continuous")
-    }
-    .pmlNode("mdef:Covariate", attrs = c(symbId = .c), children = .body)
-  }, character(1), USE.NAMES = FALSE)
-  .pmlNode("mdef:CovariateModel",
-           attrs = c(blkId = .pmlBlk[["covariate"]]),
-           children = .children,
-           indent = indent)
+  .children <- vapply(
+    .covs,
+    function(.c) {
+      .body <- if (identical(.info[[.c]]$type, "categorical")) {
+        .pmlNode(
+          "mdef:Categorical",
+          children = vapply(
+            .info[[.c]]$levels,
+            function(.l) {
+              .pmlNode("mdef:Category", attrs = c(catId = .l))
+            },
+            character(1),
+            USE.NAMES = FALSE
+          )
+        )
+      } else {
+        .pmlNode("mdef:Continuous")
+      }
+      .pmlNode("mdef:Covariate", attrs = c(symbId = .c), children = .body)
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
+  .pmlNode(
+    "mdef:CovariateModel",
+    attrs = c(blkId = .pmlBlk[["covariate"]]),
+    children = .children,
+    indent = indent
+  )
 }
 
 #' @export
@@ -58,6 +74,32 @@ attr(rxUiGet.pharmmlCovariateModel, "rstudio") <- "character"
   rxode2::assertRxUiTransformNormal(ui, .what, .var.name = ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(ui, .what, .var.name = ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(ui, .what, .var.name = ui$modelName)
+  # PharmML's Standard observation model can transform both sides with
+  # log(), which is lnorm(); boxCox(), yeoJohnson() and the bounded
+  # logit/probit transformations have no faithful counterpart.
+  rxode2::assertRxUiTransform(
+    ui,
+    c("untransformed", "lnorm"),
+    .what,
+    .var.name = ui$modelName
+  )
+  rxode2::assertRxUiErrType(
+    ui,
+    c("add", "prop", "add + prop"),
+    .what,
+    .var.name = ui$modelName
+  )
+  .predDf <- ui$predDf
+  .lnorm <- paste(.predDf$transform) == "lnorm"
+  if (any(.lnorm & paste(.predDf$errType) != "add")) {
+    stop(
+      "'",
+      ui$modelName,
+      "' can only use lnorm() on its own (not with ",
+      "prop()) for PharmML translation",
+      call. = FALSE
+    )
+  }
   invisible()
 }
 
@@ -78,11 +120,13 @@ attr(rxUiGet.pharmmlCovariateModel, "rstudio") <- "character"
 #' @noRd
 .pharmmlModelDefinition <- function(ui, data = NULL, indent = 0L) {
   .pharmmlAssertUi(ui)
-  .blocks <- c(.pharmmlVariabilityModel(ui),
-               .pharmmlCovariateModel(ui, data),
-               .pharmmlParameterModel(ui),
-               .pharmmlStructuralModel(ui),
-               .pharmmlObservationModel(ui))
+  .blocks <- c(
+    .pharmmlVariabilityModel(ui),
+    .pharmmlCovariateModel(ui, data),
+    .pharmmlParameterModel(ui),
+    .pharmmlStructuralModel(ui),
+    .pharmmlObservationModel(ui)
+  )
   .blocks <- .blocks[nzchar(.blocks)]
   .pmlNode("mdef:ModelDefinition", children = .blocks, indent = indent)
 }
