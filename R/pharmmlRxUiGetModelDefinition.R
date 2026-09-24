@@ -1,12 +1,13 @@
 #' PharmML CovariateModel block
 #'
-#' Every covariate the model references is declared as a continuous covariate.
-#' Categorical covariates are not detected yet: `rxode2` carries no type
-#' information for them at this level, so they would have to be declared by the
-#' caller.  Continuous is the safe default because it is what a numeric column
-#' in the dataset means.
+#' Every covariate the model references is declared.  rxode2 carries no type
+#' information for covariates, so the type comes from the dataset: a character
+#' or factor column is categorical, with a category per level, and anything
+#' else -- including every covariate when there is no data -- is continuous.
 #'
 #' @param ui rxode2 UI
+#'
+#' @param data The original dataset, or `NULL`
 #'
 #' @param indent Indent depth
 #'

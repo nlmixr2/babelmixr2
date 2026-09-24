@@ -131,7 +131,7 @@ scope:
 | Inter-occasion variability | error |
 | Mixture models (`mix()`) | error |
 | Michaelis-Menten or transit absorption via `linCmt()` | error |
-| Units | dropped, with a note in the description |
+| Units | dropped |
 
 Categorical covariates are detected from the dataset: a character or factor
 column becomes a PharmML `Categorical` covariate with a category per level,
