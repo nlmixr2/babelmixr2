@@ -9,12 +9,16 @@
   (`exp()`, `expit()`, `probitInv()`) while the prior sd is written as is:
   `prior(tka) ~ dnorm(log(1.5), 0.5)` becomes
   `ka_pop = {distribution=logNormal, typical=1.5, sd=0.5}`, the same
-  distribution with no approximation.  Covariate effects and residual
-  error parameters get a `normal` prior.  Priors Monolix cannot represent
-  are errors rather than being dropped: priors on omega elements or
-  omega blocks, multivariate normal priors, non-normal priors, priors on
-  a residual error parameter estimated as a variance, and priors on a
-  `probitInv()` parameter with bounds other than (0, 1).
+  distribution with no approximation.  Covariate effects get a `normal`
+  prior.  Checked with Monolix 2024R1: tight priors pin `ka_pop`,
+  `cl_pop`, a covariate effect and a logit-normal parameter at the prior
+  mean, and a vague prior leaves the estimate at the MLE.  Priors Monolix
+  cannot honour are errors rather than being dropped: priors on omega
+  elements or omega blocks, multivariate normal priors, non-normal
+  priors, priors on a `probitInv()` parameter with bounds other than
+  (0, 1), and priors on residual error parameters -- Monolix accepts a
+  MAP prior on `add__sd` but ignores it (every estimate identical to the
+  run without it).
 
 * Monolix projects with mu-referenced covariates (`cl <- exp(tcl + eta.cl +
   cl.wt * lWT)`) now load in Monolix.  The covariate was missing from the

@@ -1,9 +1,14 @@
 ## Monolix 2024R1 runs of the same theophylline model (made with the
 ## issue #207 check script), trimmed to the files babelmixr2 reads:
 ##
-## - mle:         no prior
-## - ka_weak:     prior(tka) ~ dnorm(log(3), 100), so MAP ~ the MLE
-## - beta_strong: prior(cl.wt) ~ dnorm(0.75, 0.001), so MAP ~ 0.75
+## - mle:          no prior
+## - ka_weak:      prior(tka) ~ dnorm(log(3), 100), so MAP ~ the MLE
+## - beta_strong:  prior(cl.wt) ~ dnorm(0.75, 0.001), so MAP ~ 0.75
+## - logit_strong: prior(tfr) ~ dnorm(logit(0.6), 0.01), so fr ~ 0.6
+## - two_priors:   tka ~ dnorm(log(3), 0.01) and tcl ~ dnorm(log(2), 0.01)
+## - addsd_strong: prior(add.sd) ~ dnorm(1.5, 0.001), written by an earlier
+##                 build; Monolix ignored it, which is why babelmixr2 now
+##                 refuses priors on residual error parameters
 ##
 ## They check that babelmixr2 reads a 2024R1 export with a mu-referenced
 ## covariate, and that Monolix used the MAP prior the way nlmixr2 means it.
@@ -47,7 +52,10 @@
   }
   switch(case,
          ka_weak=ini(.u, prior(tka) ~ dnorm(log(3), 100)),
-         beta_strong=ini(.u, prior(cl.wt) ~ dnorm(0.75, 0.001)))
+         beta_strong=ini(.u, prior(cl.wt) ~ dnorm(0.75, 0.001)),
+         logit_strong=ini(.u, prior(tfr) ~ dnorm(0.4054651, 0.01)),
+         two_priors=ini(ini(.u, prior(tka) ~ dnorm(log(3), 0.01)),
+                        prior(tcl) ~ dnorm(log(2), 0.01)))
 }
 
 .mlx2024Fit <- function(case) {
@@ -91,4 +99,36 @@ test_that("Monolix 2024R1 MAP estimates follow the ini() priors", {
   # a vague prior leaves the estimate at the MLE
   .f <- .mlx2024Fit("ka_weak")
   expect_equal(exp(.f$theta[["tka"]]), exp(.mle$theta[["tka"]]), tolerance=0.05)
+})
+
+test_that("Monolix 2024R1 MAP estimates follow logit and joint priors", {
+  skip_if_not(file.exists(test_path("monolix2024-priors.zip")))
+  # logitNormal prior: the mean is back-transformed, the sd is on the logit scale
+  .f <- .mlx2024Fit("logit_strong")
+  expect_equal(expit(.f$theta[["tfr"]]), 0.6, tolerance=1e-3)
+
+  .f <- .mlx2024Fit("two_priors")
+  expect_equal(exp(.f$theta[["tka"]]), 3, tolerance=0.01)
+  expect_equal(exp(.f$theta[["tcl"]]), 2, tolerance=0.01)
+})
+
+test_that("Monolix 2024R1 ignores a MAP prior on a residual error parameter", {
+  skip_if_not(file.exists(test_path("monolix2024-priors.zip")))
+  .zip <- normalizePath(test_path("monolix2024-priors.zip"))
+  withr::with_tempdir({
+    utils::unzip(.zip)
+    .pop <- function(case) {
+      read.csv(file.path("monolix2024", case, paste0(case, "-monolix"),
+                         "populationParameters.txt"))[, c("parameter", "value")]
+    }
+    .mlx <- readLines(file.path("monolix2024", "addsd_strong", "addsd_strong-monolix.mlxtran"))
+    # the prior was written ...
+    expect_true(any(.mlx == "add__sd={value=0.7, method=MAP}"))
+    expect_true(any(.mlx == "add__sd = {distribution=normal, typical=1.5, sd=0.001}"))
+    # ... and every estimate is identical to the run without it
+    expect_equal(.pop("addsd_strong"), .pop("mle"))
+  })
+  # so babelmixr2 refuses it rather than let the prior silently vanish
+  .u <- ini(.mlx2024Ui("ka_weak"), prior(add.sd) ~ dnorm(1.5, 0.001))
+  expect_error(.u$mlxtranParameter, "residual error parameter 'add.sd'")
 })

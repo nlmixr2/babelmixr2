@@ -48,7 +48,6 @@ test_that("normal priors become Monolix MAP estimation", {
   .u <- ini(.monolixPriorUi(), prior(tka) ~ dnorm(log(1.5), 0.5))
   .u <- ini(.u, prior(temax) ~ dnorm(0, 2))
   .u <- ini(.u, prior(cl.wt) ~ stdNormal())
-  .u <- ini(.u, prior(add.sd) ~ dnorm(0.7, 0.1))
 
   .par <- .u$mlxtranParameter
   expect_equal(.mlxLines(.par, "^ka_pop="),
@@ -58,7 +57,7 @@ test_that("normal priors become Monolix MAP estimation", {
   expect_equal(.mlxLines(.par, "^beta_cl_WT="),
                "beta_cl_WT={value=0, method=MAP}")
   expect_equal(.mlxLines(.par, "^add__sd="),
-               "add__sd={value=0.7, method=MAP}")
+               "add__sd={value=0.7, method=MLE}")
   # parameters without a prior are still maximum likelihood
   expect_equal(.mlxLines(.par, "^v_pop="),
                paste0("v_pop={value=", exp(3.45), ", method=MLE}"))
@@ -74,8 +73,7 @@ test_that("normal priors become Monolix MAP estimation", {
                "emax_pop = {distribution=logitNormal, min=0, max=1, typical=0.5, sd=2}")
   expect_equal(.mlxLines(.pop, "^beta_cl_WT "),
                "beta_cl_WT = {distribution=normal, typical=0, sd=1}")
-  expect_equal(.mlxLines(.pop, "^add__sd "),
-               "add__sd = {distribution=normal, typical=0.7, sd=0.1}")
+  expect_length(.mlxLines(.pop, "^add__sd "), 0L)
 
   # [POPULATION] comes before [INDIVIDUAL] in <MODEL>
   .mod <- .u$mlxtranModel
@@ -145,10 +143,13 @@ test_that("priors Monolix cannot represent are refused", {
   .u <- ini(.monolixPriorUi(), prior(tcl, tv) ~ multiNormal(c(1, 3), lotri(tcl + tv ~ c(1, 0.1, 1))))
   expect_error(.u$mlxtranParameter, "univariate normal prior")
 
+  # Monolix 2024R1 accepts a MAP prior on a residual error parameter and
+  # then ignores it, so it is refused (sd or variance parameterization)
   .u <- ini(.monolixPriorUi(), prior(add.sd) ~ dnorm(0.7, 0.1))
+  expect_error(.u$mlxtranParameter, "residual error parameter 'add.sd'")
   .u2 <- try(model(.u, cp ~ add(add.sd) + var()), silent=TRUE)
   if (!inherits(.u2, "try-error")) {
-    expect_error(.u2$mlxtranParameter, "on a variance")
+    expect_error(.u2$mlxtranParameter, "residual error parameter 'add.sd'")
   }
 })
 

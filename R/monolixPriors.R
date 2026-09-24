@@ -16,9 +16,9 @@
 ## *mean* is back-transformed like the estimate it describes (`exp()`,
 ## `expit()`, `probitInv()`) while the prior *sd* is written unchanged.
 ## Nothing is approximated -- there is no delta method, the two priors
-## are the same distribution.  Covariate effects and residual error
-## parameters are untransformed in both programs, so they are written as
-## `distribution=normal` with the mean and sd as given.
+## are the same distribution.  Covariate effects are untransformed in both
+## programs, so they are written as `distribution=normal` with the mean
+## and sd as given.
 ##
 ## What Monolix cannot express is refused rather than dropped:
 ##
@@ -29,9 +29,12 @@
 ## - a multivariate normal prior (Monolix priors are one per parameter)
 ## - a prior on a `probitInv()` parameter with bounds other than (0, 1),
 ##   since Monolix's `probitNormal` has no `min=`/`max=`
-## - a prior on a residual error parameter nlmixr2 estimates as a
-##   variance, since Monolix estimates its square root and the normal
-##   prior does not survive that transform
+## - a prior on a residual error parameter: Monolix 2024R1 accepts
+##   `add__sd={value=..., method=MAP}` with its `[POPULATION]` prior, keeps
+##   both in the project it saves, and then ignores them -- the run with
+##   `prior(add.sd) ~ dnorm(1.5, 0.001)` gave every estimate and the
+##   objective function identical, to the last digit, to the run without it
+##   (add__sd 0.698481849915935, OFV 359.878932)
 ## - any prior that is not normal (`dcauchy()`, `invWishart()`, ...),
 ##   which the `"tnpri"` level also has nlmixr2est refuse up front
 
@@ -123,14 +126,12 @@
     .mv <- .mlxtranPriorNormal(.p$prior[i], .name)
     .w <- which(.covDataFrame$covariateParameter == .name)
     if (!is.na(.p$err[i])) {
-      if (.mlxtranIsVarianceErr(.ui, .name)) {
-        stop("the prior on '", .name, "' is on a variance, but Monolix ",
-             "estimates the standard deviation, so it cannot be written for Monolix",
-             call.=FALSE)
-      }
-      .par <- eval(str2lang(paste0("rxToMonolix(", .name, ", ui=.ui)")))
-      .dist <- "distribution=normal"
-      .typical <- .mv[1]
+      # Monolix accepts a MAP prior on a residual error parameter but does
+      # not use it (see the header of this file)
+      stop("the prior on the residual error parameter '", .name,
+           "' cannot be used with est=\"monolix\": Monolix accepts a MAP prior on ",
+           "a residual error parameter but ignores it in the estimation",
+           call.=FALSE)
     } else if (length(.w) == 1L) {
       .par <- paste0("beta_", .muRef[.covDataFrame$theta[.w]], "_",
                      .covDataFrame$covariate[.w])
