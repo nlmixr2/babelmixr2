@@ -83,9 +83,11 @@ rxUiGet.monolixModel <- function(x, ...) {
   .txtFile <- rxUiGet.monolixModelFileName(x, ...)
   .regress <- .ui$allCovs
   .cov <- .ui$saemMuRefCovariateDataFrame
-  .regress <- .regress[!(.regress %in% .cov)]
+  # mu-referenced covariates enter through [INDIVIDUAL]; only the rest
+  # are time-varying regressors of the structural model
+  .regress <- .regress[!(.regress %in% .cov$covariate)]
   .regressors <- ""
-  if (length(.ui$allCovs) > 0) {
+  if (length(.regress) > 0) {
     .regressors <- paste0("\n", paste(paste0(.regress, "= {use=regressor}"), collapse="\n"))
   }
   paste0("DESCRIPTION:\n",

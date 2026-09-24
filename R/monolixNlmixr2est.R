@@ -134,6 +134,41 @@
   invisible(.lixoftStarted)
 }
 
+# thin wrappers so the failure handling in .monolixLixoftRun() can be
+# tested without Monolix
+.lixoftLoadProject <- function(mlxtran) {
+  lixoftConnectors::loadProject(mlxtran)
+}
+.lixoftRunScenario <- function() {
+  lixoftConnectors::runScenario()
+}
+
+#' Load and run a Monolix project with lixoftConnectors
+#'
+#' lixoftConnectors reports a failure by returning `FALSE` (with an
+#' `[ERROR]` message), not by signalling an R error; carrying on would
+#' wait forever for output Monolix never writes.
+#'
+#' @param mlxtran mlxtran file
+#' @return nothing, called for its side effect; errors when Monolix
+#'   cannot load or run the project
+#' @noRd
+.monolixLixoftRun <- function(mlxtran) {
+  .x <- try(.lixoftLoadProject(mlxtran), silent=TRUE)
+  if (inherits(.x, "try-error") || isFALSE(.x)) {
+    stop("lixoftConnectors cannot load '", mlxtran, "' (see Monolix's [ERROR] above)",
+         call.=FALSE)
+  }
+  .minfo("lixoftConnectors::runScenario()")
+  .x <- .lixoftRunScenario()
+  if (isFALSE(.x)) {
+    stop("lixoftConnectors::runScenario() failed for '", mlxtran, "' (see Monolix's [ERROR] above)",
+         call.=FALSE)
+  }
+  .minfo("done")
+  invisible()
+}
+
 #' Run NONMEM using either the user-specified command or function
 #'
 #' @param ui The nlmixr2 UI object for running
@@ -187,12 +222,12 @@
   .et <- rxode2::etTrans(.ret$dataSav, .ui$mv0, addCmt=TRUE)
   .nTv <- attr(class(.et), ".rxode2.lst")$nTv
   if (is.null(.nTv)) {
-    .tv <- names(.et)[-seq(1, 6)]
+    .tv <- names(.et)[-seq_len(6)]
     .nTv <- length(.tv)
   } else {
     .tv <- character(0)
     if (.nTv != 0) {
-      .tv <- names(.et)[-seq(1, 6)]
+      .tv <- names(.et)[-seq_len(6)]
     }
   }
   .muRefCovariateDataFrame <- .ui$muRefCovariateDataFrame
@@ -276,14 +311,7 @@
       }
     } else {
       if (.hasLixoftConnectors()) {
-        .x <- try(lixoftConnectors::loadProject(.mlxtran), silent=TRUE)
-        if (inherits(.x, "try-error")) {
-          stop("lixoftConnectors cannot load mlxtran",
-               call.=FALSE)
-        }
-        .minfo("lixoftConnectors::runScenario()")
-        lixoftConnectors::runScenario()
-        .minfo("done")
+        .monolixLixoftRun(.mlxtran)
         .runLS <- TRUE
       } else if (dir.exists(.exportPath)) { # needs to skip for tests
       } else if (!interactive()) {
@@ -360,6 +388,7 @@ nlmixr2Est.monolix <- function(env, ...) {
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
+  .mlxtranPriorInfo(.ui) # refuse priors Monolix cannot represent before running
   .monolixFamilyControl(env, ...)
   nlmixr2est::nmObjUiSetCompressed(FALSE)
 
@@ -373,6 +402,9 @@ nlmixr2Est.monolix <- function(env, ...) {
 attr(nlmixr2Est.monolix, "covPresent") <- TRUE
 attr(nlmixr2Est.monolix, "type") <- "External"
 attr(nlmixr2Est.monolix, "description") <- "Monolix (external software, SAEM)"
+## normal priors, written as Monolix MAP estimation (see R/monolixPriors.R);
+## omega normal priors are then refused by `.mlxtranPriorInfo()`
+attr(nlmixr2Est.monolix, "nlmixr2Priors") <- "tnpri"
 attr(nlmixr2Est.monolix, "mu") <- function(control) {
   isTRUE(control$muRefCovAlg)
 }

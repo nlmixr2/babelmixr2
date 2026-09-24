@@ -89,6 +89,7 @@ rxUiGet.mlxtranModel <- function(x, ...) {
   # note there is some categorical covariates that are not taken care of here...
   paste0("<MODEL>\n\n",
          rxUiGet.mlxtranModelCovariate(x, ...),
+         rxUiGet.mlxtranModelPopulation(x, ...),
          rxUiGet.mlxtranModelIndividual(x, ...),"\n\n",
          rxUiGet.mlxtranModelLongitudinal(x, ...))
 }

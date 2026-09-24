@@ -345,7 +345,7 @@ test_that("monolix treatment of +var()", {
 
   expect_equal(par, "add__sd={value=0.7, method=MLE}")
 
-  f2 <- try(f |> model({cp~add(add.sd) + var()}), silent=TRUE)
+  f2 <- try(model(f, {cp~add(add.sd) + var()}), silent=TRUE)
   if (inherits(f2, "try-error")) {
     skip("rxode2 doesn't support + var()")
   } else {
@@ -354,6 +354,113 @@ test_that("monolix treatment of +var()", {
     expect_equal(par, paste0("add__sd={value=", sqrt(.7), ", method=MLE}"))
   }
 
+})
+
+test_that("mu-referenced covariates are [INDIVIDUAL] inputs", {
+  one.cmt <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- log(2.7)
+      tv <- 3.45
+      cl.wt <- 0
+      v.wt <- 0
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl + cl.wt * lWT)
+      v <- exp(tv + eta.v + v.wt * lWT)
+      d/dt(depot) <- -depot*ka
+      d/dt(central) <- depot*ka - cl*central/v
+      cp <- central/v
+      cp ~ add(add.sd)
+    })
+  }
+  f <- rxode2::rxode2(one.cmt)
+  ind <- strsplit(f$mlxtranModelIndividual, "\n")[[1]]
+  # without lWT here Monolix stops with "Undefined variable 'lWT'"
+  expect_equal(ind[grepl("^input=", ind)],
+               "input={ka_pop, omega_ka, cl_pop, lWT, beta_cl_lWT, omega_cl, v_pop, beta_v_lWT, omega_v}")
+
+  # several covariates on one parameter, one of them shared: each covariate
+  # is listed once
+  f2 <- rxode2::rxode2(one.cmt)
+  f2 <- model(f2, cl <- exp(tcl + eta.cl + cl.wt * lWT + cl.age * AGE))
+  f2 <- ini(f2, cl.age=0)
+  ind <- strsplit(f2$mlxtranModelIndividual, "\n")[[1]]
+  inp <- ind[grepl("^input=", ind)]
+  inp <- trimws(strsplit(sub("^input=\\{(.*)\\}$", "\\1", inp), ",")[[1]])
+  expect_equal(sum(inp == "lWT"), 1L)
+  expect_equal(sum(inp == "AGE"), 1L)
+  expect_true(all(c("beta_cl_lWT", "beta_cl_AGE", "beta_v_lWT") %in% inp))
+  def <- ind[grepl("^cl = ", ind)]
+  expect_true(grepl("covariate = {lWT, AGE}", def, fixed=TRUE) ||
+                grepl("covariate = {AGE, lWT}", def, fixed=TRUE))
+})
+
+test_that("only non mu-referenced covariates are regressors in the Monolix model", {
+  one.cmt <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- log(2.7)
+      tv <- 3.45
+      cl.wt <- 0
+      cl.age <- 0
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl + cl.wt * lWT + cl.age * AGE)
+      v <- exp(tv + eta.v)
+      d/dt(depot) <- -depot*ka
+      d/dt(central) <- depot*ka - cl*central/v
+      cp <- central/v
+      cp ~ add(add.sd)
+    })
+  }
+  f <- rxode2::rxode2(one.cmt)
+  mod <- strsplit(f$monolixModel, "\n")[[1]]
+  # all covariates are mu-referenced: no regressor, and no "= {use=regressor}"
+  # line without a name (a Monolix syntax error)
+  expect_false(any(grepl("regressor", mod)))
+  expect_equal(mod[grepl("^input=", mod)], "input={ka,cl,v}")
+
+  # a covariate outside the mu-referencing stays a regressor
+  f2 <- model(f, cp <- central / v * (1 + 0 * CRCL))
+  mod <- strsplit(f2$monolixModel, "\n")[[1]]
+  expect_equal(mod[grepl("regressor", mod)], "CRCL= {use=regressor}")
+  expect_equal(mod[grepl("^input=", mod)], "input={ka,cl,v,CRCL}")
+
+  # a covariate also used in the structural model is not mu-referenced, so
+  # it stays a regressor and a [LONGITUDINAL] input
+  f3 <- model(f, cp <- central / v * lWT)
+  expect_equal(nrow(f3$saemMuRefCovariateDataFrame[f3$saemMuRefCovariateDataFrame$covariate == "lWT", ]), 0L)
+  mod <- strsplit(f3$monolixModel, "\n")[[1]]
+  expect_true("lWT= {use=regressor}" %in% mod)
+  expect_true(grepl("lWT", mod[grepl("^input=", mod)]))
+})
+
+test_that("a Monolix project lixoftConnectors cannot load or run is an error", {
+  # lixoftConnectors returns FALSE on failure rather than signalling an error
+  local_mocked_bindings(.lixoftLoadProject=function(mlxtran) FALSE,
+                        .lixoftRunScenario=function() stop("should not run"))
+  expect_error(.b$.monolixLixoftRun("x.mlxtran"), "cannot load 'x.mlxtran'")
+
+  local_mocked_bindings(.lixoftLoadProject=function(mlxtran) stop("boom"))
+  expect_error(.b$.monolixLixoftRun("x.mlxtran"), "cannot load 'x.mlxtran'")
+
+  local_mocked_bindings(.lixoftLoadProject=function(mlxtran) TRUE,
+                        .lixoftRunScenario=function() FALSE)
+  expect_error(suppressMessages(.b$.monolixLixoftRun("x.mlxtran")), "runScenario\\(\\) failed")
+
+  local_mocked_bindings(.lixoftRunScenario=function() TRUE)
+  expect_error(suppressMessages(.b$.monolixLixoftRun("x.mlxtran")), NA)
 })
 
 test_that("dotted mu-referenced parameters use one Monolix name (#220)", {
