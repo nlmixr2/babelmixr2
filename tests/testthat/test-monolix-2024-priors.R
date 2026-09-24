@@ -142,3 +142,30 @@ test_that("a Monolix fit uses the SAEM etas, like nlmixr2est's saem", {
   expect_equal(.eta$eta.ka, 0.0910101, tolerance=1e-6)
   expect_equal(.eta$eta.cl, -0.529241, tolerance=1e-6)
 })
+
+test_that("the PRED absolute difference to Monolix is absolute", {
+  skip_if_not(file.exists(test_path("monolix2024-priors.zip")))
+  .b <- loadNamespace("babelmixr2")
+  .zip <- normalizePath(test_path("monolix2024-priors.zip"))
+  .u <- .mlx2024Ui("mle")
+  withr::with_tempdir({
+    utils::unzip(.zip)
+    setwd(file.path("monolix2024", "mle"))
+    .f <- suppressWarnings(suppressMessages(
+      nlmixr2(.u, .mlx2024Data(), "monolix", monolixControl(modelName="mle"))))
+    .m <- .b$.monolixMergePredsAndCalcRelativeErr(.f)
+    # recompute from Monolix's own predictions
+    .p <- read.csv(file.path("mle-monolix", "predictions.txt"))
+    .d <- as.data.frame(.f)
+    .d$ID <- as.integer(.d$ID)
+    .x <- merge(.p, .d, by.x=c("id", "time", "rx_prd_cp"), by.y=c("ID", "TIME", "DV"))
+    .q <- c(0, 0.025, 0.5, 0.975, 1)
+    expect_equal(unname(.m$popAbs), unname(stats::quantile(abs(.x$PRED - .x$popPred), .q, na.rm=TRUE)))
+    expect_equal(unname(.m$individualAbs),
+                 unname(stats::quantile(abs(.x$IPRED - .x$indivPred_SAEM), .q, na.rm=TRUE)))
+    # and the message prints those absolute values, not the relative ones
+    .line <- grep("^PRED absolute difference", .m$message, value=TRUE)
+    expect_true(grepl(paste0("(", signif(.m$popAbs[2], 3), ", ", signif(.m$popAbs[4], 3), ")"),
+                      .line, fixed=TRUE))
+  })
+})
