@@ -117,8 +117,7 @@
          "standard deviation is not a normal prior on the omega)",
          call.=FALSE)
   }
-  .split <- .ui$getSplitMuModel
-  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  .muRef <- .monolixMuRef(.ui)
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
   .curEval <- .ui$muRefCurEval
   .def <- vapply(seq_along(.p$name), function(i) {

@@ -194,3 +194,17 @@ test_that("the normal prior reader takes positional or named arguments", {
   expect_error(.b$.mlxtranPriorNormal("dnorm(m=1, s=2, z=3)", "x"), "univariate normal")
   expect_error(.b$.mlxtranPriorNormal("dnorm(1, nope(2))", "x"), "univariate normal")
 })
+
+test_that("a prior on a dotted tainted mu-ref uses the __ Monolix name (#220)", {
+  .u <- .monolixPriorUi()
+  # cl.wt shared by cl and v is not a mu-referenced covariate, so it
+  # becomes the tainted rx__cl.wt, written rx__cl__wt for Monolix
+  .u <- model(.u, v <- exp(tv + eta.v + WT * cl.wt))
+  .u <- ini(.u, prior(cl.wt) ~ dnorm(0, 2))
+  expect_equal(.mlxLines(.u$mlxtranParameter, "^rx__cl__wt_pop="),
+               "rx__cl__wt_pop={value=0, method=MAP}")
+  expect_equal(.mlxLines(.u$mlxtranModelPopulation, "^rx__cl__wt_pop "),
+               "rx__cl__wt_pop = {distribution=normal, typical=0, sd=2}")
+  expect_true(grepl("rx__cl__wt,", .u$monolixModel, fixed=TRUE))
+  expect_false(grepl("cl.wt", .u$mlxtran, fixed=TRUE))
+})

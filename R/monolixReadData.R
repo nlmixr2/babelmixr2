@@ -60,8 +60,7 @@ rxUiGet.monolixParHistory <- function(x, ...) {
   if (!is.null(.raw)) {
     .ui <- x[[1]]
     .iniDf <- .ui$iniDf
-    .split <- .ui$getSplitMuModel
-    .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+    .muRef <- .monolixMuRef(.ui)
     .muRefCurEval <- .ui$muRefCurEval
     .eta <- .iniDf[is.na(.iniDf$ntheta), ]
     .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
@@ -132,8 +131,7 @@ rxUiGet.monolixOmega <- function(x, ...) {
   .pop <- rxUiGet.monolixPopulationParameters(x, ...)
   if (is.null(.pop)) return(NULL)
   .iniDf <- .ui$iniDf
-  .split <- .ui$getSplitMuModel
-  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  .muRef <- .monolixMuRef(.ui)
   .muRefCurEval <- .ui$muRefCurEval
   .eta <- .iniDf[is.na(.iniDf$ntheta), ]
   .r <- .getOmegaR(.ui)
@@ -245,8 +243,7 @@ rxUiGet.monolixFullTheta <- function(x, ...) {
   .iniDf <- .ui$iniDf
   .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
   .muRefCurEval <- .ui$muRefCurEval
-  .split <- .ui$getSplitMuModel
-  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  .muRef <- .monolixMuRef(.ui)
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
   .fullTheta <- setNames(vapply(seq_along(.theta$name),
                                 function(i) {
@@ -358,8 +355,7 @@ rxUiGet.monolixEtaObf <- function(x, ...) {
   .ui <- x[[1]]
   .etas <- .ui$iniDf[!is.na(.ui$iniDf$neta1), ]
   .etas <- .etas[.etas$neta1 == .etas$neta2, ]
-  .split <- .ui$getSplitMuModel
-  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  .muRef <- .monolixMuRef(.ui)
   .etaMonolix <- rxUiGet.monolixIndividualParameters(x, ...)
   if (is.null(.etaMonolix)) return(NULL)
   # the SAEM etas (posterior means from the last SAEM iterations), like
@@ -465,9 +461,7 @@ rxUiGet.monolixCovarianceEstimatesSA <- function(x, ...) {
 rxUiGet.monolixCovariance <- function(x, ...) {
   .cov <- rxUiGet.monolixCovarianceEstimatesSA(x, ...)
   .ui <- x[[1]]
-  .split <- .ui$getSplitMuModel
-
-  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  .muRef <- .monolixMuRef(.ui)
   .sa <- TRUE
   if (is.null(.cov)) {
     .cov <- rxUiGet.monolixCovarianceEstimatesLin(x, ...)

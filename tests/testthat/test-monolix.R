@@ -462,3 +462,122 @@ test_that("a Monolix project lixoftConnectors cannot load or run is an error", {
   local_mocked_bindings(.lixoftRunScenario=function() TRUE)
   expect_error(suppressMessages(.b$.monolixLixoftRun("x.mlxtran")), NA)
 })
+
+test_that("dotted mu-referenced parameters use one Monolix name (#220)", {
+  f <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- log(2.7)
+      tv <- 3.45
+      cl.wt <- 0
+      eta.ka + eta.cl ~ c(0.6, 0.01, 0.3)
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka.x <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl + WT * cl.wt)
+      v <- exp(tv + eta.v + WT * cl.wt)
+      d / dt(depot) <- -depot * ka.x
+      d / dt(central) <- depot * ka.x - cl * central / v
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+
+  u <- rxode2::rxode2(f)
+
+  expect_equal(
+    .b$.monolixMuRef(u),
+    c(tka = "ka__x", tcl = "rx__tcl", tv = "rx__tv", cl.wt = "rx__cl__wt")
+  )
+
+  mod <- u$monolixModel
+  expect_true(grepl(
+    "input={ka__x,rx__tcl,rx__tv,rx__cl__wt,WT}",
+    mod,
+    fixed = TRUE
+  ))
+  expect_true(grepl("cl = exp(rx__tcl+WT*rx__cl__wt)", mod, fixed = TRUE))
+  expect_true(grepl("ddt_depot = - depot*ka__x", mod, fixed = TRUE))
+
+  ind <- u$mlxtranModelIndividual
+  expect_false(grepl(".", ind, fixed = TRUE))
+  expect_true(grepl(
+    "ka__x = {distribution=logNormal, typical=ka__x_pop, sd=omega_ka__x}",
+    ind,
+    fixed = TRUE
+  ))
+  expect_true(grepl(
+    paste0(
+      "rx__cl__wt = {distribution=normal, typical=rx__cl__wt_pop, ",
+      "no-variability}"
+    ),
+    ind,
+    fixed = TRUE
+  ))
+  expect_true(grepl("r(rx__tcl, ka__x)=corr_rx__tcl_ka__x", ind, fixed = TRUE))
+
+  par <- strsplit(u$mlxtranParameter, "\n")[[1]]
+  expect_true(all(
+    c("ka__x_pop", "rx__cl__wt_pop", "omega_ka__x", "corr_rx__tcl_ka__x") %in%
+      sub("=.*$", "", par)
+  ))
+
+  # read-back: the readers look up the same names in Monolix's output
+  pop <- data.frame(
+    parameter = c(
+      "ka__x_pop",
+      "rx__tcl_pop",
+      "rx__tv_pop",
+      "rx__cl__wt_pop",
+      "add__sd",
+      "omega_ka__x",
+      "omega_rx__tcl",
+      "omega_rx__tv",
+      "corr_rx__tcl_ka__x"
+    ),
+    value = c(1.5, 1, 3.5, 0.25, 0.7, 0.8, 0.5, 0.3, 0.1)
+  )
+  ind <- data.frame(
+    id = 1:2,
+    eta_ka__x_SAEM = c(0.1, -0.1),
+    eta_rx__tcl_SAEM = c(0.2, -0.2),
+    eta_rx__tv_SAEM = c(0.3, -0.3)
+  )
+  local_mocked_bindings(
+    rxUiGet.monolixPopulationParameters = function(x, ...) pop,
+    rxUiGet.monolixIndividualParameters = function(x, ...) ind,
+    rxUiGet.monolixIndividualLL = function(x, ...) NULL,
+    .package = "babelmixr2"
+  )
+
+  theta <- u$monolixFullTheta
+  expect_equal(theta[["tka"]], log(1.5))
+  expect_equal(theta[["cl.wt"]], 0.25)
+  expect_false(anyNA(theta))
+
+  omega <- u$monolixOmega
+  expect_equal(omega["eta.ka", "eta.ka"], 0.8^2)
+  expect_equal(omega["eta.ka", "eta.cl"], 0.1 * 0.8 * 0.5)
+
+  eta_obf <- u$monolixEtaObf
+  expect_equal(eta_obf$eta.ka, c(0.1, -0.1))
+  expect_equal(eta_obf$eta.v, c(0.3, -0.3))
+
+  # a mu-referenced covariate coefficient on a dotted parameter
+  expect_equal(
+    .b$.monolixGetPopParValue(
+      "ka.age",
+      u$muRefCurEval,
+      c(tka = "ka__x"),
+      data.frame(
+        theta = "tka",
+        covariate = "AGE",
+        covariateParameter = "ka.age"
+      ),
+      data.frame(parameter = "beta_ka__x_AGE", value = 0.02)
+    ),
+    0.02
+  )
+})
