@@ -90,16 +90,22 @@ attr(rxUiGet.pharmmlCovariateModel, "rstudio") <- "character"
     .what,
     .var.name = ui$modelName
   )
+  # lnorm() has to be the endpoint's only error term: `add(a) + lnorm(b)` also
+  # reports errType "add", but has no single log-scale error to write.
   .predDf <- ui$predDf
-  .lnorm <- paste(.predDf$transform) == "lnorm"
-  if (any(.lnorm & paste(.predDf$errType) != "add")) {
-    stop(
-      "'",
-      ui$modelName,
-      "' can only use lnorm() on its own (not with ",
-      "prop()) for PharmML translation",
-      call. = FALSE
-    )
+  for (.i in which(paste(.predDf$transform) == "lnorm")) {
+    .par <- .pharmmlErrParams(ui, paste(.predDf$cond[.i]))
+    if (
+      paste(.predDf$errType[.i]) != "add" || !identical(names(.par), "lnorm")
+    ) {
+      stop(
+        "'",
+        ui$modelName,
+        "' can only use lnorm() on its own (not with add() or ",
+        "prop()) for PharmML translation",
+        call. = FALSE
+      )
+    }
   }
   invisible()
 }

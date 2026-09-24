@@ -229,7 +229,7 @@ as.pharmml <- function(
   if (!is.null(data) && isTRUE(control$writeData)) {
     # The document refers to the dataset by this path, and a relative path is
     # read relative to the document, so write it exactly there.
-    .dataFile <- .pharmmlDataFile(.ui, control)
+    .dataFile <- path.expand(.pharmmlDataFile(.ui, control))
     if (!grepl("^(/|\\\\|[A-Za-z]:)", .dataFile)) {
       .dataFile <- file.path(dirname(file), .dataFile)
     }

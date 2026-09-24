@@ -115,6 +115,20 @@ test_that("as.pharmml writes the dataset at the path the document names", {
   expect_false(file.exists(file.path(.dir, "theo.csv")))
 })
 
+test_that("as.pharmml expands ~ in the dataset path", {
+  .home <- withr::local_tempdir()
+  withr::local_envvar(HOME = .home)
+  .dir <- withr::local_tempdir()
+  as.pharmml(
+    .pharmmlApiModel(),
+    nlmixr2data::theo_sd,
+    file = file.path(.dir, "theo.xml"),
+    control = pharmmlControl(dataFile = "~/theo.csv")
+  )
+  expect_true(file.exists(file.path(.home, "theo.csv")))
+  expect_false(dir.exists(file.path(.dir, "~")))
+})
+
 test_that("as.pharmml can skip writing the dataset", {
   .dir <- withr::local_tempdir()
   .f <- file.path(.dir, "theo.xml")

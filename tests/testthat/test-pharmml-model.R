@@ -321,6 +321,17 @@ test_that("residual transformations PharmML cannot express are refused", {
     )),
     "lnorm"
   )
+  # add() + lnorm() reports errType "add" too, but has two error terms
+  expect_error(
+    as.pharmml(.pharmmlTestUiErr(
+      quote(cp ~ add(add.sd) + lnorm(lnorm.sd)),
+      quote({
+        add.sd <- 0.7
+        lnorm.sd <- 0.2
+      })
+    )),
+    "lnorm"
+  )
 })
 
 test_that("the observation model is schema-valid", {
