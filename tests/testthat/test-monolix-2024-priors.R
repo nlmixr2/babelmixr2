@@ -132,3 +132,20 @@ test_that("Monolix 2024R1 ignores a MAP prior on a residual error parameter", {
   .u <- ini(.mlx2024Ui("ka_weak"), prior(add.sd) ~ dnorm(1.5, 0.001))
   expect_error(.u$mlxtranParameter, "residual error parameter 'add.sd'")
 })
+
+test_that("a Monolix fit uses the conditional-mode etas and reproduces Monolix's IPRED", {
+  skip_if_not(file.exists(test_path("monolix2024-priors.zip")))
+  .f <- .mlx2024Fit("mle")
+  # eta_ka_mode / eta_cl_mode of ID 1 in estimatedRandomEffects.txt
+  # (the _SAEM values are 0.0910101 / -0.529241)
+  .eta <- .f$eta[.f$eta$ID == 1, ]
+  expect_equal(.eta$eta.ka, 0.0893478, tolerance=1e-6)
+  expect_equal(.eta$eta.cl, -0.537771, tolerance=1e-6)
+  # the etas agree with the final estimates, so rebuilding the predictions
+  # matches Monolix's indivPred_mode closely (it was 0.5% against
+  # indivPred_SAEM)
+  .msg <- strsplit(.f$message, "\n")[[1]]
+  .rel <- as.numeric(sub(".*Monolix IPRED: ([0-9.]+)%.*", "\\1",
+                         grep("IPRED relative difference", .msg, value=TRUE)))
+  expect_lt(.rel, 0.05)
+})

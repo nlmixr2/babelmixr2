@@ -353,6 +353,26 @@ rxUiGet.monolixIndividualLL <- function(x, ...) {
   .ret
 }
 
+#' Which Monolix individual estimates babelmixr2 uses
+#'
+#' Monolix exports two sets: `_SAEM`, from the last SAEM iterations, and
+#' `_mode`, the conditional mode computed at the final population
+#' estimates.  Only the mode agrees with the final estimates (for a
+#' Monolix 2024R1 fit, `ka_pop*exp(eta_ka_mode)` is `ka_mode`, while
+#' `ka_pop*exp(eta_ka_SAEM)` is not `ka_SAEM`), so predictions rebuilt from
+#' the final estimates match `indivPred_mode` (to 0.01%) and not
+#' `indivPred_SAEM` (0.5% off).  The mode is also what nlmixr2 reports as
+#' the empirical Bayes estimates of its own methods.  Every export
+#' babelmixr2 asks for includes it (`individualParameters(method =
+#' {conditionalMode})`); `_SAEM` is only a fallback.
+#'
+#' @param names column names of the Monolix file
+#' @return `"_mode"` or `"_SAEM"`
+#' @noRd
+.monolixIndividualSuffix <- function(names) {
+  if (any(grepl("_mode$", names))) "_mode" else "_SAEM"
+}
+
 #' @export
 rxUiGet.monolixEtaObf <- function(x, ...) {
   .ui <- x[[1]]
@@ -362,8 +382,9 @@ rxUiGet.monolixEtaObf <- function(x, ...) {
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .etaMonolix <- rxUiGet.monolixIndividualParameters(x, ...)
   if (is.null(.etaMonolix)) return(NULL)
+  .suffix <- .monolixIndividualSuffix(names(.etaMonolix))
   .n <- c("id", vapply(.etas$neta1, function(i) {
-    paste0("eta_",   .mlxtranGetIndividualMuRefEtaMonolixName(.ui, i, .muRef), "_SAEM")
+    paste0("eta_",   .mlxtranGetIndividualMuRefEtaMonolixName(.ui, i, .muRef), .suffix)
   }, character(1), USE.NAMES=FALSE))
   .etaObf <- .etaMonolix[, .n]
   names(.etaObf) <- c("ID", .etas$name)
@@ -566,12 +587,14 @@ rxUiGet.monolixPreds <- function(x, ...) {
     .tmp$CMT <- paste(.tmp$CMT)
   }
   .ret <- merge(fit$ui$monolixPreds, .tmp, by=.by)
+  # the same individual estimates the fit's etas came from
+  .ipred <- .ret[[paste0("indivPred", .monolixIndividualSuffix(names(.ret)))]]
   .ci <- (1 - fit$monolixControl$ci) / 2
   .q <- c(0, .ci, 0.5, 1 - .ci, 1)
-  .qi <- stats::quantile(with(.ret, 100*abs((IPRED-indivPred_SAEM)/indivPred_SAEM)), .q, na.rm=TRUE)
+  .qi <- stats::quantile(100*abs((.ret$IPRED - .ipred)/.ipred), .q, na.rm=TRUE)
   .qp <- stats::quantile(with(.ret, 100*abs((PRED-popPred)/popPred)), .q, na.rm=TRUE)
-  .qai <- stats::quantile(with(.ret, abs(IPRED-indivPred_SAEM)), .q, na.rm=TRUE)
-  .qap <- stats::quantile(with(.ret, abs((PRED-popPred)/popPred)), .q, na.rm=TRUE)
+  .qai <- stats::quantile(abs(.ret$IPRED - .ipred), .q, na.rm=TRUE)
+  .qap <- stats::quantile(with(.ret, abs(PRED-popPred)), .q, na.rm=TRUE)
   .sigdig <- 3
   .msg <- c(paste0("IPRED relative difference compared to Monolix IPRED: ", round(.qi[3], 2),
                  "%; ", fit$monolixControl$ci * 100,"% percentile: (",
@@ -586,7 +609,7 @@ rxUiGet.monolixPreds <- function(x, ...) {
             paste0("PRED absolute difference compared to Monolix PRED: atol=",
                    signif(.qap[3], digits=.sigdig),
                    "; ", fit$monolixControl$ci * 100,"% percentile: (",
-                   signif(.qap[2], digits=.sigdig), ", ", signif(.qp[4], digits=.sigdig), ")"))
+                   signif(.qap[2], digits=.sigdig), ", ", signif(.qap[4], digits=.sigdig), ")"))
   list(individualRel=.qi , popRel=.qp,
        individualAbs=.qai, popAbs=.qap,
        message=.msg)
