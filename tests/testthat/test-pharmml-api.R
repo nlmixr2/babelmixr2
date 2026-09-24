@@ -101,6 +101,20 @@ test_that("as.pharmml writes the model and its dataset to disk", {
   expect_false("nlmixrRowNums" %in% names(.csv))
 })
 
+test_that("as.pharmml writes the dataset at the path the document names", {
+  .dir <- withr::local_tempdir()
+  .f <- file.path(.dir, "theo.xml")
+  .x <- as.pharmml(
+    .pharmmlApiModel(),
+    nlmixr2data::theo_sd,
+    file = .f,
+    control = pharmmlControl(dataFile = "data/theo.csv")
+  )
+  expect_match(.x, "<ds:path>data/theo.csv</ds:path>", fixed = TRUE)
+  expect_true(file.exists(file.path(.dir, "data", "theo.csv")))
+  expect_false(file.exists(file.path(.dir, "theo.csv")))
+})
+
 test_that("as.pharmml can skip writing the dataset", {
   .dir <- withr::local_tempdir()
   .f <- file.path(.dir, "theo.xml")

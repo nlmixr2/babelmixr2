@@ -6,10 +6,42 @@
 .pharmmlNsAttrs <- function(version = "0.9") {
   .ns <- .pmlNs(version)
   .default <- paste0('xmlns="', .ns[["pharmml"]], '"')
-  .rest <- vapply(setdiff(names(.ns), "pharmml"), function(.p) {
-    paste0('    xmlns:', .p, '="', .ns[[.p]], '"')
-  }, character(1), USE.NAMES = FALSE)
+  .rest <- vapply(
+    setdiff(names(.ns), "pharmml"),
+    function(.p) {
+      paste0('    xmlns:', .p, '="', .ns[[.p]], '"')
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
   paste(c(.default, .rest), collapse = "\n")
+}
+
+#' The model name a document is written under
+#'
+#' @param ui rxode2 UI
+#' @return character(1)
+#' @noRd
+.pharmmlModelName <- function(ui) {
+  .ret <- ui$modelName
+  if (is.null(.ret) || !nzchar(.ret)) {
+    .ret <- "model"
+  }
+  .ret
+}
+
+#' The dataset path the document refers to
+#'
+#' @param ui rxode2 UI
+#' @param control `pharmmlControl()` options
+#' @return character(1)
+#' @noRd
+.pharmmlDataFile <- function(ui, control) {
+  .ret <- control$dataFile
+  if (is.null(.ret)) {
+    .ret <- paste0(.pharmmlModelName(ui), ".csv")
+  }
+  .ret
 }
 
 #' Assemble a complete PharmML document
@@ -21,33 +53,48 @@
 #' @noRd
 .pharmmlDocument <- function(ui, data = NULL, control = pharmmlControl()) {
   .version <- control$version
-  .name <- ui$modelName
-  if (is.null(.name) || !nzchar(.name)) .name <- "model"
+  .name <- .pharmmlModelName(ui)
   .desc <- control$description
   if (is.null(.desc)) {
-    .desc <- paste0("Model '", .name,
-                    "' translated to PharmML ", .version,
-                    " by babelmixr2 ",
-                    utils::packageVersion("babelmixr2"))
+    .desc <- paste0(
+      "Model '",
+      .name,
+      "' translated to PharmML ",
+      .version,
+      " by babelmixr2 ",
+      utils::packageVersion("babelmixr2")
+    )
   }
-  .dataFile <- control$dataFile
-  if (is.null(.dataFile)) .dataFile <- paste0(.name, ".csv")
+  .dataFile <- .pharmmlDataFile(ui, control)
 
-  .body <- c(.pmlText("ct:Name", .name, 1L),
-             .pmlText("ct:Description", .desc, 1L),
-             .pmlNode("IndependentVariable", attrs = c(symbId = "t"), indent = 1L),
-             .pharmmlModelDefinition(ui, data = data, indent = 1L))
+  .body <- c(
+    .pmlText("ct:Name", .name, 1L),
+    .pmlText("ct:Description", .desc, 1L),
+    .pmlNode("IndependentVariable", attrs = c(symbId = "t"), indent = 1L),
+    .pharmmlModelDefinition(ui, data = data, indent = 1L)
+  )
   if (!is.null(data)) {
-    .body <- c(.body,
-               .pharmmlTrialDesign(ui, data, dataFile = .dataFile, indent = 1L),
-               .pharmmlModellingSteps(ui, indent = 1L))
+    .body <- c(
+      .body,
+      .pharmmlTrialDesign(ui, data, dataFile = .dataFile, indent = 1L),
+      .pharmmlModellingSteps(ui, indent = 1L)
+    )
   }
 
-  .ret <- paste0('<?xml version="1.0" encoding="UTF-8"?>\n',
-                 "<PharmML ", .pharmmlNsAttrs(.version), "\n",
-                 '    writtenVersion="', .version, '" id="', .pharmmlId(.name), '">\n',
-                 paste(.body, collapse = "\n"), "\n",
-                 "</PharmML>\n")
+  .ret <- paste0(
+    '<?xml version="1.0" encoding="UTF-8"?>\n',
+    "<PharmML ",
+    .pharmmlNsAttrs(.version),
+    "\n",
+    '    writtenVersion="',
+    .version,
+    '" id="',
+    .pharmmlId(.name),
+    '">\n',
+    paste(.body, collapse = "\n"),
+    "\n",
+    "</PharmML>\n"
+  )
   if (isTRUE(control$validate)) {
     pharmmlValidate(.ret, version = .version)
   }
@@ -64,7 +111,9 @@
 #' @noRd
 .pharmmlId <- function(name) {
   .ret <- gsub("[^A-Za-z0-9._-]", "_", name)
-  if (!grepl("^[A-Za-z_]", .ret)) .ret <- paste0("i", .ret)
+  if (!grepl("^[A-Za-z_]", .ret)) {
+    .ret <- paste0("i", .ret)
+  }
   .ret
 }
 
@@ -98,8 +147,10 @@ rxToPharmml <- function(x, ui = NULL) {
   } else if (!is.character(x)) {
     x <- deparse1(substitute(x))
   }
-  .lst <- lapply(as.list(str2lang(paste0("{", paste(x, collapse = "\n"), "}")))[-1],
-                 function(.e) .rxToPharmml(.e, ui))
+  .lst <- lapply(
+    as.list(str2lang(paste0("{", paste(x, collapse = "\n"), "}")))[-1],
+    function(.e) .rxToPharmml(.e, ui)
+  )
   paste(unlist(.lst), collapse = "\n")
 }
 
@@ -154,8 +205,12 @@ rxToPharmml <- function(x, ui = NULL) {
 #' }
 #' as.pharmml(one.cmt, nlmixr2data::theo_sd, file = "theo.xml")
 #' }
-as.pharmml <- function(model, data = NULL, file = NULL,
-                       control = pharmmlControl()) {
+as.pharmml <- function(
+  model,
+  data = NULL,
+  file = NULL,
+  control = pharmmlControl()
+) {
   if (!inherits(control, "pharmmlControl")) {
     stop("'control' must come from pharmmlControl()", call. = FALSE)
   }
@@ -166,17 +221,20 @@ as.pharmml <- function(model, data = NULL, file = NULL,
   }
   .ret <- .pharmmlDocument(.ui, data, control)
   class(.ret) <- "babelmixr2pharmml"
-  if (is.null(file)) return(.ret)
+  if (is.null(file)) {
+    return(.ret)
+  }
 
-  writeLines(.ret, file)
+  writeLines(.ret, file, sep = "")
   if (!is.null(data) && isTRUE(control$writeData)) {
-    .dataFile <- control$dataFile
-    if (is.null(.dataFile)) {
-      .name <- .ui$modelName
-      if (is.null(.name) || !nzchar(.name)) .name <- "model"
-      .dataFile <- paste0(.name, ".csv")
+    # The document refers to the dataset by this path, and a relative path is
+    # read relative to the document, so write it exactly there.
+    .dataFile <- .pharmmlDataFile(.ui, control)
+    if (!grepl("^(/|\\\\|[A-Za-z]:)", .dataFile)) {
+      .dataFile <- file.path(dirname(file), .dataFile)
     }
-    .pharmmlWriteData(.ui, data, file.path(dirname(file), basename(.dataFile)))
+    dir.create(dirname(.dataFile), recursive = TRUE, showWarnings = FALSE)
+    .pharmmlWriteData(.ui, data, .dataFile)
   }
   invisible(.ret)
 }

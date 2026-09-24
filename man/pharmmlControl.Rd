@@ -20,8 +20,10 @@ against the PharmML schema before it is returned, and an invalid document
 is an error.  Validation is offline and takes a fraction of a second, so
 there is rarely a reason to turn it off.}
 
-\item{dataFile}{Name the PharmML document should use when referring to the
-exported dataset.  When \code{NULL} this is derived from the model name.}
+\item{dataFile}{Path the PharmML document should use when referring to the
+exported dataset.  A relative path is relative to the document, and is
+where \code{as.pharmml(file=)} writes the dataset.  When \code{NULL} this is the
+model name with a \code{.csv} extension.}
 
 \item{description}{Free text written into the document's \code{ct:Description}.
 When \code{NULL} a short provenance line naming \code{babelmixr2} is written.}

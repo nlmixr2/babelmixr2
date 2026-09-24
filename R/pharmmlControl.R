@@ -7,8 +7,10 @@
 #'   is an error.  Validation is offline and takes a fraction of a second, so
 #'   there is rarely a reason to turn it off.
 #'
-#' @param dataFile Name the PharmML document should use when referring to the
-#'   exported dataset.  When `NULL` this is derived from the model name.
+#' @param dataFile Path the PharmML document should use when referring to the
+#'   exported dataset.  A relative path is relative to the document, and is
+#'   where `as.pharmml(file=)` writes the dataset.  When `NULL` this is the
+#'   model name with a `.csv` extension.
 #'
 #' @param description Free text written into the document's `ct:Description`.
 #'   When `NULL` a short provenance line naming `babelmixr2` is written.
@@ -25,11 +27,13 @@
 #' @export
 #' @examples
 #' pharmmlControl(validate = FALSE)
-pharmmlControl <- function(version = "0.9",
-                           validate = TRUE,
-                           dataFile = NULL,
-                           description = NULL,
-                           writeData = TRUE) {
+pharmmlControl <- function(
+  version = "0.9",
+  validate = TRUE,
+  dataFile = NULL,
+  description = NULL,
+  writeData = TRUE
+) {
   checkmate::assertCharacter(version, len = 1, any.missing = FALSE)
   checkmate::assertLogical(validate, len = 1, any.missing = FALSE)
   checkmate::assertLogical(writeData, len = 1, any.missing = FALSE)
@@ -40,11 +44,13 @@ pharmmlControl <- function(version = "0.9",
     checkmate::assertCharacter(description, len = 1, any.missing = FALSE)
   }
   .pmlNs(version) # errors on an unsupported version
-  .ret <- list(version = version,
-               validate = validate,
-               dataFile = dataFile,
-               description = description,
-               writeData = writeData)
+  .ret <- list(
+    version = version,
+    validate = validate,
+    dataFile = dataFile,
+    description = description,
+    writeData = writeData
+  )
   class(.ret) <- "pharmmlControl"
   .ret
 }
