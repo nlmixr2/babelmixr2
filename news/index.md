@@ -2,6 +2,14 @@
 
 ## babelmixr2 0.1.11.9000
 
+- `est="monolix"` now spells a mu-referenced parameter with a `.` in its
+  name (like the tainted `rx__cl.wt`, or `ka.x <- exp(tka + eta.ka)`)
+  the same way in every section of the Monolix model
+  ([\#220](https://github.com/nlmixr2/babelmixr2/issues/220)). The
+  `EQUATION:` block already wrote it as `rx__cl__wt`, but `input=`,
+  `[INDIVIDUAL]`, `<PARAMETER>` and the output readers used `rx__cl.wt`,
+  so Monolix saw an undeclared variable.
+
 - `est="saemix"` now fits `linCmt()` models. The prediction was looked
   up in a column named after the endpoint (`rxLinCmt`), which the solved
   model does not output, so saemix stopped with
