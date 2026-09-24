@@ -20,17 +20,8 @@
   MAP prior on `add__sd` but ignores it (every estimate identical to the
   run without it).
 
-* A Monolix fit now takes its individual estimates (etas) from Monolix's
-  conditional mode (`eta_*_mode`) instead of the last SAEM iterations
-  (`eta_*_SAEM`).  Only the mode agrees with the final population
-  estimates, so the fit's IPRED now reproduces Monolix's (`indivPred_mode`)
-  to about 0.01% instead of 0.5%, and the etas are the empirical Bayes
-  estimates nlmixr2's own methods report.  The ODE solver was compared
-  too: with the etas fixed, rxode2's `dop853` at Monolix's tolerances
-  matched Monolix's predictions more closely than Monolix's own
-  algorithms (`lsode` Adams, `cvode`/`bdf` BDF), so it is kept.  The
-  absolute PRED difference in the fit message is now absolute (it was
-  printed as a relative one).
+* The "PRED absolute difference compared to Monolix PRED" line of a Monolix
+  fit's message is now an absolute difference (it printed a relative one).
 
 * Monolix projects with mu-referenced covariates (`cl <- exp(tcl + eta.cl +
   cl.wt * lWT)`) now load in Monolix.  The covariate was missing from the

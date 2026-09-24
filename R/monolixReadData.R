@@ -353,26 +353,6 @@ rxUiGet.monolixIndividualLL <- function(x, ...) {
   .ret
 }
 
-#' Which Monolix individual estimates babelmixr2 uses
-#'
-#' Monolix exports two sets: `_SAEM`, from the last SAEM iterations, and
-#' `_mode`, the conditional mode computed at the final population
-#' estimates.  Only the mode agrees with the final estimates (for a
-#' Monolix 2024R1 fit, `ka_pop*exp(eta_ka_mode)` is `ka_mode`, while
-#' `ka_pop*exp(eta_ka_SAEM)` is not `ka_SAEM`), so predictions rebuilt from
-#' the final estimates match `indivPred_mode` (to 0.01%) and not
-#' `indivPred_SAEM` (0.5% off).  The mode is also what nlmixr2 reports as
-#' the empirical Bayes estimates of its own methods.  Every export
-#' babelmixr2 asks for includes it (`individualParameters(method =
-#' {conditionalMode})`); `_SAEM` is only a fallback.
-#'
-#' @param names column names of the Monolix file
-#' @return `"_mode"` or `"_SAEM"`
-#' @noRd
-.monolixIndividualSuffix <- function(names) {
-  if (any(grepl("_mode$", names))) "_mode" else "_SAEM"
-}
-
 #' @export
 rxUiGet.monolixEtaObf <- function(x, ...) {
   .ui <- x[[1]]
@@ -382,9 +362,11 @@ rxUiGet.monolixEtaObf <- function(x, ...) {
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   .etaMonolix <- rxUiGet.monolixIndividualParameters(x, ...)
   if (is.null(.etaMonolix)) return(NULL)
-  .suffix <- .monolixIndividualSuffix(names(.etaMonolix))
+  # the SAEM etas (posterior means from the last SAEM iterations), like
+  # nlmixr2est's own saem; the conditional mode (`_mode`) is the FOCEi
+  # family's kind of empirical Bayes estimate
   .n <- c("id", vapply(.etas$neta1, function(i) {
-    paste0("eta_",   .mlxtranGetIndividualMuRefEtaMonolixName(.ui, i, .muRef), .suffix)
+    paste0("eta_",   .mlxtranGetIndividualMuRefEtaMonolixName(.ui, i, .muRef), "_SAEM")
   }, character(1), USE.NAMES=FALSE))
   .etaObf <- .etaMonolix[, .n]
   names(.etaObf) <- c("ID", .etas$name)
@@ -587,8 +569,8 @@ rxUiGet.monolixPreds <- function(x, ...) {
     .tmp$CMT <- paste(.tmp$CMT)
   }
   .ret <- merge(fit$ui$monolixPreds, .tmp, by=.by)
-  # the same individual estimates the fit's etas came from
-  .ipred <- .ret[[paste0("indivPred", .monolixIndividualSuffix(names(.ret)))]]
+  # the same (SAEM) individual estimates the fit's etas came from
+  .ipred <- .ret$indivPred_SAEM
   .ci <- (1 - fit$monolixControl$ci) / 2
   .q <- c(0, .ci, 0.5, 1 - .ci, 1)
   .qi <- stats::quantile(100*abs((.ret$IPRED - .ipred)/.ipred), .q, na.rm=TRUE)
