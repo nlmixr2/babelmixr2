@@ -2,6 +2,39 @@
 
 ## babelmixr2 0.1.11.9000
 
+- `est="saemix"` now fits `linCmt()` models. The prediction was looked
+  up in a column named after the endpoint (`rxLinCmt`), which the solved
+  model does not output, so saemix stopped with
+  `non-numeric argument to function`
+  ([\#212](https://github.com/nlmixr2/babelmixr2/issues/212)).
+
+- `est="saemix"` now fits models where a structural theta has no
+  between-subject variability (e.g. `v <- exp(tv)`). Collecting the
+  individual etas after the fit failed with
+  `invalid subscript type 'list'`
+  ([\#212](https://github.com/nlmixr2/babelmixr2/issues/212)).
+
+- `est="saemix"` now refuses a model it cannot fit, instead of fitting
+  it with a different residual error. saemix fits one endpoint with an
+  `add()`, `prop()`, `add() + prop()` (`combined2`, the only combination
+  saemix has) or `lnorm()` residual error, or an `ll()` likelihood. A
+  model with more than one endpoint (previously fit against predictions
+  of zero), a `combined1` `add() + prop()` (including
+  `saemixControl(addProp="combined1")`), `pow()`, `boxCox()`,
+  `yeoJohnson()`, a logit/probit transformation, `lnorm() + prop()` or a
+  non-normal residual distribution now stops with an error, as does a
+  fixed residual error or between-subject variability, which saemix
+  would otherwise estimate anyway. The checks use the new rxode2
+  assertions `assertRxUiTransform()`, `assertRxUiErrType()`,
+  `assertRxUiAddProp()`, `assertRxUiNoFixedResiduals()` and
+  `assertRxUiNoFixedOmega()`, so this requires rxode2 5.1.8
+  ([\#212](https://github.com/nlmixr2/babelmixr2/issues/212)).
+
+- `est="saemix"` now fits `lnorm()` residual errors with saemix’s
+  exponential error model; they were previously fit as an additive error
+  with a missing starting value
+  ([\#212](https://github.com/nlmixr2/babelmixr2/issues/212)).
+
 - `est="monolix"` now accepts normal priors from `ini({})` and writes
   them as Monolix MAP estimation
   ([\#207](https://github.com/nlmixr2/babelmixr2/issues/207)). A
