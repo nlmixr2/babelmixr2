@@ -1,8 +1,7 @@
 # linCmt() -> PharmML PKmacros.
 #
-# The design note in pharmml-plan.md section 4.2 explains why this cannot be
-# keyed on `linCmtFlg`: at the rxUi level rxode2 has not resolved the
-# compartment count, so 1-, 2- and 3-compartment models all report the same
+# This cannot be keyed on `linCmtFlg`: at the rxUi level rxode2 has not
+# resolved the compartment count, so 1-, 2- and 3-compartment models all report the same
 # flag.  Only the units digit (the depot flag) is usable.  The compartment
 # count and the parameterisation come from the linCmt() parameter names, which
 # is how rxode2 itself resolves them.
@@ -21,13 +20,25 @@
 # Peripheral parameter names, by compartment index and style.
 .pharmmlLinCmtPeripheral <- list(
   # clearance style: inter-compartmental clearance + peripheral volume
-  list(q = "q",  vPlain = "vp",  vNumbered = "v2", k1i = "k12", ki1 = "k21"),
+  list(q = "q", vPlain = "vp", vNumbered = "v2", k1i = "k12", ki1 = "k21"),
   list(q = "q2", vPlain = "vp2", vNumbered = "v3", k1i = "k13", ki1 = "k31")
 )
 
 # Names that mean a parameterisation this writer deliberately does not map.
-.pharmmlLinCmtUnsupported <- c("vss", "vm", "km", "alpha", "beta", "gamma",
-                               "aob", "a", "b", "c", "ktr", "mtt")
+.pharmmlLinCmtUnsupported <- c(
+  "vss",
+  "vm",
+  "km",
+  "alpha",
+  "beta",
+  "gamma",
+  "aob",
+  "a",
+  "b",
+  "c",
+  "ktr",
+  "mtt"
+)
 
 #' Which linCmt() parameters a model defines
 #'
@@ -51,11 +62,18 @@
 #' @noRd
 .pharmmlLinCmtPick <- function(pars, cand, what) {
   .w <- cand[cand %in% pars]
-  if (length(.w) == 0L) return(NA_character_)
+  if (length(.w) == 0L) {
+    return(NA_character_)
+  }
   if (length(.w) > 1L) {
-    stop("linCmt() model defines more than one ", what, " parameter ('",
-         paste(.w, collapse = "', '"), "'); PharmML translation is ambiguous",
-         call. = FALSE)
+    stop(
+      "linCmt() model defines more than one ",
+      what,
+      " parameter ('",
+      paste(.w, collapse = "', '"),
+      "'); PharmML translation is ambiguous",
+      call. = FALSE
+    )
   }
   .w
 }
@@ -76,39 +94,68 @@
   .orig <- .pharmmlParameterSymbols(ui)
   .pars <- tolower(.orig)
   .asIs <- function(n) {
-    if (is.na(n)) return(NA_character_)
+    if (is.na(n)) {
+      return(NA_character_)
+    }
     .orig[match(n, .pars)]
   }
 
   .bad <- .pharmmlLinCmtUnsupported[.pharmmlLinCmtUnsupported %in% .pars]
   if (length(.bad) > 0L) {
-    stop("linCmt() parameter '", .bad[1],
-         "' is not supported in PharmML translation yet", call. = FALSE)
+    stop(
+      "linCmt() parameter '",
+      .bad[1],
+      "' is not supported in PharmML translation yet",
+      call. = FALSE
+    )
   }
 
   # rxode2 already refuses to mix volume styles ("cannot mix 'Vp' and 'V#'
   # volume styles"), and it does so while building the UI -- before this
   # function can be reached.  No duplicate guard here: the style is only
   # detected, to know whether the peripheral volume is `vp` or `v2`.
-  .vPlain <- .pharmmlLinCmtPick(.pars, .pharmmlLinCmtVCentral$plain, "central volume")
-  .vNum <- .pharmmlLinCmtPick(.pars, .pharmmlLinCmtVCentral$numbered, "central volume")
+  .vPlain <- .pharmmlLinCmtPick(
+    .pars,
+    .pharmmlLinCmtVCentral$plain,
+    "central volume"
+  )
+  .vNum <- .pharmmlLinCmtPick(
+    .pars,
+    .pharmmlLinCmtVCentral$numbered,
+    "central volume"
+  )
   .vStyle <- if (!is.na(.vNum)) "numbered" else "plain"
   .v <- if (!is.na(.vNum)) .vNum else .vPlain
   if (is.na(.v)) {
-    stop("cannot find the central volume of the linCmt() model; PharmML ",
-         "translation needs one of '",
-         paste(c(.pharmmlLinCmtVCentral$plain, .pharmmlLinCmtVCentral$numbered),
-               collapse = "', '"), "'", call. = FALSE)
+    stop(
+      "cannot find the central volume of the linCmt() model; PharmML ",
+      "translation needs one of '",
+      paste(
+        c(.pharmmlLinCmtVCentral$plain, .pharmmlLinCmtVCentral$numbered),
+        collapse = "', '"
+      ),
+      "'",
+      call. = FALSE
+    )
   }
 
   .cl <- .pharmmlLinCmtPick(.pars, .pharmmlLinCmtCl, "clearance")
   .k <- .pharmmlLinCmtPick(.pars, .pharmmlLinCmtK, "elimination rate")
   if (!is.na(.cl) && !is.na(.k)) {
-    stop("linCmt() model defines both a clearance ('", .cl,
-         "') and an elimination rate ('", .k, "')", call. = FALSE)
+    stop(
+      "linCmt() model defines both a clearance ('",
+      .cl,
+      "') and an elimination rate ('",
+      .k,
+      "')",
+      call. = FALSE
+    )
   }
   if (is.na(.cl) && is.na(.k)) {
-    stop("cannot find the elimination term of the linCmt() model", call. = FALSE)
+    stop(
+      "cannot find the elimination term of the linCmt() model",
+      call. = FALSE
+    )
   }
   .elim <- if (!is.na(.cl)) "cl" else "k"
 
@@ -127,8 +174,12 @@
       .periph[[length(.periph) + 1L]] <-
         list(style = "k", k1i = .asIs(.k1i), ki1 = .asIs(.ki1))
     } else if (!is.na(.q) || !is.na(.pv) || !is.na(.k1i) || !is.na(.ki1)) {
-      stop("peripheral compartment ", .i,
-           " of the linCmt() model is only partly specified", call. = FALSE)
+      stop(
+        "peripheral compartment ",
+        .i,
+        " of the linCmt() model is only partly specified",
+        call. = FALSE
+      )
     } else {
       break
     }
@@ -136,25 +187,60 @@
 
   .ka <- .pharmmlLinCmtPick(.pars, "ka", "absorption rate")
 
-  list(ncmt = 1L + length(.periph),
-       depot = !is.na(.ka),
-       elimination = .elim,
-       vStyle = .vStyle,
-       v = .asIs(.v),
-       cl = .asIs(.cl),
-       k = .asIs(.k),
-       ka = .asIs(.ka),
-       peripheral = .periph)
+  list(
+    ncmt = 1L + length(.periph),
+    depot = !is.na(.ka),
+    elimination = .elim,
+    vStyle = .vStyle,
+    v = .asIs(.v),
+    cl = .asIs(.cl),
+    k = .asIs(.k),
+    ka = .asIs(.ka),
+    peripheral = .periph
+  )
+}
+
+#' Is this statement `x <- linCmt()`?
+#'
+#' @param e R language object
+#' @return TRUE when the statement assigns the solved-system prediction
+#' @noRd
+.pharmmlIsLinCmtAssign <- function(e) {
+  is.call(e) &&
+    identical(e[[1]], quote(`<-`)) &&
+    is.name(e[[2]]) &&
+    is.call(e[[3]]) &&
+    identical(e[[3]][[1]], quote(linCmt))
+}
+
+#' The variable holding a linCmt() model's concentration
+#'
+#' Either the endpoint of `linCmt() ~ add(sd)` or the left-hand side of
+#' `cp <- linCmt()`.
+#'
+#' @param ui rxode2 UI
+#' @return variable name, or NA_character_ when the model has no linCmt()
+#' @noRd
+.pharmmlLinCmtVar <- function(ui) {
+  .predDf <- ui$predDf
+  .w <- which(.predDf$linCmt %in% TRUE)
+  if (length(.w) > 0L) {
+    return(paste(.predDf$var[.w[1]]))
+  }
+  for (.e in .pharmmlModelStatements(ui)) {
+    if (.pharmmlIsLinCmtAssign(.e)) return(as.character(.e[[2]]))
+  }
+  NA_character_
 }
 
 #' Does this model use linCmt()?
 #'
 #' @param ui rxode2 UI
-#' @return TRUE when any endpoint is a solved-system prediction
+#' @return TRUE when an endpoint is a solved-system prediction or a model
+#'   variable is assigned `linCmt()`
 #' @noRd
 .pharmmlIsLinCmt <- function(ui) {
-  .predDf <- ui$predDf
-  !is.null(.predDf) && any(isTRUE(.predDf$linCmt) | .predDf$linCmt %in% TRUE)
+  !is.na(.pharmmlLinCmtVar(ui))
 }
 
 #' State names rxode2 allocates for a solved model
@@ -166,7 +252,9 @@
 #' @return state name
 #' @noRd
 .pharmmlLinCmtState <- function(i) {
-  if (i == 1L) return("central")
+  if (i == 1L) {
+    return("central")
+  }
   paste0("peripheral", i - 1L)
 }
 
@@ -212,18 +300,23 @@
 #' @noRd
 .pharmmlPkMacros <- function(ui, indent = 0L) {
   .info <- .pharmmlLinCmtInfo(ui)
-  .var <- paste(ui$predDf$var[1])
+  .var <- .pharmmlLinCmtVar(ui)
 
   .macros <- .pmlNode(
     "mdef:Compartment",
     children = c(
       .pharmmlMacroValue("cmt", .pmlText("ct:Int", 1L)),
-      .pharmmlMacroValue("amount",
-                         .pmlNode("ct:SymbRef",
-                                  attrs = c(symbIdRef = .pharmmlLinCmtState(1L)))),
+      .pharmmlMacroValue(
+        "amount",
+        .pmlNode("ct:SymbRef", attrs = c(symbIdRef = .pharmmlLinCmtState(1L)))
+      ),
       .pharmmlMacroPar("volume", .info$v, ui),
-      .pharmmlMacroValue("concentration",
-                         .pmlNode("ct:SymbRef", attrs = c(symbIdRef = .var)))))
+      .pharmmlMacroValue(
+        "concentration",
+        .pmlNode("ct:SymbRef", attrs = c(symbIdRef = .var))
+      )
+    )
+  )
 
   for (.i in seq_along(.info$peripheral)) {
     .p <- .info$peripheral[[.i]]
@@ -231,44 +324,66 @@
       # A computed rate is an expression, and a macro Value accepts only a
       # SymbRef, a scalar or a ct:Assign -- so the expression is wrapped.
       .k1i <- .pharmmlAssign(
-        .rxToPharmml(bquote(.(str2lang(.p$q)) / .(str2lang(.info$v))), ui))
+        .rxToPharmml(bquote(.(str2lang(.p$q)) / .(str2lang(.info$v))), ui)
+      )
       .ki1 <- .pharmmlAssign(
-        .rxToPharmml(bquote(.(str2lang(.p$q)) / .(str2lang(.p$v))), ui))
+        .rxToPharmml(bquote(.(str2lang(.p$q)) / .(str2lang(.p$v))), ui)
+      )
     } else {
       .k1i <- .rxToPharmml(str2lang(.p$k1i), ui)
       .ki1 <- .rxToPharmml(str2lang(.p$ki1), ui)
     }
     .macros <- c(
       .macros,
-      .pmlNode("mdef:Peripheral",
-               children = c(
-                 .pharmmlMacroValue(NULL, .k1i),
-                 .pharmmlMacroValue(NULL, .ki1),
-                 .pharmmlMacroValue("amount",
-                                    .pmlNode("ct:SymbRef",
-                                             attrs = c(symbIdRef = .pharmmlLinCmtState(.i + 1L)))))))
+      .pmlNode(
+        "mdef:Peripheral",
+        children = c(
+          .pharmmlMacroValue(NULL, .k1i),
+          .pharmmlMacroValue(NULL, .ki1),
+          .pharmmlMacroValue(
+            "amount",
+            .pmlNode(
+              "ct:SymbRef",
+              attrs = c(symbIdRef = .pharmmlLinCmtState(.i + 1L))
+            )
+          )
+        )
+      )
+    )
   }
 
   if (.info$depot) {
-    .macros <- c(.macros,
-                 .pmlNode("mdef:Oral",
-                          children = c(
-                            .pharmmlMacroValue("adm", .pmlText("ct:Int", 1L)),
-                            .pharmmlMacroValue("cmt", .pmlText("ct:Int", 1L)),
-                            .pharmmlMacroPar("ka", .info$ka, ui))))
+    .macros <- c(
+      .macros,
+      .pmlNode(
+        "mdef:Oral",
+        children = c(
+          .pharmmlMacroValue("adm", .pmlText("ct:Int", 1L)),
+          .pharmmlMacroValue("cmt", .pmlText("ct:Int", 1L)),
+          .pharmmlMacroPar("ka", .info$ka, ui)
+        )
+      )
+    )
   } else {
-    .macros <- c(.macros,
-                 .pmlNode("mdef:IV",
-                          children = c(
-                            .pharmmlMacroValue("adm", .pmlText("ct:Int", 1L)),
-                            .pharmmlMacroValue("cmt", .pmlText("ct:Int", 1L)))))
+    .macros <- c(
+      .macros,
+      .pmlNode(
+        "mdef:IV",
+        children = c(
+          .pharmmlMacroValue("adm", .pmlText("ct:Int", 1L)),
+          .pharmmlMacroValue("cmt", .pmlText("ct:Int", 1L))
+        )
+      )
+    )
   }
 
   .elim <- .pharmmlMacroValue("cmt", .pmlText("ct:Int", 1L))
   if (.info$elimination == "cl") {
-    .elim <- c(.elim,
-               .pharmmlMacroPar("V", .info$v, ui),
-               .pharmmlMacroPar("CL", .info$cl, ui))
+    .elim <- c(
+      .elim,
+      .pharmmlMacroPar("V", .info$v, ui),
+      .pharmmlMacroPar("CL", .info$cl, ui)
+    )
   } else {
     .elim <- c(.elim, .pharmmlMacroPar("k", .info$k, ui))
   }

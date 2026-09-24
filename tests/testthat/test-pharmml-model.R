@@ -397,3 +397,22 @@ test_that("the assembled ModelDefinition is schema-valid", {
     expect_true(pharmmlValidate(.doc))
   }
 })
+
+test_that("`=` assignments translate like `<-`", {
+  .f <- function() {
+    ini({
+      tcl <- log(2.72)
+      eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      d / dt(center) <- -cl * center
+      cp <- center
+      cp ~ add(add.sd)
+    })
+  }
+  .x <- as.pharmml(.f)
+  expect_match(.x, '<ct:DerivativeVariable symbId="center" symbolType="real">')
+  expect_match(.x, '<ct:Variable symbId="cp" symbolType="real">')
+})

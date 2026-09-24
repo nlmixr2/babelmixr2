@@ -4,7 +4,9 @@
   .ini <- paste0("t", seq_along(pars), " <- 1", collapse = "; ")
   .txt <- sprintf(
     "function() { ini({%s; add.sd <- 1}); model({%s; linCmt() ~ add(add.sd)}) }",
-    .ini, .body)
+    .ini,
+    .body
+  )
   rxode2::rxUiDecompress(eval(parse(text = .txt))())
 }
 
@@ -18,18 +20,33 @@
 }
 
 .pharmmlLinCmtCases <- list(
-  list(pars = c("cl", "v"),                       ncmt = 1L, depot = FALSE, elim = "cl"),
-  list(pars = c("cl", "vc"),                      ncmt = 1L, depot = FALSE, elim = "cl"),
-  list(pars = c("kel", "v"),                      ncmt = 1L, depot = FALSE, elim = "k"),
-  list(pars = c("k", "v"),                        ncmt = 1L, depot = FALSE, elim = "k"),
-  list(pars = c("ka", "cl", "v"),                 ncmt = 1L, depot = TRUE,  elim = "cl"),
-  list(pars = c("ka", "kel", "v"),                ncmt = 1L, depot = TRUE,  elim = "k"),
-  list(pars = c("cl", "v", "q", "vp"),            ncmt = 2L, depot = FALSE, elim = "cl"),
-  list(pars = c("cl", "v1", "q", "v2"),           ncmt = 2L, depot = FALSE, elim = "cl"),
-  list(pars = c("ka", "cl", "v", "q", "vp"),      ncmt = 2L, depot = TRUE,  elim = "cl"),
-  list(pars = c("k", "v", "k12", "k21"),          ncmt = 2L, depot = FALSE, elim = "k"),
-  list(pars = c("cl", "v", "q", "vp", "q2", "vp2"), ncmt = 3L, depot = FALSE, elim = "cl"),
-  list(pars = c("ka", "cl", "v", "q", "vp", "q2", "vp2"), ncmt = 3L, depot = TRUE, elim = "cl")
+  list(pars = c("cl", "v"), ncmt = 1L, depot = FALSE, elim = "cl"),
+  list(pars = c("cl", "vc"), ncmt = 1L, depot = FALSE, elim = "cl"),
+  list(pars = c("kel", "v"), ncmt = 1L, depot = FALSE, elim = "k"),
+  list(pars = c("k", "v"), ncmt = 1L, depot = FALSE, elim = "k"),
+  list(pars = c("ka", "cl", "v"), ncmt = 1L, depot = TRUE, elim = "cl"),
+  list(pars = c("ka", "kel", "v"), ncmt = 1L, depot = TRUE, elim = "k"),
+  list(pars = c("cl", "v", "q", "vp"), ncmt = 2L, depot = FALSE, elim = "cl"),
+  list(pars = c("cl", "v1", "q", "v2"), ncmt = 2L, depot = FALSE, elim = "cl"),
+  list(
+    pars = c("ka", "cl", "v", "q", "vp"),
+    ncmt = 2L,
+    depot = TRUE,
+    elim = "cl"
+  ),
+  list(pars = c("k", "v", "k12", "k21"), ncmt = 2L, depot = FALSE, elim = "k"),
+  list(
+    pars = c("cl", "v", "q", "vp", "q2", "vp2"),
+    ncmt = 3L,
+    depot = FALSE,
+    elim = "cl"
+  ),
+  list(
+    pars = c("ka", "cl", "v", "q", "vp", "q2", "vp2"),
+    ncmt = 3L,
+    depot = TRUE,
+    elim = "cl"
+  )
 )
 
 test_that("the linCmt classifier agrees with rxode2 on structure", {
@@ -40,35 +57,53 @@ test_that("the linCmt classifier agrees with rxode2 on structure", {
 
     expect_equal(.got$ncmt, .c$ncmt, info = paste(.c$pars, collapse = "/"))
     expect_equal(.got$depot, .c$depot, info = paste(.c$pars, collapse = "/"))
-    expect_equal(.got$elimination, .c$elim, info = paste(.c$pars, collapse = "/"))
+    expect_equal(
+      .got$elimination,
+      .c$elim,
+      info = paste(.c$pars, collapse = "/")
+    )
 
     # cross-check against rxode2's own resolution: the states it allocates when
     # actually solving must match the structure the classifier inferred
     .states <- .pharmmlLinCmtStates(.ui, .c$pars)
-    expect_equal("depot" %in% .states, .c$depot,
-                 info = paste(.c$pars, collapse = "/"))
-    expect_equal(sum(grepl("^(central|peripheral)", .states)), .c$ncmt,
-                 info = paste(.c$pars, collapse = "/"))
+    expect_equal(
+      "depot" %in% .states,
+      .c$depot,
+      info = paste(.c$pars, collapse = "/")
+    )
+    expect_equal(
+      sum(grepl("^(central|peripheral)", .states)),
+      .c$ncmt,
+      info = paste(.c$pars, collapse = "/")
+    )
   }
 })
 
 test_that("the classifier reads the depot flag out of linCmtFlg", {
   # linCmtFlg = numSens*100 + nLin*10 + depot; only the units digit is usable
-  # at the UI level (see pharmml-plan.md section 4.2)
+  # at the UI level
   for (.c in .pharmmlLinCmtCases) {
     .ui <- .pharmmlLinCmtUi(.c$pars)
     .flg <- rxode2::rxModelVars(.ui)$flags[["linCmtFlg"]]
-    expect_equal(.flg %% 10 == 1, .c$depot, info = paste(.c$pars, collapse = "/"))
+    expect_equal(
+      .flg %% 10 == 1,
+      .c$depot,
+      info = paste(.c$pars, collapse = "/")
+    )
   }
 })
 
 test_that("the classifier rejects parameterisations it cannot map", {
   # Michaelis-Menten and transit absorption reach this code and are refused
   # here, by name.
-  expect_error(.pharmmlLinCmtInfo(.pharmmlLinCmtUi(c("cl", "v", "vm", "km"))),
-               "'vm' is not supported")
-  expect_error(.pharmmlLinCmtInfo(.pharmmlLinCmtUi(c("cl", "v", "ka", "ktr"))),
-               "'ktr' is not supported")
+  expect_error(
+    .pharmmlLinCmtInfo(.pharmmlLinCmtUi(c("cl", "v", "vm", "km"))),
+    "'vm' is not supported"
+  )
+  expect_error(
+    .pharmmlLinCmtInfo(.pharmmlLinCmtUi(c("cl", "v", "ka", "ktr"))),
+    "'ktr' is not supported"
+  )
 })
 
 test_that("rxode2 rejects the parameterisations it owns before this code runs", {
@@ -103,7 +138,11 @@ test_that("rxode2 rejects the parameterisations it owns before this code runs", 
 # Explicit-ODE equivalent of a linCmt() model, as rxode2 model text.
 .pharmmlLinCmtOdeText <- function(info) {
   .v <- info$v
-  .ke <- if (info$elimination == "cl") paste0("(", info$cl, ")/(", .v, ")") else info$k
+  .ke <- if (info$elimination == "cl") {
+    paste0("(", info$cl, ")/(", .v, ")")
+  } else {
+    info$k
+  }
   .lines <- character(0)
   .central <- paste0("-(", .ke, ")*central")
 
@@ -118,14 +157,18 @@ test_that("rxode2 rejects the parameterisations it owns before this code runs", 
       .ki1 <- .p$ki1
     }
     .central <- paste0(.central, "-(", .k1i, ")*central+(", .ki1, ")*", .st)
-    .lines <- c(.lines,
-                sprintf("d/dt(%s) <- (%s)*central-(%s)*%s", .st, .k1i, .ki1, .st))
+    .lines <- c(
+      .lines,
+      sprintf("d/dt(%s) <- (%s)*central-(%s)*%s", .st, .k1i, .ki1, .st)
+    )
   }
 
   if (info$depot) {
-    .lines <- c(sprintf("d/dt(depot) <- -(%s)*depot", info$ka),
-                sprintf("d/dt(central) <- (%s)*depot%s", info$ka, .central),
-                .lines)
+    .lines <- c(
+      sprintf("d/dt(depot) <- -(%s)*depot", info$ka),
+      sprintf("d/dt(central) <- (%s)*depot%s", info$ka, .central),
+      .lines
+    )
   } else {
     .lines <- c(sprintf("d/dt(central) <- %s", .central), .lines)
   }
@@ -133,8 +176,13 @@ test_that("rxode2 rejects the parameterisations it owns before this code runs", 
 }
 
 .pharmmlOdeModel <- function(info, pars) {
-  .txt <- paste(c(sprintf("param(%s)", paste(pars, collapse = ", ")),
-                  .pharmmlLinCmtOdeText(info)), collapse = "\n")
+  .txt <- paste(
+    c(
+      sprintf("param(%s)", paste(pars, collapse = ", ")),
+      .pharmmlLinCmtOdeText(info)
+    ),
+    collapse = "\n"
+  )
   rxode2::rxode2(.txt)
 }
 
@@ -142,8 +190,10 @@ test_that("rxode2 rejects the parameterisations it owns before this code runs", 
 # declares them, which is what lets rxode2 resolve the parameterisation; an
 # `x <- x` self-assignment does not (rxode2 reports "Ambiguous 'kel'").
 .pharmmlLinCmtPlain <- function(pars) {
-  .txt <- paste(c(sprintf("param(%s)", paste(pars, collapse = ", ")),
-                  "cp <- linCmt()"), collapse = "\n")
+  .txt <- paste(
+    c(sprintf("param(%s)", paste(pars, collapse = ", ")), "cp <- linCmt()"),
+    collapse = "\n"
+  )
   rxode2::rxode2(.txt)
 }
 
@@ -161,10 +211,18 @@ test_that("the classifier's reading of linCmt() matches rxode2 numerically", {
     .info <- .pharmmlLinCmtInfo(.pharmmlLinCmtUi(.c$pars))
     .p <- .pharmmlLinCmtParVals(.c$pars)
 
-    .lin <- rxode2::rxSolve(.pharmmlLinCmtPlain(.c$pars), .p, .e,
-                            returnType = "data.frame")
-    .ode <- rxode2::rxSolve(.pharmmlOdeModel(.info, .c$pars), .p, .e,
-                            returnType = "data.frame")
+    .lin <- rxode2::rxSolve(
+      .pharmmlLinCmtPlain(.c$pars),
+      .p,
+      .e,
+      returnType = "data.frame"
+    )
+    .ode <- rxode2::rxSolve(
+      .pharmmlOdeModel(.info, .c$pars),
+      .p,
+      .e,
+      returnType = "data.frame"
+    )
 
     expect_lt(max(abs(.lin$cp - .ode$cp)) / max(abs(.ode$cp)), 1e-5)
   }
@@ -180,16 +238,36 @@ test_that("the numerical check can actually fail", {
   .pars <- c("cl", "v", "q", "vp")
   .p <- .pharmmlLinCmtParVals(.pars)
   .info <- .pharmmlLinCmtInfo(.pharmmlLinCmtUi(.pars))
-  .lin <- rxode2::rxSolve(.pharmmlLinCmtPlain(.pars), .p, .e, returnType = "data.frame")
+  .lin <- rxode2::rxSolve(
+    .pharmmlLinCmtPlain(.pars),
+    .p,
+    .e,
+    returnType = "data.frame"
+  )
 
   .mutations <- list(
-    "peripheral volume read as central" = function(i) { i$peripheral[[1]]$v <- i$v; i },
-    "clearance read as a rate constant" = function(i) { i$elimination <- "k"; i$k <- i$cl; i },
-    "peripheral compartment dropped"    = function(i) { i$peripheral <- list(); i })
+    "peripheral volume read as central" = function(i) {
+      i$peripheral[[1]]$v <- i$v
+      i
+    },
+    "clearance read as a rate constant" = function(i) {
+      i$elimination <- "k"
+      i$k <- i$cl
+      i
+    },
+    "peripheral compartment dropped" = function(i) {
+      i$peripheral <- list()
+      i
+    }
+  )
 
   for (.nm in names(.mutations)) {
-    .bad <- rxode2::rxSolve(.pharmmlOdeModel(.mutations[[.nm]](.info), .pars), .p, .e,
-                            returnType = "data.frame")
+    .bad <- rxode2::rxSolve(
+      .pharmmlOdeModel(.mutations[[.nm]](.info), .pars),
+      .p,
+      .e,
+      returnType = "data.frame"
+    )
     expect_gt(max(abs(.lin$cp - .bad$cp)) / max(abs(.bad$cp)), 1e-3)
   }
 })
@@ -258,4 +336,53 @@ test_that("a linCmt model produces a schema-valid ModelDefinition", {
     .doc <- .pharmmlWrapMdefRaw(.pharmmlModelDefinition(.ui))
     expect_true(pharmmlValidate(.doc), info = paste(.c$pars, collapse = "/"))
   }
+})
+
+test_that("cp <- linCmt() names the concentration and keeps the rest of the model", {
+  .f <- function() {
+    ini({
+      tka <- log(1.57)
+      tcl <- log(2.72)
+      tv <- log(31.5)
+      eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv)
+      cp <- linCmt()
+      cp2 <- 1000 * cp
+      cp2 ~ add(add.sd)
+    })
+  }
+  .x <- as.pharmml(.f, nlmixr2data::theo_sd)
+  expect_match(.x, "<mdef:PKmacros>")
+  expect_match(
+    .x,
+    '<mdef:Value argument="concentration">\\s*<ct:SymbRef symbIdRef="cp"/>'
+  )
+  expect_match(.x, '<ct:Variable symbId="cp2" symbolType="real">')
+  expect_match(.x, '<ct:SymbRef blkIdRef="sm1" symbIdRef="cp2"/>')
+  expect_false(grepl("linCmt", .x, fixed = TRUE))
+  expect_equal(.pharmmlDanglingRefs(.x), character(0))
+})
+
+test_that("a model mixing linCmt() and ODEs is refused", {
+  .f <- function() {
+    ini({
+      tcl <- log(2.72)
+      tv <- log(31.5)
+      eta.cl ~ 0.3
+      add.sd <- 0.7
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv)
+      cp <- linCmt()
+      d / dt(effect) <- cp - effect
+      effect ~ add(add.sd)
+    })
+  }
+  expect_error(as.pharmml(.f), "linCmt\\(\\) and ODEs")
 })

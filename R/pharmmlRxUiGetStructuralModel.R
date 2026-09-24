@@ -42,14 +42,29 @@
 #' @noRd
 .pharmmlModelStatements <- function(ui) {
   .lst <- ui$getSplitMuModel$modelWithDrop
-  Filter(function(.e) {
-    # mu-referenced parameter definitions are replaced by the bare symbol
-    # `_drop`; residual-error lines are `~` calls and belong to the
-    # ObservationModel, not here.
-    if (is.name(.e)) return(FALSE)
-    if (is.call(.e) && identical(as.character(.e[[1]]), "~")) return(FALSE)
-    TRUE
-  }, .lst)
+  # `a = b` is the same assignment as `a <- b` in rxode2; normalise it so the
+  # statement classifiers below only have to know one spelling.
+  .lst <- lapply(.lst, function(.e) {
+    if (is.call(.e) && identical(.e[[1]], quote(`=`))) {
+      .e[[1]] <- quote(`<-`)
+    }
+    .e
+  })
+  Filter(
+    function(.e) {
+      # mu-referenced parameter definitions are replaced by the bare symbol
+      # `_drop`; residual-error lines are `~` calls and belong to the
+      # ObservationModel, not here.
+      if (is.name(.e)) {
+        return(FALSE)
+      }
+      if (is.call(.e) && identical(as.character(.e[[1]]), "~")) {
+        return(FALSE)
+      }
+      TRUE
+    },
+    .lst
+  )
 }
 
 #' Is this statement an explicit initial condition, e.g. `center(0) <- 100`?
@@ -58,10 +73,16 @@
 #' @return TRUE when the statement sets an initial condition
 #' @noRd
 .pharmmlIsInitialCondition <- function(e) {
-  if (!is.call(e)) return(FALSE)
-  if (!identical(as.character(e[[1]]), "<-")) return(FALSE)
+  if (!is.call(e)) {
+    return(FALSE)
+  }
+  if (!identical(as.character(e[[1]]), "<-")) {
+    return(FALSE)
+  }
   .lhs <- e[[2]]
-  if (!is.call(.lhs)) return(FALSE)
+  if (!is.call(.lhs)) {
+    return(FALSE)
+  }
   # a call whose function is a plain name and whose single argument is 0
   is.name(.lhs[[1]]) && length(.lhs) == 2L && identical(.lhs[[2]], 0)
 }
@@ -72,16 +93,28 @@
 #' @return TRUE when the statement defines a derivative
 #' @noRd
 .pharmmlIsDerivative <- function(e) {
-  if (!is.call(e)) return(FALSE)
-  if (!identical(as.character(e[[1]]), "<-")) return(FALSE)
+  if (!is.call(e)) {
+    return(FALSE)
+  }
+  if (!identical(as.character(e[[1]]), "<-")) {
+    return(FALSE)
+  }
   .lhs <- e[[2]]
   # `d/dt(x)` parses as `/`(d, dt(x)) -- it is a division call, not a single
   # `d/dt` name.
-  if (!is.call(.lhs) || !identical(as.character(.lhs[[1]]), "/")) return(FALSE)
-  if (length(.lhs) != 3L) return(FALSE)
-  if (!is.name(.lhs[[2]]) || !identical(as.character(.lhs[[2]]), "d")) return(FALSE)
+  if (!is.call(.lhs) || !identical(as.character(.lhs[[1]]), "/")) {
+    return(FALSE)
+  }
+  if (length(.lhs) != 3L) {
+    return(FALSE)
+  }
+  if (!is.name(.lhs[[2]]) || !identical(as.character(.lhs[[2]]), "d")) {
+    return(FALSE)
+  }
   .rhs <- .lhs[[3]]
-  is.call(.rhs) && identical(as.character(.rhs[[1]]), "dt") && length(.rhs) == 2L
+  is.call(.rhs) &&
+    identical(as.character(.rhs[[1]]), "dt") &&
+    length(.rhs) == 2L
 }
 
 #' The state name a `d/dt()` statement assigns to
@@ -122,14 +155,25 @@
     attrs = c(symbId = state, symbolType = "real"),
     children = c(
       .pharmmlAssign(.rxToPharmml(rhs, ui)),
-      .pmlNode("ct:IndependentVariable",
-               children = .pmlNode("ct:SymbRef", attrs = c(symbIdRef = "t"))),
-      .pmlNode("ct:InitialCondition",
-               children = c(
-                 .pmlNode("ct:InitialValue",
-                          children = .pharmmlAssign(.rxToPharmml(init, ui))),
-                 .pmlNode("ct:InitialTime",
-                          children = .pharmmlAssign(.pmlText("ct:Real", 0)))))))
+      .pmlNode(
+        "ct:IndependentVariable",
+        children = .pmlNode("ct:SymbRef", attrs = c(symbIdRef = "t"))
+      ),
+      .pmlNode(
+        "ct:InitialCondition",
+        children = c(
+          .pmlNode(
+            "ct:InitialValue",
+            children = .pharmmlAssign(.rxToPharmml(init, ui))
+          ),
+          .pmlNode(
+            "ct:InitialTime",
+            children = .pharmmlAssign(.pmlText("ct:Real", 0))
+          )
+        )
+      )
+    )
+  )
 }
 
 #' PharmML StructuralModel block
@@ -144,43 +188,70 @@
 #'
 #' @noRd
 .pharmmlStructuralModel <- function(ui, indent = 0L) {
-  if (.pharmmlIsLinCmt(ui)) {
-    # A solved model is expressed as PK macros rather than derivatives, which
-    # keeps the structure the model was written in.
-    return(.pmlNode("mdef:StructuralModel",
-                    attrs = c(blkId = .pmlBlk[["structural"]]),
-                    children = .pharmmlPkMacros(ui),
-                    indent = indent))
-  }
   .init <- .pharmmlInitialConditions(ui)
   .children <- character(0)
-
-  for (.e in .pharmmlModelStatements(ui)) {
-    if (.pharmmlIsInitialCondition(.e)) next # folded into the derivative
-    if (.pharmmlIsDerivative(.e)) {
-      .state <- .pharmmlDerivativeState(.e)
-      .i <- .init[[.state]]
-      if (is.null(.i)) .i <- 0
-      .children <- c(.children,
-                     .pharmmlDerivativeVariable(.state, .e[[3]], .i, ui))
-      next
-    }
-    if (is.call(.e) && identical(as.character(.e[[1]]), "<-") && is.name(.e[[2]])) {
-      .children <- c(.children,
-                     .pmlNode("ct:Variable",
-                              attrs = c(symbId = as.character(.e[[2]]),
-                                        symbolType = "real"),
-                              children = .pharmmlAssign(.rxToPharmml(.e[[3]], ui))))
-      next
-    }
-    stop("cannot translate the model statement '", deparse1(.e),
-         "' to PharmML", call. = FALSE)
+  .linCmt <- .pharmmlIsLinCmt(ui)
+  if (.linCmt) {
+    # A solved model is expressed as PK macros rather than derivatives, which
+    # keeps the structure the model was written in.  The macros define the
+    # concentration, so the `cp <- linCmt()` statement itself is dropped and
+    # the rest of the model follows as ordinary variables.
+    .children <- .pharmmlPkMacros(ui)
   }
 
-  .pmlNode("mdef:StructuralModel",
-           attrs = c(blkId = .pmlBlk[["structural"]]),
-           children = .children,
-           indent = indent)
+  for (.e in .pharmmlModelStatements(ui)) {
+    if (.linCmt && .pharmmlIsLinCmtAssign(.e)) {
+      next
+    } # the PK macros define it
+    if (.pharmmlIsInitialCondition(.e)) {
+      next
+    } # folded into the derivative
+    if (.pharmmlIsDerivative(.e)) {
+      if (.linCmt) {
+        stop(
+          "PharmML translation of a model mixing linCmt() and ODEs is ",
+          "not supported",
+          call. = FALSE
+        )
+      }
+      .state <- .pharmmlDerivativeState(.e)
+      .i <- .init[[.state]]
+      if (is.null(.i)) {
+        .i <- 0
+      }
+      .children <- c(
+        .children,
+        .pharmmlDerivativeVariable(.state, .e[[3]], .i, ui)
+      )
+      next
+    }
+    if (
+      is.call(.e) && identical(as.character(.e[[1]]), "<-") && is.name(.e[[2]])
+    ) {
+      .children <- c(
+        .children,
+        .pmlNode(
+          "ct:Variable",
+          attrs = c(symbId = as.character(.e[[2]]), symbolType = "real"),
+          children = .pharmmlAssign(.rxToPharmml(.e[[3]], ui))
+        )
+      )
+      next
+    }
+    stop(
+      "cannot translate the model statement '",
+      deparse1(.e),
+      "' to PharmML",
+      call. = FALSE
+    )
+  }
+
+  .pmlNode(
+    "mdef:StructuralModel",
+    attrs = c(blkId = .pmlBlk[["structural"]]),
+    children = .children,
+    indent = indent
+  )
 }
 
 #' @export
