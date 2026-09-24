@@ -11,9 +11,6 @@ nlmixr2Est.saemix <- function(env, ...) {
     assign("ui", rxode2::rxUiCompress(env$ui), envir = env)
   }, add = TRUE)
 
-  # Assertions
-  rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'saemix'", .var.name = .ui$modelName)
-
   # Setup control
   .saemixFamilyControl(env, ...)
   on.exit({
@@ -22,10 +19,90 @@ nlmixr2Est.saemix <- function(env, ...) {
     }
   }, add = TRUE)
 
+  # Assertions (after the control is in the ui, so saemixControl(addProp=)
+  # decides what a default add() + prop() endpoint is)
+  .saemixAssertUi(.ui)
+
   .saemixFamilyFit(env, ...)
 }
 attr(nlmixr2Est.saemix, "type") <- "Stochastic EM"
 attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
+
+#' Assert that saemix can fit a model
+#'
+#' saemix fits a single endpoint with an additive ("constant"),
+#' proportional, combined (`sqrt(a^2 + b^2*f^2)`, nlmixr2's
+#' `combined2`) or exponential (`lnorm()`) residual error, or a
+#' likelihood (`ll()`) endpoint, and always estimates the residual
+#' error and between-subject variability.  Any other model is refused
+#' instead of being fit with a different error model or with fixed
+#' parameters silently estimated.
+#'
+#' @param ui rxode2 ui
+#' @return nothing, called for the assertions
+#' @noRd
+#' @author Matthew L. Fidler
+.saemixAssertUi <- function(ui) {
+  .extra <- " for the estimation routine 'saemix'"
+  .n <- ui$modelName
+  rxode2::assertRxUiRandomOnIdOnly(ui, .extra, .var.name = .n)
+  rxode2::assertRxUiSingleEndpoint(ui, .extra, .var.name = .n)
+  rxode2::assertRxUiEstimatedResiduals(ui, .extra, .var.name = .n)
+  # saemix estimates every residual error and omega; it cannot fix them
+  rxode2::assertRxUiNoFixedResiduals(ui, .extra, .var.name = .n)
+  rxode2::assertRxUiNoFixedOmega(ui, .extra, .var.name = .n)
+  if (ui$predDf$distribution == "LL") return(invisible())
+  rxode2::assertRxUiTransformNormal(ui, .extra, .var.name = .n)
+  rxode2::assertRxUiTransform(ui, c("untransformed", "lnorm"), .extra, .var.name = .n)
+  if (ui$predDf$transform == "lnorm") {
+    rxode2::assertRxUiErrType(ui, "add", paste0(" with lnorm()", .extra), .var.name = .n)
+  } else {
+    rxode2::assertRxUiErrType(ui, c("add", "prop", "add + prop"), .extra, .var.name = .n)
+  }
+  rxode2::assertRxUiAddProp(ui, "combined2", .extra, .var.name = .n)
+  invisible()
+}
+
+#' Translate a single endpoint's residual error to a saemix error model
+#'
+#' @param ui rxode2 ui that passed `.saemixAssertUi()`
+#' @return NULL for a likelihood (`ll()`) endpoint; otherwise a list
+#'   with the saemix `model`, its `init` values `c(a, b)` and the
+#'   nlmixr2 parameter `names` that `a` and `b` estimate (`NA` when
+#'   unused)
+#' @noRd
+#' @author Matthew L. Fidler
+.saemixErrorModel <- function(ui) {
+  .predDf <- ui$predDf
+  if (.predDf$distribution == "LL") return(NULL)
+  .iniDf <- ui$iniDf
+  .errName <- function(type) {
+    .iniDf$name[!is.na(.iniDf$err) & .iniDf$err == type]
+  }
+  .errEst <- function(name) .iniDf$est[.iniDf$name == name]
+  if (.predDf$transform == "lnorm") {
+    .a <- .errName("lnorm")
+    return(list(model = "exponential", init = c(.errEst(.a), 0),
+                names = c(.a, NA_character_)))
+  }
+  switch(as.character(.predDf$errType),
+         "add" = {
+           .a <- .errName("add")
+           list(model = "constant", init = c(.errEst(.a), 0),
+                names = c(.a, NA_character_))
+         },
+         "prop" = {
+           .b <- .errName("prop")
+           list(model = "proportional", init = c(0, .errEst(.b)),
+                names = c(NA_character_, .b))
+         },
+         "add + prop" = {
+           .a <- .errName("add")
+           .b <- .errName("prop")
+           list(model = "combined", init = c(.errEst(.a), .errEst(.b)),
+                names = c(.a, .b))
+         })
+}
 
 .saemixFamilyControl <- function(env, ...) {
   .ui <- env$ui
@@ -84,8 +161,8 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
   .ret$rowsById <- split(seq_len(nrow(.ret$dataSav)), .ret$dataSav$ID)
   .ret$subjectRowCount <- sapply(.ret$rowsById, length)
 
-  # Check if likelihood model
-  .isLikelihood <- any(.ui$predDf$distribution == "LL")
+  # Check if likelihood model (only single endpoint models are supported)
+  .isLikelihood <- .ui$predDf$distribution == "LL"
   .modelType <- if (.isLikelihood) "likelihood" else "structural"
 
   # Extract structural parameters (thetas)
@@ -129,28 +206,9 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
   }
 
   # Error model setup (only for structural models)
-  .errorModel <- NULL
-  .errorInit <- NULL
-  if (.modelType == "structural") {
-    .errType <- .ui$predDf$errType[1]
-    if (.errType == "add") {
-      .errorModel <- "constant"
-      .errRows <- .ui$iniDf[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "add", ]
-      .errorInit <- c(.errRows$est[1], 0)
-    } else if (.errType == "prop") {
-      .errorModel <- "proportional"
-      .errRows <- .ui$iniDf[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "prop", ]
-      .errorInit <- c(0, .errRows$est[1])
-    } else if (.errType %in% c("add + prop", "combined", "combined2", "combined1")) {
-      .errorModel <- "combined"
-      .addRows <- .ui$iniDf[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "add", ]
-      .propRows <- .ui$iniDf[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "prop", ]
-      .errorInit <- c(.addRows$est[1], .propRows$est[1])
-    } else {
-      .errorModel <- "constant"
-      .errorInit <- c(1, 0)
-    }
-  }
+  .saemixError <- .saemixErrorModel(.ui)
+  .errorModel <- .saemixError$model
+  .errorInit <- .saemixError$init
 
   .saemixPredictors <- c("origRow", "TIME")
   .etaNamesUi <- .ui$muRefTable$eta
@@ -220,27 +278,16 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
         .ret$cachedMatchedIdx <- matchedIdx
       }
 
-      predCols <- .ui$predDf$cond
+      predCol <- .ui$predDf$cond
       if (.isLikelihood) {
-        predCols <- rep("pred", length(predCols))
+        predCol <- "pred"
+      } else if (predCol == "rxLinCmt") {
+        # linCmt() endpoints (rxLinCmt) are not output columns of the
+        # solved model; use the individual prediction instead
+        predCol <- "ipredSim"
       }
 
-      if (length(predCols) == 1) {
-        predictions <- res[[predCols]][matchedIdx]
-      } else {
-        # Locate ytype column in .ret$dataSav$origRow mapping
-        ytypeCol <- if ("YTYPE" %in% colnames(.ret$dataSav)) "YTYPE" else "ytype"
-        ytypeVec <- .ret$dataSav[[ytypeCol]][origRowCol]
-
-        predictions <- numeric(nrow(xidep))
-        for (yVal in unique(ytypeVec)) {
-          rows <- which(ytypeVec == yVal)
-          predCol <- predCols[yVal]
-          predictions[rows] <- res[[predCol]][matchedIdx[rows]]
-        }
-      }
-
-      return(predictions)
+      return(res[[predCol]][matchedIdx])
     }, error = function(e) {
       cat("ERROR IN .saemixModelFunction:\n")
       print(e)
@@ -350,31 +397,24 @@ attr(nlmixr2Est.saemix, "description") <- "saemix (SAEM, R package)"
     pName <- .thetaNames[i]
     .fullTheta[pName] <- fit@results@fixed.effects[i]
   }
-  # Update residual parameters
-  if (.modelType == "structural") {
-    .errType <- .ui$predDf$errType[1]
-    if (.errType == "add") {
-      errName <- .ui$iniDf$name[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "add"]
-      .fullTheta[errName] <- fit@results@respar[1]
-    } else if (.errType == "prop") {
-      errName <- .ui$iniDf$name[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "prop"]
-      .fullTheta[errName] <- fit@results@respar[2]
-    } else if (.errType %in% c("add + prop", "combined", "combined2", "combined1")) {
-      addName <- .ui$iniDf$name[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "add"]
-      propName <- .ui$iniDf$name[!is.na(.ui$iniDf$err) & .ui$iniDf$err == "prop"]
-      .fullTheta[addName] <- fit@results@respar[1]
-      .fullTheta[propName] <- fit@results@respar[2]
+  # Update residual parameters (respar is c(a, b))
+  if (!is.null(.saemixError)) {
+    for (i in 1:2) {
+      if (!is.na(.saemixError$names[i])) {
+        .fullTheta[.saemixError$names[i]] <- fit@results@respar[i]
+      }
     }
   }
   .ret$fullTheta <- .fullTheta
 
   # 2. etaObf
-  etaNamesFit <- colnames(fit@results@map.eta)
-  etaNamesUi <- sapply(etaNamesFit, function(name) {
-    thetaName <- sub("^eta\\.", "", name)
+  # map.eta has a column for every structural parameter; keep only
+  # the parameters that have a between-subject variability
+  etaThetaNames <- .thetaNames[.hasEta]
+  etaNamesUi <- vapply(etaThetaNames, function(thetaName) {
     .ui$muRefTable$eta[.ui$muRefTable$theta == thetaName]
-  })
-  etaObf <- as.data.frame(fit@results@map.eta)
+  }, character(1), USE.NAMES = FALSE)
+  etaObf <- as.data.frame(fit@results@map.eta)[, .hasEta, drop = FALSE]
   colnames(etaObf) <- etaNamesUi
   etaObf$ID <- unique(.ret$dataSav$ID)
   etaObf <- etaObf[, c("ID", etaNamesUi), drop = FALSE]
