@@ -15,6 +15,25 @@
   omega blocks, multivariate normal priors, non-normal priors, priors on
   a residual error parameter estimated as a variance, and priors on a
   `probitInv()` parameter with bounds other than (0, 1).
+* `est="nonmem"` now runs models with `ini({})` priors, translating them
+  to NONMEM's `$PRIOR NWPRI` (#205).  Normal priors on population
+  parameters (`dnorm()`, `stdNormal()`, the `tcl + tv ~ c(...)` joint
+  normal) become `$THETAP`/`$THETAPV`, and `invWishart(nu)` degrees of
+  freedom on an omega block become `$OMEGAP`/`$OMEGAPD`, with the block's
+  own initial estimate as the prior scale.  NWPRI gives its priors to the
+  first THETAs and the first omega blocks, so the parameters with a prior
+  have to come first in `ini({})`; otherwise, and for priors NWPRI cannot
+  express (`dcauchy()`, a normal prior directly on an omega element, which
+  is TNPRI), the model is refused before any file is written instead of
+  fitting a different prior.  When the output is read back, the prior
+  values NM-TRAN adds as extra THETAs and OMEGAs are dropped, and the
+  objective function type says `nwpri` because NONMEM's objective
+  includes the prior.
+
+* `$OMEGA BLOCK()` records of 3 or more etas are now written in the order
+  NONMEM reads them (row by row down the lower triangle).  They used to be
+  written column by column, so NONMEM started from the wrong initial
+  omega values.
 
 * The `$PROBLEM` record of a generated NONMEM control stream now carries
   the model name (`$PROBLEM one.cmt translated from babelmixr2`).  It read
