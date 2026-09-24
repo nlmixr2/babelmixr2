@@ -176,11 +176,27 @@ rxUiGet.monolixOmega <- function(x, ...) {
 }
 attr(rxUiGet.monolixOmega, "rstudio") <- lotri::lotri(a~0.1)
 
+#' Monolix name of an nlmixr2 population parameter
+#'
+#' @param name nlmixr2 theta name
+#' @param muRef mu-referenced theta to Monolix variable names
+#' @param covDataFrame mu-referenced covariate data frame
+#' @return `beta_<var>_<covariate>` for a mu-referenced covariate effect,
+#'   otherwise `<var>_pop`
+#' @noRd
+.monolixPopParName <- function(name, muRef, covDataFrame) {
+  .w <- which(covDataFrame$covariateParameter == name)
+  if (length(.w) == 1) {
+    return(paste0("beta_", muRef[covDataFrame$theta[.w]], "_",
+                  covDataFrame$covariate[.w]))
+  }
+  paste0(muRef[name], "_pop")
+}
+
 .monolixGetPopParValue <- function(name, muRefCurEval, muRef, covDataFrame, pop) {
   .w <- which(covDataFrame$covariateParameter == name)
   if (length(.w) == 1) {
-    .par <- paste0("beta_", muRef[covDataFrame$theta[.w]], "_",
-                   covDataFrame$covariate[.w])
+    .par <- .monolixPopParName(name, muRef, covDataFrame)
     .w <- which(pop$parameter == .par)
     if (length(.w) != 1) return(NA_real_)
     return(pop$value[.w])
@@ -455,9 +471,10 @@ rxUiGet.monolixCovariance <- function(x, ...) {
     .sa <- FALSE
   }
   .j <- rxUiGet.monolixJacobian(x, ...)
-  .n <- vapply(dimnames(.j)[[1]], function(n){
-    paste0(.muRef[n], "_pop")
-  }, character(1), USE.NAMES=FALSE)
+  # a covariate effect is beta_<var>_<covariate>, not <var>_pop
+  .covDataFrame <- .ui$saemMuRefCovariateDataFrame
+  .n <- vapply(dimnames(.j)[[1]], .monolixPopParName, character(1),
+               muRef=.muRef, covDataFrame=.covDataFrame, USE.NAMES=FALSE)
   .cov <- .cov[.n, .n]
   .ui <- x[[1]]
   rxode2::rxAssignControlValue(.ui, ".covMethod", ifelse(.sa, "MonolixSA", "MonolixLin"))

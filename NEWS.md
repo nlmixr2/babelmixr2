@@ -20,7 +20,11 @@
   cl.wt * lWT)`) now load in Monolix.  The covariate was missing from the
   `[INDIVIDUAL]` inputs (Monolix: `Undefined variable 'lWT'`), and when
   every covariate was mu-referenced the structural model got a regressor
-  line with no name (`= {use=regressor}`, a syntax error).  When
+  line with no name (`= {use=regressor}`, a syntax error).  Reading the
+  results of such a fit back failed with `subscript out of bounds`: the
+  covariance looked up the covariate effect as `NA_pop` instead of
+  `beta_cl_lWT`.  The tests now replay Monolix 2024R1 runs, with and
+  without MAP priors.  When
   lixoftConnectors cannot load or run the project, `nlmixr2()` now stops
   with an error instead of waiting forever for output Monolix never
   writes.
