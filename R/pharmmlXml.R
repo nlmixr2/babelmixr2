@@ -4,13 +4,13 @@
 .pmlNsTable <- list(
   "0.9" = c(
     pharmml = "http://www.pharmml.org/pharmml/0.9/PharmML",
-    ct      = "http://www.pharmml.org/pharmml/0.9/CommonTypes",
-    math    = "http://www.pharmml.org/pharmml/0.9/Maths",
-    mdef    = "http://www.pharmml.org/pharmml/0.9/ModelDefinition",
-    mstep   = "http://www.pharmml.org/pharmml/0.9/ModellingSteps",
-    ds      = "http://www.pharmml.org/pharmml/0.9/Dataset",
-    design  = "http://www.pharmml.org/pharmml/0.9/TrialDesign",
-    po      = "http://www.pharmml.org/probonto/ProbOnto"
+    ct = "http://www.pharmml.org/pharmml/0.9/CommonTypes",
+    math = "http://www.pharmml.org/pharmml/0.9/Maths",
+    mdef = "http://www.pharmml.org/pharmml/0.9/ModelDefinition",
+    mstep = "http://www.pharmml.org/pharmml/0.9/ModellingSteps",
+    ds = "http://www.pharmml.org/pharmml/0.9/Dataset",
+    design = "http://www.pharmml.org/pharmml/0.9/TrialDesign",
+    po = "http://www.pharmml.org/probonto/ProbOnto"
   )
 )
 
@@ -38,9 +38,13 @@ pharmmlVersions <- function() {
 .pmlNs <- function(version = "0.9") {
   .ret <- .pmlNsTable[[version]]
   if (is.null(.ret)) {
-    stop("unsupported PharmML version '", version, "'; supported: ",
-         paste(pharmmlVersions(), collapse = ", "),
-         call. = FALSE)
+    stop(
+      "unsupported PharmML version '",
+      version,
+      "'; supported: ",
+      paste(pharmmlVersions(), collapse = ", "),
+      call. = FALSE
+    )
   }
   .ret
 }
@@ -65,7 +69,9 @@ pharmmlVersions <- function() {
 #' @return xml_document
 #' @noRd
 .pmlAsXmlDocument <- function(x) {
-  if (inherits(x, "xml_document")) return(x)
+  if (inherits(x, "xml_document")) {
+    return(x)
+  }
   checkmate::assertCharacter(x, min.len = 1, any.missing = FALSE)
   if (length(x) == 1L && !grepl("<", x, fixed = TRUE)) {
     checkmate::assertFileExists(x)
@@ -107,10 +113,13 @@ pharmmlValidate <- function(x, version = "0.9", error = TRUE) {
   .schema <- xml2::read_xml(file.path(.schemaDir, "pharmml.xsd"))
   .ret <- xml2::xml_validate(.doc, .schema)
   if (!isTRUE(as.logical(.ret)) && error) {
-    stop("PharmML document does not validate against the ", version,
-         " schema:\n  ",
-         paste(attr(.ret, "errors"), collapse = "\n  "),
-         call. = FALSE)
+    stop(
+      "PharmML document does not validate against the ",
+      version,
+      " schema:\n  ",
+      paste(attr(.ret, "errors"), collapse = "\n  "),
+      call. = FALSE
+    )
   }
   .ret
 }
@@ -149,15 +158,46 @@ pharmmlValidate <- function(x, version = "0.9", error = TRUE) {
   .pad <- .pmlIndent(indent)
   .a <- ""
   if (length(attrs) > 0L) {
-    .a <- paste0(" ", paste0(names(attrs), '="', .pmlEscapeAttr(attrs), '"',
-                             collapse = " "))
+    .a <- paste0(
+      " ",
+      paste0(names(attrs), '="', .pmlEscapeAttr(attrs), '"', collapse = " ")
+    )
   }
   if (length(children) == 0L) {
     return(paste0(.pad, "<", name, .a, "/>"))
   }
-  paste0(.pad, "<", name, .a, ">\n",
-         paste(children, collapse = "\n"), "\n",
-         .pad, "</", name, ">")
+  paste0(
+    .pad,
+    "<",
+    name,
+    .a,
+    ">\n",
+    paste(children, collapse = "\n"),
+    "\n",
+    .pad,
+    "</",
+    name,
+    ">"
+  )
+}
+
+#' Format a double so it reads back as the same double
+#'
+#' `as.character()` keeps only 15 significant digits, which loses the last bits
+#' of values such as `log(2.72)`; 17 always round-trips, and the shortest of
+#' 15, 16 and 17 digits that is exact is kept.
+#'
+#' @param x double vector
+#' @return character vector
+#' @noRd
+.pmlNum <- function(x) {
+  .ret <- sprintf("%.15g", x)
+  .f <- which(is.finite(x))
+  for (.d in c("%.16g", "%.17g")) {
+    .w <- .f[as.numeric(.ret[.f]) != x[.f]]
+    .ret[.w] <- sprintf(.d, x[.w])
+  }
+  .ret
 }
 
 #' Emit a PharmML element with a text value
@@ -168,6 +208,16 @@ pharmmlValidate <- function(x, version = "0.9", error = TRUE) {
 #' @return character(1)
 #' @noRd
 .pmlText <- function(name, value, indent = 0L) {
-  paste0(.pmlIndent(indent), "<", name, ">",
-         .pmlEscapeAttr(as.character(value)), "</", name, ">")
+  paste0(
+    .pmlIndent(indent),
+    "<",
+    name,
+    ">",
+    .pmlEscapeAttr(
+      if (is.double(value)) .pmlNum(value) else as.character(value)
+    ),
+    "</",
+    name,
+    ">"
+  )
 }

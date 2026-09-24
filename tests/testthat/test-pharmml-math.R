@@ -1,14 +1,20 @@
 test_that(".pmlNode emits empty, attributed and nested nodes", {
   expect_equal(.pmlNode("ct:Real"), "<ct:Real/>")
 
-  expect_equal(.pmlNode("ct:SymbRef", attrs = c(symbIdRef = "V")),
-               '<ct:SymbRef symbIdRef="V"/>')
+  expect_equal(
+    .pmlNode("ct:SymbRef", attrs = c(symbIdRef = "V")),
+    '<ct:SymbRef symbIdRef="V"/>'
+  )
 
-  expect_equal(.pmlNode("ct:SymbRef", attrs = c(blkIdRef = "pm1", symbIdRef = "V")),
-               '<ct:SymbRef blkIdRef="pm1" symbIdRef="V"/>')
+  expect_equal(
+    .pmlNode("ct:SymbRef", attrs = c(blkIdRef = "pm1", symbIdRef = "V")),
+    '<ct:SymbRef blkIdRef="pm1" symbIdRef="V"/>'
+  )
 
-  expect_equal(.pmlNode("ct:Assign", children = "<ct:Real>1</ct:Real>"),
-               "<ct:Assign>\n<ct:Real>1</ct:Real>\n</ct:Assign>")
+  expect_equal(
+    .pmlNode("ct:Assign", children = "<ct:Real>1</ct:Real>"),
+    "<ct:Assign>\n<ct:Real>1</ct:Real>\n</ct:Assign>"
+  )
 })
 
 test_that(".pmlNode indents", {
@@ -16,12 +22,23 @@ test_that(".pmlNode indents", {
 })
 
 test_that(".pmlNode escapes attribute values", {
-  expect_equal(.pmlNode("x", attrs = c(a = 'q"&<>')),
-               '<x a="q&quot;&amp;&lt;&gt;"/>')
+  expect_equal(
+    .pmlNode("x", attrs = c(a = 'q"&<>')),
+    '<x a="q&quot;&amp;&lt;&gt;"/>'
+  )
 })
 
 test_that(".pmlText emits a text node", {
   expect_equal(.pmlText("ct:Real", 1.5), "<ct:Real>1.5</ct:Real>")
+  # 15 significant digits (as.character()) would lose the last bits
+  expect_equal(
+    .pmlText("ct:Real", log(2.72)),
+    "<ct:Real>1.000631880307906</ct:Real>"
+  )
+  expect_identical(
+    as.numeric(.pmlNum(c(log(2.72), pi, 0.1, 1 / 3))),
+    c(log(2.72), pi, 0.1, 1 / 3)
+  )
   expect_equal(.pmlText("ct:Int", 3L), "<ct:Int>3</ct:Int>")
 })
 
@@ -41,7 +58,10 @@ test_that(".rxToPharmml maps time to the independent variable", {
 
 test_that(".rxToPharmml inlines numeric constants", {
   expect_equal(.rxToPharmml(quote(pi)), "<ct:Real>3.141592653589793</ct:Real>")
-  expect_equal(.rxToPharmml(quote(M_LN2)), "<ct:Real>0.6931471805599453</ct:Real>")
+  expect_equal(
+    .rxToPharmml(quote(M_LN2)),
+    "<ct:Real>0.6931471805599453</ct:Real>"
+  )
 })
 
 test_that(".rxToPharmml rejects constructs PharmML cannot express", {
@@ -53,35 +73,41 @@ test_that(".rxToPharmml rejects constructs PharmML cannot express", {
 test_that(".rxToPharmml handles binary operators", {
   expect_equal(
     .rxToPharmml(quote(a + b)),
-    paste0("<math:Binop op=\"plus\">\n",
-           "<ct:SymbRef symbIdRef=\"a\"/>\n",
-           "<ct:SymbRef symbIdRef=\"b\"/>\n",
-           "</math:Binop>"))
+    paste0(
+      "<math:Binop op=\"plus\">\n",
+      "<ct:SymbRef symbIdRef=\"a\"/>\n",
+      "<ct:SymbRef symbIdRef=\"b\"/>\n",
+      "</math:Binop>"
+    )
+  )
 
   expect_match(.rxToPharmml(quote(a * b)), 'op="times"')
   expect_match(.rxToPharmml(quote(a / b)), 'op="divide"')
   expect_match(.rxToPharmml(quote(a - b)), 'op="minus"')
-  expect_match(.rxToPharmml(quote(a ^ b)), 'op="power"')
+  expect_match(.rxToPharmml(quote(a^b)), 'op="power"')
 })
 
 test_that(".rxToPharmml handles unary minus", {
   expect_equal(
     .rxToPharmml(quote(-a)),
-    paste0("<math:Uniop op=\"minus\">\n",
-           "<ct:SymbRef symbIdRef=\"a\"/>\n",
-           "</math:Uniop>"))
+    paste0(
+      "<math:Uniop op=\"minus\">\n",
+      "<ct:SymbRef symbIdRef=\"a\"/>\n",
+      "</math:Uniop>"
+    )
+  )
 })
 
 test_that(".rxToPharmml maps rxode2 functions onto native Uniop values", {
-  expect_match(.rxToPharmml(quote(exp(a))),   'Uniop op="exp"')
-  expect_match(.rxToPharmml(quote(log(a))),   'Uniop op="log"')
-  expect_match(.rxToPharmml(quote(sqrt(a))),  'Uniop op="sqrt"')
+  expect_match(.rxToPharmml(quote(exp(a))), 'Uniop op="exp"')
+  expect_match(.rxToPharmml(quote(log(a))), 'Uniop op="log"')
+  expect_match(.rxToPharmml(quote(sqrt(a))), 'Uniop op="sqrt"')
   expect_match(.rxToPharmml(quote(log10(a))), 'Uniop op="log10"')
   # PharmML has these natively -- unlike Monolix, no rewrite needed
-  expect_match(.rxToPharmml(quote(logit(a))),  'Uniop op="logit"')
-  expect_match(.rxToPharmml(quote(expit(a))),  'Uniop op="logistic"')
+  expect_match(.rxToPharmml(quote(logit(a))), 'Uniop op="logit"')
+  expect_match(.rxToPharmml(quote(expit(a))), 'Uniop op="logistic"')
   expect_match(.rxToPharmml(quote(probit(a))), 'Uniop op="probit"')
-  expect_match(.rxToPharmml(quote(pnorm(a))),  'Uniop op="normcdf"')
+  expect_match(.rxToPharmml(quote(pnorm(a))), 'Uniop op="normcdf"')
   expect_match(.rxToPharmml(quote(lgamma(a))), 'Uniop op="gammaln"')
 })
 
@@ -97,8 +123,8 @@ test_that(".rxToPharmml rewrites functions with no direct Uniop", {
 
 test_that(".rxToPharmml handles two-argument functions", {
   expect_match(.rxToPharmml(quote(atan2(a, b))), 'Binop op="atan2"')
-  expect_match(.rxToPharmml(quote(max(a, b))),   'Binop op="max"')
-  expect_match(.rxToPharmml(quote(min(a, b))),   'Binop op="min"')
+  expect_match(.rxToPharmml(quote(max(a, b))), 'Binop op="max"')
+  expect_match(.rxToPharmml(quote(min(a, b))), 'Binop op="min"')
 })
 
 test_that(".rxToPharmml handles parenthesised expressions transparently", {
@@ -113,15 +139,15 @@ test_that(".rxToPharmml nests correctly and preserves precedence", {
 })
 
 test_that(".rxToPharmml maps logical operators", {
-  expect_match(.rxToPharmml(quote(a < b)),  'LogicBinop op="lt"')
+  expect_match(.rxToPharmml(quote(a < b)), 'LogicBinop op="lt"')
   expect_match(.rxToPharmml(quote(a <= b)), 'LogicBinop op="leq"')
-  expect_match(.rxToPharmml(quote(a > b)),  'LogicBinop op="gt"')
+  expect_match(.rxToPharmml(quote(a > b)), 'LogicBinop op="gt"')
   expect_match(.rxToPharmml(quote(a >= b)), 'LogicBinop op="geq"')
   expect_match(.rxToPharmml(quote(a == b)), 'LogicBinop op="eq"')
   expect_match(.rxToPharmml(quote(a != b)), 'LogicBinop op="neq"')
-  expect_match(.rxToPharmml(quote(a & b)),  'LogicBinop op="and"')
-  expect_match(.rxToPharmml(quote(a | b)),  'LogicBinop op="or"')
-  expect_match(.rxToPharmml(quote(!a)),     'LogicUniop op="not"')
+  expect_match(.rxToPharmml(quote(a & b)), 'LogicBinop op="and"')
+  expect_match(.rxToPharmml(quote(a | b)), 'LogicBinop op="or"')
+  expect_match(.rxToPharmml(quote(!a)), 'LogicUniop op="not"')
 })
 
 test_that(".rxToPharmml maps ifelse() to a two-piece Piecewise", {
@@ -165,8 +191,10 @@ test_that("the math walker emits schema-valid PharmML", {
   )
   for (.e in .exprs) {
     .doc <- .pharmmlWrapMath(.rxToPharmml(.e))
-    expect_true(pharmmlValidate(.doc),
-                info = paste("failed for:", deparse1(.e)))
+    expect_true(
+      pharmmlValidate(.doc),
+      info = paste("failed for:", deparse1(.e))
+    )
   }
 })
 
@@ -175,10 +203,18 @@ test_that("the math walker emits schema-valid PharmML", {
 # by hand) means adding a table entry without a test is impossible.
 test_that("every .rxPmlUniop entry translates to its declared operator", {
   for (.fn in names(.rxPmlUniop)) {
-    .call <- if (.fn == "-") quote(-a) else as.call(list(as.name(.fn), quote(a)))
+    .call <- if (.fn == "-") {
+      quote(-a)
+    } else {
+      as.call(list(as.name(.fn), quote(a)))
+    }
     .x <- .rxToPharmml(.call)
-    expect_match(.x, paste0('math:Uniop op="', .rxPmlUniop[[.fn]], '"'),
-                 fixed = FALSE, info = .fn)
+    expect_match(
+      .x,
+      paste0('math:Uniop op="', .rxPmlUniop[[.fn]], '"'),
+      fixed = FALSE,
+      info = .fn
+    )
     expect_true(pharmmlValidate(.pharmmlWrapMath(.x)), info = .fn)
   }
 })
@@ -186,12 +222,20 @@ test_that("every .rxPmlUniop entry translates to its declared operator", {
 test_that("every .rxPmlBinop and .rxPmlBinopF entry translates", {
   for (.fn in names(.rxPmlBinop)) {
     .x <- .rxToPharmml(as.call(list(as.name(.fn), quote(a), quote(b))))
-    expect_match(.x, paste0('math:Binop op="', .rxPmlBinop[[.fn]], '"'), info = .fn)
+    expect_match(
+      .x,
+      paste0('math:Binop op="', .rxPmlBinop[[.fn]], '"'),
+      info = .fn
+    )
     expect_true(pharmmlValidate(.pharmmlWrapMath(.x)), info = .fn)
   }
   for (.fn in names(.rxPmlBinopF)) {
     .x <- .rxToPharmml(as.call(list(as.name(.fn), quote(a), quote(b))))
-    expect_match(.x, paste0('math:Binop op="', .rxPmlBinopF[[.fn]], '"'), info = .fn)
+    expect_match(
+      .x,
+      paste0('math:Binop op="', .rxPmlBinopF[[.fn]], '"'),
+      info = .fn
+    )
     expect_true(pharmmlValidate(.pharmmlWrapMath(.x)), info = .fn)
   }
 })
@@ -199,8 +243,11 @@ test_that("every .rxPmlBinop and .rxPmlBinopF entry translates", {
 test_that("every .rxPmlLogicBinop entry translates", {
   for (.fn in names(.rxPmlLogicBinop)) {
     .x <- .rxToPharmml(as.call(list(as.name(.fn), quote(a), quote(b))))
-    expect_match(.x, paste0('math:LogicBinop op="', .rxPmlLogicBinop[[.fn]], '"'),
-                 info = .fn)
+    expect_match(
+      .x,
+      paste0('math:LogicBinop op="', .rxPmlLogicBinop[[.fn]], '"'),
+      info = .fn
+    )
   }
 })
 
