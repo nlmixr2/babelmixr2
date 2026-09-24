@@ -426,4 +426,10 @@ test_that("dotted mu-referenced parameters use one Monolix name (#220)", {
   etaObf <- u$monolixEtaObf
   expect_equal(etaObf$eta.ka, c(0.1, -0.1))
   expect_equal(etaObf$eta.v, c(0.3, -0.3))
+
+  # a mu-referenced covariate coefficient on a dotted parameter
+  expect_equal(.b$.monolixGetPopParValue(
+    "ka.age", u$muRefCurEval, c(tka="ka__x"),
+    data.frame(theta="tka", covariate="AGE", covariateParameter="ka.age"),
+    data.frame(parameter="beta_ka__x_AGE", value=0.02)), 0.02)
 })
