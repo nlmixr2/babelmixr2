@@ -16,6 +16,35 @@
   a residual error parameter estimated as a variance, and priors on a
   `probitInv()` parameter with bounds other than (0, 1).
 
+* Monolix projects with mu-referenced covariates (`cl <- exp(tcl + eta.cl +
+  cl.wt * lWT)`) now load in Monolix.  The covariate was missing from the
+  `[INDIVIDUAL]` inputs (Monolix: `Undefined variable 'lWT'`), and when
+  every covariate was mu-referenced the structural model got a regressor
+  line with no name (`= {use=regressor}`, a syntax error).  When
+  lixoftConnectors cannot load or run the project, `nlmixr2()` now stops
+  with an error instead of waiting forever for output Monolix never
+  writes.
+
+* `est="nonmem"` now runs models with `ini({})` priors, translating them
+  to NONMEM's `$PRIOR NWPRI` (#205).  Normal priors on population
+  parameters (`dnorm()`, `stdNormal()`, the `tcl + tv ~ c(...)` joint
+  normal) become `$THETAP`/`$THETAPV`, and `invWishart(nu)` degrees of
+  freedom on an omega block become `$OMEGAP`/`$OMEGAPD`, with the block's
+  own initial estimate as the prior scale.  NWPRI gives its priors to the
+  first THETAs and the first omega blocks, so the parameters with a prior
+  have to come first in `ini({})`; otherwise, and for priors NWPRI cannot
+  express (`dcauchy()`, a normal prior directly on an omega element, which
+  is TNPRI), the model is refused before any file is written instead of
+  fitting a different prior.  When the output is read back, the prior
+  values NM-TRAN adds as extra THETAs and OMEGAs are dropped, and the
+  objective function type says `nwpri` because NONMEM's objective
+  includes the prior.
+
+* `$OMEGA BLOCK()` records of 3 or more etas are now written in the order
+  NONMEM reads them (row by row down the lower triangle).  They used to be
+  written column by column, so NONMEM started from the wrong initial
+  omega values.
+
 * The `$PROBLEM` record of a generated NONMEM control stream now carries
   the model name (`$PROBLEM one.cmt translated from babelmixr2`).  It read
   a misspelled getter and was always blank (#209).  Because the control
