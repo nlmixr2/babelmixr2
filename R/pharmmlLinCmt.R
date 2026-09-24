@@ -14,7 +14,7 @@
 )
 
 # Accepted names for the elimination term.
-.pharmmlLinCmtCl <- c("cl")
+.pharmmlLinCmtCl <- "cl"
 .pharmmlLinCmtK <- c("k", "ke", "kel")
 
 # Peripheral parameter names, by compartment index and style.
