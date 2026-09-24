@@ -83,6 +83,24 @@ test_that("normal priors become Monolix MAP estimation", {
                 regexpr("[INDIVIDUAL]", .mod, fixed=TRUE))
 })
 
+test_that("bounded expit and untransformed parameters get the matching prior", {
+  .u <- model(.monolixPriorUi(), emax <- expit(temax, 0, 10))
+  .u <- model(.u, v <- tv + eta.v)
+  .u <- ini(.u, tv=30, eta.v=4)
+  .u <- ini(.u, prior(temax) ~ dnorm(0, 2))
+  .u <- ini(.u, prior(tv) ~ dnorm(30, 5))
+  .pop <- .u$mlxtranModelPopulation
+  # the logit prior keeps the parameter's own bounds, and its mean is the
+  # bounded back-transform (expit(0, 0, 10) = 5)
+  expect_equal(.mlxLines(.pop, "^emax_pop "),
+               "emax_pop = {distribution=logitNormal, min=0, max=10, typical=5, sd=2}")
+  # an untransformed parameter is normal in Monolix, so is its prior
+  expect_equal(.mlxLines(.pop, "^v_pop "),
+               "v_pop = {distribution=normal, typical=30, sd=5}")
+  expect_equal(.mlxLines(.u$mlxtranParameter, "^v_pop="),
+               "v_pop={value=30, method=MAP}")
+})
+
 test_that("a normal prior written with named arguments is read the same", {
   .u <- ini(.monolixPriorUi(), prior(tka) ~ dnorm(mean=log(1.5), sd=0.5))
   expect_equal(.mlxLines(.u$mlxtranModelPopulation, "^ka_pop "),

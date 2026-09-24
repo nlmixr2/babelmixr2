@@ -384,4 +384,19 @@ test_that("mu-referenced covariates are [INDIVIDUAL] inputs", {
   # without lWT here Monolix stops with "Undefined variable 'lWT'"
   expect_equal(ind[grepl("^input=", ind)],
                "input={ka_pop, omega_ka, cl_pop, lWT, beta_cl_lWT, omega_cl, v_pop, beta_v_lWT, omega_v}")
+
+  # several covariates on one parameter, one of them shared: each covariate
+  # is listed once
+  f2 <- rxode2::rxode2(one.cmt)
+  f2 <- model(f2, cl <- exp(tcl + eta.cl + cl.wt * lWT + cl.age * AGE))
+  f2 <- ini(f2, cl.age=0)
+  ind <- strsplit(f2$mlxtranModelIndividual, "\n")[[1]]
+  inp <- ind[grepl("^input=", ind)]
+  inp <- trimws(strsplit(sub("^input=\\{(.*)\\}$", "\\1", inp), ",")[[1]])
+  expect_equal(sum(inp == "lWT"), 1L)
+  expect_equal(sum(inp == "AGE"), 1L)
+  expect_true(all(c("beta_cl_lWT", "beta_cl_AGE", "beta_v_lWT") %in% inp))
+  def <- ind[grepl("^cl = ", ind)]
+  expect_true(grepl("covariate = {lWT, AGE}", def, fixed=TRUE) ||
+                grepl("covariate = {AGE, lWT}", def, fixed=TRUE))
 })
