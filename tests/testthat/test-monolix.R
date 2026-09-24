@@ -437,3 +437,20 @@ test_that("only non mu-referenced covariates are regressors in the Monolix model
   expect_equal(mod[grepl("regressor", mod)], "CRCL= {use=regressor}")
   expect_equal(mod[grepl("^input=", mod)], "input={ka,cl,v,CRCL}")
 })
+
+test_that("a Monolix project lixoftConnectors cannot load or run is an error", {
+  # lixoftConnectors returns FALSE on failure rather than signalling an error
+  local_mocked_bindings(.lixoftLoadProject=function(mlxtran) FALSE,
+                        .lixoftRunScenario=function() stop("should not run"))
+  expect_error(.b$.monolixLixoftRun("x.mlxtran"), "cannot load 'x.mlxtran'")
+
+  local_mocked_bindings(.lixoftLoadProject=function(mlxtran) stop("boom"))
+  expect_error(.b$.monolixLixoftRun("x.mlxtran"), "cannot load 'x.mlxtran'")
+
+  local_mocked_bindings(.lixoftLoadProject=function(mlxtran) TRUE,
+                        .lixoftRunScenario=function() FALSE)
+  expect_error(suppressMessages(.b$.monolixLixoftRun("x.mlxtran")), "runScenario\\(\\) failed")
+
+  local_mocked_bindings(.lixoftRunScenario=function() TRUE)
+  expect_error(suppressMessages(.b$.monolixLixoftRun("x.mlxtran")), NA)
+})

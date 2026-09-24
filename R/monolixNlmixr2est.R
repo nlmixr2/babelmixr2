@@ -134,6 +134,41 @@
   invisible(.lixoftStarted)
 }
 
+# thin wrappers so the failure handling in .monolixLixoftRun() can be
+# tested without Monolix
+.lixoftLoadProject <- function(mlxtran) {
+  lixoftConnectors::loadProject(mlxtran)
+}
+.lixoftRunScenario <- function() {
+  lixoftConnectors::runScenario()
+}
+
+#' Load and run a Monolix project with lixoftConnectors
+#'
+#' lixoftConnectors reports a failure by returning `FALSE` (with an
+#' `[ERROR]` message), not by signalling an R error; carrying on would
+#' wait forever for output Monolix never writes.
+#'
+#' @param mlxtran mlxtran file
+#' @return nothing, called for its side effect; errors when Monolix
+#'   cannot load or run the project
+#' @noRd
+.monolixLixoftRun <- function(mlxtran) {
+  .x <- try(.lixoftLoadProject(mlxtran), silent=TRUE)
+  if (inherits(.x, "try-error") || isFALSE(.x)) {
+    stop("lixoftConnectors cannot load '", mlxtran, "' (see Monolix's [ERROR] above)",
+         call.=FALSE)
+  }
+  .minfo("lixoftConnectors::runScenario()")
+  .x <- .lixoftRunScenario()
+  if (isFALSE(.x)) {
+    stop("lixoftConnectors::runScenario() failed for '", mlxtran, "' (see Monolix's [ERROR] above)",
+         call.=FALSE)
+  }
+  .minfo("done")
+  invisible()
+}
+
 #' Run NONMEM using either the user-specified command or function
 #'
 #' @param ui The nlmixr2 UI object for running
@@ -276,21 +311,7 @@
       }
     } else {
       if (.hasLixoftConnectors()) {
-        # lixoftConnectors reports a failure by returning FALSE (with an
-        # [ERROR] message), not by signalling an R error; carrying on
-        # would wait forever for output Monolix never writes
-        .x <- try(lixoftConnectors::loadProject(.mlxtran), silent=TRUE)
-        if (inherits(.x, "try-error") || isFALSE(.x)) {
-          stop("lixoftConnectors cannot load '", .mlxtran, "' (see Monolix's [ERROR] above)",
-               call.=FALSE)
-        }
-        .minfo("lixoftConnectors::runScenario()")
-        .x <- lixoftConnectors::runScenario()
-        if (isFALSE(.x)) {
-          stop("lixoftConnectors::runScenario() failed for '", .mlxtran, "' (see Monolix's [ERROR] above)",
-               call.=FALSE)
-        }
-        .minfo("done")
+        .monolixLixoftRun(.mlxtran)
         .runLS <- TRUE
       } else if (dir.exists(.exportPath)) { # needs to skip for tests
       } else if (!interactive()) {
