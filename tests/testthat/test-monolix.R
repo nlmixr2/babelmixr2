@@ -400,3 +400,40 @@ test_that("mu-referenced covariates are [INDIVIDUAL] inputs", {
   expect_true(grepl("covariate = {lWT, AGE}", def, fixed=TRUE) ||
                 grepl("covariate = {AGE, lWT}", def, fixed=TRUE))
 })
+
+test_that("only non mu-referenced covariates are regressors in the Monolix model", {
+  one.cmt <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- log(2.7)
+      tv <- 3.45
+      cl.wt <- 0
+      cl.age <- 0
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl + cl.wt * lWT + cl.age * AGE)
+      v <- exp(tv + eta.v)
+      d/dt(depot) <- -depot*ka
+      d/dt(central) <- depot*ka - cl*central/v
+      cp <- central/v
+      cp ~ add(add.sd)
+    })
+  }
+  f <- rxode2::rxode2(one.cmt)
+  mod <- strsplit(f$monolixModel, "\n")[[1]]
+  # all covariates are mu-referenced: no regressor, and no "= {use=regressor}"
+  # line without a name (a Monolix syntax error)
+  expect_false(any(grepl("regressor", mod)))
+  expect_equal(mod[grepl("^input=", mod)], "input={ka,cl,v}")
+
+  # a covariate outside the mu-referencing stays a regressor
+  f2 <- model(f, cp <- central / v * (1 + 0 * CRCL))
+  mod <- strsplit(f2$monolixModel, "\n")[[1]]
+  expect_equal(mod[grepl("regressor", mod)], "CRCL= {use=regressor}")
+  expect_equal(mod[grepl("^input=", mod)], "input={ka,cl,v,CRCL}")
+})
