@@ -220,6 +220,23 @@
   return(.ret)
 }
 
+#' Mu-referenced theta to Monolix variable name map
+#'
+#' Monolix variable names cannot contain `.`; `.rxToMonolix()` spells
+#' them with `__` in the equations, so every other Monolix section
+#' (and the output readers) must use the same spelling.
+#'
+#' @param ui rxode2 ui
+#' @return named character vector; names are the thetas, values are
+#'   the Monolix variable names
+#' @author Matthew L. Fidler
+#' @noRd
+.monolixMuRef <- function(ui) {
+  .split <- ui$getSplitMuModel
+  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  setNames(gsub("[.]", "__", .muRef), names(.muRef))
+}
+
 .rxToMonolix <- function(x, ui) {
   ui <- rxode2::rxUiDecompress(ui)
   if (is.name(x) || is.atomic(x)) {

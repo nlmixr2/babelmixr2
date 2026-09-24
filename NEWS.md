@@ -1,5 +1,12 @@
 # babelmixr2 0.1.11.9000
 
+* `est="monolix"` now spells a mu-referenced parameter with a `.` in its
+  name (like the tainted `rx__cl.wt`, or `ka.x <- exp(tka + eta.ka)`) the
+  same way in every section of the Monolix model (#220).  The `EQUATION:`
+  block already wrote it as `rx__cl__wt`, but `input=`, `[INDIVIDUAL]`,
+  `<PARAMETER>` and the output readers used `rx__cl.wt`, so Monolix saw an
+  undeclared variable.
+
 * `est="nonmem"` now runs models with `ini({})` priors, translating them
   to NONMEM's `$PRIOR NWPRI` (#205).  Normal priors on population
   parameters (`dnorm()`, `stdNormal()`, the `tcl + tv ~ c(...)` joint

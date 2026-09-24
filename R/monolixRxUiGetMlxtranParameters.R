@@ -67,8 +67,7 @@
 rxUiGet.mlxtranParameter <- function(x, ...) {
   .ui <- x[[1]]
   .r <- .getOmegaR(.ui)
-  .split <- .ui$getSplitMuModel
-  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  .muRef <- .monolixMuRef(.ui)
   .iniDf <- .ui$iniDf
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
   .curEval <- .ui$muRefCurEval
