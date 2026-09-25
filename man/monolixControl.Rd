@@ -8,6 +8,7 @@ monolixControl(
   nbSSDoses = 7,
   useLinearization = FALSE,
   stiff = FALSE,
+  linCmt = c("pkmodel", "ode"),
   addProp = c("combined2", "combined1"),
   exploratoryAutoStop = FALSE,
   smoothingAutoStop = FALSE,
@@ -42,6 +43,12 @@ monolixControl(
 fim.}
 
 \item{stiff}{boolean for using the stiff ODE solver}
+
+\item{linCmt}{How a \code{linCmt()} model is written for Monolix:
+\code{"pkmodel"} uses Monolix's closed-form \code{pkmodel()} macro when the
+model allows it and otherwise translates the model to ODEs;
+\code{"ode"} always translates the model to ODEs (with
+\code{rxode2::linToOde()})}
 
 \item{addProp}{Type of additive-plus-proportional error: `"combined1"`,
 where standard deviations add:

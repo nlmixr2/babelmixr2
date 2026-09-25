@@ -3,6 +3,8 @@ rxUiGet.nonmemMod <- function(x, ...) {
   .ui <- x[[1]]
   .state <- rxode2::rxModelVars(.ui)$state
   if (length(.state) == 0) return("")
+  # closed-form ADVANs have their own compartments
+  if (!is.null(.nonmemLinCmtAdvan(.ui))) return("")
   paste(c(paste0("$MODEL NCOMPARTMENTS=", length(.state)),
           vapply(.state,
                function(s) {
@@ -13,6 +15,20 @@ rxUiGet.nonmemMod <- function(x, ...) {
         collapse="\n")
 }
 attr(rxUiGet.nonmemMod, "rstudio") <- "nonmemMod"
+
+#' $MODEL section followed by its spacing
+#'
+#' A closed-form ADVAN has no $MODEL, so it has no spacing either
+#'
+#' @inheritParams rxUiGet.nonmemMod
+#' @return $MODEL text for the control stream
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmemModSection <- function(x, ...) {
+  .mod <- rxUiGet.nonmemMod(x, ...)
+  if (.mod == "" && !is.null(.nonmemLinCmtAdvan(x[[1]]))) return("")
+  paste0(.mod, "\n\n")
+}
 
 .nonmemResetUi <- function(ui, extra="") {
   rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf",
@@ -45,7 +61,7 @@ rxUiGet.nonmemModel <- function(x, ...) {
     rxUiGet.nonmemInput(x, ...), "\n",
     rxUiGet.nonmemSub(x, ...), "\n\n",
     rxUiGet.nonmemPrior(x, ...),
-    rxUiGet.nonmemMod(x, ...), "\n\n",
+    .nonmemModSection(x, ...),
     rxUiGet.nonmemPkDesErr0(x, ...),
     rxUiGet.nonmemErrF(x, ...),"\n",
     rxUiGet.nonmemTheta(x, ...),"\n\n",

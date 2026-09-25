@@ -71,6 +71,8 @@ rex::register_shortcuts("babelmixr2")
   "abs"=c("DABS(", ")"),
   "log"=c("DLOG(", ")"),
   "normcdf"=c("PHI(", ")"),
+  # probitInv() is normalized to erf(); erf(x) = 2*PHI(sqrt(2)*x) - 1
+  "erf"=c("(2*PHI(1.414213562373095145475*(", "))-1)"),
   "sin"=c("DSIN(", ")"),
   "cos"=c("DCOS(", ")"),
   "tan"=c("DTAN(", ")"),
@@ -165,7 +167,8 @@ rex::register_shortcuts("babelmixr2")
   .w <- which(.reserved$var == var)
   if (length(.w) == 1) {
     var <- .reserved$nm[.w]
-  } else if (regexpr(.nmRes, .uvar, perl=TRUE) != -1) {
+  } else if (regexpr(.nmRes, .uvar, perl=TRUE) != -1 ||
+               .uvar %in% rxode2::rxGetControl(ui, ".nmLinCmtReserved", character(0))) {
     .num <- rxode2::rxGetControl(ui, ".nmVarResNum", 1)
     .newVar <- sprintf("RXR%d", .num)
     rxode2::rxAssignControlValue(ui, ".nmVarResNum", .num + 1)
@@ -720,6 +723,11 @@ rex::register_shortcuts("babelmixr2")
 }
 
 .rxToNonmemHandleCall <- function(x, ui) {
+  if (length(x) == 3L &&
+        (identical(x[[1]], quote(`Rx_pow_di`)) || identical(x[[1]], quote(`Rx_pow`)))) {
+    # rxode2's normalized powers
+    return(paste0("(", .rxToNonmem(x[[2]], ui=ui), ")**(", .rxToNonmem(x[[3]], ui=ui), ")"))
+  }
   if (identical(x[[1]], quote(`(`))) {
     return(paste0("(", .rxToNonmem(x[[2]], ui=ui), ")"))
   } else if (identical(x[[1]], quote(`{`))) {

@@ -30,7 +30,7 @@ jobs:
       matrix:
         # Must match the number of entries in `.slowBatches` in
         # tests/testthat.R.
-        batch: [1, 2]
+        batch: [1, 2, 3]
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}

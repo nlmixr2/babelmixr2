@@ -176,7 +176,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), rxCon
   }
 
   .col0 <- c(.col0, model$allCovs, .censData, .limitData, "nlmixrRowNums")
-  list("monolix"=.new[.df$.nlmixrKeep, .col0],
+  list("monolix"=.bblDatAddMissing(.new, .col0)[.df$.nlmixrKeep, .col0],
        "adm"=.conv0$adm)
 }
 
@@ -256,7 +256,7 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), rxCon
            call.=FALSE)
     }
     if (.conv0$hasTinf) {
-      stop(software, "does not support a duration/tinf data item",
+      stop(software, " does not support a duration/tinf data item",
            call.=FALSE)
     }
   }
@@ -268,7 +268,8 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), rxCon
   .new$SS <- .df$SS
   .new$CMT <- .df$CMT
   .col0 <- c("ID", "TIME", "EVID", "AMT", "II", "DV", "CMT", "DVID", "SS")
-  if (.conv0$hasRate) {
+  # modeled rates/durations are RATE=-1/-2 in NONMEM
+  if (.conv0$hasRate || any(.df$RATE != 0, na.rm=TRUE)) {
     .new$RATE <- .df$RATE
     .col0 <- c(.col0, "RATE")
   } else if (.conv0$hasTinf) {
@@ -291,7 +292,24 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), rxCon
   }
 
   .col0 <- c(.col0, model$allCovs, .censData, .limitData, "nlmixrRowNums")
-  .new[.df$.nlmixrKeep, .col0]
+  .bblDatAddMissing(.new, .col0)[.df$.nlmixrKeep, .col0]
+}
+
+#' Add the event items a data set without them does not have
+#'
+#' A data set without doses (for example for a `$PRED` model with the
+#' dose as a covariate) has no `AMT` or `II` after processing.
+#'
+#' @param data processed data
+#' @param cols columns that are needed
+#' @return data with the missing columns set to 0
+#' @noRd
+#' @author Matthew L. Fidler
+.bblDatAddMissing <- function(data, cols) {
+  for (.c in setdiff(cols, names(data))) {
+    data[[.c]] <- 0
+  }
+  data
 }
 
 #' @rdname bblDatToMonolix
@@ -327,17 +345,23 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
     env$nmLikAdj <- .dv2$likAdj
     env$nmNcmt <- .dv2$nCmt
   }
+  # the dosing items are kept when the data use them (the $INPUT
+  # record is written from the columns kept here)
+  .hasItem <- function(n) {
+    any(names(.ret) == n) && any(.ret[[n]] != 0, na.rm=TRUE)
+  }
+  .hasSs <- .hasItem("SS")
   .names <- c(
     "ID", "TIME", "EVID", "AMT",
-    ifelse(rxode2::rxGetControl(.ui, ".hasIi", FALSE), "II", ""),
+    ifelse(.hasSs && .hasItem("II"), "II", ""),
     "DV", "CMT",
     ifelse(length(.ui$predDf$cond) > 1, "DVID", ""),
-    ifelse(rxode2::rxGetControl(.ui, ".hasSs", FALSE), "SS", ""),
-    ifelse(rxode2::rxGetControl(.ui, ".hasRate", FALSE), "RATE", ""),
+    ifelse(.hasSs, "SS", ""),
+    ifelse(.hasItem("RATE"), "RATE", ""),
     vapply(.ui$allCovs, .nmGetVar, character(1), ui=.ui,
            USE.NAMES=FALSE),
-    ifelse(rxode2::rxGetControl(.ui, ".hasCens", FALSE), "CENS", ""),
-    ifelse(rxode2::rxGetControl(.ui, ".hasLimit", FALSE), "LIMIT", ""),
+    ifelse(any(names(.ret) == "CENS"), "CENS", ""),
+    ifelse(any(names(.ret) == "LIMIT"), "LIMIT", ""),
     "nlmixrRowNums")
   .names <- .names[.names != ""]
   .allCovs <- .ui$allCovs

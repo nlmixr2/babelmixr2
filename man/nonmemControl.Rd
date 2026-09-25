@@ -7,6 +7,7 @@
 nonmemControl(
   est = c("focei", "imp", "its", "posthoc"),
   advanOde = c("advan13", "advan8", "advan6"),
+  linCmt = c("advan", "ode"),
   cov = c("r,s", "r", "s", ""),
   maxeval = 1e+05,
   tol = 6,
@@ -56,6 +57,14 @@ INTERACTION}) or \code{"posthoc"} (\code{METHOD=0 MAXEVALS=0
 POSTHOC})}
 
 \item{advanOde}{The ODE solving method for NONMEM}
+
+\item{linCmt}{How a \code{linCmt()} model is written for NONMEM:
+\code{"advan"} uses NONMEM's closed-form solutions
+(\code{ADVAN1}-\code{ADVAN4}, \code{ADVAN11} or \code{ADVAN12}
+with \code{TRANS1} micro-constants) when the model allows it and
+otherwise translates the model to ODEs; \code{"ode"} always
+translates the model to ODEs (with \code{rxode2::linToOde()}) and
+solves it with \code{advanOde}}
 
 \item{cov}{The NONMEM covariance method}
 

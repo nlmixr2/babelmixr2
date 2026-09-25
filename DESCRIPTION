@@ -35,7 +35,8 @@ Suggests:
     coda,
     crayon,
     saemix,
-    lme4
+    lme4,
+    nlmixr2lib
 Depends:
     R (>= 3.5)
 Imports:

@@ -46,7 +46,7 @@ nmGetDistributionMonolixLines.norm <- function(line) {
   .rx <- line[[1]]
   .pred1 <- line[[2]]
   if (.pred1[["linCmt"]]) {
-    stop("linCmt() translation not supported (yet)",
+    stop("linCmt() models are translated when fit with nlmixr2(..., est=\"monolix\"); to translate the model directly, first convert it with rxode2::linToOde()",
          call.=FALSE)
   }
   .var <- str2lang(.pred1[["var"]])

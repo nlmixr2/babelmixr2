@@ -2071,19 +2071,17 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
 #' order of `rxModelVars(ui)$state`: rxode2 shuffles the solved
 #' compartments to the front of the event numbering (see `getCmtNum()` in
 #' rxode2's etTrans.cpp), so `cmt=1` is the depot even when `$state`
-#' starts with an ODE.  PopED rejects `linCmt()` models anyway
-#' (`.popedRxModel()` stops with "could not figure out linCmt() model"),
-#' so rather than guess at the mapping here, leave those datasets alone
-#' and let that error be the one the user sees.
+#' starts with an ODE.  `nlmixr2(..., est="poped")` translates a
+#' `linCmt()` model to ODEs (with `rxode2::linToOde()`, which keeps
+#' these numbers) before the design is set up, so rather than guess at
+#' the mapping here, leave those datasets alone.
 #'
 #' @param ui rxode2 ui function
 #' @return TRUE when the model has a solved linear compartment
 #' @noRd
 #' @author Matthew L. Fidler
 .popedHasLinCmt <- function(ui) {
-  .flags <- rxode2::rxModelVars(ui)$flags
-  if (!any(names(.flags) == "linCmtFlg")) return(FALSE)
-  !identical(as.integer(.flags[["linCmtFlg"]]), 0L)
+  .bblHasLinCmt(ui)
 }
 
 #' Translate a numeric compartment given as a string back to a number
@@ -2181,8 +2179,7 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   .cmt <- data[[.wcmt]][which(.evid == 1 | .evid == 4 |
                                 .evid == 5 | .evid == 6)]
   if (length(.cmt) == 0L) return(invisible())
-  # a linCmt() model numbers its compartments differently, and PopED
-  # rejects it with a clearer error a moment later
+  # a linCmt() model numbers its compartments differently
   if (.popedHasLinCmt(ui)) return(invisible())
   .state <- rxode2::rxModelVars(ui)$state
   if (is.factor(.cmt)) .cmt <- as.character(.cmt)
@@ -3204,6 +3201,9 @@ nlmixr2Est.poped <- function(env, ...) {
   rxode2::assertRxUiTransformNormal(.ui, " for the optimal design routine 'poped'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the optimal design routine 'poped'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'poped'", .var.name=.ui$modelName)
+  # PopED solves the model with rxode2 one design point at a time, which
+  # needs the ODE form of a linCmt() model
+  .bblLinCmtToOde(env, "PopED", native=FALSE)
   .popedFamilyControl(env, ...)
 
   .ui <- env$ui
