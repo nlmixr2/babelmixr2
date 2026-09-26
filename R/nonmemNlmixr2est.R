@@ -304,9 +304,18 @@ nlmixr2Est.nonmem <- function(env, ...) {
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
+  # the residual transformations babelmixr2 can write for NONMEM
+  rxode2::assertRxUiTransform(.ui, c("untransformed", "boxCox", "yeoJohnson", "lnorm",
+                                     "logit", "logit + yeoJohnson"),
+                              " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   # refuse a prior NWPRI cannot express before anything is written
   .nonmemPriorSpec(.ui)
+  # linCmt() is written as NONMEM's closed-form ADVAN or as ODEs
+  .micro <- .bblLinCmtToOde(env, "NONMEM",
+                            native=(.bblLinCmtControl(env$control, "advan") == "advan"))
+  .ui <- env$ui
   .nonmemFamilyControl(env, ...)
+  rxode2::rxAssignControlValue(.ui, ".linCmtMicro", .micro)
   on.exit({
     if (exists("control", envir=.ui)) {
       rm("control", envir=.ui)

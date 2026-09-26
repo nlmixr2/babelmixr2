@@ -378,6 +378,8 @@
 nlmixr2Est.monolix <- function(env, ...) {
   .ui <- env$ui
   rxode2::assertRxUiMuRefOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
+  # Monolix needs between subject variability
+  rxode2::assertRxUiMixedOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   .ui <- rxode2::rxUiDecompress(env$ui)
   nlmixr2est::nmObjUiSetCompressed(FALSE)
   on.exit({nlmixr2est::nmObjUiSetCompressed(TRUE)})
@@ -388,8 +390,19 @@ nlmixr2Est.monolix <- function(env, ...) {
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'monolix'", .var.name=.ui$modelName)
+  # Monolix's residual error models (constant, proportional, combined1/2)
+  # and distributions (normal, logNormal, logitNormal)
+  rxode2::assertRxUiErrType(.ui, c("add", "prop", "add + prop"),
+                            " for the estimation routine 'monolix'", .var.name=.ui$modelName)
+  rxode2::assertRxUiTransform(.ui, c("untransformed", "lnorm", "logit"),
+                              " for the estimation routine 'monolix'", .var.name=.ui$modelName)
   .mlxtranPriorInfo(.ui) # refuse priors Monolix cannot represent before running
+  # linCmt() is written as Monolix's pkmodel() or as ODEs
+  .micro <- .bblLinCmtToOde(env, "Monolix",
+                            native=(.bblLinCmtControl(env$control, "pkmodel") == "pkmodel"))
+  .ui <- env$ui
   .monolixFamilyControl(env, ...)
+  rxode2::rxAssignControlValue(.ui, ".linCmtMicro", .micro)
   nlmixr2est::nmObjUiSetCompressed(FALSE)
 
   on.exit({

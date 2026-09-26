@@ -5,12 +5,15 @@
   .errType <- as.integer(.pred1$errType)
   .iniDf <- .iniDf[which(.iniDf$condition == .cond), ]
   if (.errType == 1L) { # add
-    .tmp <- as.character(.iniDf$name)
+    # only the add() parameter; a transformation (like logitNorm()) can
+    # have its own parameters
+    .tmp <- as.character(.iniDf$name[.iniDf$err %in% c("add", "lnorm", "logitNorm", "probitNorm")])
+    if (length(.tmp) > 1L) .tmp <- as.character(.iniDf$name[.iniDf$err == "add"])
     .tmp <- eval(str2lang(paste0("rxToMonolix(", .tmp, ", ui=ui)")))
     if (input) return(.tmp)
     paste0("constant(", .tmp, ")")
   } else if (.errType == 2L) { # prop
-    .tmp <- as.character(.iniDf$name)
+    .tmp <- as.character(.iniDf$name[.iniDf$err %in% c("prop", "propT", "propF")])
     .tmp <- eval(str2lang(paste0("rxToMonolix(", .tmp, ", ui=ui)")))
     if (input) return(.tmp)
     paste0("proportional(", .tmp, ")")
@@ -48,7 +51,7 @@
     stop("monolix does not support the transform: ", .pred1$transform,
          call.=FALSE)
   } else if (.residual == "logitNormal") {
-    .residual <- paste0("logitNormal, min=", .pred1$trLow, "max=", .pred1$trHi)
+    .residual <- paste0("logitNormal, min=", .pred1$trLow, ", max=", .pred1$trHi)
   }
   return(.residual)
 }

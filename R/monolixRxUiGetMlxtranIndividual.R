@@ -5,7 +5,7 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .mlxTranCurEvalToDistribution <- function(curEval) {
-  .ret <- switch(ifelse(curEval %in% c("", "*", "**", "/", "^", "+", "-"),
+  .ret <- switch(ifelse(curEval %in% c("", "*", "**", "/", "^", "+", "-", "("),
                         "add", curEval),
                  exp="logNormal",
                  expit="logitNormal",
@@ -13,7 +13,8 @@
                  add="normal",
                  NA_character_)
   if (is.na(.ret))
-    stop(paste0("monolix translation of '", curEval, "' is unknown"),
+    stop(paste0("monolix does not support the parameter transformation '", curEval,
+                "' (supported: exp(), expit(), probitInv() and linear)"),
          call.=FALSE)
   paste0("distribution=", .ret)
 }

@@ -1117,3 +1117,36 @@ if (requireNamespace("PopED", quietly=TRUE) &&
   })
 
 }
+
+test_that("PopED designs linCmt() models like their ODE version", {
+  skip_on_cran()
+  skip_if_not_installed("PopED")
+  lin <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      cp <- linCmt()
+      cp ~ add(add.sd)
+    })
+  }
+  ode <- rxode2::linToOde(lin)
+  e <- rxode2::et(amt=320) |>
+    rxode2::et(c(0.25, 1, 2, 4, 8, 12, 24)) |>
+    rxode2::et(id=1:2) |>
+    as.data.frame()
+  dbLin <- suppressMessages(nlmixr2(lin, e, "poped", popedControl(maxn=15)))
+  dbOde <- suppressMessages(nlmixr2(ode, e, "poped", popedControl(maxn=15)))
+  expect_equal(PopED::evaluate_design(dbLin)$ofv,
+               PopED::evaluate_design(dbOde)$ofv,
+               tolerance=1e-4)
+})

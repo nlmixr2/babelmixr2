@@ -41,7 +41,9 @@
 .nonmemGetThetaMuCov <- function(theta, ui, covRefDf) {
   .w <- which(covRefDf$theta == theta)
   if (length(.w) == 0) return(NA_character_)
-  paste(paste0(covRefDf$covariate[.w], "*",
+  # the covariate uses its NONMEM name (as in $INPUT)
+  paste(paste0(vapply(covRefDf$covariate[.w], .nmGetVar, character(1),
+                      ui=ui, USE.NAMES=FALSE), "*",
                vapply(covRefDf$covariateParameter[.w], .nonmemGetThetaNum, character(1),
                       ui=ui)),
         collapse="+")
@@ -70,10 +72,13 @@ attr(rxUiGet.nonmemThetaRep, "rstudio") <- "nonmemThetaRep"
 #'@export
 rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   .ui <- x[[1]]
+  .bblLinCmtAssertOde(.ui, "nonmem")
   rxode2::rxAssignControlValue(.ui, ".nmVarResNum", 1)
   rxode2::rxAssignControlValue(.ui, ".nmGetVarReservedDf",
                                data.frame(var=character(0),
                                           nm=character(0)))
+  .advan <- .nonmemLinCmtAdvan(.ui)
+  rxode2::rxAssignControlValue(.ui, ".nmLinCmtReserved", .advan$reserved)
   .split <- .ui$getSplitMuModel
   .mu <- rxUiGet.nonmemThetaRep(x, ...)
   .ret <- vapply(seq_along(.mu$mu), function(i) {
@@ -110,7 +115,16 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                            function(i) {
                              identical(.desModel[[i]], quote(`_drop`))
                            }, logical(1), USE.NAMES=FALSE))
-  .desModel <- .desModel[-.rmModel]
+  if (length(.rmModel) > 0L) .desModel <- .desModel[-.rmModel]
+  if (!is.null(.advan)) {
+    # closed-form ADVAN: the state independent lines are calculated in
+    # $PK before the micro-constants; the rest are in $ERROR
+    .dep <- .bblLinCmtStateDep(.desModel, rxode2::rxState(.ui))
+    # compartment properties (like alag(depot)) are written in $PK, but
+    # still need translating to be recorded; the ODEs are kept so the
+    # compartments are defined, and their DADT lines are dropped later
+    .pkModel <- .desModel[!.dep$dep]
+  }
 
   .mainModel <- rxode2::rxCombineErrorLines(.ui,
                                             errLines=nmGetDistributionNonmemLines(.ui),
@@ -147,8 +161,12 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   .nonmemResetUi(.ui, "")
   #rxode2::rxAssignControlValue(.ui, ".nmVarExtra", "")
   rm(".thetaMu", envir=.ui)
-  .norm <- rxode2::rxNorm(.mv)
-  .des <- rxToNonmem(.norm, ui=.ui)
+  if (is.null(.advan)) {
+    .norm <- rxode2::rxNorm(.mv)
+    .des <- rxToNonmem(.norm, ui=.ui)
+  } else {
+    .des <- .nonmemLinCmtPk(.pkModel, .advan, .ui)
+  }
   .prop <- .nonmemGetCmtProperties(.ui)
   .pk2 <- vapply(seq_along(.prop$cmt),
                  function(i) {
@@ -158,9 +176,13 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                      .ret <- c(.ret,
                                paste0("  F", .cmt, "=", .prop$f[i]))
                    }
+                   if (!is.na(.prop$rate[i])) {
+                     .ret <- c(.ret,
+                               paste0("  R", .cmt, "=", .prop$rate[i]))
+                   }
                    if (!is.na(.prop$dur[i])) {
                      .ret <- c(.ret,
-                               paste0("  DUR", .cmt, "=", .prop$dur[i]))
+                               paste0("  D", .cmt, "=", .prop$dur[i]))
                    }
                    if (!is.na(.prop$lag[i])) {
                      .ret <- c(.ret,
@@ -175,6 +197,11 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                  }, character(1), USE.NAMES=FALSE)
   .pk2 <- .pk2[!is.na(.pk2)]
   .pk2 <- ifelse(length(.pk2) > 0, paste0("\n", paste(.pk2, collapse="\n")), "")
+  if (!is.null(.advan)) {
+    return(paste0(.pk, .des, .pk2,
+                  "\n\n$ERROR\n  ;Redefine LHS in $PK by prefixing with on RXE_ for $ERROR\n",
+                  .err))
+  }
   paste0(.pk, .pk2,
          ifelse(.isPred, "\n", "\n\n$DES\n"),
          .des,
@@ -182,3 +209,91 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
          .err)
 }
 attr(rxUiGet.nonmemPkDesErr0, "rstudio") <- "nonmemPkDesErr0"
+
+#' NONMEM closed-form ADVAN for a linCmt() model
+#'
+#' @param ui rxode2 ui (the ODE version of the linCmt() model) with the
+#'   micro-constants in the `.linCmtMicro` control value
+#' @return `NULL` when the model is solved with ODEs, otherwise a list
+#'   with `advan` (the ADVAN name), `par` (named list of TRANS1 NONMEM
+#'   parameter to micro-constant expression) and `reserved` (TRANS1
+#'   names model variables cannot use)
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmemLinCmtAdvan <- function(ui) {
+  .micro <- rxode2::rxGetControl(ui, ".linCmtMicro", NULL)
+  if (is.null(.micro)) return(NULL)
+  .oral <- .micro$oral0 == 1L
+  if (.micro$ncmt == 1L) {
+    .advan <- ifelse(.oral, "ADVAN2", "ADVAN1")
+    .par <- list(K=.micro$k)
+  } else if (.micro$ncmt == 2L) {
+    if (.oral) {
+      .advan <- "ADVAN4"
+      .par <- list(K=.micro$k, K23=.micro$k12, K32=.micro$k21)
+    } else {
+      .advan <- "ADVAN3"
+      .par <- list(K=.micro$k, K12=.micro$k12, K21=.micro$k21)
+    }
+  } else {
+    if (.oral) {
+      .advan <- "ADVAN12"
+      .par <- list(K=.micro$k, K23=.micro$k12, K32=.micro$k21,
+                   K24=.micro$k13, K42=.micro$k31)
+    } else {
+      .advan <- "ADVAN11"
+      .par <- list(K=.micro$k, K12=.micro$k12, K21=.micro$k21,
+                   K13=.micro$k13, K31=.micro$k31)
+    }
+  }
+  if (.oral) .par$KA <- .micro$ka
+  # a model variable that is already the TRANS1 parameter (like ka ->
+  # KA) needs no extra line; other model variables with these names
+  # are renamed
+  .same <- vapply(names(.par), function(n) {
+    .e <- .par[[n]]
+    is.name(.e) && identical(gsub(".", "_", toupper(as.character(.e)), fixed=TRUE), n)
+  }, logical(1), USE.NAMES=FALSE)
+  # NONMEM also knows the rate constants by compartment number (like
+  # K12 for KA and K20 for K in ADVAN4), so a model variable cannot use
+  # any of those names either
+  .alias <- c("K", "KA", "K10", "K20", "K30", "K40", "K12", "K21", "K13",
+              "K31", "K23", "K32", "K24", "K42", "K34", "K43")
+  list(advan=.advan, par=.par[!.same],
+       reserved=setdiff(.alias, names(.par)[.same]))
+}
+
+#' Write the $PK lines for a closed-form NONMEM ADVAN
+#'
+#' @param pkModel state independent model lines (calculated in $PK)
+#'   and the ODEs (which are dropped)
+#' @param advan list from `.nonmemLinCmtAdvan()`
+#' @param ui rxode2 ui
+#' @return NONMEM $PK lines (starting with a new line) with the
+#'   model lines and the TRANS1 micro-constants
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmemLinCmtPk <- function(pkModel, advan, ui) {
+  .ret <- ""
+  if (length(pkModel) > 0L) {
+    .mv <- rxode2::rxModelVars(paste(vapply(seq_along(pkModel),
+                                            function(i) {
+                                              deparse1(pkModel[[i]])
+                                            }, character(1), USE.NAMES=FALSE),
+                                     collapse="\n"))
+    .norm <- rxode2::rxNorm(.mv)
+    .pk <- strsplit(rxToNonmem(.norm, ui=ui), "\n")[[1]]
+    .pk <- .pk[!grepl("^ *DADT[(]", .pk)]
+    if (length(.pk) > 0L) .ret <- paste0("\n", paste(.pk, collapse="\n"))
+  }
+  if (length(advan$par) > 0L) {
+    .ret <- paste0(.ret, "\n",
+                   paste(vapply(names(advan$par), function(n) {
+                     .e <- advan$par[[n]]
+                     paste0("  ", n, "=", .rxToNonmem(.e, ui=ui),
+                            .babelmixr2Deparse(.e))
+                   }, character(1), USE.NAMES=FALSE),
+                   collapse="\n"))
+  }
+  .ret
+}

@@ -46,7 +46,7 @@ nmGetDistributionNonmemLines.norm <- function(line) {
   .env <- line[[1]]
   .pred1 <- line[[2]]
   if (.pred1[["linCmt"]]) {
-    stop("linCmt() translation not supported (yet)",
+    stop("linCmt() models are translated when fit with nlmixr2(..., est=\"nonmem\"); to translate the model directly, first convert it with rxode2::linToOde()",
          call.=FALSE)
   }
   # Take out transformation; not supported right for multiple endpoint models

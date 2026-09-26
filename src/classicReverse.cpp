@@ -44,7 +44,12 @@
 // xx = 50, Phantom event, used for transit compartments
 // Steady state events need a II data item > 0
 #define EVID0_REGULAR 1
+// steady state with a lag time: rxode2 gives the steady state part
+// (xx = 9 for SS=1, 19 for SS=2) and the dose itself as a separate
+// regular dose at the same time
+#define EVID0_SS0 9
 #define EVID0_SS 10
+#define EVID0_SS20 19
 #define EVID0_SS2 20
 #define EVID0_OFF 30
 #define EVID0_SSINF 40 
@@ -84,10 +89,10 @@ static inline void getWh(int evid, int *wh, int *cmt, int *wh100, int *whI, int 
 }
 
 static inline int getSs(int wh0, bool &hasSs, bool &hasSs2, bool &hasSsRate) {
-  if (wh0 == EVID0_SS2) {
+  if (wh0 == EVID0_SS2 || wh0 == EVID0_SS20) {
     hasSs=true;
     return  2;
-  } else if (wh0 == EVID0_SS) {
+  } else if (wh0 == EVID0_SS || wh0 == EVID0_SS0) {
     hasSs=true;
     return 1;
   } else if (wh0 == EVID0_SSINF) {
@@ -175,6 +180,10 @@ List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, Nu
   bool hasSs2=false;
   bool hasSsRate=false;
   double curAmt=0.0;
+  // the dose that goes with a lagged steady state record; NONMEM and
+  // Monolix give it themselves with an SS dose, so it is dropped
+  int lagSsId = NA_INTEGER, lagSsCmt = NA_INTEGER;
+  double lagSsTime = NA_REAL, lagSsAmt = NA_REAL;
   for (R_xlen_t i = 0; i < evid.size(); ++i) {
     int curEvid = evid[i];
     // put in defaults
@@ -198,6 +207,18 @@ List convertDataBack(IntegerVector id, NumericVector time, NumericVector amt, Nu
       // these are doses
       getWh(curEvid, &wh, &cmt0, &wh100, &whI, &wh0,
             linNcmt, linKa, neq);
+      if (wh0 == EVID0_SS0 || wh0 == EVID0_SS20) {
+        lagSsId = id[i];
+        lagSsCmt = cmt[i];
+        lagSsTime = time[i];
+        lagSsAmt = amt[i];
+      } else if (wh0 == EVID0_REGULAR && lagSsId == id[i] &&
+                 lagSsCmt == cmt[i] && lagSsTime == time[i] &&
+                 lagSsAmt == amt[i]) {
+        lagSsId = NA_INTEGER;
+        keepItem[i] = false;
+        continue;
+      }
       if (wh0 ==EVID0_OFF) {
         // turn off a compartment; supported in nonmem
         // In monoix "Turning off compartments should instead be defined in the model file"

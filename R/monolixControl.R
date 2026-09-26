@@ -2,6 +2,11 @@
 #'
 #' @param nbSSDoses Number of steady state doses (default 7)
 #' @param stiff boolean for using the stiff ODE solver
+#' @param linCmt How a `linCmt()` model is written for Monolix:
+#'   `"pkmodel"` uses Monolix's closed-form `pkmodel()` macro when the
+#'   model allows it and otherwise translates the model to ODEs;
+#'   `"ode"` always translates the model to ODEs (with
+#'   `rxode2::linToOde()`)
 #' @param exploratoryAutoStop logical to turn on or off exploratory
 #'   phase auto-stop of SAEM (default 250)
 #' @param exploratoryIterations Number of iterations for exploratory
@@ -72,6 +77,7 @@
 monolixControl <- function(nbSSDoses=7,
                            useLinearization=FALSE,
                            stiff=FALSE,
+                           linCmt=c("pkmodel", "ode"),
                            addProp = c("combined2", "combined1"),
                            exploratoryAutoStop=FALSE,
                            smoothingAutoStop=FALSE,
@@ -179,6 +185,7 @@ monolixControl <- function(nbSSDoses=7,
   }
 
   .ret <- list(nbSSDoses=as.integer(nbSSDoses), stiff=stiff,
+               linCmt=match.arg(linCmt),
                exploratoryAutoStop=exploratoryAutoStop,
                smoothingAutoStop=smoothingAutoStop,
                addProp=addProp,

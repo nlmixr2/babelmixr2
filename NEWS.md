@@ -1,5 +1,72 @@
 # babelmixr2 0.1.11.9000
 
+* `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
+  `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
+  `ADVAN11` or `ADVAN12` with `TRANS1` micro-constants) or Monolix's
+  `pkmodel()`; a model the closed form cannot represent (other ODEs,
+  parameters that change with time, and for Monolix modeled rates or
+  durations, doses into more than one compartment or amounts used in
+  the model) is translated to ODEs with `rxode2::linToOde()`.
+  `nonmemControl(linCmt="ode")` and `monolixControl(linCmt="ode")`
+  always use ODEs.  The closed-form solutions need an rxode2 with
+  `linCmtMicro()`; with an older rxode2, `linCmt()` models use ODEs.
+
+* `est="poped"` now designs `linCmt()` models (translated to ODEs).
+  `est="nlmer"`, `est="fmeMcmc"` and `est="pseudoOptim"` are now tested
+  with `linCmt()` models.
+
+* New NONMEM/Monolix stress test (`inst/stress/`), shared by the package
+  tests and a command line runner (`run-stress.R`).  The runner can also
+  fit every case with NONMEM and/or Monolix end to end on a machine that
+  has them, and optionally translate the nlmixr2lib models; see
+  `inst/stress/README.md`.
+
+* The NONMEM data dropped the `RATE`, `SS` and `II` items: which items
+  were written was decided from settings made only after the data were
+  converted, so infusions, steady state doses and modeled rates or
+  durations were written as plain bolus doses.  The items are now kept
+  when the data use them.
+
+* A steady state dose with a lag time (which rxode2 splits in two) is now
+  written as one `SS` dose for NONMEM and Monolix, not as two bolus
+  doses.
+
+* NONMEM now writes a modeled duration as `Dn` (it was `DURn`, which
+  NONMEM does not know) and a modeled rate as `Rn` (it was dropped).
+
+* NONMEM now uses the NONMEM name of a mu-referenced covariate in `$PK`
+  (like `NLMIXRMUDERCOV1`), matching `$INPUT`.
+
+* `probitInv()` (which rxode2 writes with `erf()`) now translates to
+  NONMEM (`PHI()`) and Monolix (`normcdf()`).
+
+* `est="monolix"` now refuses models without between-subject
+  variability, residual errors other than `add()`, `prop()` and
+  `add() + prop()`, and transformations other than `lnorm()` and
+  `logitNorm()` up front with a clear error.  Before, a `boxCox()`,
+  `yeoJohnson()` or `logitNorm()` residual stopped with "argument must be
+  a character string".
+
+* Monolix now separates the arguments of the `empty()` macro and the
+  `logitNormal` distribution with commas.
+
+* rxode2's normalized powers (`Rx_pow_di()`, `Rx_pow()`) now translate to
+  NONMEM (`**`) and Monolix (`^`).
+
+* NONMEM and Monolix data without doses (like a `$PRED` model with the
+  dose as a covariate) no longer stop with "undefined columns selected".
+
+* `est="nonmem"` now refuses residual transformations it cannot write
+  (like `probitNorm()`) up front; before, writing the files stopped with
+  "can only write character objects".
+
+* Monolix now applies a bioavailability or lag time to the doses of that
+  compartment only; a property of a compartment without doses no longer
+  stops with "values must be length 1".  A parameter written with
+  brackets (like `v <- (tv + eta.v)`) is now a normal parameter, and an
+  unsupported parameter transformation (like `log10()`) gives a clear
+  error.
+
 * `est="monolix"` now spells a mu-referenced parameter with a `.` in its
   name (like the tainted `rx__cl.wt`, or `ka.x <- exp(tka + eta.ka)`) the
   same way in every section of the Monolix model (#220).  The `EQUATION:`
