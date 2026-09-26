@@ -9,6 +9,7 @@ monolixControl(
   nbSSDoses = 7,
   useLinearization = FALSE,
   stiff = FALSE,
+  linCmt = c("pkmodel", "ode"),
   addProp = c("combined2", "combined1"),
   exploratoryAutoStop = FALSE,
   smoothingAutoStop = FALSE,
@@ -50,6 +51,14 @@ monolixControl(
 - stiff:
 
   boolean for using the stiff ODE solver
+
+- linCmt:
+
+  How a `linCmt()` model is written for Monolix: `"pkmodel"` uses
+  Monolix's closed-form `pkmodel()` macro when the model allows it and
+  otherwise translates the model to ODEs; `"ode"` always translates the
+  model to ODEs (with
+  [`rxode2::linToOde()`](https://nlmixr2.github.io/rxode2/reference/linToOde.html))
 
 - addProp:
 

@@ -49,6 +49,7 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">nonmemControl</span><span class="op">(</span></span>
 <span>  est <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"focei"</span>, <span class="st">"imp"</span>, <span class="st">"its"</span>, <span class="st">"posthoc"</span><span class="op">)</span>,</span>
 <span>  advanOde <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"advan13"</span>, <span class="st">"advan8"</span>, <span class="st">"advan6"</span><span class="op">)</span>,</span>
+<span>  linCmt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"advan"</span>, <span class="st">"ode"</span><span class="op">)</span>,</span>
 <span>  cov <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"r,s"</span>, <span class="st">"r"</span>, <span class="st">"s"</span>, <span class="st">""</span><span class="op">)</span>,</span>
 <span>  maxeval <span class="op">=</span> <span class="fl">1e+05</span>,</span>
 <span>  tol <span class="op">=</span> <span class="fl">6</span>,</span>
@@ -105,6 +106,16 @@ POSTHOC</code>)</p></dd>
 
 <dt id="arg-advanode">advanOde<a class="anchor" aria-label="anchor" href="#arg-advanode"></a></dt>
 <dd><p>The ODE solving method for NONMEM</p></dd>
+
+
+<dt id="arg-lincmt">linCmt<a class="anchor" aria-label="anchor" href="#arg-lincmt"></a></dt>
+<dd><p>How a <code>linCmt()</code> model is written for NONMEM:
+<code>"advan"</code> uses NONMEM's closed-form solutions
+(<code>ADVAN1</code>-<code>ADVAN4</code>, <code>ADVAN11</code> or <code>ADVAN12</code>
+with <code>TRANS1</code> micro-constants) when the model allows it and
+otherwise translates the model to ODEs; <code>"ode"</code> always
+translates the model to ODEs (with <code><a href="https://nlmixr2.github.io/rxode2/reference/linToOde.html" class="external-link">rxode2::linToOde()</a></code>) and
+solves it with <code>advanOde</code></p></dd>
 
 
 <dt id="arg-cov">cov<a class="anchor" aria-label="anchor" href="#arg-cov"></a></dt>
@@ -299,6 +310,9 @@ the model files and without starting NONMEM.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $advanOde</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "advan13"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $linCmt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "advan"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $maxeval</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e+05</span>

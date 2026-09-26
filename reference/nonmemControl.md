@@ -8,6 +8,7 @@ NONMEM estimation control
 nonmemControl(
   est = c("focei", "imp", "its", "posthoc"),
   advanOde = c("advan13", "advan8", "advan6"),
+  linCmt = c("advan", "ode"),
   cov = c("r,s", "r", "s", ""),
   maxeval = 1e+05,
   tol = 6,
@@ -62,6 +63,16 @@ nonmemControl(
 - advanOde:
 
   The ODE solving method for NONMEM
+
+- linCmt:
+
+  How a `linCmt()` model is written for NONMEM: `"advan"` uses NONMEM's
+  closed-form solutions (`ADVAN1`-`ADVAN4`, `ADVAN11` or `ADVAN12` with
+  `TRANS1` micro-constants) when the model allows it and otherwise
+  translates the model to ODEs; `"ode"` always translates the model to
+  ODEs (with
+  [`rxode2::linToOde()`](https://nlmixr2.github.io/rxode2/reference/linToOde.html))
+  and solves it with `advanOde`
 
 - cov:
 
@@ -269,6 +280,9 @@ nonmemControl()
 #> 
 #> $advanOde
 #> [1] "advan13"
+#> 
+#> $linCmt
+#> [1] "advan"
 #> 
 #> $maxeval
 #> [1] 1e+05
