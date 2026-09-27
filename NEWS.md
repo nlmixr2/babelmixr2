@@ -16,6 +16,15 @@
   `nonmemControl(msfo=TRUE)` writes a model specification file for any
   NONMEM fit.  A test kit for a machine with NONMEM is in `inst/tnpri/`.
 
+* The ACoP 2024 `babelmixr2`/`PopED` abstract
+  ([doi:10.70534/XUMG6226](https://doi.org/10.70534/XUMG6226)) is now
+  in `citation("babelmixr2")`, the package description and the `PopED`
+  article (#155).
+* `as.nlmixr2()` of a `nonmem2rx` model now stops with an informative
+  error when the model still contains untranslated NONMEM residual
+  variables (`eps#` or `err#`) instead of failing inside the estimation
+  routine (#95).
+
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
   `ADVAN11` or `ADVAN12` with `TRANS1` micro-constants) or Monolix's
