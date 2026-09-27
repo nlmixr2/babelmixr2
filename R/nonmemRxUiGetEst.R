@@ -1,9 +1,24 @@
+#' Does the NONMEM model have censoring?
+#'
+#' @param ui rxode2 ui
+#' @return `TRUE` when the NONMEM data has censored observations or
+#'   limits (so the `$ERROR` uses `F_FLAG`)
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemHasCens <- function(ui) {
+  rxode2::rxGetControl(ui, ".hasCens", FALSE) ||
+    rxode2::rxGetControl(ui, ".hasLimit", FALSE)
+}
+
 #' @export
 rxUiGet.nonmemEst <- function(x, ...) {
   .ui <- x[[1]]
   .est <- rxode2::rxGetControl(.ui, "est", "focei")
+  # censored observations are a likelihood (F_FLAG=1), which needs the
+  # Laplacian method outside of importance sampling
+  .lap <- ifelse(.nonmemHasCens(.ui), " LAPLACIAN", "")
   if (.est == "focei") {
-    paste0("$ESTIMATION METHOD=1 INTER MAXEVALS=",
+    paste0("$ESTIMATION METHOD=1", .lap, " INTER MAXEVALS=",
            sprintf("%d", rxode2::rxGetControl(.ui, "maxeval", 10000)),
            " SIGDIG=",sprintf("%d", rxode2::rxGetControl(.ui, "sigdig", 3)),
            " SIGL=",sprintf("%d", rxode2::rxGetControl(.ui, "sigl", 12)),
@@ -11,13 +26,15 @@ rxUiGet.nonmemEst <- function(x, ...) {
            ifelse(rxode2::rxGetControl(.ui, "noabort", TRUE),
                   " NOABORT", ""), "\n")
   } else if (.est == "posthoc") {
-    paste0("$ESTIMATION METHOD=0 MAXEVALS=0 POSTHOC PRINT=", rxode2::rxGetControl(.ui, "print", 1),
+    paste0("$ESTIMATION METHOD=", ifelse(.lap == "", "0", "1 LAPLACIAN INTER"),
+           " MAXEVALS=0 POSTHOC PRINT=", rxode2::rxGetControl(.ui, "print", 1),
            " SIGDIG=",sprintf("%d", rxode2::rxGetControl(.ui, "sigdig", 10000)),
            " SIGL=",sprintf("%d", rxode2::rxGetControl(.ui, "sigl", 10000)),
            ifelse(rxode2::rxGetControl(.ui, "noabort", TRUE),
                   " NOABORT", ""), "\n")
   } else if (.est == "its") {
-    paste0("$ESTIMATION METHOD=ITS INTERACTION PRINT=", rxode2::rxGetControl(.ui, "print", 1),
+    paste0("$ESTIMATION METHOD=ITS", .lap, " INTERACTION PRINT=",
+           rxode2::rxGetControl(.ui, "print", 1),
            " NITER=",sprintf("%d", rxode2::rxGetControl(.ui, "niter", 100)),
            ifelse(rxode2::rxGetControl(.ui, "noabort", TRUE),
                   " NOABORT", ""), "\n")
