@@ -1312,6 +1312,14 @@ withr::with_tempdir({
     expect_equal(.rxToN("acos(1)"), "0")
     expect_equal(.rxToN("log1pexp(0)"), "0.69314718055994529")
     expect_equal(.rxToN("factorial(3)"), "6")
+    # partly constant calls and rxode2's normalized powers
+    expect_equal(
+      .rxToN("expit(0, tka, tcl)"),
+      "((THETA(2))-(THETA(1)))*(0.5)+(THETA(1))"
+    )
+    expect_equal(.rxToN("expit(0, tka)"), "(1.0-(THETA(1)))*(0.5)+(THETA(1))")
+    expect_equal(.rxToN("exp(Rx_pow_di(2, 2))"), "54.598150033144236")
+    expect_equal(.rxToN("exp(tka)*Rx_pow(2, 3)"), "DEXP(THETA(1))*8")
     expect_equal(.rxToN("gammafn(5)"), "24")
     expect_equal(.rxToN("lfactorial(1)"), "0")
     expect_equal(

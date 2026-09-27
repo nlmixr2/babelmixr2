@@ -101,7 +101,7 @@ rex::register_shortcuts("babelmixr2")
 )
 
 # Arithmetic evaluated in R when all its arguments are numbers
-.rxNMfoldOp <- c("+", "-", "*", "/", "^", "**")
+.rxNMfoldOp <- c("+", "-", "*", "/", "^", "**", "Rx_pow", "Rx_pow_di")
 
 # Largest integer power written as a product with `$ABBR PROTECT`;
 # larger powers are written as powers of `x*x`
@@ -156,7 +156,7 @@ rex::register_shortcuts("babelmixr2")
   }
   .fun <- NULL
   if (.f %in% .rxNMfoldOp && length(x) %in% 2:3) {
-    .fun <- match.fun(ifelse(.f == "**", "^", .f))
+    .fun <- match.fun(ifelse(.f %in% c("**", "Rx_pow", "Rx_pow_di"), "^", .f))
   } else {
     .fun <- .rxNMfoldConstant[[.f]]
   }
@@ -199,6 +199,25 @@ rex::register_shortcuts("babelmixr2")
     .ret <- paste0("(", .ret, ")")
   }
   .ret
+}
+
+#' The probability part of `expit()` for NONMEM
+#'
+#' @param x R expression for the argument of `expit()`
+#' @param nm NONMEM translation of `x`
+#' @return `1/(1+DEXP(-(x)))`, or its value when `x` is a number (so
+#'   `$ABBR PROTECT` never sees `DEXP()` of a constant)
+#' @author Matthew L. Fidler
+#' @noRd
+.rxToNonmemExpitP <- function(x, nm) {
+  .v <- .rxToNonmemNumber(x)
+  if (!is.null(.v)) {
+    .ret <- .rxToNonmemFormatNumber(1 / (1 + exp(-.v)))
+    if (!is.null(.ret)) {
+      return(.ret)
+    }
+  }
+  paste0("1/(1+DEXP(-(", nm, ")))")
 }
 
 #' Is this name one of NONMEM's protected functions used by `$ABBR PROTECT`?
@@ -1354,12 +1373,12 @@ rex::register_shortcuts("babelmixr2")
       }
     } else if (any(.fun == c("expit", "invLogit", "logitInv"))) {
       if (length(.ret0) == 1) {
-        .ret <- paste0("1/(1+DEXP(-(", unlist(.ret0)[1], ")))")
+        .ret <- .rxToNonmemExpitP(x[[2]], unlist(.ret0)[1])
       } else if (length(.ret0) == 2) {
         .ret0 <- unlist(.ret0)
         .low <- paste(.ret0[2])
         if (regexpr("^-?[0-9]+$", .low) != -1) .low <- paste0(.low, ".0")
-        .p <- paste0("1/(1+DEXP(-(", .ret0[1], ")))")
+        .p <- .rxToNonmemExpitP(x[[2]], .ret0[1])
         ## return (high-low)*p+low;
         .ret <- paste0(
           "(1.0-(", .low, "))*(", .p,
@@ -1367,7 +1386,7 @@ rex::register_shortcuts("babelmixr2")
         )
       } else if (length(.ret0) == 3) {
         .ret0 <- unlist(.ret0)
-        .p <- paste0("1/(1+DEXP(-(", .ret0[1], ")))")
+        .p <- .rxToNonmemExpitP(x[[2]], .ret0[1])
         .low <- paste(.ret0[2])
         if (regexpr("^-?[0-9]+$", .low) != -1) .low <- paste0(.low, ".0")
         .hi <- paste(.ret0[3])
