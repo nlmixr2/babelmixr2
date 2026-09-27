@@ -484,6 +484,68 @@ test_that("est='pknca' with parameters defined in ini()", {
   expect_equal(fit$ui$theta[["prop.err"]], 0.5)
 })
 
+test_that("pkncaParamMap does not use thetas transformed in the model directly", {
+  model <- function() {
+    ini({
+      tka <- 0.45
+      cl <- log(4)
+      tv <- 3
+      eta.cl ~ 0.3
+      prop.err <- 0.5
+    })
+    model({
+      ka <- tka
+      CL <- exp(cl + 0.75 * log(WT / 70) + eta.cl)
+      v <- tv
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - CL / v * center
+      cp <- center / v
+      cp ~ prop(prop.err)
+    })
+  }
+  suppressMessages(ui <- rxode2::rxode(model))
+  paramMap <- pkncaParamMap(ui)
+  expect_false("cl" %in% paramMap$param)
+  suppressMessages(newmod <- ini_transform(ui, cl = c(0.3, 3, 30)))
+  expect_equal(newmod$theta[["cl"]], log(4))
+})
+
+test_that("ini_transform allows infinite bounds", {
+  model <- function() {
+    ini({
+      tka <- 0
+      eta.ka ~ 0.1
+      tcl <- 1
+      tvc <- 3
+      prop.err <- 0.5
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl)
+      vc <- exp(tvc)
+      cp <- linCmt()
+      cp ~ prop(prop.err)
+    })
+  }
+  suppressMessages(ui <- rxode2::rxode(model))
+  suppressMessages(newmod <- ini_transform(ui, ka = c(0.01, 1, Inf)))
+  expect_equal(newmod$theta[["tka"]], 0)
+  iniDf <- newmod$iniDf
+  expect_equal(iniDf$lower[iniDf$name == "tka"], log(0.01))
+  expect_equal(iniDf$upper[iniDf$name == "tka"], Inf)
+})
+
+test_that("pkncaTransformedNames", {
+  expect_equal(
+    sort(pkncaTransformedNames(list(
+      quote(CL <- exp(cl + 0.75 * log(WT / 70))),
+      quote(d/dt(center) <- -cl / vc * center),
+      quote(cp <- center / vc)
+    ))),
+    sort(c("cl", "WT"))
+  )
+})
+
 test_that("pkncaAssignedNames", {
   expect_equal(
     pkncaAssignedNames(list(quote(a <- 1), quote(if (x) {b <- 2} else {a = 3}), quote(y ~ add(z)))),

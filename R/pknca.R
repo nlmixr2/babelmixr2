@@ -419,7 +419,9 @@ pkncaParamMap <- function(ui) {
     }
   }
   # Thetas used directly as the parameter (like `ka` in `ini()` with `linCmt()`)
+  # (only when never used within a transformation like `exp()`)
   directThetas <- setdiff(thetaNames, c(ret$theta, ret$param, allLhs))
+  directThetas <- setdiff(directThetas, pkncaTransformedNames(ui$lstExpr))
   if (length(directThetas) > 0) {
     ret <- rbind(ret, data.frame(
       theta = directThetas, param = directThetas, curEval = "",
@@ -443,6 +445,27 @@ pkncaNumConst <- function(x) {
     return(-pkncaNumConst(x[[2]]))
   }
   NA_real_
+}
+
+#' Find the names used within a non-arithmetic function call
+#'
+#' @param x An R expression or a list of expressions
+#' @return A character vector of variable names used within a function call
+#'   other than arithmetic (like `exp(cl)` or `log(WT / 70)`)
+#' @noRd
+pkncaTransformedNames <- function(x) {
+  if (is.list(x)) {
+    return(unique(unlist(lapply(x, pkncaTransformedNames), use.names = FALSE)))
+  }
+  if (!is.call(x)) {
+    return(character())
+  }
+  arith <- c("+", "-", "*", "/", "(", "{", "<-", "=", "~", "if", "dt")
+  fun <- x[[1]]
+  if (is.name(fun) && !(as.character(fun) %in% arith)) {
+    return(all.vars(x))
+  }
+  pkncaTransformedNames(as.list(x)[-1])
 }
 
 #' Find the names of all assigned variables (one per assignment)
@@ -549,7 +572,8 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
       } else {
         cli::cli_abort("cannot invert the transform {.val {currentTrans}} for {.code {nm}} (please report a bug)") # nocov
       }
-      if (any(!is.finite(newValue))) {
+      # Infinite bounds are allowed, but not an infinite or undefined estimate
+      if (anyNA(newValue) || !is.finite(newValue[ceiling(length(newValue) / 2)])) {
         cli::cli_warn("cannot transform the estimate for {.code {nm}} to {.code {iniName}}, leaving it unchanged")
         next
       }
