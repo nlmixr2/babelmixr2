@@ -166,6 +166,36 @@ withr::with_tempdir({
     .has("  RXDZ004=CL+V")
     .has("  RXR3=DLOG(RXDZ004) ; b = log(cl + v)")
   })
+
+  test_that("zero protection for compartment properties is in $PK (#91)", {
+    f <- function() {
+      ini({
+        tcl <- 1
+        tv <- 1
+        eta.cl ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        cl <- tcl + eta.cl
+        v <- tv
+        alag(central) <- log(cl)
+        d/dt(central) <- -central
+        cp <- central/v
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protectZeros=TRUE)
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    .des <- which(.mod == "$DES")
+    .alag <- which(.mod == "  ALAG1=DLOG(RXDZ001) ; alag(central) = log(cl)")
+    .dz <- which(.mod == "  RXDZ001=ETA(1)+THETA(1)")
+    expect_length(.alag, 1L)
+    expect_length(.dz, 1L)
+    # the protection is calculated in $PK before ALAG1 uses it
+    expect_true(.dz < .alag)
+    expect_true(.alag < .des)
+  })
   withr::with_options(list(babelmixr2.protectZeros=FALSE), {
     test_that("NONMEM dsl, individual lines", {
 

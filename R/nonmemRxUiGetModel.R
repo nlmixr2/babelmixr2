@@ -44,6 +44,7 @@ attr(rxUiGet.nonmemMod, "rstudio") <- "nonmemMod"
                                data.frame(expr=character(0),
                                           nm=character(0)))
   rxode2::rxAssignControlValue(ui, ".nmPrefixLines", NULL)
+  rxode2::rxAssignControlValue(ui, ".nmCmtPrefixLines", NULL)
   rxode2::rxAssignControlValue(ui, ".nmVarExtra", extra)
 }
 

@@ -787,6 +787,15 @@ rex::register_shortcuts("babelmixr2")
   .tmp <- .nonmemReplaceThetaEtaWithNames(.tmp, ui)
   .extra <- paste0(.nonmemReplaceNonmemThetaWithMu(.rxToNonmem(.tmp, ui=ui), ui=ui),
                    .babelmixr2Deparse(x))
+  # The property is written in $PK, so any zero protection it needs has
+  # to be written there too (before the property)
+  .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
+  if (!is.null(.prefixLines)) {
+    rxode2::rxAssignControlValue(ui, ".nmCmtPrefixLines",
+                                 c(rxode2::rxGetControl(ui, ".nmCmtPrefixLines", NULL),
+                                   .prefixLines))
+    rxode2::rxAssignControlValue(ui, ".nmPrefixLines", NULL)
+  }
   .nonmemSetCmtProperty(ui, .state, .extra, type=.prefix)
   paste0("; ", .prefix, "(", .state, ") defined in $PK block")
 }

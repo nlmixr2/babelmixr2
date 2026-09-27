@@ -11,7 +11,9 @@
   reassigned in the model is protected again instead of reusing the
   protection of its old value.  Zero protection needed by an `if()`
   condition is now calculated before the NONMEM `IF` that uses it
-  (instead of inside its body).
+  (instead of inside its body), and zero protection needed by `f()`,
+  `alag()`, `rate()` or `dur()` is calculated in `$PK` with the
+  property (instead of later in `$DES`).
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
