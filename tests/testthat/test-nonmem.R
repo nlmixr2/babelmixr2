@@ -228,6 +228,8 @@ withr::with_tempdir({
             "",
             "$DATA one.cmt.csv IGNORE=@",
             "",
+            "$ABBR PROTECT",
+            "",
             "$INPUT ID TIME EVID AMT DV CMT RXROW",
             "",
             "$SUBROUTINES ADVAN13 TOL=6 ATOL=12 SSTOL=6 SSATOL=12",
@@ -970,5 +972,59 @@ test_that("nonmem model creation without running", {
     unlink(c("staleTest-nonmem", "staleTest-001-nonmem", "staleTest-002-nonmem"),
            recursive=TRUE)
 
+  })
+})
+
+withr::with_tempdir({
+  test_that("NONMEM $ABBR PROTECT (#62)", {
+    one.cmt <- function() {
+      ini({
+        tka <- 0.45
+        tcl <- 1
+        tv <- 3.45
+        eta.ka ~ 0.6
+        add.sd <- 0.7
+      })
+      model({
+        ka <- exp(tka + eta.ka) * exp(0)
+        cl <- exp(tcl) + log(0.5) - sqrt(4)
+        plog <- log(2)
+        v <- exp(tv) * plog
+        d/dt(depot) <- -ka * depot
+        d/dt(central) <- ka * depot - cl/v * central
+        cp <- central / v
+        cp ~ add(add.sd)
+      })
+    }
+
+    .ctl <- function(...) {
+      nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
+              nonmemControl(runCommand=NA, ...))
+      .ret <- readLines(file.path("one.cmt-nonmem", "one.cmt.nmctl"))
+      unlink("one.cmt-nonmem", recursive=TRUE)
+      .ret
+    }
+
+    .nm <- suppressMessages(.ctl())
+    expect_true("$ABBR PROTECT" %in% .nm)
+    # $ABBR comes before the abbreviated code
+    expect_lt(which(.nm == "$ABBR PROTECT"), which(.nm == "$PK"))
+    # NM-TRAN's protection mistranslates functions of constants like EXP(0)
+    expect_false(any(grepl("DEXP(0)", .nm, fixed=TRUE)))
+    expect_true(any(grepl("KA=DEXP(RX__TKA)*1 ;", .nm, fixed=TRUE)))
+    expect_true(any(grepl("(-0.69314718055994529)-2 ;", .nm, fixed=TRUE)))
+    # PLOG is a NONMEM protected function, so the variable is renamed
+    expect_false(any(grepl("^ *PLOG=", .nm)))
+    expect_true(any(grepl("RXR1=0.69314718055994529 ; plog = log(2)", .nm, fixed=TRUE)))
+
+    .nm <- suppressMessages(.ctl(protect=FALSE))
+    expect_false(any(grepl("$ABBR", .nm, fixed=TRUE)))
+    expect_true(any(grepl("^ *PLOG=", .nm)))
+
+    withr::with_options(list(babelmixr2.nmProtect=FALSE), {
+      expect_false(nonmemControl()$protect)
+    })
+    expect_true(nonmemControl()$protect)
+    expect_error(nonmemControl(protect=NA))
   })
 })

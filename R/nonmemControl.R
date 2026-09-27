@@ -51,7 +51,14 @@
 #' @param iniSigDig How many significant digits are printed in $THETA
 #'   and $OMEGA when the estimate is zero.  Also controls the zero
 #'   protection numbers
-#' @param protectZeros Add methods to protect divide by zero
+#' @param protectZeros Add babelmixr2's own code to protect divide
+#'   by zero (and the domains of `log()`, `sqrt()` and similar
+#'   functions) in the control stream
+#' @param protect Add `$ABBR PROTECT` to the control stream so NM-TRAN
+#'   replaces `LOG`, `EXP`, `SQRT`, division and powers with NONMEM's
+#'   protected functions (`PLOG`, `PEXP`, `PSQRT`, `PDZ`); this requires
+#'   NONMEM 7.4 or later.  The default comes from the
+#'   `babelmixr2.nmProtect` option, which is `TRUE` when unset
 #' @param muRef Automatically mu-reference the control stream
 #' @param rxControl Options to pass to \code{rxode2::rxControl} for
 #'   simulations
@@ -111,6 +118,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           runCommand=getOption("babelmixr2.nonmem", ""),
                           iniSigDig=5,
                           protectZeros=FALSE,
+                          protect=getOption("babelmixr2.nmProtect", TRUE),
                           muRef=TRUE,
                           addProp = c("combined2", "combined1"),
                           rxControl=NULL,
@@ -148,6 +156,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertIntegerish(sigl, lower=1, upper=14, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(iniSigDig, lower=1, len=1, any.missing=FALSE)
   checkmate::assertLogical(protectZeros, len=1, any.missing=FALSE)
+  checkmate::assertLogical(protect, len=1, any.missing=FALSE)
   checkmate::assertLogical(muRef, len=1, any.missing=FALSE)
   checkmate::assertLogical(readRounding, len=1, any.missing=FALSE)
   checkmate::assertLogical(readBadOpt, len=1, any.missing=FALSE)
@@ -238,6 +247,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                muRef=muRef,
                sigdig=sigdig,
                protectZeros=protectZeros,
+               protect=protect,
                runCommand=runCommand,
                outputExtension=outputExtension,
                addProp=addProp,

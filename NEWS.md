@@ -1,5 +1,13 @@
 # babelmixr2 0.1.11.9000
 
+* NONMEM control streams now use `$ABBR PROTECT` so NM-TRAN replaces
+  `LOG`, `EXP`, `SQRT`, division and powers with NONMEM's protected
+  functions (NONMEM 7.4 or later).  Turn it off with
+  `nonmemControl(protect=FALSE)` or `options(babelmixr2.nmProtect=FALSE)`.
+  Functions of a number (like `exp(0)`) are written as numbers, and model
+  variables named like a protected function (like `plog`) are renamed
+  (#62).
+
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
   `ADVAN11` or `ADVAN12` with `TRANS1` micro-constants) or Monolix's

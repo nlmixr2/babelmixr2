@@ -40,6 +40,8 @@ withr::with_tempdir({
           "",
           "$DATA one.cmt.csv IGNORE=@",
           "",
+          "$ABBR PROTECT",
+          "",
           "$INPUT ID TIME EVID AMT DV CMT RXROW",
           "",
           "$SUBROUTINES ADVAN13 TOL=6 ATOL=12 SSTOL=6 SSATOL=12",

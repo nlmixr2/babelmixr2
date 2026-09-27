@@ -47,6 +47,14 @@ attr(rxUiGet.nonmemMod, "rstudio") <- "nonmemMod"
   rxode2::rxAssignControlValue(ui, ".nmVarExtra", extra)
 }
 
+#' @export
+rxUiGet.nonmemAbbr <- function(x, ...) {
+  .ui <- x[[1]]
+  if (!.nonmemProtect(.ui)) return("")
+  "$ABBR PROTECT\n\n"
+}
+attr(rxUiGet.nonmemAbbr, "rstudio") <- "nonmemAbbr"
+
 rxUiGetNonememModelEnv <- new.env(parent=emptyenv())
 rxUiGetNonememModelEnv$rxS <- NULL
 
@@ -58,6 +66,7 @@ rxUiGet.nonmemModel <- function(x, ...) {
   .ret <- paste0(
     "$PROBLEM ", .ui$nonmemModelName, " translated from babelmixr2\n; comments show mu referenced model in ui$getSplitMuModel\n\n",
     "$DATA ", .ui$nonmemCsv, " IGNORE=@\n\n",
+    rxUiGet.nonmemAbbr(x, ...),
     rxUiGet.nonmemInput(x, ...), "\n",
     rxUiGet.nonmemSub(x, ...), "\n\n",
     rxUiGet.nonmemPrior(x, ...),

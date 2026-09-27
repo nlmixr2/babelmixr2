@@ -45,6 +45,52 @@ rex::register_shortcuts("babelmixr2")
 
 .rxNmProtectZeroP1 <- c("log1p", "lfactorial", "lgamma1p", "factorial")
 
+# NONMEM's protected functions (NONMEM 7.4+); with `$ABBR PROTECT` these
+# names cannot be used as model variables
+.rxNMprotectFun <- c("PLOG", "PLOG10", "PSQRT", "PEXP", "PDZ", "PZR", "PNP",
+                     "PNG", "PHE", "PTAN", "PATAN", "PACOS", "PASIN")
+
+# Functions evaluated in R when their argument is a number.  NM-TRAN's
+# `$ABBR PROTECT` mistranslates a protected function of a constant (like
+# `EXP(0)`), so these are written as numbers instead
+.rxNMfoldConstant <- c("exp", "log", "sqrt", "log10", "log2", "log1p", "expm1")
+
+#' Should the control stream use NONMEM's `$ABBR PROTECT`?
+#'
+#' @param ui rxode2 ui
+#' @return boolean
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemProtect <- function(ui) {
+  isTRUE(rxode2::rxGetControl(ui, "protect",
+                              getOption("babelmixr2.nmProtect", TRUE)))
+}
+
+#' Fold a single-argument function of a number into a number
+#'
+#' @param x call like `exp(0)` or `log(-1)`
+#' @return the value formatted for NONMEM, or `NULL` when the call
+#'   should not be folded
+#' @author Matthew L. Fidler
+#' @noRd
+.rxToNonmemFoldConstant <- function(x) {
+  .x1 <- as.character(x[[1]])
+  if (!(.x1 %in% .rxNMfoldConstant)) return(NULL)
+  .arg <- x[[2]]
+  if (is.call(.arg) && length(.arg) == 2 && identical(.arg[[1]], quote(`-`))) {
+    .arg <- .arg[[2]]
+    if (!is.numeric(.arg)) return(NULL)
+    .arg <- -.arg
+  } else if (!is.numeric(.arg)) {
+    return(NULL)
+  }
+  .val <- suppressWarnings(match.fun(.x1)(.arg))
+  if (length(.val) != 1 || !is.finite(.val)) return(NULL)
+  .ret <- gsub("e", "D", sprintf("%.17g", .val), fixed=TRUE)
+  if (.val < 0) .ret <- paste0("(", .ret, ")")
+  .ret
+}
+
 # "log1pexp" = c("DLOG(1+DEXP(", "))", "log1pexp"), ???
 
 .rxNMsingle <- list(
@@ -168,7 +214,8 @@ rex::register_shortcuts("babelmixr2")
   if (length(.w) == 1) {
     var <- .reserved$nm[.w]
   } else if (regexpr(.nmRes, .uvar, perl=TRUE) != -1 ||
-               .uvar %in% rxode2::rxGetControl(ui, ".nmLinCmtReserved", character(0))) {
+               .uvar %in% rxode2::rxGetControl(ui, ".nmLinCmtReserved", character(0)) ||
+               (.uvar %in% .rxNMprotectFun && .nonmemProtect(ui))) {
     .num <- rxode2::rxGetControl(ui, ".nmVarResNum", 1)
     .newVar <- sprintf("RXR%d", .num)
     rxode2::rxAssignControlValue(ui, ".nmVarResNum", .num + 1)
@@ -791,6 +838,8 @@ rex::register_shortcuts("babelmixr2")
       .xc <- .rxNMsingle[[.x1]]
       if (!is.null(.xc)) {
         if (length(x) == 2) {
+          .ret <- .rxToNonmemFoldConstant(x)
+          if (!is.null(.ret)) return(.ret)
           if (.x1 %in% .rxNMprotectZero) {
             .expr <- .rxProtectPlusZero(x[[2]], ui=ui, one=FALSE)
           } else if (.x1 %in% .rxNmProtectZeroP1) {
