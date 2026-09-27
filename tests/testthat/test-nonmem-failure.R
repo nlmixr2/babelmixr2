@@ -100,6 +100,12 @@ test_that("NONMEM failures are classified from the output (#46)", {
   )
 })
 
+test_that("NONMEM exiting with an error is warned about (#46)", {
+  expect_no_warning(.nonmemWarnStatus(NULL))
+  expect_no_warning(.nonmemWarnStatus(0L))
+  expect_warning(.nonmemWarnStatus(137L), "exited with status 137")
+})
+
 test_that("real NONMEM output is classified (#46)", {
   # PsN's collection of NONMEM output, shipped with nonmem2rx
   .zip <- system.file("PsN.zip", package = "nonmem2rx")

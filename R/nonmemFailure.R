@@ -431,3 +431,22 @@
   unlink(file.path(.exportPath, c(ui$nonmemNmlst, "FMSG", "PRDERR")))
   invisible()
 }
+
+#' Warn when NONMEM exited with an error but its output was read
+#'
+#' @param status The exit status of the NONMEM run command, or `NULL`
+#'   when it is not known
+#' @return Nothing, warns when the status is not zero
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemWarnStatus <- function(status) {
+  if (!is.null(status) && !identical(as.integer(status), 0L)) {
+    warning(
+      "NONMEM exited with status ",
+      status,
+      " after estimation; its output (like the tables) may be incomplete",
+      call. = FALSE
+    )
+  }
+  invisible()
+}

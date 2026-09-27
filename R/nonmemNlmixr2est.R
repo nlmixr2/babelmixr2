@@ -257,6 +257,7 @@
          call.=FALSE)
   }
   .ret <- .nonmemFinalizeOrExplain(.ret, .ui, .status)
+  .nonmemWarnStatus(.status)
   if (inherits(.ret, "nlmixr2FitData")) {
     .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
     .prderrPath <- file.path(.exportPath, "PRDERR")
