@@ -134,7 +134,12 @@ rex::register_shortcuts("babelmixr2")
 .rxToNonmemFormatNumber <- function(x) {
   if (length(x) != 1L || !is.finite(x)) return(NULL)
   if (x == 0) x <- 0 # drop the sign of -0
-  .ret <- gsub("e", "D", sprintf("%.17g", x), fixed=TRUE)
+  .ret <- sprintf("%.17g", x)
+  if (abs(x) > .Machine$integer.max && !grepl("[.e]", .ret)) {
+    # a whole number this large is not a valid Fortran integer
+    .ret <- sprintf("%.16e", x)
+  }
+  .ret <- gsub("e", "D", .ret, fixed=TRUE)
   if (x < 0) .ret <- paste0("(", .ret, ")")
   .ret
 }
@@ -187,9 +192,14 @@ rex::register_shortcuts("babelmixr2")
     if (.e < 0) .ret <- paste0("(1/", .ret, ")")
     return(.ret)
   }
-  if (!is.null(.b) && .b > 0) {
-    return(paste0("DEXP((", .rxToNonmem(expo, ui=ui), ")*",
-                  .rxToNonmemFormatNumber(log(.b)), ")"))
+  if (!is.null(.b)) {
+    if (.b > 0) {
+      return(paste0("DEXP((", .rxToNonmem(expo, ui=ui), ")*",
+                    .rxToNonmemFormatNumber(log(.b)), ")"))
+    }
+    warning("with $ABBR PROTECT, NONMEM writes '", deparse1(base), "^",
+            deparse1(expo), "' as PEXP(E*PLOG(B)) which is wrong for a base <= 0; ",
+            "consider nonmemControl(protect=FALSE)", call.=FALSE)
   }
   NULL
 }

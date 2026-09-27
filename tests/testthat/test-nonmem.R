@@ -1049,6 +1049,10 @@ withr::with_tempdir({
     expect_equal(.rxToN("expit(tka)"), "1/(1+DEXP(-(THETA(1))))")
     # powers above .rxNMmaxIntPow keep **
     expect_equal(.rxToN("tka^13"), "THETA(1)**13")
+    # large whole numbers are not written as Fortran integers
+    expect_equal(.rxToN("2^31"), "2.1474836480000000D+09")
+    expect_equal(.rxToN("2^30"), "1073741824")
+    expect_warning(.rxToN("(-2)^tka"), "PLOG")
     # PROTECT writes B**E as PEXP(E*PLOG(B)), which is wrong for B < 0,
     # so integer powers are products and powers of numbers use DEXP()
     expect_equal(.rxToN("tka^2"), "(THETA(1)*THETA(1))")
@@ -1060,6 +1064,13 @@ withr::with_tempdir({
     expect_equal(.rxToN("2^3"), "8")
     expect_equal(.rxToN("tka^(1+1)"), "(THETA(1)*THETA(1))")
     expect_equal(.rxToN("tka^0.5"), "THETA(1)**0.5")
+
+    .ui <- rxode2::rxUiDecompress(one.cmt())
+    rxode2::rxAssignControlValue(.ui, "protect", FALSE)
+    rxode2::rxAssignControlValue(.ui, "protectZeros", FALSE)
+    expect_equal(rxToNonmem("tka^2", .ui), "THETA(1)**2")
+    expect_equal(rxToNonmem("2^tka", .ui), "2**THETA(1)")
+    expect_warning(rxToNonmem("(-2)^tka", .ui), NA)
 
     .nm <- suppressMessages(.ctl(protect=FALSE))
     expect_false(any(grepl("$ABBR", .nm, fixed=TRUE)))
