@@ -146,7 +146,10 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                  function(v) {
                    paste0("RXE_", .rxToNonmemHandleNamesOrAtomic(str2lang(v), .ui))
                  }, character(1), USE.NAMES=TRUE)
-  .ini <- vapply(names(.mv$ini[!is.na(.mv$ini)]),
+  .ini <- names(.mv$ini[!is.na(.mv$ini)])
+  # constants like pi are written as numbers, not variables
+  .ini <- .ini[!(.ini %in% names(.rxNMcnt))]
+  .ini <- vapply(.ini,
                  function(v) {
                    paste0("RXE_", .rxToNonmemHandleNamesOrAtomic(str2lang(v), .ui))
                  }, character(1), USE.NAMES=TRUE)

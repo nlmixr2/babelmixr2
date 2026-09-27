@@ -4,9 +4,10 @@
   `LOG`, `EXP`, `SQRT`, division and powers with NONMEM's protected
   functions (NONMEM 7.4 or later).  Turn it off with
   `nonmemControl(protect=FALSE)` or `options(babelmixr2.nmProtect=FALSE)`.
-  Since NM-TRAN writes `B**E` as `PEXP(E*PLOG(B))`, integer powers are
-  written as products and powers of a positive number with `DEXP()`.
-  Functions of a number (like `exp(0)`) are written as numbers, and model
+  Since NM-TRAN writes `B**E` as `PEXP(E*PLOG(B))`, integer powers up to
+  12 are written as products and powers of a positive number with
+  `DEXP()`.  Functions of numbers (like `exp(0)`, `log(2*pi)` or
+  `expit(0)`) are written as numbers, and model
   variables named like a protected function (like `plog`) are renamed
   (#62).
 

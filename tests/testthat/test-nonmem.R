@@ -989,7 +989,7 @@ withr::with_tempdir({
         ka <- exp(tka + eta.ka) * exp(0)
         cl <- exp(tcl) + log(0.5) - sqrt(4)
         plog <- log(2)
-        v <- exp(tv) * plog
+        v <- exp(tv) * plog * sqrt(pi) / sqrt(pi)
         d/dt(pnp) <- -ka * pnp
         d/dt(central) <- ka * pnp - cl/v * central
         cp <- central / v
@@ -1018,6 +1018,9 @@ withr::with_tempdir({
     expect_true(any(grepl("RXR2=0.69314718055994529 ; plog = log(2)", .nm, fixed=TRUE)))
     # the renamed compartment keeps its name throughout the control stream
     expect_true("     COMP(RXR1, DEFDOSE) ; pnp" %in% .nm)
+    # pi is a number in $ERROR too
+    expect_false(any(grepl("RXE_1.77", .nm, fixed=TRUE)))
+    expect_false(any(grepl("RXE_3.14", .nm, fixed=TRUE)))
     expect_false(any(grepl("RXR1=", .nm, fixed=TRUE)))
 
     .rxToN <- function(x) rxToNonmem(x, one.cmt())
@@ -1035,6 +1038,17 @@ withr::with_tempdir({
     expect_equal(.rxToN("acos(1)"), "0")
     expect_equal(.rxToN("log1pexp(0)"), "0.69314718055994529")
     expect_equal(.rxToN("exp(tka)*exp(1-1)"), "DEXP(THETA(1))*1")
+    # named constants and hand-written translations fold too
+    expect_equal(.rxToN("sqrt(pi)"), "1.7724538509055159")
+    expect_equal(.rxToN("log(2*M_PI)"), "1.8378770664093453")
+    expect_equal(.rxToN("exp(M_LN2)"), "2")
+    expect_equal(.rxToN("expit(0)"), "0.5")
+    expect_equal(.rxToN("expit(0, 1, 3)"), "2")
+    expect_equal(.rxToN("logit(0.5)"), "0")
+    expect_equal(.rxToN("log1pmx(1)"), "(-0.30685281944005471)")
+    expect_equal(.rxToN("expit(tka)"), "1/(1+DEXP(-(THETA(1))))")
+    # powers above .rxNMmaxIntPow keep **
+    expect_equal(.rxToN("tka^13"), "THETA(1)**13")
     # PROTECT writes B**E as PEXP(E*PLOG(B)), which is wrong for B < 0,
     # so integer powers are products and powers of numbers use DEXP()
     expect_equal(.rxToN("tka^2"), "(THETA(1)*THETA(1))")
