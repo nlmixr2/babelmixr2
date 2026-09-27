@@ -30,6 +30,37 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
   .foceiControl
 }
 
+#' Stop when a nonmem2rx model still has NONMEM residual variables
+#'
+#' When nonmem2rx cannot translate the residual error, the NONMEM
+#' `EPS(#)`/`ERR(#)` variables remain in the model as `eps#`/`err#`,
+#' which would otherwise be treated as missing data covariates.
+#'
+#' @param x decompressed nonmem2rx ui
+#' @return nothing, called for its side effect
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmem2rxAssertNoEps <- function(x) {
+  .covs <- x$allCovs
+  # A data column with the exact name supplies the value, so the model
+  # can still be solved (nonmem2rx keeps data case, ie EPS1 != eps1)
+  .covs <- setdiff(.covs, names(x$nonmemData))
+  .eps <- .covs[grepl("^(eps|err)[0-9]+$", .covs)]
+  if (length(.eps) == 0L) {
+    return(invisible())
+  }
+  stop(
+    "the model still contains untranslated NONMEM residual variable(s): ",
+    paste(paste0("'", .eps, "'"), collapse = ", "),
+    "\nthe residual error needs to be expressed in nlmixr2 format",
+    " (ie `ipred ~ prop(prop.sd)`)",
+    " and these variables removed;",
+    " adjust manually and then use `as.nonmem2rx(new, old)` to update",
+    " and re-verify the manual model translation",
+    call. = FALSE
+  )
+}
+
 #' @export
 as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl(), ci=0.95) {
   #need x$nonmemData
@@ -37,6 +68,7 @@ as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxCon
   # The environment needs:
   env <- new.env(parent=emptyenv())
   x <- rxode2::rxUiDecompress(x)
+  .nonmem2rxAssertNoEps(x)
   if (is.null(x$predDf)) {
     stop("The input model does not have a endpoint specified in nlmixr2 format.",
          " Please adjust manually and then use `as.nonmem2rx(new, old)` to update",
