@@ -997,6 +997,27 @@ test_that("est='pknca' with covariates and mixed IV/oral dosing (#102)", {
   )
   # Covariates are kept in the NCA data
   expect_true("ROUTE" %in% names(as.data.frame(ret$nca$data$conc)))
+  # ka inside if () is not updated (it is not a simple function of tka)
+  expect_equal(ret$ui$iniDf$est[ret$ui$iniDf$name == "tka"], 0.45)
+  # With ka for all subjects, ka is from the extravascular doses
+  suppressMessages(suppressWarnings(
+    modKa <- rxode2::model(modA, ka <- exp(tka + eta.ka), append = NA)
+  ))
+  suppressMessages(suppressWarnings(
+    retKa <- nlmixr2est::nlmixr(
+      object = modKa,
+      data = dat,
+      est = "pknca",
+      control = ctl
+    )
+  ))
+  ncaKa <- as.data.frame(retKa$nca)
+  tmaxEv <- ncaKa$PPORRES[ncaKa$PPTESTCD == "tmax"]
+  expect_setequal(ncaKa$ID[ncaKa$PPTESTCD == "tmax"], c(21, 22, 23))
+  expect_equal(
+    retKa$ui$iniDf$est[retKa$ui$iniDf$name == "tka"],
+    log(min(3, log(2) / (median(tmaxEv) / 4)))
+  )
 
   # The same C0 when the data are not sorted by time
   datShuffle <- dat[rev(seq_len(nrow(dat))), ]
