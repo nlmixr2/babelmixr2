@@ -136,6 +136,44 @@ withr::with_tempdir({
     .has("  RXR2=DLOG(RXDZ002) ; b = log(cl)")
   })
 
+  test_that("if bodies and initial conditions do not share zero protection (#91)", {
+    f <- function() {
+      ini({
+        tcl <- 1
+        eta.cl ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        k <- exp(tcl + eta.cl)
+        cl <- 2 + k
+        a <- log(cl)
+        if (WT > 70) {
+          cl <- 4 + k
+          a <- log(cl)
+        }
+        b <- log(cl)
+        central(0) <- log(-70 + WT)
+        d / dt(central) <- -a * b * central
+        cp <- central
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protectZeros = TRUE, prune = FALSE)
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    .has <- function(x) expect_true(x %in% .mod, info = x)
+    # nothing is protected (or cached) inside the if body ...
+    .has("    RXR1=DLOG(CL) ; a = log(cl)")
+    # ... so the cl assigned there is protected again after the IF
+    .if <- which(.mod == "  IF (WT.GT.70) THEN")
+    .endIf <- which(.mod == "  END IF" & seq_along(.mod) > .if)[1]
+    .b <- which(.mod == "  RXR2=DLOG(RXDZ002) ; b = log(cl)")
+    expect_length(.b, 1L)
+    expect_true(which(.mod == "  RXDZ002=CL") > .endIf)
+    # initial conditions ($PK) do not use protection from $DES
+    expect_false(any(grepl("^  A_0\\(1\\)=.*RXDZ", .mod)))
+  })
+
   test_that("zero protection: if conditions, reassignment, high sigdig (#91)", {
     f <- function() {
       ini({
