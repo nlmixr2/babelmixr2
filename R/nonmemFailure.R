@@ -60,11 +60,13 @@
 #' Classify what went wrong in a NONMEM run from its output
 #'
 #' @param lines The output lines (from `.nonmemFailureLines()`)
+#' @param modelName The model name; lines naming it (like NONMEM's
+#'   problem title or file names) are not read as license messages
 #' @return A list with the `cause` of the failure and the output
 #'   `lines` that show it, or `NULL` when no failure is recognized
 #' @author Matthew L. Fidler
 #' @noRd
-.nonmemClassifyFailure <- function(lines) {
+.nonmemClassifyFailure <- function(lines, modelName=NULL) {
   if (length(lines) == 0L) return(NULL)
   if (any(grepl("(DATA ERROR)", lines, fixed=TRUE))) {
     return(list(cause="data",
@@ -92,6 +94,9 @@
     grepl("expired|not valid|invalid|not found|cannot find|could not find|missing|no valid|unable to|failed",
           lines, ignore.case=TRUE) &
     !grepl("registered to|warning", lines, ignore.case=TRUE)
+  if (!is.null(modelName)) {
+    .lic <- .lic & !grepl(modelName, lines, fixed=TRUE)
+  }
   if (any(.lic)) {
     return(list(cause="license",
                 lines=.nonmemFailureContext(lines[which(.lic)[1]:length(lines)],
@@ -154,7 +159,7 @@
         "  - the NONMEM license is missing or expired (see the NONMEM messages printed above)",
         paste0("  - a runCommand function did not write '", .lst, "' in the run directory")))
   }
-  .fail <- .nonmemClassifyFailure(.lines)
+  .fail <- .nonmemClassifyFailure(.lines, ui$nonmemModelName)
   if (!is.null(.fail)) {
     .msg <- switch(
       .fail$cause,
@@ -185,8 +190,11 @@
     .nonmemFailureStop(.msg)
   }
   .started <- any(grepl("NONLINEAR MIXED EFFECTS MODEL PROGRAM", .lines, fixed=TRUE))
-  .finished <- any(grepl("#TERM:|MINIMIZATION SUCCESSFUL|MINIMIZATION TERMINATED|OPTIMIZATION WAS COMPLETED|OPTIMIZATION WAS NOT COMPLETED|STOCHASTIC PORTION WAS|EXPECTATION ONLY PROCESS",
-                           .lines))
+  # the model name is in NONMEM's problem title and file names, so
+  # lines naming it do not show that NONMEM finished
+  .done <- grepl("#TERM:|MINIMIZATION SUCCESSFUL|MINIMIZATION TERMINATED|OPTIMIZATION WAS COMPLETED|OPTIMIZATION WAS NOT COMPLETED|STOCHASTIC PORTION WAS|EXPECTATION ONLY PROCESS",
+                 .lines)
+  .finished <- any(.done & !grepl(ui$nonmemModelName, .lines, fixed=TRUE))
   if (!.started) {
     .nonmemFailureStop(
       c(paste0("NONMEM did not start estimation (see '", .lstFile, "')"),

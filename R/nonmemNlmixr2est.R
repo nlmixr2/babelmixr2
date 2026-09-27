@@ -223,11 +223,14 @@
                     error=function(e) {
                       .nonmemCheckRun(.ui, .status, readError=e)
                     })
-  if (!.read && is.null(.ui$nonmemTermMessage)) {
-    # without NONMEM's termination message there is nothing to read;
-    # tell the user why NONMEM failed
+  if (!.read) {
+    # tell the user why NONMEM failed when it did not finish (or,
+    # without NONMEM's termination message, when there is nothing to
+    # read); a finished run that did not converge continues below
     .nonmemCheckRun(.ui, .status,
-                    readError=simpleError("NONMEM's output has no termination message"))
+                    readError=if (is.null(.ui$nonmemTermMessage)) {
+                      simpleError("NONMEM's output has no termination message")
+                    })
   }
   .readRounding <- rxode2::rxGetControl(.ui, "readRounding", FALSE)
   .roundingErrors <- .ui$nonmemRoundingErrors

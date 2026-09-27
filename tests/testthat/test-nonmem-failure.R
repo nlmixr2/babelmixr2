@@ -36,6 +36,9 @@ test_that("NONMEM failures are classified from the output (#46)", {
                                      "0PROGRAM TERMINATED BY OBJ"))
   expect_equal(.crash$cause, "crash")
   expect_true("0PROGRAM TERMINATED BY OBJ" %in% .crash$lines)
+  # the model name is not read as a license message
+  expect_null(.nonmemClassifyFailure(c(" PROBLEM NO.:  1  license_missing translated from babelmixr2"),
+                                     modelName="license_missing"))
 })
 
 withr::with_tempdir({
@@ -138,6 +141,31 @@ withr::with_tempdir({
                          "0PROGRAM TERMINATED BY OBJ",
                          " ERROR IN NCONTR WHILE COMPUTING OBJECTIVE")), "fail_obj")
     expect_match(.msg, "PROGRAM TERMINATED BY OBJ", fixed=TRUE)
+  })
+
+  test_that("a crash after NONMEM read the data is reported (#46)", {
+    # with the data summary, nonmem2rx reads the crash as NONMEM's
+    # termination message
+    .msg <- .failure(.fakeNonmem(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
+                                   " TOT. NO. OF OBS RECS:      132",
+                                   " TOT. NO. OF INDIVIDUALS:       12",
+                                   " #TERM:",
+                                   "0PROGRAM TERMINATED BY OBJ",
+                                   " ERROR IN NCONTR WHILE COMPUTING OBJECTIVE")), "fail_obj2")
+    expect_match(.msg, "NONMEM stopped during the run")
+    expect_match(.msg, "PROGRAM TERMINATED BY OBJ", fixed=TRUE)
+    expect_no_match(.msg, "minimization not successful")
+  })
+
+  test_that("a finished NONMEM run that did not converge is reported (#46)", {
+    .msg <- .failure(.fakeNonmem(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
+                                   " TOT. NO. OF OBS RECS:      132",
+                                   " TOT. NO. OF INDIVIDUALS:       12",
+                                   " #TERM:",
+                                   "0MINIMIZATION TERMINATED",
+                                   " DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED",
+                                   " #TERE:")), "fail_maxeval")
+    expect_match(.msg, "minimization not successful")
   })
 
   test_that("unreadable NONMEM output is reported (#46)", {
