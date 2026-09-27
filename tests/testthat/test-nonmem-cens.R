@@ -105,6 +105,25 @@ withr::with_tempdir({
     expect_true(any(grepl("^\\$ESTIMATION METHOD=1 INTER ", .r$ctl)))
   })
 
+  test_that("censored and limited observations adjust the objective (#92)", {
+    .nFlag <- function(data) {
+      .ui <- rxode2::rxUiDecompress(rxode2::rxode2(one.cmt))
+      assign("control", nonmemControl(), envir=.ui)
+      .env <- new.env(parent=emptyenv())
+      .d <- suppressMessages(suppressWarnings(bblDatToNonmem(.ui, data, env=.env)))
+      .nonmemFormatCensData(.d, .ui)
+      rxode2::rxGetControl(.ui, ".nFlag", NA_integer_)
+    }
+    expect_equal(.nFlag(.cens), 16L)
+    .d <- .cens
+    .d$LIMIT <- ifelse(.d$EVID == 0, 0.5, NA)
+    # every observation is M2, M3 or M4
+    expect_equal(.nFlag(.d), sum(.d$EVID == 0))
+    .d <- .theo
+    .d$CENS <- 0
+    expect_equal(.nFlag(.d), 0L)
+  })
+
   test_that("censoring with a transformed endpoint is refused in NONMEM (#92)", {
     .m <- rxode2::model(one.cmt, cp ~ lnorm(add.sd))
     expect_error(
