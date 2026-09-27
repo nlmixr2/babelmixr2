@@ -11,7 +11,8 @@
   concentration, or zero for the first dose).  When no doses are only
   extravascular, `ka` is not updated.  Multiple-dose data no longer need
   a concentration at each dose time; each dose until the next (with at
-  least 3 concentrations) is used.  A central volume named `v` is now
+  least 3 concentrations) is used, with `vc` from the first dose.  Doses
+  at the same time are combined.  A central volume named `v` is now
   estimated like `vc`.
 * `est="monolix"` now translates compartment properties (`f()`,
   `alag()`, `rate()` and `dur()`) that are expressions, like

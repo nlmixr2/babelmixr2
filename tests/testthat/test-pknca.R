@@ -533,14 +533,56 @@ test_that("pkncaAutoIntervals (#102)", {
   expect_equal(ret$start[ret$ID == 1], c(0, 0))
   expect_equal(ret$end[ret$ID == 1], c(24, Inf))
   # Multiple doses use intervals with enough concentrations (not only the
-  # trough at 23.9 for 24 to 48)
-  expect_equal(ret$start[ret$ID == 2], c(0, 48))
-  expect_equal(ret$end[ret$ID == 2], c(24, Inf))
-  expect_equal(ret$half.life[ret$ID == 2], c(FALSE, TRUE))
-  expect_error(
-    pkncaAutoIntervals(obs = obs[obs$ID == 1, ], dose = dose[dose$ID == 2, ], groupCols = "ID", timeCol = "TIME", dvCol = "DV"),
-    "no NCA intervals"
+  # trough at 23.9 for 24 to 48), ending at the last concentration before the
+  # next dose, the last dosing interval for the last dose, and the half-life
+  # after the last dose
+  expect_equal(ret$start[ret$ID == 2], c(0, 48, 48))
+  expect_equal(ret$end[ret$ID == 2], c(23.9, 72, Inf))
+  expect_equal(ret$auclast[ret$ID == 2], c(TRUE, TRUE, FALSE))
+  # Cmax only from the first dose
+  expect_equal(ret$cmax[ret$ID == 2], c(TRUE, FALSE, FALSE))
+  expect_equal(ret$half.life[ret$ID == 2], c(FALSE, FALSE, TRUE))
+})
+
+test_that("pkncaCollapseDose (#102)", {
+  dose <- data.frame(
+    ID = c(1, 1, 1, 2),
+    TIME = c(0, 0, 12, 0),
+    AMT = c(1, 2, 3, 4),
+    pkncaRoute = c("intravascular", "extravascular", "intravascular", "intravascular")
   )
+  ret <- pkncaCollapseDose(dose = dose, groupCols = "ID", timeCol = "TIME", amtCol = "AMT")
+  expect_equal(ret$TIME, c(0, 12, 0))
+  expect_equal(ret$AMT, c(3, 3, 4))
+  expect_equal(ret$pkncaRoute, c("extravascular", "intravascular", "intravascular"))
+  expect_equal(pkncaCollapseDose(dose = dose[-1, ], groupCols = "ID", timeCol = "TIME", amtCol = "AMT"), dose[-1, ])
+})
+
+test_that("est='pknca' with simultaneous IV and oral doses (#102)", {
+  mod <- function() {
+    ini({
+      tka <- 0.45
+      lcl <- 1
+      lvc <- 3.45
+      prop.err <- 0.5
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(lcl)
+      vc <- exp(lvc)
+      cp <- linCmt()
+      cp ~ prop(prop.err)
+    })
+  }
+  d <- nlmixr2data::theo_sd
+  extra <- d[d$ID == 1 & d$EVID != 0, ]
+  extra$CMT <- 2
+  d <- rbind(d, extra)
+  d <- d[order(d$ID, d$TIME, -d$EVID), ]
+  suppressMessages(suppressWarnings(
+    ret <- nlmixr2est::nlmixr(object = mod, data = d, est = "pknca")
+  ))
+  expect_s3_class(ret, "pkncaEst")
 })
 
 test_that("est='pknca' multiple-dose extravascular without concentrations at dosing (#102)", {

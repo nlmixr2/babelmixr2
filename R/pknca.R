@@ -296,13 +296,22 @@ calcPknca <- function(env, pkncaUnits) {
   attr(obsData, "noC0") <- NULL
 
   oConc <- PKNCA::PKNCAconc(data = obsData, oConcFormula, sparse = control$sparse)
-  oDose <- PKNCA::PKNCAdose(data = doseData, oDoseFormula, route = "pkncaRoute")
+  oDose <-
+    PKNCA::PKNCAdose(
+      data =
+        pkncaCollapseDose(
+          dose = doseData, groupCols = groupCols,
+          timeCol = cleanColNames[["time"]], amtCol = cleanColNames[["amt"]]
+        ),
+      oDoseFormula,
+      route = "pkncaRoute"
+    )
 
   intervals <-
     pkncaIntervals(
       intervals =
         pkncaAutoIntervals(
-          obs = obsData, dose = doseData, groupCols = groupCols,
+          obs = cleanData$obs, dose = doseData, groupCols = groupCols,
           timeCol = cleanColNames[["time"]], dvCol = cleanColNames[["dv"]]
         ),
       dose = doseData, groupCols = groupCols,
@@ -484,11 +493,36 @@ pkncaKey <- function(data, cols) {
   do.call(paste, c(unname(as.list(data[, cols, drop = FALSE])), sep = "\r"))
 }
 
+#' Combine doses at the same time for PKNCA
+#'
+#' PKNCA requires one dose per group and time.  Doses at the same time are
+#' combined (summing the amount); the route is intravascular only when all
+#' doses at that time are intravascular (#102).
+#'
+#' @inheritParams pkncaAddIvC0
+#' @param amtCol The dose amount column name
+#' @return `dose` with one row per group and time
+#' @noRd
+pkncaCollapseDose <- function(dose, groupCols, timeCol, amtCol) {
+  doseTimeKey <- pkncaKey(dose, c(groupCols, timeCol))
+  if (!anyDuplicated(doseTimeKey)) {
+    return(dose)
+  }
+  keep <- !duplicated(doseTimeKey)
+  ret <- dose[keep, , drop = FALSE]
+  ret[[amtCol]] <- as.vector(tapply(dose[[amtCol]], doseTimeKey, sum)[doseTimeKey[keep]])
+  allIv <- as.vector(tapply(dose$pkncaRoute == "intravascular", doseTimeKey, all)[doseTimeKey[keep]])
+  ret$pkncaRoute <- ifelse(allIv, "intravascular", "extravascular")
+  ret
+}
+
 #' Choose the NCA intervals from the dosing
 #'
 #' A single dose uses the PKNCA default single-dose intervals.  Multiple doses
-#' use each dose until the next dose and the last dose until infinity, when
-#' there are enough concentrations in the interval (unlike
+#' use each dose until the next dose (or the last concentration before it) and
+#' the last dose for the last dosing interval, when there are enough
+#' concentrations in the interval (with Cmax only from the first dose when
+#' available), and the half-life after the last dose (unlike
 #' the PKNCA automatic intervals, a concentration at the time of dosing is not
 #' required; it is imputed, #102).
 #'
@@ -509,17 +543,30 @@ pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 3)
       intervals$start <- intervals$start + doseTimes
       intervals$end <- intervals$end + doseTimes
     } else {
+      nDose <- length(doseTimes)
+      obsTime <- obs[[timeCol]][obsKey == key & !is.na(obs[[dvCol]])]
+      # The last dose uses the last dosing interval (tau), like PKNCA
+      end <- c(doseTimes[-1], 2 * doseTimes[nDose] - doseTimes[nDose - 1])
+      for (i in seq_len(nDose - 1)) {
+        # Without a concentration at the next dose, end at the last
+        # concentration before it (so that a C0 back-extrapolated for the next
+        # dose is not in this interval)
+        if (!(end[i] %in% obsTime)) {
+          before <- obsTime[obsTime > doseTimes[i] & obsTime < end[i]]
+          if (length(before) > 0) {
+            end[i] <- max(before)
+          }
+        }
+      }
       intervals <-
         data.frame(
           start = doseTimes,
-          end = c(doseTimes[-1], Inf),
+          end = end,
           auclast = TRUE,
           cmax = TRUE,
-          tmax = TRUE,
-          half.life = c(rep(FALSE, length(doseTimes) - 1), TRUE)
+          tmax = TRUE
         )
       # Intervals with few concentrations (like only a trough) are not used
-      obsTime <- obs[[timeCol]][obsKey == key & !is.na(obs[[dvCol]])]
       nObs <-
         vapply(
           seq_len(nrow(intervals)),
@@ -527,16 +574,21 @@ pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 3)
           integer(1)
         )
       intervals <- intervals[nObs >= minObs, , drop = FALSE]
-      if (nrow(intervals) == 0) {
-        next
+      if (any(intervals$start == doseTimes[1])) {
+        # Cmax (for vc) from the first dose when possible, since later doses
+        # include accumulation
+        intervals$cmax <- intervals$start == doseTimes[1]
       }
+      intervals$half.life <- rep(FALSE, nrow(intervals))
+      intervals <-
+        rbind(
+          intervals,
+          data.frame(start = doseTimes[nDose], end = Inf, auclast = FALSE, cmax = FALSE, tmax = FALSE, half.life = TRUE)
+        )
     }
     intervals <- PKNCA::check.interval.specification(intervals)
     groupValues <- doseGroup[rep(1, nrow(intervals)), groupCols, drop = FALSE]
     ret[[length(ret) + 1]] <- cbind(groupValues, intervals)
-  }
-  if (length(ret) == 0) {
-    cli::cli_abort("no NCA intervals with enough concentrations for PKNCA estimation")
   }
   ret <- do.call(rbind, ret)
   rownames(ret) <- NULL
