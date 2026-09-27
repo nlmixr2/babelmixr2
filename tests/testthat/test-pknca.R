@@ -433,31 +433,25 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
       cp ~ prop(prop.sd)
     })
   }
-  suppressMessages(
+  # With more than one central volume name, it is ambiguous
+  expect_message(
     fitVPeriph <- nlmixr(
       vPeriphMod,
       data = dModNoZero,
       est = "pknca",
       control = ctl
-    )
+    ),
+    regexp = "the central volume could be any of"
   )
   expect_equal(fitVPeriph$ui$theta[["tv"]], 0.003)
-  # ... and V gets the central volume estimate
-  expect_equal(fitVPeriph$ui$theta[["tV"]], feNonMu[["tv"]])
+  expect_equal(fitVPeriph$ui$theta[["tV"]], 0.004)
 
-  # V1 is preferred to V for the central volume
+  # Another central volume name gets the central volume estimate
+  suppressMessages(vcMod <- rxode2::rxRename(nonmumod, Vc = v, tVc = tv))
   suppressMessages(
-    v1Mod <- rxode2::rxRename(
-      rxode2::rxRename(vPeriphMod, V1 = V, tV1 = tV),
-      V = v,
-      tV = tv
-    )
+    fitVc2 <- nlmixr(vcMod, data = dModNoZero, est = "pknca", control = ctl)
   )
-  suppressMessages(
-    fitV1 <- nlmixr(v1Mod, data = dModNoZero, est = "pknca", control = ctl)
-  )
-  expect_equal(fitV1$ui$theta[["tV1"]], feNonMu[["tv"]])
-  expect_equal(fitV1$ui$theta[["tV"]], 0.003)
+  expect_equal(fitVc2$ui$theta[["tVc"]], feNonMu[["tv"]])
 
   # A v that cannot be updated (and no vc) is reported
   suppressMessages(

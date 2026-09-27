@@ -120,13 +120,21 @@ nlmixr2Est.pknca <- function(env, ...) {
     )
   # What parameters should be modified?  And then modify them.
   paramMap <- pkncaParamMap(env$ui)
-  # The central volume may have another name (like with rxode2's linCmt()); the
-  # first name the model defines gets the central volume estimate
+  # The central volume may have another name (like with rxode2's linCmt()); it
+  # gets the central volume estimate when there is exactly one such name
   modelNames <- c(pkncaAssignedNames(env$ui$lstExpr), env$ui$iniDf$name)
-  centralNames <- c("vc", "Vc", "VC", "v1", "V1", "V", "v")
-  centralName <- intersect(centralNames, modelNames)
-  if (length(centralName) > 0 && centralName[1] != "vc") {
-    paramEstimates[[centralName[1]]] <- paramEstimates$vc
+  centralNames <- intersect(c("Vc", "VC", "v1", "V1", "V", "v"), modelNames)
+  if (!("vc" %in% modelNames) && length(centralNames) > 0) {
+    if (length(centralNames) == 1) {
+      paramEstimates[[centralNames]] <- paramEstimates$vc
+    } else {
+      cli::cli_inform(c(
+        "i" = paste(
+          "NCA central volume not applied: the central volume could be any",
+          "of {.code {centralNames}}"
+        )
+      ))
+    }
   }
   updateNames <- intersect(paramMap$param, names(paramEstimates))
   notUpdated <- setdiff(
