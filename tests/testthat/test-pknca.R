@@ -466,9 +466,24 @@ test_that("pkncaObsStates (#102)", {
       cp ~ add(add.sd)
     })
   }
+  mLinTilde <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(tcl)
+      v <- exp(tv)
+      linCmt() ~ add(add.sd)
+    })
+  }
   suppressMessages({
     expect_equal(pkncaObsStates(rxode2::rxode2(mOde)), "center")
     expect_equal(pkncaObsStates(rxode2::rxode2(mLin)), "central")
+    expect_equal(pkncaObsStates(rxode2::rxode2(mLinTilde)), "central")
   })
 })
 
@@ -522,7 +537,7 @@ test_that("pkncaCmtOrder with linCmt() and ODEs (#102)", {
 })
 
 test_that("pkncaAutoIntervals (#102)", {
-  dose <- data.frame(ID = c(1, 2, 2, 2), TIME = c(0, 0, 24, 48))
+  dose <- data.frame(ID = c(1, 2, 2, 2), TIME = c(0, 0, 24, 48), pkncaRoute = "extravascular")
   obs <- data.frame(
     ID = c(1, 1, 2, 2, 2, 2, 2, 2, 2),
     TIME = c(1, 2, 1, 2, 4, 23.9, 49, 50, 52),
@@ -534,14 +549,26 @@ test_that("pkncaAutoIntervals (#102)", {
   expect_equal(ret$end[ret$ID == 1], c(24, Inf))
   # Multiple doses use intervals with enough concentrations (not only the
   # trough at 23.9 for 24 to 48), ending at the last concentration before the
-  # next dose, the last dosing interval for the last dose, and the half-life
-  # after the last dose
-  expect_equal(ret$start[ret$ID == 2], c(0, 48, 48))
-  expect_equal(ret$end[ret$ID == 2], c(23.9, 72, Inf))
-  expect_equal(ret$auclast[ret$ID == 2], c(TRUE, TRUE, FALSE))
+  # next dose, and the last dosing interval for the last dose
+  expect_equal(ret$start[ret$ID == 2], c(0, 48))
+  expect_equal(ret$end[ret$ID == 2], c(23.9, 72))
+  expect_equal(ret$auclast[ret$ID == 2], c(TRUE, TRUE))
   # Cmax only from the first dose
-  expect_equal(ret$cmax[ret$ID == 2], c(TRUE, FALSE, FALSE))
-  expect_equal(ret$half.life[ret$ID == 2], c(FALSE, FALSE, TRUE))
+  expect_equal(ret$cmax[ret$ID == 2], c(TRUE, FALSE))
+  # Cmax from the first dose of each route (crossover)
+  doseCross <- dose[dose$ID == 2, ]
+  doseCross$pkncaRoute[3] <- "intravascular"
+  ret <- pkncaAutoIntervals(obs = obs, dose = doseCross, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  expect_equal(ret$cmax, c(TRUE, TRUE))
+  # Peak and trough sampling keeps the intervals
+  obsPt <- data.frame(ID = 2, TIME = c(2, 24, 26, 48, 50, 72), DV = 1)
+  ret <- pkncaAutoIntervals(obs = obsPt, dose = dose[dose$ID == 2, ], groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  expect_equal(ret$start, c(0, 24, 48))
+  expect_equal(ret$end, c(24, 48, 72))
+  # With too few concentrations everywhere, all intervals are kept
+  obsFew <- data.frame(ID = 2, TIME = c(2, 26, 50), DV = 1)
+  ret <- pkncaAutoIntervals(obs = obsFew, dose = dose[dose$ID == 2, ], groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  expect_equal(ret$start, c(0, 24, 48))
 })
 
 test_that("pkncaCollapseDose (#102)", {
