@@ -73,10 +73,6 @@ attr(rxUiGet.nonmemThetaRep, "rstudio") <- "nonmemThetaRep"
 rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   .ui <- x[[1]]
   .bblLinCmtAssertOde(.ui, "nonmem")
-  rxode2::rxAssignControlValue(.ui, ".nmVarResNum", 1)
-  rxode2::rxAssignControlValue(.ui, ".nmGetVarReservedDf",
-                               data.frame(var=character(0),
-                                          nm=character(0)))
   .advan <- .nonmemLinCmtAdvan(.ui)
   rxode2::rxAssignControlValue(.ui, ".nmLinCmtReserved", .advan$reserved)
   .split <- .ui$getSplitMuModel

@@ -72,7 +72,7 @@ withr::with_tempdir({
           "  ; Write out expressions for ipred and w",
           "  RX_IP1 = RX_PF1",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(4))**2) ; W1 ~ sqrt((add.sd)^2)",
+          "  W1=DSQRT(((THETA(4))*(THETA(4)))) ; W1 ~ sqrt((add.sd)^2)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",

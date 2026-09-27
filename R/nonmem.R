@@ -55,6 +55,9 @@ rex::register_shortcuts("babelmixr2")
 # `EXP(0)`), so these are written as numbers instead
 .rxNMfoldConstant <- c("exp", "log", "sqrt", "log10", "log2", "log1p", "expm1")
 
+# Largest integer power written as a product with `$ABBR PROTECT`
+.rxNMmaxIntPow <- 12
+
 #' Should the control stream use NONMEM's `$ABBR PROTECT`?
 #'
 #' @param ui rxode2 ui
@@ -64,6 +67,36 @@ rex::register_shortcuts("babelmixr2")
 .nonmemProtect <- function(ui) {
   isTRUE(rxode2::rxGetControl(ui, "protect",
                               getOption("babelmixr2.nmProtect", TRUE)))
+}
+
+#' Numeric value of a number written in R
+#'
+#' @param x R expression like `2`, `-2`, `(2)` or `-(2)`
+#' @return the number, or `NULL` when `x` is not a number
+#' @author Matthew L. Fidler
+#' @noRd
+.rxToNonmemNumber <- function(x) {
+  if (is.numeric(x) && length(x) == 1L) return(x)
+  if (!is.call(x) || length(x) != 2L) return(NULL)
+  .ret <- .rxToNonmemNumber(x[[2]])
+  if (is.null(.ret)) return(NULL)
+  if (identical(x[[1]], quote(`(`)) || identical(x[[1]], quote(`+`))) return(.ret)
+  if (identical(x[[1]], quote(`-`))) return(-.ret)
+  NULL
+}
+
+#' Write a number computed in R for NONMEM
+#'
+#' @param x number
+#' @return the number formatted for NONMEM, or `NULL` when it is not
+#'   finite
+#' @author Matthew L. Fidler
+#' @noRd
+.rxToNonmemFormatNumber <- function(x) {
+  if (length(x) != 1L || !is.finite(x)) return(NULL)
+  .ret <- gsub("e", "D", sprintf("%.17g", x), fixed=TRUE)
+  if (x < 0) .ret <- paste0("(", .ret, ")")
+  .ret
 }
 
 #' Fold a single-argument function of a number into a number
@@ -76,19 +109,50 @@ rex::register_shortcuts("babelmixr2")
 .rxToNonmemFoldConstant <- function(x) {
   .x1 <- as.character(x[[1]])
   if (!(.x1 %in% .rxNMfoldConstant)) return(NULL)
-  .arg <- x[[2]]
-  if (is.call(.arg) && length(.arg) == 2 && identical(.arg[[1]], quote(`-`))) {
-    .arg <- .arg[[2]]
-    if (!is.numeric(.arg)) return(NULL)
-    .arg <- -.arg
-  } else if (!is.numeric(.arg)) {
-    return(NULL)
+  .arg <- .rxToNonmemNumber(x[[2]])
+  if (is.null(.arg)) return(NULL)
+  .rxToNonmemFormatNumber(suppressWarnings(match.fun(.x1)(.arg)))
+}
+
+#' Write a power so `$ABBR PROTECT` keeps its value
+#'
+#' Under `$ABBR PROTECT`, NM-TRAN writes `B**E` as `PEXP(E*PLOG(B))`,
+#' which is wrong for a negative `B` (`PLOG()` of a negative number is
+#' a large negative number) and mistranslates `PLOG()` of a constant.
+#' Integer powers are written as products and powers of a positive
+#' number as `DEXP()`
+#'
+#' @param base R expression for the base
+#' @param expo R expression for the exponent
+#' @param ui rxode2 ui
+#' @return NONMEM code for the power, or `NULL` when the power is
+#'   written as usual
+#' @author Matthew L. Fidler
+#' @noRd
+.rxToNonmemProtectPow <- function(base, expo, ui) {
+  if (!.nonmemProtect(ui)) return(NULL)
+  .b <- .rxToNonmemNumber(base)
+  .e <- .rxToNonmemNumber(expo)
+  if (!is.null(.b) && !is.null(.e)) {
+    .ret <- .rxToNonmemFormatNumber(.b^.e)
+    if (!is.null(.ret)) return(.ret)
   }
-  .val <- suppressWarnings(match.fun(.x1)(.arg))
-  if (length(.val) != 1 || !is.finite(.val)) return(NULL)
-  .ret <- gsub("e", "D", sprintf("%.17g", .val), fixed=TRUE)
-  if (.val < 0) .ret <- paste0("(", .ret, ")")
-  .ret
+  if (!is.null(.e) && .e == round(.e) && abs(.e) <= .rxNMmaxIntPow) {
+    if (.e == 0) return("1")
+    .base <- .rxToNonmem(base, ui=ui)
+    if (!(is.name(base) || is.numeric(base) ||
+            (is.call(base) && identical(base[[1]], quote(`(`))))) {
+      .base <- paste0("(", .base, ")")
+    }
+    .ret <- paste0("(", paste(rep(.base, abs(.e)), collapse="*"), ")")
+    if (.e < 0) .ret <- paste0("(1/", .ret, ")")
+    return(.ret)
+  }
+  if (!is.null(.b) && .b > 0) {
+    return(paste0("DEXP((", .rxToNonmem(expo, ui=ui), ")*",
+                  .rxToNonmemFormatNumber(log(.b)), ")"))
+  }
+  NULL
 }
 
 # "log1pexp" = c("DLOG(1+DEXP(", "))", "log1pexp"), ???
@@ -469,6 +533,8 @@ rex::register_shortcuts("babelmixr2")
     }
   } else if (identical(x[[1]], quote(`^`)) ||
                identical(x[[1]], quote(`**`))) {
+    .ret <- .rxToNonmemProtectPow(x[[2]], x[[3]], ui)
+    if (!is.null(.ret)) return(.ret)
     .needProtect <-TRUE
     if (is.numeric(x[[3]]) && x[[3]] > 0) {
       .needProtect <- FALSE
@@ -773,6 +839,8 @@ rex::register_shortcuts("babelmixr2")
   if (length(x) == 3L &&
         (identical(x[[1]], quote(`Rx_pow_di`)) || identical(x[[1]], quote(`Rx_pow`)))) {
     # rxode2's normalized powers
+    .ret <- .rxToNonmemProtectPow(x[[2]], x[[3]], ui)
+    if (!is.null(.ret)) return(.ret)
     return(paste0("(", .rxToNonmem(x[[2]], ui=ui), ")**(", .rxToNonmem(x[[3]], ui=ui), ")"))
   }
   if (identical(x[[1]], quote(`(`))) {

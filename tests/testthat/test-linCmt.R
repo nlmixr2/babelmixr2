@@ -254,6 +254,10 @@ test_that("Monolix macros and distributions separate their arguments", {
 
 test_that("rxode2's normalized powers translate", {
   .ui <- rxode2::rxUiDecompress(rxode2::rxode2(.linCmtOne))
+  # $ABBR PROTECT (#62) writes integer powers as products
+  expect_equal(.rxToNonmem(quote(Rx_pow_di(x, 2)), .ui), "(X*X)")
+  expect_equal(.rxToNonmem(quote(Rx_pow(x, z)), .ui), "(X)**(Z)")
+  rxode2::rxAssignControlValue(.ui, "protect", FALSE)
   expect_equal(.rxToNonmem(quote(Rx_pow_di(x, 2)), .ui), "(X)**(2)")
   expect_equal(.rxToMonolix(quote(Rx_pow_di(x, 2)), .ui), "(x)^(2)")
 })

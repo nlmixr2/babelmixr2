@@ -258,7 +258,7 @@ withr::with_tempdir({
             "  ; Write out expressions for ipred and w",
             "  RX_IP1 = RX_PF1",
             "  RX_P1 = RX_IP1",
-            "  W1=DSQRT((THETA(4))**2) ; W1 ~ sqrt((add.sd)^2)",
+            "  W1=DSQRT(((THETA(4))*(THETA(4)))) ; W1 ~ sqrt((add.sd)^2)",
             "  IF (W1 .EQ. 0.0) W1 = 1",
             "  IPRED = RX_IP1",
             "  W     = W1",
@@ -461,7 +461,7 @@ withr::with_tempdir({
           "     RX_IP1 = -1000000000",
           "  END IF",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((add.err)^2)",
+          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((add.err)^2)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -524,7 +524,7 @@ withr::with_tempdir({
           "     END IF",
           "  END IF",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((add.err)^2)",
+          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((add.err)^2)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -570,7 +570,7 @@ withr::with_tempdir({
           "     RX_IP1 = DLOG(RX_IP1)",
           "  END IF",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((lnorm.err)^2)",
+          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -613,7 +613,7 @@ withr::with_tempdir({
           "  XL  = (RX_IP1 - (-0.1))/((70.0) - (-0.1))",
           "  RX_IP1 = -DLOG(1.0/XL - 1.0)",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((lnorm.err)^2)",
+          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -673,7 +673,7 @@ withr::with_tempdir({
           "     END IF",
           "  END IF",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((lnorm.err)^2)",
+          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -742,7 +742,7 @@ withr::with_tempdir({
           "  ; Write out expressions for ipred and w",
           "  RX_IP1 = RX_PF1",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((RX_PF1*THETA(5))**2) ; W1 ~ sqrt((rx_pred_f_ * prop.err)^2)",
+          "  W1=DSQRT(((RX_PF1*THETA(5))*(RX_PF1*THETA(5)))) ; W1 ~ sqrt((rx_pred_f_ * prop.err)^2)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -824,7 +824,7 @@ withr::with_tempdir({
           "     RX_IP1 = -1000000000",
           "  END IF",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(5))**2) ; W1 ~ sqrt((cpadd.sd)^2)",
+          "  W1=DSQRT(((THETA(5))*(THETA(5)))) ; W1 ~ sqrt((cpadd.sd)^2)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  RX_IP2 = RX_PF2",
           "  IF (RX_IP2 .GE. 0.0) THEN",
@@ -845,7 +845,7 @@ withr::with_tempdir({
           "     END IF",
           "  END IF",
           "  RX_P2 = RX_IP2",
-          "  W2=DSQRT((THETA(12))**2) ; W2 ~ sqrt((pdadd.err)^2)",
+          "  W2=DSQRT(((THETA(12))*(THETA(12)))) ; W2 ~ sqrt((pdadd.err)^2)",
           "  IF (W2 .EQ. 0.0) W2 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -990,8 +990,8 @@ withr::with_tempdir({
         cl <- exp(tcl) + log(0.5) - sqrt(4)
         plog <- log(2)
         v <- exp(tv) * plog
-        d/dt(depot) <- -ka * depot
-        d/dt(central) <- ka * depot - cl/v * central
+        d/dt(pnp) <- -ka * pnp
+        d/dt(central) <- ka * pnp - cl/v * central
         cp <- central / v
         cp ~ add(add.sd)
       })
@@ -1015,7 +1015,29 @@ withr::with_tempdir({
     expect_true(any(grepl("(-0.69314718055994529)-2 ;", .nm, fixed=TRUE)))
     # PLOG is a NONMEM protected function, so the variable is renamed
     expect_false(any(grepl("^ *PLOG=", .nm)))
-    expect_true(any(grepl("RXR1=0.69314718055994529 ; plog = log(2)", .nm, fixed=TRUE)))
+    expect_true(any(grepl("RXR2=0.69314718055994529 ; plog = log(2)", .nm, fixed=TRUE)))
+    # the renamed compartment keeps its name throughout the control stream
+    expect_true("     COMP(RXR1, DEFDOSE) ; pnp" %in% .nm)
+    expect_false(any(grepl("RXR1=", .nm, fixed=TRUE)))
+
+    .rxToN <- function(x) rxToNonmem(x, one.cmt())
+    # functions of numbers, including negative or parenthesized ones
+    expect_equal(.rxToN("exp((0))"), "1")
+    expect_equal(.rxToN("exp(-(1))"), "0.36787944117144233")
+    # log(-1) is NaN, so it is not folded
+    expect_true(startsWith(.rxToN("log(-1)"), "DLOG("))
+    expect_equal(.rxToN("sqrt(+(4))"), "2")
+    expect_equal(.rxToN("log(0.5)"), "(-0.69314718055994529)")
+    # PROTECT writes B**E as PEXP(E*PLOG(B)), which is wrong for B < 0,
+    # so integer powers are products and powers of numbers use DEXP()
+    expect_equal(.rxToN("tka^2"), "(THETA(1)*THETA(1))")
+    expect_equal(.rxToN("(tka - 3)^3"), "((THETA(1)-3)*(THETA(1)-3)*(THETA(1)-3))")
+    expect_equal(.rxToN("exp(tka)^2"), "((DEXP(THETA(1)))*(DEXP(THETA(1))))")
+    expect_equal(.rxToN("tka^-2"), "(1/(THETA(1)*THETA(1)))")
+    expect_equal(.rxToN("tka^0"), "1")
+    expect_equal(.rxToN("2^tka"), "DEXP((THETA(1))*0.69314718055994529)")
+    expect_equal(.rxToN("2^3"), "8")
+    expect_equal(.rxToN("tka^0.5"), "THETA(1)**0.5")
 
     .nm <- suppressMessages(.ctl(protect=FALSE))
     expect_false(any(grepl("$ABBR", .nm, fixed=TRUE)))
