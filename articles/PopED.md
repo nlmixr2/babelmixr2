@@ -4,6 +4,9 @@
 
 `babelmixr2` now introduces a new method that takes `rxode2`/`nlmixr2`
 models converts them to a `PopED` database to help with optimal design.
+This approach was presented at ACoP 2024 ([Fidler et al
+2024](https://doi.org/10.70534/XUMG6226)); please cite it when you use
+`babelmixr2` with `PopED` (see `citation("babelmixr2")`).
 
 As in the [PopED vignette comparing ODE
 solvers](https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html#speed-of-fim-computation)
@@ -169,7 +172,7 @@ f$popedFfFun
 #>     }
 #>     return(list(f = matrix(.ret$rx_pred_, ncol = 1), poped.db = poped.db))
 #> }
-#> <environment: 0x5566893e3a60>
+#> <environment: 0x563becf31800>
 ```
 
 Some things to note in this function:
@@ -205,7 +208,7 @@ design:
 
 summary(poped_db_ode_babelmixr2$babelmixr2$modelMT)
 #> rxode2 5.1.8 model named rx_d246309c753705c1eb8db49f3253bf33 model (✔ ready). 
-#> DLL: /tmp/RtmpVPVYvZ/rxode2/rx_d246309c753705c1eb8db49f3253bf33__.rxd/rx_d246309c753705c1eb8db49f3253bf33_.so
+#> DLL: /tmp/RtmphcxGM9/rxode2/rx_d246309c753705c1eb8db49f3253bf33__.rxd/rx_d246309c753705c1eb8db49f3253bf33_.so
 #> NULL
 #> 
 #> Calculated Variables:
@@ -243,7 +246,7 @@ time points greater than the design specification:
 
 summary(poped_db_ode_babelmixr2$babelmixr2$modelF)
 #> rxode2 5.1.8 model named rx_81bed09e573a02f3b91c94381a7f3dde model (✔ ready). 
-#> DLL: /tmp/RtmpVPVYvZ/rxode2/rx_81bed09e573a02f3b91c94381a7f3dde__.rxd/rx_81bed09e573a02f3b91c94381a7f3dde_.so
+#> DLL: /tmp/RtmphcxGM9/rxode2/rx_81bed09e573a02f3b91c94381a7f3dde__.rxd/rx_81bed09e573a02f3b91c94381a7f3dde_.so
 #> NULL
 #> 
 #> Calculated Variables:
@@ -362,7 +365,7 @@ f$popedFgFun
 #>         NULL), rx__eta.cl = setNames(rx__eta.cl, NULL), DOSE = setNames(DOSE, 
 #>         NULL))
 #> }
-#> <environment: 0x55668d093e18>
+#> <environment: 0x563bf27e9540>
 ```
 
 ##### PopED’s error function `fError_fun`
@@ -381,7 +384,7 @@ f$popedFErrorFun
 #>     rxErr1 <- rxF * (1 + epsi[, 1]) + epsi[, 2]
 #>     return(list(y = rxErr1, poped.db = rxPoped.db))
 #> }
-#> <environment: 0x55668dabc178>
+#> <environment: 0x563bf3155bb0>
 ```
 
 One really important note to keep in mind is that `PopED` works with

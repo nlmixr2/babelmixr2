@@ -2,6 +2,21 @@
 
 ## babelmixr2 0.1.11.9000
 
+- `est="monolix"` now translates compartment properties (`f()`,
+  `alag()`, `rate()` and `dur()`) that are expressions, like
+  `f(depot) <- exp(lfdepot)`, instead of erroring with “the complex F is
+  not supported by babelmixr2”
+  ([\#115](https://github.com/nlmixr2/babelmixr2/issues/115)). The
+  expression is calculated in a new variable (like `rx_f_depot`) that
+  the `PK:` macro uses. A property set only inside an `if` now keeps
+  rxode2’s default otherwise (1 for `f()`, 0 for `alag()`) instead of
+  being applied unconditionally.
+
+- The ACoP 2024 `babelmixr2`/`PopED` abstract
+  ([doi:10.70534/XUMG6226](https://doi.org/10.70534/XUMG6226)) is now in
+  `citation("babelmixr2")`, the package description and the `PopED`
+  article ([\#155](https://github.com/nlmixr2/babelmixr2/issues/155)).
+
 - [`as.nlmixr2()`](https://nlmixr2.github.io/babelmixr2/reference/as.nlmixr2.md)
   of a `nonmem2rx` model now stops with an informative error when the
   model still contains untranslated NONMEM residual variables (`eps#` or

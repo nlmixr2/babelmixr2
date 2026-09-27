@@ -66,3 +66,19 @@ nlmixr.” *CPT: Pharmacometrics & Systems Pharmacology*, **8**(12),
       month = {dec},
       abstract = {The free and open-source package nlmixr implements pharmacometric nonlinear mixed effects model parameter estimation in R. It provides a uniform language to define pharmacometric models using ordinary differential equations. Performances of the stochastic approximation expectation-maximization (SAEM) and first order-conditional estimation with interaction (FOCEI) algorithms in nlmixr were compared with those found in the industry standards, Monolix and NONMEM, using the following two scenarios: a simple model fit to 500 sparsely sampled data sets and a range of more complex compartmental models with linear and nonlinear clearance fit to data sets with rich sampling. Estimation results obtained from nlmixr for FOCEI and SAEM matched the corresponding output from NONMEM/FOCEI and Monolix/SAEM closely both in terms of parameter estimates and associated standard errors. These results indicate that nlmixr may provide a viable alternative to existing tools for pharmacometric parameter estimation.},
     }
+
+Fidler ML, Denney W, Harrold J, Hooijmaijers R, Papathanasiou T,
+Schoemaker R, Taubert M, Trame M, Wilkins J (2024). “babelmixr2 and
+PopED: Quick Conversion of NONMEM, Monolix and nlmixr2/rxode2 Models to
+PopED Optimal Design Analysis.” In *American Conference on
+Pharmacometrics (ACoP) 2024*.
+[doi:10.70534/XUMG6226](https://doi.org/10.70534/XUMG6226).
+
+    @InProceedings{,
+      title = {{babelmixr2} and {PopED}: Quick Conversion of {NONMEM}, {Monolix} and {nlmixr2}/{rxode2} Models to {PopED} Optimal Design Analysis},
+      author = {Matthew L. Fidler and William Denney and John Harrold and Richard Hooijmaijers and Theodoros Papathanasiou and Rik Schoemaker and Max Taubert and Mirjam Trame and Justin Wilkins},
+      booktitle = {American Conference on Pharmacometrics (ACoP) 2024},
+      publisher = {International Society of Pharmacometrics},
+      year = {2024},
+      doi = {10.70534/XUMG6226},
+    }
