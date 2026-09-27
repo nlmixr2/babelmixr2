@@ -306,6 +306,16 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
   )
   expect_equal(fitVc$ui$theta[["tv"]], 0.003)
   expect_equal(fitVc$ui$theta[["tvc"]], feNonMu[["tv"]])
+
+  # ... even when vc cannot be updated (not a simple function of one theta)
+  suppressMessages(
+    vcCovMod <- rxode2::model(vcmod, vc <- tvc * 2 * exp(eta.v))
+  )
+  suppressMessages(
+    fitVcCov <- nlmixr(vcCovMod, data = dModNoZero, est = "pknca", control = ctl)
+  )
+  expect_equal(fitVcCov$ui$theta[["tv"]], 0.003)
+  expect_equal(fitVcCov$ui$theta[["tvc"]], 0.004)
 })
 
 test_that("pkncaParamMap", {
