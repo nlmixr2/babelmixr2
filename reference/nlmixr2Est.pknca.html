@@ -84,7 +84,15 @@ controlled by the <code>vpMult</code> and <code>vp2Mult</code> arguments to
 <li><p><code>q,q2</code> 0.5- and 0.25-fold the <code>cl</code>, respectively by default,
 controlled by the <code>qMult</code> and <code>q2Mult</code> arguments to
 <code>pkncaControl</code></p></li>
-</ul><p>The bounds for the parameter estimates are set to 10% of the first percentile
+</ul><p>When both intravascular and extravascular doses are present (doses into the
+observation compartment are intravascular), <code>ka</code> is estimated from the
+extravascular doses and <code>vc</code> and <code>cl</code> are estimated from the
+intravascular doses; without extravascular-only doses, <code>ka</code> is not
+updated.  Intravascular bolus doses have the concentration at the time of
+dosing back-extrapolated (replacing a predose concentration at the first
+dose), and other doses without a concentration at the time of dosing have it
+imputed as the predose concentration (or zero for the first dose).</p>
+<p>The bounds for the parameter estimates are set to 10% of the first percentile
 and 10 times the 99th percentile.  (For ka, the lower bound is set to the
 lower of 10% of the first percentile or 0.03 and the upper bound is not
 modified from 10 times the 99th percentile.)</p>

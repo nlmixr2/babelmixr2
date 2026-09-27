@@ -92,7 +92,7 @@ prepared <-
 #> ℹ change initial estimate (0.89314878960486) and upper/lower bound (-3.50655789731998 to 3.72508541597241) of `tka`
 #> → significant model change detected
 #> → removed from model: '$getSplitModel'
-#> ℹ change initial estimate (8.41044546236311) and upper/lower bound (5.51439905878865 to 10.899462850803) of `tcl`
+#> ℹ change initial estimate (8.41044546236311) and upper/lower bound (5.51483016561674 to 10.8994944000769) of `tcl`
 #> ℹ change initial estimate (10.5377244826318) and upper/lower bound (7.94567233496473 to 13.1050053785005) of `tv`
 ```
 
@@ -129,7 +129,7 @@ knitr::knit_print(
   summary(prepared$nca)
 )
 #>  Interval Start Interval End  N AUClast (hr*ng/mL) Cmax (ng/mL)
-#>               0           24 12        74.6 [24.3]            .
+#>               0           24 12        74.6 [24.2]            .
 #>               0          Inf 12                  .  8.65 [17.0]
 #>           Tmax (hr) CL (based on AUClast) (mg/(hr*ng/mL))
 #>                   .                           4.22 [23.0]
@@ -224,7 +224,7 @@ preparedNcaData <-
 #> ℹ change initial estimate (0.929027077269762) and upper/lower bound (-3.50655789731998 to 3.32136703319919) of `tka`
 #> → significant model change detected
 #> → removed from model: '$getSplitModel'
-#> ℹ change initial estimate (8.3955404628088) and upper/lower bound (5.85241523541802 to 10.7637056987378) of `tcl`
+#> ℹ change initial estimate (8.3955404628088) and upper/lower bound (5.85336265682573 to 10.7637056987378) of `tcl`
 #> ℹ change initial estimate (10.5377244826318) and upper/lower bound (7.94370069836702 to 13.1024358787022) of `tv`
 
 preparedNcaData$ui
