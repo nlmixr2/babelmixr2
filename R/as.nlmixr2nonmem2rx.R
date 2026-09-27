@@ -35,23 +35,30 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
 #' @param ui rxode2 ui of the imported model
 #' @param etaObf data frame with ID, the etas and OBJI
 #' @param nsub number of subjects in the processed data (`dataSav`)
-#' @return matrix of the etas in the order of the model's etas, or
-#'   `NULL` when the model has no etas, they are not exactly the eta
-#'   columns of `etaObf`, or `etaObf` does not have one row per subject
-#'   (for example when subjects without observations were dropped)
+#' @return matrix of the etas in the order of the model's etas; zero
+#'   etas when they are not exactly the eta columns of `etaObf`, have
+#'   missing values, or `etaObf` does not have one row per subject (for
+#'   example when subjects without observations were dropped); `NULL`
+#'   when the model has no etas
 #' @author Matthew L. Fidler
 #' @noRd
 .importEtaMat <- function(ui, etaObf, nsub) {
   .iniDf <- ui$iniDf
   .iniDf <- .iniDf[is.na(.iniDf$ntheta) & .iniDf$neta1 == .iniDf$neta2, ]
   .etaNames <- .iniDf$name[order(.iniDf$neta1)]
-  if (length(.etaNames) == 0L || nrow(etaObf) != nsub ||
-        !setequal(.etaNames, setdiff(names(etaObf), c("ID", "OBJI")))) {
+  if (length(.etaNames) == 0L) {
     return(NULL)
+  }
+  # zero etas are what nlmixr2est uses without an etaMat, but an explicit
+  # matrix keeps it from using the etas of the last nlmixr2() fit
+  .zero <- matrix(0, nsub, length(.etaNames))
+  if (nrow(etaObf) != nsub ||
+        !setequal(.etaNames, setdiff(names(etaObf), c("ID", "OBJI")))) {
+    return(.zero)
   }
   .ret <- as.matrix(etaObf[, .etaNames, drop = FALSE])
   if (anyNA(.ret)) {
-    return(NULL)
+    return(.zero)
   }
   dimnames(.ret) <- NULL
   storage.mode(.ret) <- "double"
