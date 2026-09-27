@@ -21,8 +21,8 @@ test_that("Monolix logical expressions as numbers are indicators (#11)", {
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -122,8 +122,8 @@ test_that("prune=\"auto\" only prunes Monolix models when needed (#11)", {
       } else {
         cl2 <- cl * 0.8
       }
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl2 / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl2 / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -209,8 +209,8 @@ test_that("Monolix compartment properties write their indicators first (#11)", {
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })

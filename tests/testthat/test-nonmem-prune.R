@@ -21,8 +21,8 @@ test_that("NONMEM logical expressions as numbers are indicators (#11)", {
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -96,9 +96,9 @@ test_that("NONMEM models with nested if/else can be pruned (#11)", {
       } else {
         fd <- 1
       }
-      d / dt(depot) <- -ka * depot
+      d/dt(depot) <- -ka * depot
       f(depot) <- fd
-      d / dt(central) <- ka * depot - cl2 / v * central
+      d/dt(central) <- ka * depot - cl2 / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -183,8 +183,8 @@ test_that("models without if/else are not changed by pruning (#11)", {
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -215,8 +215,8 @@ test_that("prune=\"auto\" only prunes when needed (#11)", {
       if (WT > 70) {
         cl2 <- cl * 1.2
       }
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl2 / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl2 / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })

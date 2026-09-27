@@ -77,6 +77,8 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   # indicator variables for logical expressions are numbered across
   # $PK, $DES and $ERROR
   rxode2::rxAssignControlValue(.ui, ".nmVarLNum", 1)
+  rxode2::rxAssignControlValue(.ui, ".nmPrefixLines", NULL)
+  rxode2::rxAssignControlValue(.ui, ".nmLogicalDf", NULL)
   rxode2::rxAssignControlValue(.ui, ".nmGetVarReservedDf",
                                data.frame(var=character(0),
                                           nm=character(0)))

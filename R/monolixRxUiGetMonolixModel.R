@@ -86,6 +86,8 @@ rxUiGet.monolixModel <- function(x, ...) {
   assignInMyNamespace(".monolixCmtPropDefaults", NULL)
   # indicator variables for logical expressions are numbered in the model
   rxode2::rxAssignControlValue(.ui, ".mVarLNum", 1)
+  rxode2::rxAssignControlValue(.ui, ".mPrefixLines", NULL)
+  rxode2::rxAssignControlValue(.ui, ".mLogicalDf", NULL)
   .mod <- rxToMonolix(.norm, ui = .ui)
   .defaults <- get(".monolixCmtPropDefaults")
   if (length(.defaults) > 0L) {
