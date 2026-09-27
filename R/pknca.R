@@ -128,7 +128,10 @@ nlmixr2Est.pknca <- function(env, ...) {
   }
   updateNames <- intersect(paramMap$param, names(paramEstimates))
   notUpdated <- setdiff(
-    intersect(names(paramEstimates), pkncaAssignedNames(env$ui$lstExpr)),
+    intersect(
+      names(paramEstimates),
+      c(pkncaAssignedNames(env$ui$lstExpr), env$ui$iniDf$name)
+    ),
     updateNames
   )
   if (length(notUpdated) > 0) {
@@ -527,7 +530,10 @@ pkncaParamMap <- function(ui) {
   # Thetas used directly as the parameter (like `ka` in `ini()` with `linCmt()`)
   # (only when never used within a transformation like `exp()`)
   directThetas <- setdiff(thetaNames, c(ret$theta, ret$param, allLhs))
-  directThetas <- setdiff(directThetas, pkncaTransformedNames(ui$lstExpr))
+  directThetas <- setdiff(
+    directThetas,
+    pkncaTransformedNames(ui$lstExpr, covs = ui$allCovs)
+  )
   if (length(directThetas) > 0) {
     ret <- rbind(
       ret,
@@ -560,25 +566,52 @@ pkncaNumConst <- function(x) {
   NA_real_
 }
 
-#' Find the names used within a non-arithmetic function call
+#' Find the names used within a transformation
 #'
 #' @param x An R expression or a list of expressions
+#' @param covs Names of the data covariates
 #' @return A character vector of variable names used within a function call
-#'   other than arithmetic (like `exp(cl)` or `log(WT / 70)`)
+#'   other than arithmetic (like `exp(cl)` or `log(WT / 70)`) or within an
+#'   arithmetic expression that includes a covariate (like `cl * WT`).
+#'   Arguments of `linCmt()` are used directly, so they are not included.
 #' @noRd
-pkncaTransformedNames <- function(x) {
+pkncaTransformedNames <- function(x, covs = character()) {
   if (is.list(x)) {
-    return(unique(unlist(lapply(x, pkncaTransformedNames), use.names = FALSE)))
+    return(unique(unlist(
+      lapply(x, pkncaTransformedNames, covs = covs),
+      use.names = FALSE
+    )))
   }
   if (!is.call(x)) {
     return(character())
   }
-  arith <- c("+", "-", "*", "/", "(", "{", "<-", "=", "~", "if", "dt")
   fun <- x[[1]]
-  if (is.name(fun) && !(as.character(fun) %in% arith)) {
+  if (!is.name(fun)) {
+    # For example a namespaced function like base::exp(cl)
     return(all.vars(x))
   }
-  pkncaTransformedNames(as.list(x)[-1])
+  fun <- as.character(fun)
+  if (fun %in% c("+", "-", "*", "/", "(") && any(all.vars(x) %in% covs)) {
+    return(all.vars(x))
+  }
+  passThrough <- c(
+    "+",
+    "-",
+    "*",
+    "/",
+    "(",
+    "{",
+    "<-",
+    "=",
+    "~",
+    "if",
+    "dt",
+    "linCmt"
+  )
+  if (!(fun %in% passThrough)) {
+    return(all.vars(x))
+  }
+  pkncaTransformedNames(as.list(x)[-1], covs = covs)
 }
 
 #' Find the names of all assigned variables (one per assignment)

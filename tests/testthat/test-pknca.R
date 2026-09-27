@@ -600,6 +600,43 @@ test_that("ini_transform allows infinite bounds", {
   expect_equal(iniDf$upper[iniDf$name == "tka"], Inf)
 })
 
+test_that("pkncaParamMap: covariates and linCmt() arguments", {
+  covModel <- function() {
+    ini({
+      ka <- 0.45
+      cl <- 1
+      vc <- 3
+      prop.err <- 0.5
+    })
+    model({
+      CL <- cl * WT
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - CL / vc * center
+      cp <- center / vc
+      cp ~ prop(prop.err)
+    })
+  }
+  suppressMessages(ui <- rxode2::rxode(covModel))
+  paramMap <- pkncaParamMap(ui)
+  expect_false("cl" %in% paramMap$param)
+  expect_true(all(c("ka", "vc") %in% paramMap$param))
+
+  linModel <- function() {
+    ini({
+      ka <- 0.45
+      cl <- 1
+      vc <- 3.45
+      prop.err <- 0.5
+    })
+    model({
+      cp <- linCmt(ka, cl, vc)
+      cp ~ prop(prop.err)
+    })
+  }
+  suppressMessages(ui <- rxode2::rxode(linModel))
+  expect_true(all(c("ka", "cl", "vc") %in% pkncaParamMap(ui)$param))
+})
+
 test_that("pkncaTransformedNames", {
   expect_equal(
     sort(pkncaTransformedNames(list(
@@ -608,6 +645,15 @@ test_that("pkncaTransformedNames", {
       quote(cp <- center / vc)
     ))),
     sort(c("cl", "WT"))
+  )
+  expect_equal(pkncaTransformedNames(quote(base::exp(cl) / vc)), "cl")
+  expect_equal(
+    pkncaTransformedNames(quote(cl * WT / vc), covs = "WT"),
+    c("cl", "WT", "vc")
+  )
+  expect_equal(
+    pkncaTransformedNames(quote(cp <- linCmt(ka, cl, vc))),
+    character()
   )
 })
 
