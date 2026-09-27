@@ -35,14 +35,16 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
 #' @param ui rxode2 ui of the imported model
 #' @param etaObf data frame with ID, the etas and OBJI
 #' @return matrix of the etas in the order of the model's etas, or
-#'   `NULL` when the model has no etas or they are not all in `etaObf`
+#'   `NULL` when the model has no etas or they are not exactly the eta
+#'   columns of `etaObf`
 #' @author Matthew L. Fidler
 #' @noRd
 .importEtaMat <- function(ui, etaObf) {
   .iniDf <- ui$iniDf
   .iniDf <- .iniDf[is.na(.iniDf$ntheta) & .iniDf$neta1 == .iniDf$neta2, ]
   .etaNames <- .iniDf$name[order(.iniDf$neta1)]
-  if (length(.etaNames) == 0L || !all(.etaNames %in% names(etaObf))) {
+  if (length(.etaNames) == 0L ||
+        !setequal(.etaNames, setdiff(names(etaObf), c("ID", "OBJI")))) {
     return(NULL)
   }
   .ret <- as.matrix(etaObf[, .etaNames, drop = FALSE])
