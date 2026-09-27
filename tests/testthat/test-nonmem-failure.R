@@ -80,6 +80,18 @@ test_that("NONMEM failures are classified from the output (#46)", {
     ),
     modelName = "license_missing"
   ))
+  # nor does a model named "license" (real NONMEM license messages)
+  for (.l in c(
+    " ERROR reading license file /opt/nm730/license/nonmem.lic",
+    "  **** NONMEM LICENSE HAS EXPIRED ****",
+    "License file has expired"
+  )) {
+    expect_equal(
+      .nonmemClassifyFailure(.l, modelName = "license")$cause,
+      "license",
+      info = .l
+    )
+  }
   # but a short model name does not hide a license message
   expect_equal(
     .nonmemClassifyFailure("License file has expired", modelName = "a")$cause,
@@ -358,6 +370,18 @@ withr::with_tempdir({
       "solving errors: 'fail_prderr-nonmem/PRDERR'",
       fixed = TRUE
     )
+  })
+
+  test_that("NM-TRAN stopping before NONMEM runs is reported (#46)", {
+    .msg <- .failure(
+      .fakeNonmem(c(
+        " WARNING: THE NUMBER OF WARNINGS EXCEEDS THE MAXIMUM.",
+        " PROGRAM TERMINATED."
+      )),
+      "fail_nmtran"
+    )
+    expect_match(.msg, "NM-TRAN stopped before NONMEM could run")
+    expect_match(.msg, "fail_nmtran.nmctl", fixed = TRUE)
   })
 
   test_that("a NONMEM evaluation (MAXEVALS=0) is not a crash (#46)", {
