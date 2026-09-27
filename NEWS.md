@@ -1,5 +1,12 @@
 # babelmixr2 0.1.11.9000
 
+* `est="pknca"` now updates the initial estimates of models that are not
+  mu-referenced, like `ka <- tka * exp(eta.ka)`, instead of failing with
+  "Must have names" (#101).  When there is no `vc`, a central volume
+  named `v`, `V`, `Vc`, `VC`, `v1` or `V1` (only one of them) now gets
+  the NCA central volume estimate.  Parameters defined as `expit()` of a
+  theta are now transformed back correctly.  A message lists the
+  parameters that could not be updated.
 * NONMEM models can now use nested `if`/`else if`/`else` statements
   (and `ifelse()`): their branches are pruned with rxode2's branch
   pruning before the model is translated to NONMEM (#11).  With the
