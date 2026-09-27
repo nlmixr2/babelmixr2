@@ -83,7 +83,11 @@ rxUiGet.monolixModel <- function(x, ...) {
                     useIf=FALSE)
   .norm <- rxode2::rxNorm(eval(.mainModel))
   .mv <- rxode2::rxModelVars(.ui)
+  assignInMyNamespace(".monolixCmtPropDefaults", NULL)
   .mod <- rxToMonolix(.norm, ui=.ui)
+  if (length(.monolixCmtPropDefaults) > 0L) {
+    .mod <- paste(c(.monolixCmtPropDefaults, .mod), collapse="\n")
+  }
   if (is.null(.pkmodel)) {
     .pk <- paste0("\n\nPK:\n; Define compartments with administrations\n",
                   .monolixGetCompartmentInformation(.ui),

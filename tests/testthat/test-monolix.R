@@ -252,7 +252,7 @@ test_that("monolix dsl", {
   .ee(.rxToM("probit(a,b,c)"), "probit(((a)-(b))/((c)-(b)))")
   .ee(.rxToM("d/dt(depot)=-depot*kel"), "ddt_depot = - depot*kel")
   .ee(.rxToM("depot(0)=50"), "depot_0 = 50")
-  .ee(.rxToM("f(depot)=3"), ";f defined in PK section")
+  .ee(.rxToM("f(depot)=3"), ";f defined in PK section\nrx_f_depot = 3")
   .ee(.rxToM("f(depot)=exp(a)"), ";f defined in PK section\nrx_f_depot = exp(a)")
   .ee(.rxToM("alag(depot)=0.1*a"), ";alag defined in PK section\nrx_lag_depot = 0.1*a")
   .ee(.rxToM("a**b"), "a^b")
@@ -348,6 +348,43 @@ test_that("monolix complex bioavailability and lag time (issue #115)", {
     expect_true(any(grepl("Tlag=rx_lag_depot, p=rx_f_depot)", .txt, fixed=TRUE)))
     expect_true(any(grepl("^ *rx_f_depot = exp\\(rx__lfdepot\\)$", .txt)))
     expect_true(any(grepl("^ *rx_lag_depot = exp\\(rx__lalag\\)\\*ka$", .txt)))
+  })
+})
+
+test_that("monolix bioavailability set in a conditional keeps its default (issue #115)", {
+  withr::with_tempdir({
+    one.cmt <- function() {
+      ini({
+        tka <- 0.45
+        tcl <- log(c(0, 2.7, 100))
+        tv <- 3.45
+        eta.ka ~ 0.6
+        eta.cl ~ 0.3
+        eta.v ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        ka <- exp(tka + eta.ka)
+        cl <- exp(tcl + eta.cl)
+        v <- exp(tv + eta.v)
+        d/dt(depot) <- -depot*ka
+        d/dt(central) <- depot*ka - cl*central/v
+        if (WT > 70) {
+          f(depot) <- 0.5
+        }
+        cp <- central/v
+        cp ~ add(add.sd)
+      })
+    }
+
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "monolix",
+            monolixControl(runCommand=NA, modelName="monolixIfF"))
+    .txt <- readLines("monolixIfF-monolix.txt")
+    expect_true(any(grepl("Tlag=0, p=rx_f_depot)", .txt, fixed=TRUE)))
+    .eq <- which(.txt == "EQUATION:")
+    # the default comes first, then the conditional value
+    expect_equal(trimws(.txt[.eq + 1]), "rx_f_depot = 1")
+    expect_true(any(grepl("^ *rx_f_depot = 0.5$", .txt)))
   })
 })
 

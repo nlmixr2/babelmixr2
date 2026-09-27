@@ -140,13 +140,23 @@
   rxode2::rxAssignControlValue(ui, ".adm", .adm)
 }
 
+#' Defaults of generated compartment property variables
+#'
+#' Lines like `rx_f_depot = 1` that go at the top of Monolix's
+#' `EQUATION:` so a property only set inside a conditional keeps
+#' rxode2's default otherwise.
+#'
+#' @noRd
+.monolixCmtPropDefaults <- NULL
+
 #' Translate a compartment property (f, alag, rate, dur) to Monolix
 #'
 #' Monolix sets these in the `PK:` macros, which take a single
-#' variable.  A property that is already a single variable or number
-#' is used directly; any other expression is assigned in `EQUATION:`
-#' to a generated variable (like `rx_f_depot`) that the macro then
-#' uses (issue #115).
+#' variable.  The property is assigned in `EQUATION:` to a generated
+#' variable (like `rx_f_depot`) that the macro then uses, so
+#' expressions (issue #115) and conditional assignments translate.
+#' When the property is set inside a conditional, the variable starts
+#' at rxode2's default (1 for `f()`, 0 for `alag()`).
 #'
 #' @param x assignment expression, like `f(depot) <- exp(lfdepot)`
 #' @param prop the property name (`"f"`, `"F"`, `"alag"`, `"lag"`,
@@ -158,15 +168,16 @@
 .rxToMonolixCmtProp <- function(x, prop, ui) {
   .type <- switch(prop, alag="lag", F="f", prop)
   .state <- as.character(x[[2]][[2]])
-  .comment <- paste0(.rxToMonolixGetIndent(ui),
-                     ";", prop, " defined in PK section")
-  if (length(x[[3]]) == 1L) {
-    .monolixSetAdm(ui, .state, .rxToMonolix(x[[3]], ui=ui), type=.type)
-    return(.comment)
-  }
   .var <- paste0("rx_", .type, "_", gsub("[.]", "__", .state))
   .monolixSetAdm(ui, .state, .var, type=.type)
-  paste0(.comment, "\n",
+  .default <- switch(.type, f="1", lag="0", NA_character_)
+  if (!is.na(.default) &&
+        rxode2::rxGetControl(ui, ".mIndent", 0) > 0) {
+    assignInMyNamespace(".monolixCmtPropDefaults",
+                        unique(c(.monolixCmtPropDefaults,
+                                 paste0("   ", .var, " = ", .default))))
+  }
+  paste0(.rxToMonolixGetIndent(ui), ";", prop, " defined in PK section\n",
          paste(.rxToMonolixGetIndent(ui),
                .var, "=", .rxToMonolix(x[[3]], ui=ui)))
 }

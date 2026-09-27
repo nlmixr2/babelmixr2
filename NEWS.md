@@ -4,7 +4,9 @@
   `alag()`, `rate()` and `dur()`) that are expressions, like
   `f(depot) <- exp(lfdepot)`, instead of erroring with "the complex F is
   not supported by babelmixr2" (#115).  The expression is calculated in
-  a new variable (like `rx_f_depot`) that the `PK:` macro uses.
+  a new variable (like `rx_f_depot`) that the `PK:` macro uses.  A
+  property set only inside an `if` now keeps rxode2's default otherwise
+  (1 for `f()`, 0 for `alag()`) instead of being applied unconditionally.
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
