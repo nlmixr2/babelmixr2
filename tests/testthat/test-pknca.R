@@ -371,6 +371,23 @@ test_that("pkncaIntervals route handling (#102)", {
   expect_equal(ret$cl.last, c(TRUE, FALSE, FALSE))
   # Imputation of the start for all but the bolus-only interval
   expect_equal(is.na(ret$impute), c(TRUE, FALSE, FALSE))
+
+  # Intravascular intervals starting from the prior trough are not used for vc
+  # and cl when others are available
+  doseMulti <- data.frame(
+    ID = 1,
+    TIME = c(0, 12),
+    pkncaRoute = "intravascular",
+    pkncaBolus = TRUE,
+    pkncaNoC0 = c(FALSE, TRUE)
+  )
+  intervalsMulti <- data.frame(ID = 1, start = c(0, 12), end = c(12, 24), cmax = TRUE, auclast = TRUE)
+  ret <- pkncaIntervals(intervals = intervalsMulti, dose = doseMulti, groupCols = "ID", timeCol = "TIME")
+  expect_equal(ret$cmax.dn, c(TRUE, FALSE))
+  expect_equal(ret$cl.last, c(TRUE, FALSE))
+  doseMulti$pkncaNoC0 <- TRUE
+  ret <- pkncaIntervals(intervals = intervalsMulti, dose = doseMulti, groupCols = "ID", timeCol = "TIME")
+  expect_equal(ret$cmax.dn, c(TRUE, TRUE))
 })
 
 test_that("pkncaAddIvC0 (#102)", {
@@ -386,6 +403,7 @@ test_that("pkncaAddIvC0 (#102)", {
   # dose has a concentration at the time of dosing
   expect_equal(ret$TIME, c(0, 6, 12, 18))
   expect_equal(ret$DV, c(8, 4, 2, 5))
+  expect_equal(attr(ret, "noC0"), pkncaKey(dose[2, ], c("ID", "TIME")))
   # Only one C0 for simultaneous doses
   dose2 <- rbind(dose[1, ], dose[1, ])
   ret2 <- pkncaAddIvC0(obs = obs, dose = dose2, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
@@ -395,7 +413,7 @@ test_that("pkncaAddIvC0 (#102)", {
   dose3$pkncaRoute[2] <- "extravascular"
   dose3$pkncaBolus[2] <- FALSE
   ret3 <- pkncaAddIvC0(obs = obs, dose = dose3, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
-  expect_equal(ret3, obs)
+  expect_equal(ret3, obs, ignore_attr = TRUE)
   # A predose concentration at the first dose is replaced by C0 (missing or
   # not)
   for (dv0 in c(0, NA)) {

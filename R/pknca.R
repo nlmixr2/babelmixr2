@@ -281,6 +281,10 @@ calcPknca <- function(env, pkncaUnits) {
       obs = cleanData$obs, dose = doseData, groupCols = groupCols,
       timeCol = cleanColNames[["time"]], dvCol = cleanColNames[["dv"]]
     )
+  # Intravascular bolus doses keeping the prior trough at the time of dosing
+  doseData$pkncaNoC0 <-
+    pkncaKey(doseData, c(groupCols, cleanColNames[["time"]])) %in% attr(obsData, "noC0")
+  attr(obsData, "noC0") <- NULL
 
   oConc <- PKNCA::PKNCAconc(data = obsData, oConcFormula, sparse = control$sparse)
   oDose <- PKNCA::PKNCAdose(data = doseData, oDoseFormula, route = "pkncaRoute")
@@ -308,7 +312,10 @@ calcPknca <- function(env, pkncaUnits) {
 #'   `pkncaBolus` columns)
 #' @param groupCols,timeCol,dvCol Column names for the grouping, time, and
 #'   dependent variable
-#' @return `obs` with rows added for back-extrapolated C0
+#' @return `obs` with rows added for back-extrapolated C0 and the attribute
+#'   "noC0" with the group and time keys (see `pkncaKey()`) of doses where C0
+#'   was not back-extrapolated because the prior trough is at the time of
+#'   dosing
 #' @noRd
 pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
   obsKey <- pkncaKey(obs, groupCols)
@@ -319,6 +326,7 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
   allBolus <- as.vector(tapply(dose$pkncaBolus, doseTimeKey, all)[doseTimeKey])
   bolusIdx <- which(allBolus & !duplicated(doseTimeKey))
   newRows <- list()
+  noC0 <- character()
   for (idx in bolusIdx) {
     doseTime <- dose[[timeCol]][idx]
     nextDoseTime <- dose[[timeCol]][doseKey == doseKey[idx] & dose[[timeCol]] > doseTime]
@@ -333,6 +341,7 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
     atDose <- obsKey == doseKey[idx] & obs[[timeCol]] == doseTime
     isFirstDose <- !any(doseKey == doseKey[idx] & dose[[timeCol]] < doseTime)
     if (any(atDose) && !isFirstDose) {
+      noC0 <- c(noC0, doseTimeKey[idx])
       next
     }
     mask <- mask & !atDose
@@ -362,6 +371,7 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
     obs <- rbind(obs, do.call(rbind, newRows))
     obs <- obs[do.call(order, unname(as.list(obs[, c(groupCols, timeCol), drop = FALSE]))), , drop = FALSE]
   }
+  attr(obs, "noC0") <- noC0
   obs
 }
 
@@ -385,6 +395,8 @@ pkncaKey <- function(data, cols) {
 #' when intervals with a single route are available.
 #'
 #' @param intervals The automatically-generated intervals from `PKNCAdata()`
+#' @param dose Dose data with `pkncaRoute`, `pkncaBolus`, and (optionally)
+#'   `pkncaNoC0` columns
 #' @inheritParams pkncaAddIvC0
 #' @return The modified intervals
 #' @noRd
@@ -424,6 +436,16 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
       )
     for (nm in ivParams) {
       intervals[[nm]][!isEv] <- FALSE
+    }
+  }
+  if (!is.null(dose$pkncaNoC0)) {
+    # Intravascular intervals starting from the prior trough (without C0) are
+    # not used for vc and cl when others are available
+    doseNoC0 <- tapply(dose$pkncaNoC0, doseKey, any)
+    isNoC0 <- as.vector(doseNoC0[intervalKey])
+    isNoC0 <- !is.na(isNoC0) & isNoC0
+    if (any(isIv & !isNoC0)) {
+      isIv <- isIv & !isNoC0
     }
   }
   if (any(isIv) && any(!isIv)) {
