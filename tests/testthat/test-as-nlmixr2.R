@@ -55,7 +55,7 @@ test_that("nlmixr2 translation from nonmem2x", {
 
   # tableControl(cwres=TRUE) adds nlmixr2's FOCEi objective, but the
   # imported NONMEM objective stays in use (#94)
-  fit <- .as.nlmixr(new, table=tableControl(cwres=TRUE))
+  fit <- .as.nlmixr(new, table = tableControl(cwres = TRUE))
   expect_true("CWRES" %in% names(fit))
   expect_setequal(row.names(fit$objDf), c("nonmem2rx", "FOCEi"))
   expect_equal(fit$ofvType, "nonmem2rx")
@@ -85,7 +85,7 @@ test_that("nlmixr2 translation from monolix2rx", {
   expect_true(inherits(fit, "nlmixr2FitData"))
 
   # the imported Monolix objective stays in use with cwres=TRUE (#94)
-  fit <- .as.nlmixr2(mod, table=tableControl(cwres=TRUE))
+  fit <- .as.nlmixr2(mod, table = tableControl(cwres = TRUE))
   expect_true("CWRES" %in% names(fit))
   expect_true("FOCEi" %in% row.names(fit$objDf))
   expect_equal(nrow(fit$objDf), 2L)
@@ -115,27 +115,40 @@ test_that(".importEtaMat() only uses etas that match the model (#94)", {
       cp ~ add(add.sd)
     })
   })
-  .obf <- data.frame(ID=1:2, eta.cl=c(0.1, 0.2), eta.v=c(0.3, 0.4), OBJI=NA_real_)
+  .obf <- data.frame(
+    ID = 1:2,
+    eta.cl = c(0.1, 0.2),
+    eta.v = c(0.3, 0.4),
+    OBJI = NA_real_
+  )
   # columns follow the model's eta order, not the etaObf order
-  expect_equal(.b$.importEtaMat(.ui, .obf, 2L),
-               matrix(c(0.3, 0.4, 0.1, 0.2), 2, 2))
+  expect_equal(
+    .b$.importEtaMat(.ui, .obf, 2L),
+    matrix(c(0.3, 0.4, 0.1, 0.2), 2, 2)
+  )
   # a subject dropped from the processed data (for example one without
   # observations), missing etas or NA etas give zero etas
   expect_equal(.b$.importEtaMat(.ui, .obf, 1L), matrix(0, 1, 2))
-  expect_equal(.b$.importEtaMat(.ui, .obf[, c("ID", "eta.cl", "OBJI")], 2L),
-               matrix(0, 2, 2))
+  expect_equal(
+    .b$.importEtaMat(.ui, .obf[, c("ID", "eta.cl", "OBJI")], 2L),
+    matrix(0, 2, 2)
+  )
   .na <- .obf
   .na$eta.v[1] <- NA_real_
   expect_equal(.b$.importEtaMat(.ui, .na, 2L), matrix(0, 2, 2))
   # no etas, no matrix
-  expect_null(.b$.importEtaMat(rxode2::rxode2(function() {
-    ini({
-      tcl <- 1
-      add.sd <- 0.1
-    })
-    model({
-      cp <- exp(tcl)
-      cp ~ add(add.sd)
-    })
-  }), .obf[, c("ID", "OBJI")], 2L))
+  expect_null(.b$.importEtaMat(
+    rxode2::rxode2(function() {
+      ini({
+        tcl <- 1
+        add.sd <- 0.1
+      })
+      model({
+        cp <- exp(tcl)
+        cp ~ add(add.sd)
+      })
+    }),
+    .obf[, c("ID", "OBJI")],
+    2L
+  ))
 })

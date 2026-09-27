@@ -52,8 +52,10 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
   # zero etas are what nlmixr2est uses without an etaMat, but an explicit
   # matrix keeps it from using the etas of the last nlmixr2() fit
   .zero <- matrix(0, nsub, length(.etaNames))
-  if (nrow(etaObf) != nsub ||
-        !setequal(.etaNames, setdiff(names(etaObf), c("ID", "OBJI")))) {
+  if (
+    nrow(etaObf) != nsub ||
+      !setequal(.etaNames, setdiff(names(etaObf), c("ID", "OBJI")))
+  ) {
     return(.zero)
   }
   .ret <- as.matrix(etaObf[, .etaNames, drop = FALSE])
@@ -142,8 +144,7 @@ as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxCon
     # Start from the imported etas; otherwise nlmixr2est may start from
     # the etas of the last nlmixr2() fit (like the one run for the FOCEi
     # objective of an earlier import with tableControl(cwres=TRUE))
-    env$etaMat <- .importEtaMat(.ui, env$etaObf,
-                                length(unique(env$dataSav$ID)))
+    env$etaMat <- .importEtaMat(.ui, env$etaObf, length(unique(env$dataSav$ID)))
     # When running the focei problem to create the nlmixr object, you also need a
     #  foceiControl object
     .nonmem2rxToFoceiControl(env, x, TRUE)

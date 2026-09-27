@@ -138,21 +138,19 @@ test_that("pheno NONMEM reading", {
 })
 
 test_that("pheno NONMEM reading with tableControl(cwres=TRUE) (#94)", {
-
   pheno <- function() {
     ini({
       tcl <- log(0.008)
-      tv <-  log(0.6)
-      eta.cl + eta.v ~ c(1,
-                         0.01, 1)
+      tv <- log(0.6)
+      eta.cl + eta.v ~ c(1, 0.01, 1)
       add.err <- 0.1
     })
     model({
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
       ke <- cl / v
-      d/dt(A1) = - ke * A1
-      cp = A1 / v
+      d / dt(A1) <- -ke * A1
+      cp <- A1 / v
       cp ~ add(add.err)
     })
   }
@@ -161,9 +159,13 @@ test_that("pheno NONMEM reading with tableControl(cwres=TRUE) (#94)", {
   .path <- normalizePath("pheno-nonmem.zip")
   withr::with_tempdir({
     unzip(.path)
-    f <- .nlmixr(pheno, nlmixr2data::pheno_sd, "nonmem",
-                 control=nonmemControl(modelName="pheno"),
-                 table=tableControl(cwres=TRUE))
+    f <- .nlmixr(
+      pheno,
+      nlmixr2data::pheno_sd,
+      "nonmem",
+      control = nonmemControl(modelName = "pheno"),
+      table = tableControl(cwres = TRUE)
+    )
     expect_true(inherits(f, "nlmixr2FitData"))
     expect_true(all(c("CWRES", "WRES") %in% names(f)))
     # both the NONMEM and nlmixr2's FOCEi objective are kept, with the
@@ -173,10 +175,15 @@ test_that("pheno NONMEM reading with tableControl(cwres=TRUE) (#94)", {
     expect_equal(f$objective, f$objDf["nonmem focei", "OBJF"])
     expect_equal(AIC(f), f$objDf["nonmem focei", "AIC"])
     expect_equal(BIC(f), f$objDf["nonmem focei", "BIC"])
-    expect_equal(as.numeric(logLik(f)),
-                 f$objDf["nonmem focei", "Log-likelihood"])
-    expect_equal(f$objDf["FOCEi", "OBJF"], f$objDf["nonmem focei", "OBJF"],
-                 tolerance=1e-4)
+    expect_equal(
+      as.numeric(logLik(f)),
+      f$objDf["nonmem focei", "Log-likelihood"]
+    )
+    expect_equal(
+      f$objDf["FOCEi", "OBJF"],
+      f$objDf["nonmem focei", "OBJF"],
+      tolerance = 1e-4
+    )
   })
 })
 

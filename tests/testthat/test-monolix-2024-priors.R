@@ -154,8 +154,14 @@ test_that("a Monolix fit works with tableControl(cwres=TRUE) (#94)", {
     utils::unzip(.zip)
     setwd(file.path("monolix2024", "mle"))
     .f <- suppressWarnings(suppressMessages(
-      nlmixr2(.u, .mlx2024Data(), "monolix", monolixControl(modelName="mle"),
-              table=tableControl(cwres=TRUE))))
+      nlmixr2(
+        .u,
+        .mlx2024Data(),
+        "monolix",
+        monolixControl(modelName = "mle"),
+        table = tableControl(cwres = TRUE)
+      )
+    ))
   })
   expect_true(inherits(.f, "nlmixr2FitData"))
   expect_true("CWRES" %in% names(.f))
@@ -166,8 +172,7 @@ test_that("a Monolix fit works with tableControl(cwres=TRUE) (#94)", {
   expect_equal(.f$objective, .f$objDf[.f$ofvType, "OBJF"])
   expect_equal(AIC(.f), .f$objDf[.f$ofvType, "AIC"])
   expect_equal(BIC(.f), .f$objDf[.f$ofvType, "BIC"])
-  expect_equal(as.numeric(logLik(.f)),
-               .f$objDf[.f$ofvType, "Log-likelihood"])
+  expect_equal(as.numeric(logLik(.f)), .f$objDf[.f$ofvType, "Log-likelihood"])
 })
 
 test_that("the PRED absolute difference to Monolix is absolute", {
