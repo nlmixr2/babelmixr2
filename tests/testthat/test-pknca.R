@@ -464,6 +464,17 @@ test_that("pkncaIntervals route handling (#102)", {
   )
   expect_equal(ret$cmax.dn, c(TRUE, FALSE))
   expect_equal(ret$cl.last, c(TRUE, FALSE))
+  # Without others calculating the parameter, they are used
+  intervalsNoAuc <- intervalsMulti
+  intervalsNoAuc$auclast <- c(FALSE, TRUE)
+  ret <- pkncaIntervals(
+    intervals = intervalsNoAuc,
+    dose = doseMulti,
+    groupCols = "ID",
+    timeCol = "TIME"
+  )
+  expect_equal(ret$cmax.dn, c(TRUE, FALSE))
+  expect_equal(ret$cl.last, c(FALSE, TRUE))
   # Without others, they are used (cmax.dn only from the first)
   doseMulti$pkncaNoC0 <- TRUE
   ret <- pkncaIntervals(
