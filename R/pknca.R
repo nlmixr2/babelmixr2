@@ -118,8 +118,12 @@ nlmixr2Est.pknca <- function(env, ...) {
       unitConversions = unitConversions
     )
   # What parameters should be modified?  And then modify them.
-  murefNames <- env$ui$getSplitMuModel$pureMuRef
-  updateNames <- intersect(murefNames, names(paramEstimates))
+  paramMap <- pkncaParamMap(env$ui)
+  if (!("vc" %in% paramMap$param) && ("v" %in% paramMap$param)) {
+    # One-compartment models commonly name the central volume `v`
+    paramEstimates$v <- paramEstimates$vc
+  }
+  updateNames <- intersect(paramMap$param, names(paramEstimates))
   newEnv <- do.call(ini_transform, append(list(x=env$ui), paramEstimates[updateNames]))
 
   if (unitConversions[["cmax"]] != 1) {
@@ -334,49 +338,161 @@ ncaToEst <- function(tmax, cmaxdn, cl, control, unitConversions) {
   ncaEstimates
 }
 
+#' Map model parameters to the population thetas that define them
+#'
+#' Mu-referenced parameters come from `getSplitMuModel$pureMuRef`.  Parameters
+#' that are not mu-referenced (like `ka <- tka * exp(eta.ka)`) are found from the
+#' model lines when, after setting the etas to zero, the assignment simplifies to
+#' `theta` or a supported transformation of `theta` (like `exp(theta)`).
+#'
+#' @param ui The rxode2 ui model
+#' @return A data.frame with columns `theta`, `param`, `curEval`, `low`, and `hi`
+#' @noRd
+pkncaParamMap <- function(ui) {
+  murefNames <- ui$getSplitMuModel$pureMuRef
+  murefTrans <- ui$muRefCurEval
+  ret <- data.frame(
+    theta = as.character(names(murefNames)),
+    param = as.character(unname(murefNames)),
+    curEval = rep(NA_character_, length(murefNames)),
+    low = rep(NA_real_, length(murefNames)),
+    hi = rep(NA_real_, length(murefNames)),
+    stringsAsFactors = FALSE
+  )
+  for (idx in seq_len(nrow(ret))) {
+    w <- which(murefTrans$parameter == ret$theta[idx])
+    if (length(w) == 1) {
+      ret$curEval[idx] <- as.character(murefTrans$curEval[w])
+      ret$low[idx] <- murefTrans$low[w]
+      ret$hi[idx] <- murefTrans$hi[w]
+    }
+  }
+  iniDf <- ui$iniDf
+  thetaNames <- iniDf$name[!is.na(iniDf$ntheta)]
+  etaNames <- iniDf$name[is.na(iniDf$ntheta) & !is.na(iniDf$neta1) & iniDf$neta1 == iniDf$neta2]
+  lhs <- vapply(ui$lstExpr, function(e) {
+    if (is.call(e) && (identical(e[[1]], quote(`<-`)) || identical(e[[1]], quote(`=`))) &&
+      is.name(e[[2]])) {
+      as.character(e[[2]])
+    } else {
+      NA_character_
+    }
+  }, character(1))
+  for (idx in which(!is.na(lhs))) {
+    param <- lhs[idx]
+    if (param %in% ret$param || sum(lhs == param, na.rm = TRUE) != 1) {
+      # Already mapped or assigned more than once (ambiguous)
+      next
+    }
+    rhs <- pkncaSimplifyZeroEta(ui$lstExpr[[idx]][[3]], etaNames)
+    theta <- NULL
+    curEval <- ""
+    if (is.name(rhs)) {
+      theta <- as.character(rhs)
+    } else if (is.call(rhs) && length(rhs) == 2 && identical(rhs[[1]], quote(exp)) &&
+      is.name(rhs[[2]])) {
+      theta <- as.character(rhs[[2]])
+      curEval <- "exp"
+    }
+    if (!is.null(theta) && theta %in% thetaNames && !(theta %in% ret$theta)) {
+      ret <- rbind(ret, data.frame(
+        theta = theta, param = param, curEval = curEval,
+        low = NA_real_, hi = NA_real_, stringsAsFactors = FALSE
+      ))
+    }
+  }
+  ret
+}
+
+#' Replace etas with zero and simplify the resulting expression
+#'
+#' @param x An R expression
+#' @param etaNames Names of the etas to set to zero
+#' @return The simplified expression
+#' @noRd
+pkncaSimplifyZeroEta <- function(x, etaNames) {
+  isNum <- function(e, value) {
+    is.numeric(e) && length(e) == 1 && e == value
+  }
+  if (is.name(x)) {
+    if (as.character(x) %in% etaNames) {
+      return(0)
+    }
+    return(x)
+  }
+  if (!is.call(x)) {
+    return(x)
+  }
+  args <- lapply(as.list(x)[-1], pkncaSimplifyZeroEta, etaNames = etaNames)
+  fun <- x[[1]]
+  if (identical(fun, quote(`(`))) {
+    return(args[[1]])
+  }
+  if (length(args) == 1 && identical(fun, quote(exp)) && isNum(args[[1]], 0)) {
+    return(1)
+  }
+  if (length(args) == 2) {
+    if (identical(fun, quote(`+`))) {
+      if (isNum(args[[1]], 0)) return(args[[2]])
+      if (isNum(args[[2]], 0)) return(args[[1]])
+    } else if (identical(fun, quote(`-`))) {
+      if (isNum(args[[2]], 0)) return(args[[1]])
+    } else if (identical(fun, quote(`*`))) {
+      if (isNum(args[[1]], 1)) return(args[[2]])
+      if (isNum(args[[2]], 1)) return(args[[1]])
+    } else if (identical(fun, quote(`/`))) {
+      if (isNum(args[[2]], 1)) return(args[[1]])
+    }
+  }
+  as.call(c(list(fun), args))
+}
+
 # Update the ini() with parameters given by ...; transformations to the
 # estimation scale are automatically applied
 ini_transform <- function(x, ..., envir = parent.frame()) {
   changeArgs <- list(...)
+  if (length(changeArgs) == 0) {
+    return(x)
+  }
   # This only works for fixed effects, so formula are not allowed
   checkmate::assert_names(names(changeArgs))
-  murefNames <- x$getSplitMuModel$pureMuRef
-  murefTrans <- x$muRefCurEval
+  paramMap <- pkncaParamMap(x)
   inverseTrans <-
     list(
       exp=log,
-      logit=rxode2::expit
+      expit=rxode2::logit
       # TODO: add all of the other transforms here
     )
 
   for (nm in names(changeArgs)) {
-    if (nm %in% names(murefNames)) {
+    if (nm %in% paramMap$theta) {
       # It is already the transformed parameter, no modification required
       x <- do.call(rxode2::ini, append(list(x=x), changeArgs[nm]))
-    } else if (nm %in% murefNames) {
-      iniName <- names(murefNames)[murefNames == nm]
-      currentTrans <- murefTrans$curEval[murefTrans$parameter == iniName]
-      if (currentTrans == "") {
+    } else if (nm %in% paramMap$param) {
+      w <- which(paramMap$param == nm)
+      iniName <- paramMap$theta[w]
+      currentTrans <- paramMap$curEval[w]
+      value <- changeArgs[[nm]]
+      if (is.na(currentTrans) || currentTrans == "") {
         # No transformation
-        transFun <- identity
+        newValue <- value
+      } else if (currentTrans == "expit") {
+        low <- paramMap$low[w]
+        hi <- paramMap$hi[w]
+        newValue <- rxode2::logit(value, ifelse(is.na(low), 0, low), ifelse(is.na(hi), 1, hi))
+      } else if (currentTrans %in% names(inverseTrans)) {
+        newValue <- inverseTrans[[currentTrans]](value)
       } else {
-        transFun <- inverseTrans[[currentTrans]]
-      }
-      if (is.null(transFun)) {
-        cli::cli_abort(paste("cannot invert the transform (please report a bug):", transFun)) # nocov
+        cli::cli_abort("cannot invert the transform {.val {currentTrans}} for {.code {nm}} (please report a bug)") # nocov
       }
       x <-
         do.call(
           rxode2::ini,
           append(
             list(x=x),
-            stats::setNames(
-              list(transFun(changeArgs[[nm]])),
-              iniName
-            )
+            stats::setNames(list(newValue), iniName)
           )
         )
-      newValue <- changeArgs[[nm]]
     }
   }
   x
