@@ -1,5 +1,18 @@
 # babelmixr2 0.1.11.9000
 
+* NONMEM control streams now explain the zero-protection code
+  babelmixr2 adds: each `RXDZ###` `IF` block is preceded by a comment
+  saying what it keeps the variable away from and why, as is the
+  `IF (W1 .EQ. 0.0)` residual variance protection (#91).
+  The protection for `lfactorial()`/`lgamma1p()` now keeps its argument
+  above `-1` (it previously clamped it just below `-1`, making `x+1`
+  negative), `log(x)` and `1/x` no longer share one protected
+  variable, so `1/x` keeps the sign of a negative `x`, and a variable
+  reassigned in the model is protected again instead of reusing the
+  protection of its old value.  Zero protection needed by `f()`,
+  `alag()`, `rate()` or `dur()` (written in `$PK`) is no longer shared
+  with other lines, which could use it before (or without) it being
+  calculated.
 * `est="pknca"` now works with covariates in the data and with a mix of
   intravascular and extravascular doses (#102).  Doses into a
   compartment that the observations are calculated from are

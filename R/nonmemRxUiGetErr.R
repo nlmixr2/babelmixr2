@@ -76,9 +76,12 @@ rxUiGet.nonmemErrF <- function(x, ...) {
                      .var <- .repEndpoint(.var, .pred1$dvid)
                      # depending on the method the prop can be with regards to the F or the transformed F
                      # So, here we add RX_PRED_ to be the transformed to support both
-                     .ret <- paste0(.ret,
-                                    .var,
-                                    paste0("\n  IF (", .w, " .EQ. 0.0) ", .w, " = 1"))
+                     .zero <- paste0(
+                       "\n  ; keep ", .w, " away from zero ",
+                       "(a zero residual variance is undefined)",
+                       "\n  IF (", .w, " .EQ. 0.0) ", .w, " = 1"
+                     )
+                     .ret <- paste0(.ret, .var, .zero)
                      .ret
                    }, character(1), USE.NAMES=FALSE)
   .err <- paste(.ipred, collapse="\n")

@@ -281,6 +281,39 @@ rex::register_shortcuts("babelmixr2")
          .rxToNonmem(x[[3]], ui=ui))
 }
 
+#' Comment explaining a zero-protection IF block
+#'
+#' The generated `IF` blocks that keep a value away from zero can be
+#' confusing when reading the control stream, so each one is preceded
+#' by a NONMEM comment saying which variable is protected and why.
+#'
+#' The comment describes what the block does (not the first expression
+#' that needed it) since a protected variable is reused by any later
+#' expression needing the same protection.
+#'
+#' @param newVar the NONMEM variable being protected (like `RXDZ001`)
+#' @param type type of protection: "plus" (keep positive), "one" (keep
+#'   above -1) or "sign" (keep away from zero, preserving the sign)
+#' @param ui rxode2 ui
+#' @return NONMEM comment line
+#' @author Matthew L. Fidler
+#' @noRd
+.rxProtectZeroComment <- function(newVar, type = c("plus", "one", "sign"), ui) {
+  type <- match.arg(type)
+  paste0(
+    .rxToNonmemGetIndent(ui),
+    "; IF block below keeps ",
+    newVar,
+    " ",
+    switch(
+      type,
+      plus = "positive (used by log, sqrt, etc.)",
+      one = "above -1 (lfactorial, log1p, etc. need x+1 > 0)",
+      sign = "away from zero keeping its sign (avoids 1/0 and 0**-n)"
+    )
+  )
+}
+
 #' Protect Zeros for dlog(x) or dsqrt(x)
 #'
 #' @param x Expression to protect
@@ -295,7 +328,9 @@ rex::register_shortcuts("babelmixr2")
     .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
                                 data.frame(expr=character(0),
                                            nm=character(0)))
-    .expr <- paste0(.ret, ifelse(one, "+++1", ""))
+    # Keyed separately from the +/- protection of the same expression,
+    # which keeps negative values (and needs to for 1/x to keep its sign)
+    .expr <- paste0(.ret, ifelse(one, "+++1", "+++0"))
     .w <- which(.df$expr == .expr)
     if (length(.w) == 1) {
       # Previously protected this expression
@@ -307,8 +342,17 @@ rex::register_shortcuts("babelmixr2")
       .newVar <- sprintf("RXDZ%s%03d", .extra, .num)
       rxode2::rxAssignControlValue(ui, ".nmVarDZNum", .num + 1)
       .sigdig <- rxode2::rxGetControl(ui, "iniSigDig", 5)
-      .num <- paste0(ifelse(one, "-1.", "0."), paste(rep("0", .sigdig), collapse=""), "1")
+      # For x+1 protection keep x just above -1 (e.g. -0.999999) so x+1
+      # stays positive; more than ~15 nines rounds to -1 in double precision
+      if (one) .sigdig <- min(.sigdig, 12)
+      .num <- ifelse(
+        one,
+        paste0("-0.", paste(rep("9", .sigdig + 1), collapse = "")),
+        paste0("0.", paste(rep("0", .sigdig), collapse = ""), "1")
+      )
+      .type <- ifelse(one, "one", "plus")
       .prefixLines <- c(.prefixLines,
+                        .rxProtectZeroComment(.newVar, .type, ui),
                         paste0(.rxToNonmemGetIndent(ui),
                                .newVar, "=", .ret),
                         paste0(.rxToNonmemGetIndent(ui),
@@ -355,6 +399,7 @@ rex::register_shortcuts("babelmixr2")
       .sigdig <- rxode2::rxGetControl(ui, "iniSigDig", 5)
       .num <- paste0("0.", paste(rep("0", .sigdig), collapse=""), "1")
       .prefixLines <- c(.prefixLines,
+                        .rxProtectZeroComment(.newVar, "sign", ui),
                         paste0(.rxToNonmemGetIndent(ui),
                                .newVar, "=", .denom),
                         paste0(.rxToNonmemGetIndent(ui),
@@ -674,11 +719,42 @@ rex::register_shortcuts("babelmixr2")
   }
 }
 
+#' Forget zero protections of expressions using a reassigned variable
+#'
+#' A zero-protected expression is cached so later uses share one
+#' `RXDZ###` variable.  Once a variable in that expression is
+#' reassigned, the cached variable holds the old value, so the
+#' protection has to be recalculated.
+#'
+#' @param var NONMEM variable being assigned
+#' @param ui rxode2 ui
+#' @return nothing, called for side effects
+#' @author Matthew L. Fidler
+#' @noRd
+.rxNmForgetZeroProtection <- function(var, ui) {
+  .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf", NULL)
+  if (is.null(.df) || nrow(.df) == 0L) {
+    return(invisible())
+  }
+  # NONMEM variable names are only letters, digits and underscores
+  .reg <- paste0("(^|[^A-Za-z0-9_])", var, "($|[^A-Za-z0-9_(])")
+  .w <- grepl(.reg, .df$expr, perl = TRUE)
+  if (any(.w)) {
+    rxode2::rxAssignControlValue(
+      ui,
+      ".nmGetDivideZeroDf",
+      .df[!.w, , drop = FALSE]
+    )
+  }
+  invisible()
+}
+
 # When there is a simple left-hand-side assignment (e.g. set a variable)
 .rxToNonmemHandleAssignmentOperatorSimpleLHS <- function(x, ui) {
   stopifnot(length(x[[2]]) == 1)
   .var <- .rxToNonmem(x[[2]], ui=ui)
   .val <- .rxToNonmem(x[[3]], ui=ui)
+  .rxNmForgetZeroProtection(.var, ui)
   paste0(
     .rxToNonmemFlushPrefixLines(ui),
     .rxToNonmemGetIndent(ui), .var, "=", .val,
@@ -810,8 +886,18 @@ rex::register_shortcuts("babelmixr2")
   .tmp <- get(.tmp, envir=rxUiGetNonememModelEnv$rxS)
   .tmp <- rxode2::rxFromSE(.tmp)
   .tmp <- .nonmemReplaceThetaEtaWithNames(.tmp, ui)
+  # The property is written in $PK apart from the other lines, so it
+  # neither reuses a protection defined elsewhere (like $DES) nor lets
+  # other lines reuse its protection before it is defined
+  .zeroDf <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf", NULL)
+  rxode2::rxAssignControlValue(
+    ui,
+    ".nmGetDivideZeroDf",
+    data.frame(expr = character(0), nm = character(0))
+  )
   .extra <- paste0(.nonmemReplaceNonmemThetaWithMu(.rxToNonmem(.tmp, ui=ui), ui=ui),
                    .babelmixr2Deparse(x))
+  rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf", .zeroDf)
   .pre <- .nonmemReplaceNonmemThetaWithMu(
     .rxToNonmemFlushPrefixLines(ui),
     ui = ui
