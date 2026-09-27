@@ -301,6 +301,9 @@ test_that("pkncaParamMap", {
       vp <- exp(lvp) * WT / 70
       kx <- 3
       kx <- kx + 1
+      if (WT > 70) {
+        q <- tq * 2 * exp(eta.q)
+      }
       fdepot <- expit(tf)
       cp <- linCmt()
       cp ~ prop(prop.err)
@@ -310,9 +313,10 @@ test_that("pkncaParamMap", {
   paramMap <- pkncaParamMap(ui)
   paramMap <- paramMap[order(paramMap$param), c("theta", "param", "curEval")]
   rownames(paramMap) <- NULL
-  expect_equal(paramMap$param, c("cl", "fdepot", "ka", "q", "vc"))
-  expect_equal(paramMap$theta, c("lcl", "tf", "tka", "tq", "tvc"))
-  expect_equal(paramMap$curEval, c("exp", "expit", "", "", ""))
+  # q is also assigned in an if block, so it is ambiguous and not mapped
+  expect_equal(paramMap$param, c("cl", "fdepot", "ka", "vc"))
+  expect_equal(paramMap$theta, c("lcl", "tf", "tka", "tvc"))
+  expect_equal(paramMap$curEval, c("exp", "expit", "", ""))
 
   # Nothing to change returns the model unchanged
   expect_identical(ini_transform(ui), ui)
@@ -323,6 +327,13 @@ test_that("pkncaParamMap", {
   expect_equal(newmod$theta[["tf"]], rxode2::logit(0.25))
   # vp is not a simple function of a single theta, so it is unchanged
   expect_equal(newmod$theta[["lvp"]], 3)
+})
+
+test_that("pkncaAssignedNames", {
+  expect_equal(
+    pkncaAssignedNames(list(quote(a <- 1), quote(if (x) {b <- 2} else {a = 3}), quote(y ~ add(z)))),
+    c("a", "b", "a")
+  )
 })
 
 test_that("pkncaSimplifyZeroEta", {

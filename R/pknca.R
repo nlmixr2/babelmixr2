@@ -378,9 +378,11 @@ pkncaParamMap <- function(ui) {
       NA_character_
     }
   }, character(1))
+  # All assigned variables, including those assigned within if/else blocks
+  allLhs <- pkncaAssignedNames(ui$lstExpr)
   for (idx in which(!is.na(lhs))) {
     param <- lhs[idx]
-    if (param %in% ret$param || sum(lhs == param, na.rm = TRUE) != 1) {
+    if (param %in% ret$param || sum(allLhs == param) != 1) {
       # Already mapped or assigned more than once (ambiguous)
       next
     }
@@ -402,6 +404,26 @@ pkncaParamMap <- function(ui) {
     }
   }
   ret
+}
+
+#' Find the names of all assigned variables (one per assignment)
+#'
+#' @param x An R expression or a list of expressions
+#' @return A character vector with the name of each assigned variable, repeated
+#'   when it is assigned more than once
+#' @noRd
+pkncaAssignedNames <- function(x) {
+  if (is.list(x)) {
+    return(unlist(lapply(x, pkncaAssignedNames), use.names = FALSE))
+  }
+  if (!is.call(x)) {
+    return(character())
+  }
+  ret <- character()
+  if ((identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) && is.name(x[[2]])) {
+    ret <- as.character(x[[2]])
+  }
+  c(ret, pkncaAssignedNames(as.list(x)[-1]))
 }
 
 #' Replace etas with zero and simplify the resulting expression
