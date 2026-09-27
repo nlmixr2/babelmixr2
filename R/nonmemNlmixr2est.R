@@ -97,6 +97,10 @@
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
   .nonmemControlToFoceiControl(env, TRUE)
+  # nlmixr2CreateOutputFromUi() may add its own objective (like FOCEi
+  # with tableControl(cwres=TRUE)) and switch env$ofvType to it, so keep
+  # the NONMEM objective type here (#94)
+  .ofvType <- env$ofvType
   env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData,
                                                control=env$control, table=env$table,
                                                env=env, est="nonmem")
@@ -119,7 +123,7 @@
   assign("time",
          cbind(.time, data.frame(NONMEM=.ui$nonmemRunTime)),
          .env)
-  nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .env$ofvType)
+  nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .ofvType)
   env
 }
 
