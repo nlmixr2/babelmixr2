@@ -1168,4 +1168,8 @@ test_that("popedControl(sigdig=) ODE tolerances do not depend on rxode2 (#223)",
   .rx <- popedControl(rxControl=rxode2::rxControl(atol=1e-3, rtol=1e-3))$rxControl
   expect_equal(.rx$rtol, 1e-3)
   expect_error(popedControl(sigdig=NA))
+  # without sigdig, the looser fallback is kept
+  .rx <- popedControl(sigdig=NULL)$rxControl
+  expect_equal(.rx$atol, 1e-4)
+  expect_equal(.rx$rtol, 1e-4)
 })
