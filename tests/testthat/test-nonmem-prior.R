@@ -71,7 +71,7 @@ withr::with_tempdir({
           "  RX_IP1 = RX_PF1",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT((THETA(4))**2) ; W1 ~ sqrt((add.sd)^2)",
-          "  IF (W1 .EQ. 0.0) W1 = 1",
+          "  IF (W1 .EQ. 0.0) W1 = 1 ; protect W1 from zero (zero residual variance)",
           "  IPRED = RX_IP1",
           "  W     = W1",
           "  Y     = IPRED + W*EPS(1)",

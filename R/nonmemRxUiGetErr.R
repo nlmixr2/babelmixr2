@@ -78,7 +78,8 @@ rxUiGet.nonmemErrF <- function(x, ...) {
                      # So, here we add RX_PRED_ to be the transformed to support both
                      .ret <- paste0(.ret,
                                     .var,
-                                    paste0("\n  IF (", .w, " .EQ. 0.0) ", .w, " = 1"))
+                                    paste0("\n  IF (", .w, " .EQ. 0.0) ", .w, " = 1",
+                                           " ; protect ", .w, " from zero (zero residual variance)"))
                      .ret
                    }, character(1), USE.NAMES=FALSE)
   .err <- paste(.ipred, collapse="\n")
