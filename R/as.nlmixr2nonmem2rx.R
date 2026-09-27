@@ -30,6 +30,43 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
   .foceiControl
 }
 
+#' Get the eta matrix of an imported NONMEM/Monolix fit
+#'
+#' @param ui rxode2 ui of the imported model
+#' @param etaObf data frame with ID, the etas and OBJI
+#' @param nsub number of subjects in the processed data (`dataSav`)
+#' @return matrix of the etas in the order of the model's etas; zero
+#'   etas when they are not exactly the eta columns of `etaObf`, have
+#'   missing values, or `etaObf` does not have one row per subject (for
+#'   example when subjects without observations were dropped); `NULL`
+#'   when the model has no etas
+#' @author Matthew L. Fidler
+#' @noRd
+.importEtaMat <- function(ui, etaObf, nsub) {
+  .iniDf <- ui$iniDf
+  .iniDf <- .iniDf[is.na(.iniDf$ntheta) & .iniDf$neta1 == .iniDf$neta2, ]
+  .etaNames <- .iniDf$name[order(.iniDf$neta1)]
+  if (length(.etaNames) == 0L) {
+    return(NULL)
+  }
+  # zero etas are what nlmixr2est uses without an etaMat, but an explicit
+  # matrix keeps it from using the etas of the last nlmixr2() fit
+  .zero <- matrix(0, nsub, length(.etaNames))
+  if (
+    nrow(etaObf) != nsub ||
+      !setequal(.etaNames, setdiff(names(etaObf), c("ID", "OBJI")))
+  ) {
+    return(.zero)
+  }
+  .ret <- as.matrix(etaObf[, .etaNames, drop = FALSE])
+  if (anyNA(.ret)) {
+    return(.zero)
+  }
+  dimnames(.ret) <- NULL
+  storage.mode(.ret) <- "double"
+  .ret
+}
+
 #' Stop when a nonmem2rx model still has NONMEM residual variables
 #'
 #' When nonmem2rx cannot translate the residual error, the NONMEM
@@ -136,13 +173,24 @@ as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxCon
     env$nobs2<- x$dfObs
     # Run before converting to nonmemControl
     .objf <- .ui$nonmemObjf
+    # Start from the imported etas; otherwise nlmixr2est may start from
+    # the etas of the last nlmixr2() fit (like the one run for the FOCEi
+    # objective of an earlier import with tableControl(cwres=TRUE))
+    env$etaMat <- .importEtaMat(.ui, env$etaObf, length(unique(env$dataSav$ID)))
     # When running the focei problem to create the nlmixr object, you also need a
     #  foceiControl object
     .nonmem2rxToFoceiControl(env, x, TRUE)
+    .ofvType <- env$ofvType
     .ret <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData,
                                                   control=env$control, table=env$table,
                                                   env=env, est="nonmem2rx")
     if (inherits(.ret, "nlmixr2FitData")) {
+      # nlmixr2CreateOutputFromUi() may add its own objective (like FOCEi
+      # with tableControl(cwres=TRUE)) and make it the one in use; keep
+      # the imported NONMEM objective in use, like the fit itself (#94)
+      if (any(row.names(.ret$objDf) == .ofvType)) {
+        nlmixr2est::setOfv(.ret, .ofvType)
+      }
       assign("nonmemControl", list(ci=ci), .ret$env)
       .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
       rm("nonmemControl", envir=.ret$env)

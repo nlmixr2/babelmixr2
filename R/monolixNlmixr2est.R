@@ -96,6 +96,10 @@
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
   .monolixControlToFoceiControl(env)
+  # nlmixr2CreateOutputFromUi() may add its own objective (like FOCEi
+  # with tableControl(cwres=TRUE)) and switch env$ofvType to it, so keep
+  # the Monolix objective type here (#94)
+  .ofvType <- env$ofvType
   env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData, control=env$control, table=env$table, env=env, est="monolix")
   .env <- env$env
   .env$method <- "monolix"
@@ -112,7 +116,7 @@
           OBJF = .objf, AIC = .objf2 + 2 * attr(get("logLik", .env), "df"),
           BIC = .objf2 + log(.env$nobs) * attr(get("logLik", .env), "df"),
           "Log-likelihood" = as.numeric(.llik), check.names = FALSE)
-  nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .env$ofvType)
+  nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .ofvType)
   env
 }
 
@@ -400,6 +404,9 @@ nlmixr2Est.monolix <- function(env, ...) {
   # linCmt() is written as Monolix's pkmodel() or as ODEs
   .micro <- .bblLinCmtToOde(env, "Monolix",
                             native=(.bblLinCmtControl(env$control, "pkmodel") == "pkmodel"))
+  # if/else branches Monolix cannot write are pruned (written as
+  # arithmetic), as set by the prune option of monolixControl
+  if (.bblPruneControl(env, nested = TRUE)) .bblPruneIf(env, "Monolix")
   .ui <- env$ui
   .monolixFamilyControl(env, ...)
   rxode2::rxAssignControlValue(.ui, ".linCmtMicro", .micro)

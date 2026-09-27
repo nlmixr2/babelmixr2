@@ -53,6 +53,17 @@ test_that("nlmixr2 translation from nonmem2x", {
   expect_true(inherits(fit, "nlmixr2FitData"))
   expect_true(any(names(fit$time) == "NONMEM"))
 
+  # tableControl(cwres=TRUE) adds nlmixr2's FOCEi objective, but the
+  # imported NONMEM objective stays in use (#94)
+  fit <- .as.nlmixr(new, table = tableControl(cwres = TRUE))
+  expect_true("CWRES" %in% names(fit))
+  expect_setequal(row.names(fit$objDf), c("nonmem2rx", "FOCEi"))
+  expect_equal(fit$ofvType, "nonmem2rx")
+  expect_equal(fit$objective, fit$objDf["nonmem2rx", "OBJF"])
+  expect_equal(AIC(fit), fit$objDf["nonmem2rx", "AIC"])
+
+  # a different model right after the cwres=TRUE import must not start
+  # from the etas of the FOCEi objective's nlmixr2() fit (#94)
   rx <- .nonmem2rx(system.file("mods/err/run006.lst", package="nonmem2rx"))
   fit <- .as.nlmixr(rx)
   expect_true(inherits(fit, "nlmixr2FitData"))
@@ -137,4 +148,78 @@ test_that("nlmixr2 translation from monolix2rx", {
 
   expect_true(inherits(fit, "nlmixr2FitData"))
 
+  # the imported Monolix objective stays in use with cwres=TRUE (#94)
+  fit <- .as.nlmixr2(mod, table = tableControl(cwres = TRUE))
+  expect_true("CWRES" %in% names(fit))
+  expect_true("FOCEi" %in% row.names(fit$objDf))
+  expect_equal(nrow(fit$objDf), 2L)
+  expect_false(fit$ofvType == "FOCEi")
+  expect_equal(fit$objective, fit$objDf[fit$ofvType, "OBJF"])
+  expect_equal(AIC(fit), fit$objDf[fit$ofvType, "AIC"])
+  expect_equal(BIC(fit), fit$objDf[fit$ofvType, "BIC"])
+  expect_equal(
+    as.numeric(logLik(fit)),
+    fit$objDf[fit$ofvType, "Log-likelihood"]
+  )
+
+  # a different model right after the Monolix cwres=TRUE import must not
+  # start from the etas of the FOCEi objective's nlmixr2() fit (#94)
+  rx <- .nonmem2rx(system.file("mods/err/run006.lst", package = "nonmem2rx"))
+  fit <- .as.nlmixr2(rx)
+  expect_true(inherits(fit, "nlmixr2FitData"))
+})
+
+test_that(".importEtaMat() only uses etas that match the model (#94)", {
+  .b <- loadNamespace("babelmixr2")
+  .ui <- rxode2::rxode2(function() {
+    ini({
+      tcl <- 1
+      tv <- 2
+      eta.v ~ 0.1
+      eta.cl ~ 0.1
+      add.sd <- 0.1
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      cp <- linCmt()
+      cp ~ add(add.sd)
+    })
+  })
+  .obf <- data.frame(
+    ID = 1:2,
+    eta.cl = c(0.1, 0.2),
+    eta.v = c(0.3, 0.4),
+    OBJI = NA_real_
+  )
+  # columns follow the model's eta order, not the etaObf order
+  expect_equal(
+    .b$.importEtaMat(.ui, .obf, 2L),
+    matrix(c(0.3, 0.4, 0.1, 0.2), 2, 2)
+  )
+  # a subject dropped from the processed data (for example one without
+  # observations), missing etas or NA etas give zero etas
+  expect_equal(.b$.importEtaMat(.ui, .obf, 1L), matrix(0, 1, 2))
+  expect_equal(
+    .b$.importEtaMat(.ui, .obf[, c("ID", "eta.cl", "OBJI")], 2L),
+    matrix(0, 2, 2)
+  )
+  .na <- .obf
+  .na$eta.v[1] <- NA_real_
+  expect_equal(.b$.importEtaMat(.ui, .na, 2L), matrix(0, 2, 2))
+  # no etas, no matrix
+  expect_null(.b$.importEtaMat(
+    rxode2::rxode2(function() {
+      ini({
+        tcl <- 1
+        add.sd <- 0.1
+      })
+      model({
+        cp <- exp(tcl)
+        cp ~ add(add.sd)
+      })
+    }),
+    .obf[, c("ID", "OBJI")],
+    2L
+  ))
 })

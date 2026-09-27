@@ -32,7 +32,7 @@ Estimate starting parameters using PKNCA
 Parameters are estimated as follows:
 \itemize{
 \item \code{ka} 4 half-lives to Tmax but not higher than 3:  \code{log(2)/(tmax/4)}
-\item \code{vc} (or \code{v}) Inverse of dose-normalized Cmax
+\item \code{vc} Inverse of dose-normalized Cmax
 \item \code{cl} Estimated as the median clearance
 \item \code{vp,vp2}2- and 4-fold the \code{vc}, respectively by default,
 controlled by the \code{vpMult} and \code{vp2Mult} arguments to
