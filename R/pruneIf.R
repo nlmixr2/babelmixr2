@@ -18,16 +18,20 @@
   any(vapply(ui$lstExpr, .hasIf, logical(1), USE.NAMES = FALSE))
 }
 
-#' Does this model have `if`/`else` statements NONMEM cannot write directly?
+#' Does this model have `if`/`else` statements the software cannot write?
 #'
-#' NONMEM `IF` blocks are written for simple `if` blocks; an `else`,
-#' `else if`, a nested `if` or `ifelse()` needs the branches pruned.
+#' `ifelse()` always needs the branches pruned.  When the software
+#' cannot write nested `if`/`else` statements (like NONMEM, where only
+#' simple `IF` blocks are written), an `else`, `else if` or a nested
+#' `if` also needs the branches pruned.
 #'
 #' @param ui rxode2 ui
+#' @param nested can the software write nested `if`/`else` statements
+#'   (like Monolix)?
 #' @return boolean saying if the model needs its branches pruned
 #' @noRd
 #' @author Matthew L. Fidler
-.bblNeedsPrune <- function(ui) {
+.bblNeedsPrune <- function(ui, nested = FALSE) {
   .needs <- function(x, inIf = FALSE) {
     if (!is.call(x)) {
       return(FALSE)
@@ -36,10 +40,16 @@
       return(TRUE)
     }
     if (identical(x[[1]], quote(`if`))) {
-      if (inIf || length(x) > 3L) {
+      if (!nested && (inIf || length(x) > 3L)) {
         return(TRUE)
       }
-      return(.needs(x[[2]], TRUE) || .needs(x[[3]], TRUE))
+      return(any(vapply(
+        as.list(x)[-1],
+        .needs,
+        logical(1),
+        inIf = TRUE,
+        USE.NAMES = FALSE
+      )))
     }
     any(vapply(
       as.list(x)[-1],
@@ -97,12 +107,13 @@
 #'
 #' @param env nlmixr2 estimation environment with `env$ui` and
 #'   `env$control`
+#' @param nested can the software write nested `if`/`else` statements?
 #' @return boolean, should the model be pruned; `"auto"` (the default)
 #'   prunes only when the `if`/`else` statements cannot be written
 #'   directly
 #' @noRd
 #' @author Matthew L. Fidler
-.bblPruneControl <- function(env) {
+.bblPruneControl <- function(env, nested = FALSE) {
   .prune <- "auto"
   .control <- env$control
   if (is.list(.control) && !is.null(.control$prune)) {
@@ -114,5 +125,5 @@
   if (isFALSE(.prune)) {
     return(FALSE)
   }
-  .bblNeedsPrune(rxode2::rxUiDecompress(env$ui))
+  .bblNeedsPrune(rxode2::rxUiDecompress(env$ui), nested = nested)
 }

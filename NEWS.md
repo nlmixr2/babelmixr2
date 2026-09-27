@@ -9,6 +9,13 @@
   prunes (the error for unsupported `if`/`else` statements suggests
   `prune=TRUE`).
 
+* `monolixControl(prune=)` has the same option for Monolix.  Monolix
+  writes `if`/`elseif`/`else` (and nested `if`) statements directly, so
+  `prune="auto"` (the default) only prunes a model that uses `ifelse()`,
+  which Monolix cannot write; `prune=TRUE` always prunes and
+  `prune=FALSE` never prunes.  A logical expression used as a number in
+  a Monolix model is written as a 0/1 indicator variable (#11).
+
 * A logical expression used as a number in a NONMEM model (like
   `cl <- tcl * (WT > 70)`) is now written as a 0/1 indicator variable,
   since NONMEM cannot use a logical expression as a number.  A numeric

@@ -315,7 +315,7 @@ nlmixr2Est.nonmem <- function(env, ...) {
                             native=(.bblLinCmtControl(env$control, "advan") == "advan"))
   # nested if/else branches are pruned (written as arithmetic), as
   # set by the prune option of nonmemControl
-  if (.bblPruneControl(env)) .bblPruneIf(env, "NONMEM")
+  if (.bblPruneControl(env, nested = FALSE)) .bblPruneIf(env, "NONMEM")
   .ui <- env$ui
   .nonmemFamilyControl(env, ...)
   rxode2::rxAssignControlValue(.ui, ".linCmtMicro", .micro)

@@ -199,15 +199,120 @@
 }
 
 
+#' Get (and clear) the lines that need to be written before a line
+#'
+#' @param ui rxode2 ui
+#' @return the prefix lines followed by a new line, or `""` when there
+#'   are no prefix lines
+#' @noRd
+#' @author Matthew L. Fidler
+.rxToMonolixFlushPrefixLines <- function(ui) {
+  # the indicator variables are only reused within the same line
+  rxode2::rxAssignControlValue(ui, ".mLogicalDf", NULL)
+  .prefixLines <- rxode2::rxGetControl(ui, ".mPrefixLines", NULL)
+  if (is.null(.prefixLines)) {
+    return("")
+  }
+  rxode2::rxAssignControlValue(ui, ".mPrefixLines", NULL)
+  paste0(paste(.prefixLines, collapse = "\n"), "\n")
+}
+
+#' Translate a condition (like in `if ()`) to Monolix
+#'
+#' @param x rxode2 condition expression
+#' @param ui rxode2 ui
+#' @return Monolix logical expression
+#' @noRd
+#' @author Matthew L. Fidler
+.rxToMonolixCondition <- function(x, ui) {
+  if (is.call(x)) {
+    if (identical(x[[1]], quote(`(`))) {
+      return(paste0("(", .rxToMonolixCondition(x[[2]], ui), ")"))
+    }
+    if (identical(x[[1]], quote(`!`))) {
+      return(paste0("~", .rxToMonolixCondition(x[[2]], ui)))
+    }
+    .op <- as.character(x[[1]])
+    if (length(x) == 3L && .op %in% c("&&", "||", "&", "|")) {
+      return(paste0(
+        .rxToMonolixCondition(x[[2]], ui),
+        .op,
+        .rxToMonolixCondition(x[[3]], ui)
+      ))
+    }
+    if (length(x) == 3L && .rxIsLogicalOperator(x[[1]])) {
+      ## Use "preferred" monolix syntax
+      return(paste0(
+        .rxToMonolix(x[[2]], ui = ui),
+        .op,
+        .rxToMonolix(x[[3]], ui = ui)
+      ))
+    }
+  }
+  .rxToMonolix(x, ui = ui)
+}
+
+#' Translate a logical expression used as a number to Monolix
+#'
+#' Pruned `if`/`else` branches use logical expressions (like
+#' `(WT > 70)`) as numbers.  This writes a 0/1 indicator variable in
+#' the lines before the current line and uses that variable instead.
+#'
+#' @param x rxode2 logical expression
+#' @param ui rxode2 ui
+#' @return Monolix indicator variable name
+#' @noRd
+#' @author Matthew L. Fidler
+.rxToMonolixLogicalIndicator <- function(x, ui) {
+  .cond <- .rxToMonolixCondition(x, ui)
+  .df <- rxode2::rxGetControl(
+    ui,
+    ".mLogicalDf",
+    data.frame(cond = character(0), nm = character(0))
+  )
+  .w <- which(.df$cond == .cond)
+  if (length(.w) == 1L) {
+    return(.df$nm[.w])
+  }
+  .num <- rxode2::rxGetControl(ui, ".mVarLNum", 1)
+  .newVar <- sprintf("rx_l%03d", .num)
+  rxode2::rxAssignControlValue(ui, ".mVarLNum", .num + 1)
+  .indent <- .rxToMonolixGetIndent(ui)
+  .prefixLines <- c(
+    rxode2::rxGetControl(ui, ".mPrefixLines", NULL),
+    paste0(.indent, .newVar, " = 0"),
+    paste0(.indent, "if ", .cond),
+    paste0(.indent, "  ", .newVar, " = 1"),
+    paste0(.indent, "end")
+  )
+  rxode2::rxAssignControlValue(ui, ".mPrefixLines", .prefixLines)
+  rxode2::rxAssignControlValue(
+    ui,
+    ".mLogicalDf",
+    rbind(.df, data.frame(cond = .cond, nm = .newVar))
+  )
+  .newVar
+}
+
 .rxToMonolixHandleIfExpressions <- function(x, ui) {
-  .ret <- paste0(.rxToMonolixGetIndent(ui), "if ", .rxToMonolix(x[[2]], ui=ui), "\n")
+  .cond <- .rxToMonolixCondition(x[[2]], ui)
+  .ret <- paste0(.rxToMonolixFlushPrefixLines(ui),
+                 .rxToMonolixGetIndent(ui), "if ", .cond, "\n")
   .rxToMonolixIndent(ui)
   .ret <- paste0(.ret, .rxToMonolix(x[[3]], ui=ui))
   x <- x[-c(1:3)]
   if (length(x) == 1) x <- x[[1]]
   while(identical(x[[1]], quote(`if`))) {
+    .cond <- .rxToMonolixCondition(x[[2]], ui)
+    if (!identical(rxode2::rxGetControl(ui, ".mPrefixLines", NULL), NULL)) {
+      stop(
+        "an `else if` condition cannot use a logical expression as a ",
+        "number in Monolix; prune with `monolixControl(prune=TRUE)`",
+        call. = FALSE
+      )
+    }
     .ret <- paste0(.ret, "\n",
-                   .rxToMonolixGetIndent(ui, FALSE), "elseif ", .rxToMonolix(x[[2]], ui=ui), "\n")
+                   .rxToMonolixGetIndent(ui, FALSE), "elseif ", .cond, "\n")
     .rxToMonolixIndent(ui)
     .ret <- paste0(.ret, .rxToMonolix(x[[3]], ui=ui))
     x <- x[-c(1:3)]
@@ -294,11 +399,9 @@
       }
     } else if (identical(x[[1]], quote(`if`))) {
       return(.rxToMonolixHandleIfExpressions(x, ui))
-    } else if (.rxIsLogicalOperator(x[[1]])) {
-        ## Use "preferred" monolix syntax
-      return(paste0(.rxToMonolix(x[[2]], ui=ui), as.character(x[[1]]), .rxToMonolix(x[[3]], ui=ui)))
-    } else if (identical(x[[1]], quote(`!`)) ) {
-      return(paste0("~", .rxToMonolix(x[[2]], ui=ui)))
+    } else if (.rxIsLogicalOperator(x[[1]]) || identical(x[[1]], quote(`!`))) {
+      # a logical expression used as a number
+      return(.rxToMonolixLogicalIndicator(x, ui))
     } else if (identical(x[[1]], quote(`**`)) ) {
       return(paste(.rxToMonolix(x[[2]], ui=ui), "^", .rxToMonolix(x[[3]], ui=ui)))
     } else if (.rxIsAssignmentOperator(x[[1]])) {
@@ -347,8 +450,9 @@
                       ";", as.character(x[[2]])[1], " defined in PK section"))
       }
       .var <- .rxToMonolix(x[[2]], ui=ui)
-      return(paste(.rxToMonolixGetIndent(ui),
-                   .var, "=", .rxToMonolix(x[[3]], ui=ui)))
+      .val <- .rxToMonolix(x[[3]], ui = ui)
+      return(paste0(.rxToMonolixFlushPrefixLines(ui),
+                    paste(.rxToMonolixGetIndent(ui), .var, "=", .val)))
     } else if (identical(x[[1]], quote(`[`))) {
       .type <- toupper(as.character(x[[2]]))
       if (any(.type == c("THETA", "ETA"))) {

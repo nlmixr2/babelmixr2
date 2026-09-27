@@ -420,6 +420,48 @@
       cp ~ add(add.sd)
     })
   },
+  nestedIf=function() {
+    ini({
+      tka <- 0.45; tcl <- 1; tv <- 3.45; cl.sex <- 0.2
+      eta.ka ~ 0.6; eta.cl ~ 0.3; eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      if (SEX >= 1) {
+        if (SEX == 1) {
+          fcl <- 1 + cl.sex
+        } else {
+          fcl <- 1 - cl.sex
+        }
+      } else {
+        fcl <- 1
+      }
+      v <- exp(tv + eta.v)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - fcl * cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  },
+  ifelseFun=function() {
+    ini({
+      tka <- 0.45; tcl <- 1; tv <- 3.45; cl.sex <- 0.2
+      eta.ka ~ 0.6; eta.cl ~ 0.3; eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      fcl <- ifelse(SEX == 1, 1 + cl.sex, 1)
+      v <- exp(tv + eta.v)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - fcl * cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  },
   reserved=function() {
     ini({
       tka <- 0.45; tcl <- 1; tv <- 3.45
@@ -794,7 +836,12 @@ stressCases <- function() {
                 nonmem="ylo|yup|limit|laplacian"),
     # model code ---------------------------------------------------------
     .stressCase("if/else", .stressCode$ifElse, .theoSex, checkNonmem="IF \\("),
-    .stressCase("else if", .stressCode$ifElseIf, .theoSex, nonmem="else|if"),
+    # NONMEM (and Monolix for ifelse()) prune the if/else branches (#11)
+    .stressCase("else if", .stressCode$ifElseIf, .theoSex, checkNonmem="RXL"),
+    .stressCase("nested if/else", .stressCode$nestedIf, .theoSex,
+                checkNonmem="RXL"),
+    .stressCase("ifelse()", .stressCode$ifelseFun, .theoSex,
+                checkNonmem="RXL", checkMonolix="rx_l"),
     .stressCase("NONMEM reserved names", .stressCode$reserved, .theo,
                 checkNonmem="RXR1"),
     .stressCase("long dotted names", .stressCode$longNames, .theo),
@@ -995,6 +1042,13 @@ stressLintNonmem <- function(lines) {
   if (length(.bad) > 0L) .ret <- c(.ret, paste0("R syntax left in code: ", lines[.bad]))
   .bad <- grep("=\\s*$", .code)
   if (length(.bad) > 0L) .ret <- c(.ret, paste0("assignment without value: ", lines[.bad]))
+  # NONMEM cannot use a logical expression as a number (only in IF ())
+  .if <- paste0("^\\s*(ELSE )?IF\\s*\\(.*\\)( THEN)?",
+                "(\\s+[A-Z_0-9]+\\s*=\\s*[0-9.]+)?\\s*$")
+  .bad <- grep("\\.(EQ|NE|GT|GE|LT|LE|AND|OR|NOT)\\.", sub(.if, "", .code))
+  if (length(.bad) > 0L) {
+    .ret <- c(.ret, paste0("logical expression used as a number: ", lines[.bad]))
+  }
   if (!any(grepl("^\\$(PK|PRED)", lines))) .ret <- c(.ret, "no $PK/$PRED record")
   if (any(grepl("^\\$SUBROUTINES ADVAN(1|2|3|4|11|12) ", lines)) &&
         any(grepl("^\\$DES", lines))) {

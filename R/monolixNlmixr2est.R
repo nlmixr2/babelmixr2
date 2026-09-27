@@ -400,6 +400,9 @@ nlmixr2Est.monolix <- function(env, ...) {
   # linCmt() is written as Monolix's pkmodel() or as ODEs
   .micro <- .bblLinCmtToOde(env, "Monolix",
                             native=(.bblLinCmtControl(env$control, "pkmodel") == "pkmodel"))
+  # if/else branches Monolix cannot write are pruned (written as
+  # arithmetic), as set by the prune option of monolixControl
+  if (.bblPruneControl(env, nested = TRUE)) .bblPruneIf(env, "Monolix")
   .ui <- env$ui
   .monolixFamilyControl(env, ...)
   rxode2::rxAssignControlValue(.ui, ".linCmtMicro", .micro)
