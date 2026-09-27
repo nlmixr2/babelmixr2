@@ -63,20 +63,18 @@ nlmixr2Est.pknca <- function(env, ...) {
     )
   modelDataConversions <-
     data.frame(
-      PPORRESU=
-        c(
-          unitsSetup[["cmax"]],
-          unitsSetup[["cmax.dn"]],
-          unitsSetup[["cl.last"]],
-          unitsSetup[["vss.last"]]
-        ),
-      PPSTRESU=
-        c(
-          conversionFactors$cmtu,
-          conversionFactors$volumeu,
-          conversionFactors$clearanceu,
-          conversionFactors$volumeu
-        )
+      PPORRESU = c(
+        unitsSetup[["cmax"]],
+        unitsSetup[["cmax.dn"]],
+        unitsSetup[["cl.last"]],
+        unitsSetup[["vss.last"]]
+      ),
+      PPSTRESU = c(
+        conversionFactors$cmtu,
+        conversionFactors$volumeu,
+        conversionFactors$clearanceu,
+        conversionFactors$volumeu
+      )
     )
   ncaUnitsToModelUnits <-
     merge(
@@ -86,7 +84,10 @@ nlmixr2Est.pknca <- function(env, ...) {
     )
   ncaUnitsToModelUnits$conversionFactor <- NA_real_
   for (idx in seq_len(nrow(ncaUnitsToModelUnits))) {
-    if (is.na(ncaUnitsToModelUnits$PPORRESU[idx]) | is.na(ncaUnitsToModelUnits$PPSTRESU[idx])) {
+    if (
+      is.na(ncaUnitsToModelUnits$PPORRESU[idx]) |
+        is.na(ncaUnitsToModelUnits$PPSTRESU[idx])
+    ) {
       ncaUnitsToModelUnits$conversionFactor[idx] <- 1
     } else {
       ncaUnitsToModelUnits$conversionFactor[idx] <-
@@ -119,13 +120,30 @@ nlmixr2Est.pknca <- function(env, ...) {
     )
   # What parameters should be modified?  And then modify them.
   paramMap <- pkncaParamMap(env$ui)
-  vcDefined <- "vc" %in% c(pkncaAssignedNames(env$ui$lstExpr), env$ui$iniDf$name)
+  vcDefined <- "vc" %in%
+    c(pkncaAssignedNames(env$ui$lstExpr), env$ui$iniDf$name)
   if (!vcDefined && ("v" %in% paramMap$param)) {
     # Models without `vc` commonly name the central volume `v`
     paramEstimates$v <- paramEstimates$vc
   }
   updateNames <- intersect(paramMap$param, names(paramEstimates))
-  newEnv <- do.call(ini_transform, append(list(x=env$ui), paramEstimates[updateNames]))
+  notUpdated <- setdiff(
+    intersect(names(paramEstimates), pkncaAssignedNames(env$ui$lstExpr)),
+    updateNames
+  )
+  if (length(notUpdated) > 0) {
+    cli::cli_inform(c(
+      "i" = "NCA initial estimates not applied to {.code {notUpdated}}",
+      " " = paste(
+        "they are not a simple function of a single population parameter",
+        "(like {.code tcl*exp(eta.cl)} or {.code exp(tcl + eta.cl)})"
+      )
+    ))
+  }
+  newEnv <- do.call(
+    ini_transform,
+    append(list(x = env$ui), paramEstimates[updateNames])
+  )
 
   if (unitConversions[["cmax"]] != 1) {
     # No need to bother with modifications if the unit conversion is unity
@@ -135,10 +153,14 @@ nlmixr2Est.pknca <- function(env, ...) {
       if (length(dvResid) == 1) {
         dvParam <- dvResid[[1]][[2]]
         if (is.name(dvParam)) {
-          cli::cli_abort("Could not detect the dependent variable (not a name), use pkncaControl(dvParam) to fix")
+          cli::cli_abort(
+            "Could not detect the dependent variable (not a name), use pkncaControl(dvParam) to fix"
+          )
         }
       } else {
-        cli::cli_abort("Could not detect the dependent variable (no specific line found), use pkncaControl(dvParam) to fix")
+        cli::cli_abort(
+          "Could not detect the dependent variable (no specific line found), use pkncaControl(dvParam) to fix"
+        )
       }
     }
     dvAssign <- getDvLines(modelfun = env$ui$fun, dvAssign = dvParam)
@@ -150,7 +172,7 @@ nlmixr2Est.pknca <- function(env, ...) {
         sprintf(
           "rxode2::model(newEnv, %s <- %g*%s)",
           dvParam,
-          1/unitConversions[["cmax"]],
+          1 / unitConversions[["cmax"]],
           deparse1(dvAssign[[1]][[3]])
         )
       ))
@@ -178,18 +200,36 @@ getDvLines <- function(modelfun, inModel = FALSE, dvAssign = NULL) {
     }
     allAreNames <- vapply(X = dvAssign, FUN = is.name, FUN.VALUE = TRUE)
     if (!allAreNames) {
-      cli::cli_abort("dvAssign must be a name, a character string, or a list of names")
+      cli::cli_abort(
+        "dvAssign must be a name, a character string, or a list of names"
+      )
     }
   }
   if (is.function(modelfun)) {
-    ret <- getDvLines(methods::functionBody(modelfun), inModel = inModel, dvAssign = dvAssign)
+    ret <- getDvLines(
+      methods::functionBody(modelfun),
+      inModel = inModel,
+      dvAssign = dvAssign
+    )
   } else if (inherits(modelfun, "{")) {
-    ret <- lapply(X = modelfun, FUN = getDvLines, inModel = inModel, dvAssign = dvAssign)
+    ret <- lapply(
+      X = modelfun,
+      FUN = getDvLines,
+      inModel = inModel,
+      dvAssign = dvAssign
+    )
   } else if (is.name(modelfun)) {
     ret <- NULL
   } else if (inherits(modelfun, "<-") | inherits(modelfun, "=")) {
     if (inModel & !is.null(dvAssign)) {
-      if (any(vapply(X = dvAssign, FUN = identical, FUN.VALUE = TRUE, y = modelfun[[2]]))) {
+      if (
+        any(vapply(
+          X = dvAssign,
+          FUN = identical,
+          FUN.VALUE = TRUE,
+          y = modelfun[[2]]
+        ))
+      ) {
         # Return the DV assignment line(s) for the DV of interest
         ret <- list(modelfun)
       } else {
@@ -207,11 +247,21 @@ getDvLines <- function(modelfun, inModel = FALSE, dvAssign = NULL) {
       ret <- NULL
     } else if (identical(modelfun[[1]], as.name("model"))) {
       # This is what we want
-      ret <- lapply(X = modelfun, FUN = getDvLines, inModel = TRUE, dvAssign = dvAssign)
+      ret <- lapply(
+        X = modelfun,
+        FUN = getDvLines,
+        inModel = TRUE,
+        dvAssign = dvAssign
+      )
     } else {
       # No other call has information that we want (I think), but recurse in
       # case the model is within the other call.
-      ret <- lapply(X = modelfun, FUN = getDvLines, inModel = inModel, dvAssign = dvAssign)
+      ret <- lapply(
+        X = modelfun,
+        FUN = getDvLines,
+        inModel = inModel,
+        dvAssign = dvAssign
+      )
     }
   } else {
     cli::cli_abort("Error finding DV lines, please report a bug") # nocov
@@ -238,27 +288,45 @@ calcPknca <- function(env, pkncaUnits) {
     # as.data.frame() due to https://github.com/nlmixr2/nlmixr2est/pull/262
     rawData <- as.data.frame(control$ncaData)
   }
-  cleanData <- bblDatToPknca(model = env$ui, data = rawData, rxControl=rxControl)
+  cleanData <- bblDatToPknca(
+    model = env$ui,
+    data = rawData,
+    rxControl = rxControl
+  )
   cleanColNames <- getStandardColNames(cleanData$obs)
   oConcFormula <-
     stats::as.formula(sprintf(
       "%s~%s|%s",
-      cleanColNames[["dv"]], cleanColNames[["time"]],
-      paste(c(control$groups, cleanColNames[["id"]]), collapse="+")
+      cleanColNames[["dv"]],
+      cleanColNames[["time"]],
+      paste(c(control$groups, cleanColNames[["id"]]), collapse = "+")
     ))
   oDoseFormula <-
     stats::as.formula(sprintf(
       "%s~%s|%s",
-      cleanColNames[["amt"]], cleanColNames[["time"]],
-      paste(c(control$groups, cleanColNames[["id"]]), collapse="+")
+      cleanColNames[["amt"]],
+      cleanColNames[["time"]],
+      paste(c(control$groups, cleanColNames[["id"]]), collapse = "+")
     ))
   # Determine route of administration
   obsCmt <- unique(cleanData$obs[[cleanColNames[["cmt"]]]])
   doseCmt <- unique(cleanData$dose[[cleanColNames[["cmt"]]]])
-  doseRoute <- ifelse(obsCmt == doseCmt, yes = "intravascular", no = "extravascular")
+  doseRoute <- ifelse(
+    obsCmt == doseCmt,
+    yes = "intravascular",
+    no = "extravascular"
+  )
 
-  oConc <- PKNCA::PKNCAconc(data = cleanData$obs, oConcFormula, sparse = control$sparse)
-  oDose <- PKNCA::PKNCAdose(data = cleanData$dose, oDoseFormula, route = doseRoute)
+  oConc <- PKNCA::PKNCAconc(
+    data = cleanData$obs,
+    oConcFormula,
+    sparse = control$sparse
+  )
+  oDose <- PKNCA::PKNCAdose(
+    data = cleanData$dose,
+    oDoseFormula,
+    route = doseRoute
+  )
 
   oData <- PKNCA::PKNCAdata(oConc, oDose, units = pkncaUnits)
   intervals <- oData$intervals
@@ -278,14 +346,29 @@ calcPkncaEst <- function(objectPknca) {
   ncaParams <- as.data.frame(objectPknca)
   # one compartment parameters including unit conversion
   tmaxValues <-
-    c(0.1, 1, 10)*
-    stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "tmax"], probs = c(0.01, 0.5, 0.99), na.rm=TRUE, names = FALSE)
+    c(0.1, 1, 10) *
+    stats::quantile(
+      ncaParams$PPORRES[ncaParams$PPTESTCD == "tmax"],
+      probs = c(0.01, 0.5, 0.99),
+      na.rm = TRUE,
+      names = FALSE
+    )
   cmaxdnValues <-
-    c(0.1, 1, 10)*
-    stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "cmax.dn"], probs = c(0.01, 0.5, 0.99), na.rm=TRUE, names = FALSE)
+    c(0.1, 1, 10) *
+    stats::quantile(
+      ncaParams$PPORRES[ncaParams$PPTESTCD == "cmax.dn"],
+      probs = c(0.01, 0.5, 0.99),
+      na.rm = TRUE,
+      names = FALSE
+    )
   cllastValues <-
-    c(0.1, 1, 10)*
-    stats::quantile(ncaParams$PPORRES[ncaParams$PPTESTCD == "cl.last"], probs = c(0.01, 0.5, 0.99), na.rm=TRUE, names = FALSE)
+    c(0.1, 1, 10) *
+    stats::quantile(
+      ncaParams$PPORRES[ncaParams$PPTESTCD == "cl.last"],
+      probs = c(0.01, 0.5, 0.99),
+      na.rm = TRUE,
+      names = FALSE
+    )
 
   # Ensure that NCA as sufficiently successful
   naValues <- character()
@@ -317,13 +400,10 @@ calcPkncaEst <- function(objectPknca) {
 ncaToEst <- function(tmax, cmaxdn, cl, control, unitConversions) {
   ncaEstimates <-
     list(
-      ka=
-        # 4 absorption half-lives
-        sort(log(2)/(tmax/4)),
-      vc=
-        sort(unitConversions[["vss.last"]] / cmaxdn),
-      cl=
-        unitConversions[["cl.last"]] * cl
+      # 4 absorption half-lives
+      ka = sort(log(2) / (tmax / 4)),
+      vc = sort(unitConversions[["vss.last"]] / cmaxdn),
+      cl = unitConversions[["cl.last"]] * cl
     )
   ncaEstimates$ka <-
     pmin(
@@ -331,23 +411,25 @@ ncaToEst <- function(tmax, cmaxdn, cl, control, unitConversions) {
       ncaEstimates$ka
     )
   # two compartment parameters
-  ncaEstimates$vp <- ncaEstimates$vc*control$vpMult
-  ncaEstimates$q <-  ncaEstimates$cl*control$qMult
+  ncaEstimates$vp <- ncaEstimates$vc * control$vpMult
+  ncaEstimates$q <- ncaEstimates$cl * control$qMult
   # three compartment parameters
-  ncaEstimates$vp2 <-  ncaEstimates$vc*control$vp2Mult
-  ncaEstimates$q2 <-  ncaEstimates$cl*control$q2Mult
+  ncaEstimates$vp2 <- ncaEstimates$vc * control$vp2Mult
+  ncaEstimates$q2 <- ncaEstimates$cl * control$q2Mult
   ncaEstimates
 }
 
 #' Map model parameters to the population thetas that define them
 #'
 #' Mu-referenced parameters come from `getSplitMuModel$pureMuRef`.  Parameters
-#' that are not mu-referenced (like `ka <- tka * exp(eta.ka)`) are found from the
-#' model lines when, after setting the etas to zero, the assignment simplifies to
-#' `theta` or a supported transformation of `theta` (like `exp(theta)`).
+#' that are not mu-referenced (like `ka <- tka * exp(eta.ka)`) are found from
+#' the model lines when, after setting the etas to zero, the assignment
+#' simplifies to `theta` or a supported transformation of `theta` (like
+#' `exp(theta)`).
 #'
 #' @param ui The rxode2 ui model
-#' @return A data.frame with columns `theta`, `param`, `curEval`, `low`, and `hi`
+#' @return A data.frame with columns `theta`, `param`, `curEval`, `low`, and
+#'   `hi`
 #' @noRd
 pkncaParamMap <- function(ui) {
   murefNames <- ui$getSplitMuModel$pureMuRef
@@ -370,15 +452,24 @@ pkncaParamMap <- function(ui) {
   }
   iniDf <- ui$iniDf
   thetaNames <- iniDf$name[!is.na(iniDf$ntheta)]
-  etaNames <- iniDf$name[is.na(iniDf$ntheta) & !is.na(iniDf$neta1) & iniDf$neta1 == iniDf$neta2]
-  lhs <- vapply(ui$lstExpr, function(e) {
-    if (is.call(e) && (identical(e[[1]], quote(`<-`)) || identical(e[[1]], quote(`=`))) &&
-      is.name(e[[2]])) {
-      as.character(e[[2]])
-    } else {
-      NA_character_
-    }
-  }, character(1))
+  etaNames <- iniDf$name[
+    is.na(iniDf$ntheta) & !is.na(iniDf$neta1) & iniDf$neta1 == iniDf$neta2
+  ]
+  lhs <- vapply(
+    ui$lstExpr,
+    function(e) {
+      if (
+        is.call(e) &&
+          (identical(e[[1]], quote(`<-`)) || identical(e[[1]], quote(`=`))) &&
+          is.name(e[[2]])
+      ) {
+        as.character(e[[2]])
+      } else {
+        NA_character_
+      }
+    },
+    character(1)
+  )
   # All assigned variables, including those assigned within if/else blocks
   allLhs <- pkncaAssignedNames(ui$lstExpr)
   for (idx in which(!is.na(lhs))) {
@@ -394,12 +485,20 @@ pkncaParamMap <- function(ui) {
     hi <- NA_real_
     if (is.name(rhs)) {
       theta <- as.character(rhs)
-    } else if (is.call(rhs) && length(rhs) == 2 && is.name(rhs[[2]]) &&
-      identical(rhs[[1]], quote(exp))) {
+    } else if (
+      is.call(rhs) &&
+        length(rhs) == 2 &&
+        is.name(rhs[[2]]) &&
+        identical(rhs[[1]], quote(exp))
+    ) {
       theta <- as.character(rhs[[2]])
       curEval <- "exp"
-    } else if (is.call(rhs) && length(rhs) %in% c(2, 4) && is.name(rhs[[2]]) &&
-      identical(rhs[[1]], quote(expit))) {
+    } else if (
+      is.call(rhs) &&
+        length(rhs) %in% c(2, 4) &&
+        is.name(rhs[[2]]) &&
+        identical(rhs[[1]], quote(expit))
+    ) {
       # rxode2 normalizes expit(x) to expit(x, low, hi)
       bounds <- vapply(as.list(rhs)[-(1:2)], pkncaNumConst, numeric(1))
       if (!anyNA(bounds)) {
@@ -412,10 +511,17 @@ pkncaParamMap <- function(ui) {
       }
     }
     if (!is.null(theta) && theta %in% thetaNames) {
-      ret <- rbind(ret, data.frame(
-        theta = theta, param = param, curEval = curEval,
-        low = low, hi = hi, stringsAsFactors = FALSE
-      ))
+      ret <- rbind(
+        ret,
+        data.frame(
+          theta = theta,
+          param = param,
+          curEval = curEval,
+          low = low,
+          hi = hi,
+          stringsAsFactors = FALSE
+        )
+      )
     }
   }
   # Thetas used directly as the parameter (like `ka` in `ini()` with `linCmt()`)
@@ -423,10 +529,17 @@ pkncaParamMap <- function(ui) {
   directThetas <- setdiff(thetaNames, c(ret$theta, ret$param, allLhs))
   directThetas <- setdiff(directThetas, pkncaTransformedNames(ui$lstExpr))
   if (length(directThetas) > 0) {
-    ret <- rbind(ret, data.frame(
-      theta = directThetas, param = directThetas, curEval = "",
-      low = NA_real_, hi = NA_real_, stringsAsFactors = FALSE
-    ))
+    ret <- rbind(
+      ret,
+      data.frame(
+        theta = directThetas,
+        param = directThetas,
+        curEval = "",
+        low = NA_real_,
+        hi = NA_real_,
+        stringsAsFactors = FALSE
+      )
+    )
   }
   # A theta defining more than one parameter cannot take one NCA estimate
   ret[!(ret$theta %in% ret$theta[duplicated(ret$theta)]), , drop = FALSE]
@@ -482,7 +595,10 @@ pkncaAssignedNames <- function(x) {
     return(character())
   }
   ret <- character()
-  if ((identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) && is.name(x[[2]])) {
+  if (
+    (identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) &&
+      is.name(x[[2]])
+  ) {
     ret <- as.character(x[[2]])
   }
   c(ret, pkncaAssignedNames(as.list(x)[-1]))
@@ -513,21 +629,31 @@ pkncaSimplifyZeroEta <- function(x, etaNames) {
     return(args[[1]])
   }
   if (length(args) == 1 && isNum(args[[1]], 0)) {
-    if (identical(fun, quote(exp))) return(1)
+    if (identical(fun, quote(exp))) {
+      return(1)
+    }
     if (identical(fun, quote(`-`)) || identical(fun, quote(`+`))) return(0)
   }
   if (length(args) == 2) {
     if (identical(fun, quote(`+`))) {
-      if (isNum(args[[1]], 0)) return(args[[2]])
+      if (isNum(args[[1]], 0)) {
+        return(args[[2]])
+      }
       if (isNum(args[[2]], 0)) return(args[[1]])
     } else if (identical(fun, quote(`-`))) {
       if (isNum(args[[2]], 0)) return(args[[1]])
     } else if (identical(fun, quote(`*`))) {
-      if (isNum(args[[1]], 0) || isNum(args[[2]], 0)) return(0)
-      if (isNum(args[[1]], 1)) return(args[[2]])
+      if (isNum(args[[1]], 0) || isNum(args[[2]], 0)) {
+        return(0)
+      }
+      if (isNum(args[[1]], 1)) {
+        return(args[[2]])
+      }
       if (isNum(args[[2]], 1)) return(args[[1]])
     } else if (identical(fun, quote(`/`))) {
-      if (isNum(args[[1]], 0)) return(0)
+      if (isNum(args[[1]], 0)) {
+        return(0)
+      }
       if (isNum(args[[2]], 1)) return(args[[1]])
     }
   }
@@ -546,15 +672,15 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
   paramMap <- pkncaParamMap(x)
   inverseTrans <-
     list(
-      exp=log,
-      expit=rxode2::logit
+      exp = log,
+      expit = rxode2::logit
       # TODO: add all of the other transforms here
     )
 
   for (nm in names(changeArgs)) {
     if (!(nm %in% paramMap$param) && (nm %in% paramMap$theta)) {
       # It is already the transformed parameter, no modification required
-      x <- do.call(rxode2::ini, append(list(x=x), changeArgs[nm]))
+      x <- do.call(rxode2::ini, append(list(x = x), changeArgs[nm]))
     } else if (nm %in% paramMap$param) {
       w <- which(paramMap$param == nm)
       iniName <- paramMap$theta[w]
@@ -566,22 +692,38 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
       } else if (currentTrans == "expit") {
         low <- paramMap$low[w]
         hi <- paramMap$hi[w]
-        newValue <- rxode2::logit(value, ifelse(is.na(low), 0, low), ifelse(is.na(hi), 1, hi))
+        newValue <- rxode2::logit(
+          value,
+          ifelse(is.na(low), 0, low),
+          ifelse(is.na(hi), 1, hi)
+        )
       } else if (currentTrans %in% names(inverseTrans)) {
         newValue <- inverseTrans[[currentTrans]](value)
       } else {
-        cli::cli_abort("cannot invert the transform {.val {currentTrans}} for {.code {nm}} (please report a bug)") # nocov
+        cli::cli_abort(
+          paste(
+            "cannot invert the transform {.val {currentTrans}} for",
+            "{.code {nm}} (please report a bug)"
+          )
+        ) # nocov
       }
       # Infinite bounds are allowed, but not an infinite or undefined estimate
-      if (anyNA(newValue) || !is.finite(newValue[ceiling(length(newValue) / 2)])) {
-        cli::cli_warn("cannot transform the estimate for {.code {nm}} to {.code {iniName}}, leaving it unchanged")
+      if (
+        anyNA(newValue) || !is.finite(newValue[ceiling(length(newValue) / 2)])
+      ) {
+        cli::cli_warn(
+          paste(
+            "cannot transform the estimate for {.code {nm}} to",
+            "{.code {iniName}}, leaving it unchanged"
+          )
+        )
         next
       }
       x <-
         do.call(
           rxode2::ini,
           append(
-            list(x=x),
+            list(x = x),
             stats::setNames(list(newValue), iniName)
           )
         )
@@ -612,16 +754,22 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
 #' @param rxControl Control options sent to `rxode2::rxControl()`
 #' @return A list of parameters
 #' @export
-pkncaControl <- function(concu = NA_character_, doseu = NA_character_, timeu = NA_character_,
-                         volumeu = NA_character_,
-                         vpMult=2, qMult=1/2,
-                         vp2Mult=4, q2Mult=1/4,
-                         dvParam = "cp",
-                         groups = character(),
-                         sparse = FALSE,
-                         ncaData = NULL,
-                         ncaResults = NULL,
-                         rxControl=rxode2::rxControl()) {
+pkncaControl <- function(
+  concu = NA_character_,
+  doseu = NA_character_,
+  timeu = NA_character_,
+  volumeu = NA_character_,
+  vpMult = 2,
+  qMult = 1 / 2,
+  vp2Mult = 4,
+  q2Mult = 1 / 4,
+  dvParam = "cp",
+  groups = character(),
+  sparse = FALSE,
+  ncaData = NULL,
+  ncaResults = NULL,
+  rxControl = rxode2::rxControl()
+) {
   getValidNlmixrCtl.pknca(
     list(
       concu = concu,
@@ -637,7 +785,7 @@ pkncaControl <- function(concu = NA_character_, doseu = NA_character_, timeu = N
       sparse = sparse,
       ncaData = ncaData,
       ncaResults = ncaResults,
-      rxControl=rxControl
+      rxControl = rxControl
     )
   )
 }
@@ -669,25 +817,56 @@ getValidNlmixrCtl.pknca <- function(control) {
   )
   # verify units look like units
   for (unitNm in c("concu", "doseu", "timeu", "volumeu")) {
-    checkmate::assert_character(control[[unitNm]], .var.name = unitNm, null.ok = FALSE, len = 1, min.chars = 1)
+    checkmate::assert_character(
+      control[[unitNm]],
+      .var.name = unitNm,
+      null.ok = FALSE,
+      len = 1,
+      min.chars = 1
+    )
   }
   # Verify that multipliers are numbers
   for (multNm in c("vpMult", "qMult", "vp2Mult", "q2Mult")) {
-    checkmate::assert_number(control[[multNm]], .var.name = multNm, na.ok = FALSE, finite = TRUE)
+    checkmate::assert_number(
+      control[[multNm]],
+      .var.name = multNm,
+      na.ok = FALSE,
+      finite = TRUE
+    )
   }
 
   checkmate::assert_data_frame(control$ncaData, min.rows = 1, null.ok = TRUE)
-  checkmate::assert_class(control$ncaResults, classes = "PKNCAresults", null.ok = TRUE)
-  checkmate::assert_character(control$dvParam, min.chars = 1, len = 1, null.ok = FALSE)
-  checkmate::assert_character(control$groups, min.chars = 1, min.len = as.numeric(control$sparse))
+  checkmate::assert_class(
+    control$ncaResults,
+    classes = "PKNCAresults",
+    null.ok = TRUE
+  )
+  checkmate::assert_character(
+    control$dvParam,
+    min.chars = 1,
+    len = 1,
+    null.ok = FALSE
+  )
+  checkmate::assert_character(
+    control$groups,
+    min.chars = 1,
+    min.len = as.numeric(control$sparse)
+  )
   checkmate::assert_logical(control$sparse, len = 1, any.missing = FALSE)
   orig
 }
 
 #' @export
-nlmixr2.pkncaEst <- function(object, data, est = NULL,
-                             control = list(), table = nlmixr2est::tableControl(),
-                             ..., save = NULL, envir = parent.frame()) {
+nlmixr2.pkncaEst <- function(
+  object,
+  data,
+  est = NULL,
+  control = list(),
+  table = nlmixr2est::tableControl(),
+  ...,
+  save = NULL,
+  envir = parent.frame()
+) {
   # Estimate using the ui part of the object
   nlmixr2est::nlmixr2(
     object = object$ui,

@@ -4,7 +4,8 @@
   mu-referenced, like `ka <- tka * exp(eta.ka)`, instead of failing with
   "Must have names" (#101).  A central volume named `v` (when there is
   no `vc`) now gets the NCA central volume estimate.  Parameters defined
-  as `expit()` of a theta are now transformed back correctly.
+  as `expit()` of a theta are now transformed back correctly.  A message
+  lists the parameters that could not be updated.
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,

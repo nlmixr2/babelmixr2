@@ -1,15 +1,19 @@
 test_that("est='pknca'", {
   modelGood <- function() {
     ini({
-      tvka <- 0.45 ; label("Absorption rate (Ka)")
-      lcl <- 1 ; label("Clearance (CL)")
-      lvc  <- 3.45 ; label("Central volume of distribution (V)")
-      prop.err <- 0.5 ; label("Proportional residual error (fraction)")
+      tvka <- 0.45
+      label("Absorption rate (Ka)")
+      lcl <- 1
+      label("Clearance (CL)")
+      lvc <- 3.45
+      label("Central volume of distribution (V)")
+      prop.err <- 0.5
+      label("Proportional residual error (fraction)")
     })
     model({
       ka <- tvka
       cl <- exp(lcl)
-      vc  <- exp(lvc)
+      vc <- exp(lvc)
 
       cp <- linCmt()
       cp ~ prop(prop.err)
@@ -18,7 +22,11 @@ test_that("est='pknca'", {
 
   # It works with no `control` argument
   suppressMessages(expect_s3_class(
-    nlmixr2est::nlmixr(object = modelGood, data = nlmixr2data::theo_sd, est = "pknca"),
+    nlmixr2est::nlmixr(
+      object = modelGood,
+      data = nlmixr2data::theo_sd,
+      est = "pknca"
+    ),
     "pkncaEst"
   ))
 
@@ -46,9 +54,9 @@ test_that("pkncaControl", {
       timeu = "hr",
       volumeu = "L",
       vpMult = 3,
-      qMult = 1/3,
+      qMult = 1 / 3,
       vp2Mult = 6,
-      q2Mult = 1/6,
+      q2Mult = 1 / 6,
       dvParam = "cp",
       groups = "foo",
       sparse = FALSE
@@ -59,15 +67,15 @@ test_that("pkncaControl", {
       timeu = "hr",
       volumeu = "L",
       vpMult = 3,
-      qMult = 1/3,
+      qMult = 1 / 3,
       vp2Mult = 6,
-      q2Mult = 1/6,
+      q2Mult = 1 / 6,
       dvParam = "cp",
       groups = "foo",
       sparse = FALSE,
       ncaData = NULL,
       ncaResults = NULL,
-      rxControl= rxode2::rxControl()
+      rxControl = rxode2::rxControl()
     )
   )
 
@@ -90,20 +98,26 @@ test_that("pkncaControl", {
 test_that("ini_transform", {
   model <- function() {
     ini({
-      tvka <- 0.45 ; label("Absorption rate (Ka)")
-      lcl <- 1 ; label("Clearance (CL)")
-      lvc  <- 3.45 ; label("Central volume of distribution (V)")
-      prop.err <- 0.5 ; label("Proportional residual error (fraction)")
+      tvka <- 0.45
+      label("Absorption rate (Ka)")
+      lcl <- 1
+      label("Clearance (CL)")
+      lvc <- 3.45
+      label("Central volume of distribution (V)")
+      prop.err <- 0.5
+      label("Proportional residual error (fraction)")
     })
     model({
       ka <- tvka
       cl <- exp(lcl)
-      vc  <- exp(lvc)
+      vc <- exp(lvc)
 
       linCmt() ~ prop(prop.err)
     })
   }
-  suppressMessages(newmod <- ini_transform(rxode2::rxode(model), ka=1.5, cl=2, lvc=3))
+  suppressMessages(
+    newmod <- ini_transform(rxode2::rxode(model), ka = 1.5, cl = 2, lvc = 3)
+  )
   expect_equal(fixef(newmod)[["tvka"]], 1.5)
   expect_equal(fixef(newmod)[["lcl"]], log(2))
   expect_equal(fixef(newmod)[["lvc"]], 3)
@@ -112,30 +126,38 @@ test_that("ini_transform", {
 test_that("dvParam", {
   modelBad <- function() {
     ini({
-      tvka <- 0.45 ; label("Absorption rate (Ka)")
-      lcl <- 1 ; label("Clearance (CL)")
-      lvc  <- 3.45 ; label("Central volume of distribution (V)")
-      prop.err <- 0.5 ; label("Proportional residual error (fraction)")
+      tvka <- 0.45
+      label("Absorption rate (Ka)")
+      lcl <- 1
+      label("Clearance (CL)")
+      lvc <- 3.45
+      label("Central volume of distribution (V)")
+      prop.err <- 0.5
+      label("Proportional residual error (fraction)")
     })
     model({
       ka <- tvka
       cl <- exp(lcl)
-      vc  <- exp(lvc)
+      vc <- exp(lvc)
 
       linCmt() ~ prop(prop.err)
     })
   }
   modelGood <- function() {
     ini({
-      tvka <- 0.45 ; label("Absorption rate (Ka)")
-      lcl <- 1 ; label("Clearance (CL)")
-      lvc  <- 3.45 ; label("Central volume of distribution (V)")
-      prop.err <- 0.5 ; label("Proportional residual error (fraction)")
+      tvka <- 0.45
+      label("Absorption rate (Ka)")
+      lcl <- 1
+      label("Clearance (CL)")
+      lvc <- 3.45
+      label("Central volume of distribution (V)")
+      prop.err <- 0.5
+      label("Proportional residual error (fraction)")
     })
     model({
       ka <- tvka
       cl <- exp(lcl)
-      vc  <- exp(lvc)
+      vc <- exp(lvc)
 
       cp <- linCmt()
       cp ~ prop(prop.err)
@@ -155,9 +177,15 @@ test_that("dvParam", {
   skip_if_not_installed("PKNCA", "0.10.0.9000") # this test will fail due to https://github.com/humanpred/pknca/pull/191
   suppressMessages(expect_error(
     nlmixr(
-      object = modelBad, data = nlmixr2data::theo_sd,
+      object = modelBad,
+      data = nlmixr2data::theo_sd,
       est = "pknca",
-      control = pkncaControl(concu = "ng/mL", doseu = "mg", timeu = "hr", volumeu = "L")
+      control = pkncaControl(
+        concu = "ng/mL",
+        doseu = "mg",
+        timeu = "hr",
+        volumeu = "L"
+      )
     ),
     regexp = "Could not detect DV assignment for unit conversion"
   ))
@@ -166,30 +194,38 @@ test_that("dvParam", {
 test_that("getDvLines", {
   modelBad <- function() {
     ini({
-      tvka <- 0.45 ; label("Absorption rate (Ka)")
-      lcl <- 1 ; label("Clearance (CL)")
-      lvc  <- 3.45 ; label("Central volume of distribution (V)")
-      prop.err <- 0.5 ; label("Proportional residual error (fraction)")
+      tvka <- 0.45
+      label("Absorption rate (Ka)")
+      lcl <- 1
+      label("Clearance (CL)")
+      lvc <- 3.45
+      label("Central volume of distribution (V)")
+      prop.err <- 0.5
+      label("Proportional residual error (fraction)")
     })
     model({
       ka <- tvka
       cl <- exp(lcl)
-      vc  <- exp(lvc)
+      vc <- exp(lvc)
 
       linCmt() ~ prop(prop.err)
     })
   }
   modelGood <- function() {
     ini({
-      tvka <- 0.45 ; label("Absorption rate (Ka)")
-      lcl <- 1 ; label("Clearance (CL)")
-      lvc  <- 3.45 ; label("Central volume of distribution (V)")
-      prop.err <- 0.5 ; label("Proportional residual error (fraction)")
+      tvka <- 0.45
+      label("Absorption rate (Ka)")
+      lcl <- 1
+      label("Clearance (CL)")
+      lvc <- 3.45
+      label("Central volume of distribution (V)")
+      prop.err <- 0.5
+      label("Proportional residual error (fraction)")
     })
     model({
       ka <- tvka
       cl <- exp(lcl)
-      vc  <- exp(lvc)
+      vc <- exp(lvc)
 
       cp <- linCmt()
       cp ~ prop(prop.err)
@@ -215,7 +251,7 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
     ini({
       tka <- 0.45
       tcl <- 0.009
-      tv  <- 0.003
+      tv <- 0.003
       eta.ka ~ 0.6
       eta.cl ~ 0.3
       eta.v ~ 0.1
@@ -225,9 +261,9 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
       ka <- tka * exp(eta.ka)
       cl <- tcl * exp(eta.cl)
       v <- tv * exp(eta.v)
-      d/dt(depot) = -ka * depot
-      d/dt(center) = ka * depot - cl / v * center
-      cp = center / v
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / v * center
+      cp <- center / v
       cp ~ prop(prop.sd)
     })
   }
@@ -235,7 +271,7 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
     ini({
       tka <- 0.45
       tcl <- -7
-      tv  <- -8
+      tv <- -8
       eta.ka ~ 0.6
       eta.cl ~ 0.3
       eta.v ~ 0.1
@@ -245,18 +281,29 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d/dt(depot) = -ka * depot
-      d/dt(center) = ka * depot - cl / v * center
-      cp = center / v
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / v * center
+      cp <- center / v
       cp ~ prop(prop.sd)
     })
   }
   dMod <- nlmixr2data::theo_sd
   dModNoZero <- dMod[(dMod$DV != 0 & dMod$EVID == 0) | (dMod$EVID == 101), ]
-  ctl <- pkncaControl(ncaData = dMod, concu = "mg/L", doseu = "mg/kg", timeu = "hr", volumeu = "L/kg")
+  ctl <- pkncaControl(
+    ncaData = dMod,
+    concu = "mg/L",
+    doseu = "mg/kg",
+    timeu = "hr",
+    volumeu = "L/kg"
+  )
 
   suppressMessages(
-    fitNonMu <- nlmixr(nonmumod, data = dModNoZero, est = "pknca", control = ctl)
+    fitNonMu <- nlmixr(
+      nonmumod,
+      data = dModNoZero,
+      est = "pknca",
+      control = ctl
+    )
   )
   suppressMessages(
     fitMu <- nlmixr(mumod, data = dModNoZero, est = "pknca", control = ctl)
@@ -284,7 +331,7 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
       tka <- 0.45
       tcl <- 0.009
       tvc <- 0.004
-      tv  <- 0.003
+      tv <- 0.003
       eta.ka ~ 0.6
       eta.cl ~ 0.3
       eta.v ~ 0.1
@@ -295,9 +342,9 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
       cl <- tcl * exp(eta.cl)
       vc <- tvc * exp(eta.v)
       v <- tv * exp(eta.v)
-      d/dt(depot) = -ka * depot
-      d/dt(center) = ka * depot - cl / vc * center
-      cp = center / vc + 0 * v
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / vc * center
+      cp <- center / vc + 0 * v
       cp ~ prop(prop.sd)
     })
   }
@@ -312,10 +359,19 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
     vcCovMod <- rxode2::model(vcmod, vc <- tvc * 2 * exp(eta.v))
   )
   suppressMessages(
-    fitVcCov <- nlmixr(vcCovMod, data = dModNoZero, est = "pknca", control = ctl)
+    fitVcCov <- nlmixr(
+      vcCovMod,
+      data = dModNoZero,
+      est = "pknca",
+      control = ctl
+    )
   )
   expect_equal(fitVcCov$ui$theta[["tv"]], 0.003)
   expect_equal(fitVcCov$ui$theta[["tvc"]], 0.004)
+  expect_message(
+    nlmixr(vcCovMod, data = dModNoZero, est = "pknca", control = ctl),
+    regexp = "NCA initial estimates not applied to `vc`"
+  )
 
   # ... or when vc is a theta used directly
   vcThetaMod <- function() {
@@ -323,7 +379,7 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
       tka <- 0.45
       tcl <- 0.009
       vc <- 0.004
-      tv  <- 0.003
+      tv <- 0.003
       eta.v ~ 0.1
       prop.sd <- 0.7
     })
@@ -331,14 +387,19 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
       ka <- tka
       cl <- tcl
       v <- tv * exp(eta.v)
-      d/dt(depot) = -ka * depot
-      d/dt(center) = ka * depot - cl / vc * center
-      cp = center / vc + 0 * v
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / vc * center
+      cp <- center / vc + 0 * v
       cp ~ prop(prop.sd)
     })
   }
   suppressMessages(
-    fitVcTheta <- nlmixr(vcThetaMod, data = dModNoZero, est = "pknca", control = ctl)
+    fitVcTheta <- nlmixr(
+      vcThetaMod,
+      data = dModNoZero,
+      est = "pknca",
+      control = ctl
+    )
   )
   expect_equal(fitVcTheta$ui$theta[["tv"]], 0.003)
   expect_equal(fitVcTheta$ui$theta[["vc"]], feNonMu[["tv"]])
@@ -376,7 +437,9 @@ test_that("pkncaParamMap", {
   }
   suppressMessages(ui <- rxode2::rxode(model))
   paramMap <- pkncaParamMap(ui)
-  paramMap <- paramMap[paramMap$param %in% c("cl", "fdepot", "ka", "q", "vc", "vp"), ]
+  paramMap <- paramMap[
+    paramMap$param %in% c("cl", "fdepot", "ka", "q", "vc", "vp"),
+  ]
   paramMap <- paramMap[order(paramMap$param), c("theta", "param", "curEval")]
   rownames(paramMap) <- NULL
   # q is also assigned in an if block, so it is ambiguous and not mapped; vp
@@ -388,7 +451,9 @@ test_that("pkncaParamMap", {
   # Nothing to change returns the model unchanged
   expect_identical(ini_transform(ui), ui)
 
-  suppressMessages(newmod <- ini_transform(ui, ka = 1.5, cl = 2, fdepot = 0.25, vp = 99))
+  suppressMessages(
+    newmod <- ini_transform(ui, ka = 1.5, cl = 2, fdepot = 0.25, vp = 99)
+  )
   expect_equal(newmod$theta[["tka"]], 1.5)
   expect_equal(newmod$theta[["lcl"]], log(2))
   expect_equal(newmod$theta[["tf"]], rxode2::logit(0.25))
@@ -466,8 +531,8 @@ test_that("est='pknca' with parameters defined in ini()", {
       prop.err <- 0.5
     })
     model({
-      d/dt(depot) <- -ka * depot
-      d/dt(center) <- ka * depot - cl / vc * center
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / vc * center
       cp <- center / vc
       cp ~ prop(prop.err)
     })
@@ -484,7 +549,7 @@ test_that("est='pknca' with parameters defined in ini()", {
   expect_equal(fit$ui$theta[["prop.err"]], 0.5)
 })
 
-test_that("pkncaParamMap does not use thetas transformed in the model directly", {
+test_that("pkncaParamMap skips direct thetas used in transformations", {
   model <- function() {
     ini({
       tka <- 0.45
@@ -497,8 +562,8 @@ test_that("pkncaParamMap does not use thetas transformed in the model directly",
       ka <- tka
       CL <- exp(cl + 0.75 * log(WT / 70) + eta.cl)
       v <- tv
-      d/dt(depot) <- -ka * depot
-      d/dt(center) <- ka * depot - CL / v * center
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - CL / v * center
       cp <- center / v
       cp ~ prop(prop.err)
     })
@@ -539,7 +604,7 @@ test_that("pkncaTransformedNames", {
   expect_equal(
     sort(pkncaTransformedNames(list(
       quote(CL <- exp(cl + 0.75 * log(WT / 70))),
-      quote(d/dt(center) <- -cl / vc * center),
+      quote(d / dt(center) <- -cl / vc * center),
       quote(cp <- center / vc)
     ))),
     sort(c("cl", "WT"))
@@ -548,22 +613,59 @@ test_that("pkncaTransformedNames", {
 
 test_that("pkncaAssignedNames", {
   expect_equal(
-    pkncaAssignedNames(list(quote(a <- 1), quote(if (x) {b <- 2} else {a = 3}), quote(y ~ add(z)))),
+    pkncaAssignedNames(list(
+      quote(a <- 1),
+      quote(
+        if (x) {
+          b <- 2
+        } else {
+          a <- 3
+        }
+      ),
+      quote(y ~ add(z))
+    )),
     c("a", "b", "a")
   )
 })
 
 test_that("pkncaSimplifyZeroEta", {
-  expect_equal(pkncaSimplifyZeroEta(quote(tka * exp(eta.ka)), "eta.ka"), quote(tka))
-  expect_equal(pkncaSimplifyZeroEta(quote(exp(eta.ka) * tka), "eta.ka"), quote(tka))
-  expect_equal(pkncaSimplifyZeroEta(quote(exp(tka + eta.ka)), "eta.ka"), quote(exp(tka)))
-  expect_equal(pkncaSimplifyZeroEta(quote(exp(tka - eta.ka)), "eta.ka"), quote(exp(tka)))
-  expect_equal(pkncaSimplifyZeroEta(quote(tka / exp(eta.ka)), "eta.ka"), quote(tka))
+  expect_equal(
+    pkncaSimplifyZeroEta(quote(tka * exp(eta.ka)), "eta.ka"),
+    quote(tka)
+  )
+  expect_equal(
+    pkncaSimplifyZeroEta(quote(exp(eta.ka) * tka), "eta.ka"),
+    quote(tka)
+  )
+  expect_equal(
+    pkncaSimplifyZeroEta(quote(exp(tka + eta.ka)), "eta.ka"),
+    quote(exp(tka))
+  )
+  expect_equal(
+    pkncaSimplifyZeroEta(quote(exp(tka - eta.ka)), "eta.ka"),
+    quote(exp(tka))
+  )
+  expect_equal(
+    pkncaSimplifyZeroEta(quote(tka / exp(eta.ka)), "eta.ka"),
+    quote(tka)
+  )
   expect_equal(pkncaSimplifyZeroEta(quote(eta.ka + tka), "eta.ka"), quote(tka))
   expect_equal(pkncaSimplifyZeroEta(quote(tka * WT), "eta.ka"), quote(tka * WT))
-  expect_equal(pkncaSimplifyZeroEta(quote(tka * exp(-eta.ka)), "eta.ka"), quote(tka))
-  expect_equal(pkncaSimplifyZeroEta(quote(expit(tf) * exp(eta.f)), "eta.f"), quote(expit(tf)))
+  expect_equal(
+    pkncaSimplifyZeroEta(quote(tka * exp(-eta.ka)), "eta.ka"),
+    quote(tka)
+  )
+  expect_equal(
+    pkncaSimplifyZeroEta(quote(expit(tf) * exp(eta.f)), "eta.f"),
+    quote(expit(tf))
+  )
   expect_equal(pkncaSimplifyZeroEta(3, "eta.ka"), 3)
-  expect_equal(pkncaSimplifyZeroEta(quote(tka * exp(0.5 * eta.ka)), "eta.ka"), quote(tka))
-  expect_equal(pkncaSimplifyZeroEta(quote(tka * exp(eta.ka / 2)), "eta.ka"), quote(tka))
+  expect_equal(
+    pkncaSimplifyZeroEta(quote(tka * exp(0.5 * eta.ka)), "eta.ka"),
+    quote(tka)
+  )
+  expect_equal(
+    pkncaSimplifyZeroEta(quote(tka * exp(eta.ka / 2)), "eta.ka"),
+    quote(tka)
+  )
 })
