@@ -410,14 +410,15 @@ pkncaParamMap <- function(ui) {
         }
       }
     }
-    if (!is.null(theta) && theta %in% thetaNames && !(theta %in% ret$theta)) {
+    if (!is.null(theta) && theta %in% thetaNames) {
       ret <- rbind(ret, data.frame(
         theta = theta, param = param, curEval = curEval,
         low = low, hi = hi, stringsAsFactors = FALSE
       ))
     }
   }
-  ret
+  # A theta defining more than one parameter cannot take one NCA estimate
+  ret[!(ret$theta %in% ret$theta[duplicated(ret$theta)]), , drop = FALSE]
 }
 
 #' Get the value of a numeric constant expression like `2` or `-1`
@@ -490,9 +491,11 @@ pkncaSimplifyZeroEta <- function(x, etaNames) {
     } else if (identical(fun, quote(`-`))) {
       if (isNum(args[[2]], 0)) return(args[[1]])
     } else if (identical(fun, quote(`*`))) {
+      if (isNum(args[[1]], 0) || isNum(args[[2]], 0)) return(0)
       if (isNum(args[[1]], 1)) return(args[[2]])
       if (isNum(args[[2]], 1)) return(args[[1]])
     } else if (identical(fun, quote(`/`))) {
+      if (isNum(args[[1]], 0)) return(0)
       if (isNum(args[[2]], 1)) return(args[[1]])
     }
   }
@@ -536,6 +539,10 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
         newValue <- inverseTrans[[currentTrans]](value)
       } else {
         cli::cli_abort("cannot invert the transform {.val {currentTrans}} for {.code {nm}} (please report a bug)") # nocov
+      }
+      if (any(!is.finite(newValue))) {
+        cli::cli_warn("cannot transform the estimate for {.code {nm}} to {.code {iniName}}, leaving it unchanged")
+        next
       }
       x <-
         do.call(

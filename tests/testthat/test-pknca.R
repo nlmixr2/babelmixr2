@@ -277,6 +277,35 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
   # bounds are on the parameter scale for the non-mu-referenced model
   iniDf <- fitNonMu$ui$iniDf
   expect_true(all(iniDf$lower[iniDf$name %in% c("tka", "tcl", "tv")] > 0))
+
+  # When vc is in the model, v is not given the vc estimate
+  vcmod <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 0.009
+      tvc <- 0.004
+      tv  <- 0.003
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      prop.sd <- 0.7
+    })
+    model({
+      ka <- tka * exp(eta.ka)
+      cl <- tcl * exp(eta.cl)
+      vc <- tvc * exp(eta.v)
+      v <- tv * exp(eta.v)
+      d/dt(depot) = -ka * depot
+      d/dt(center) = ka * depot - cl / vc * center
+      cp = center / vc + 0 * v
+      cp ~ prop(prop.sd)
+    })
+  }
+  suppressMessages(
+    fitVc <- nlmixr(vcmod, data = dModNoZero, est = "pknca", control = ctl)
+  )
+  expect_equal(fitVc$ui$theta[["tv"]], 0.003)
+  expect_equal(fitVc$ui$theta[["tvc"]], feNonMu[["tv"]])
 })
 
 test_that("pkncaParamMap", {
@@ -357,6 +386,37 @@ test_that("ini_transform with the same theta and parameter name", {
   model2 <- rxode2::model(ui, fdepot <- expit(tf, -1, 2) * exp(eta.f))
   suppressMessages(newmod <- ini_transform(model2, fdepot = 0.25))
   expect_equal(newmod$theta[["tf"]], rxode2::logit(0.25, -1, 2))
+
+  # An estimate outside of the expit() bounds leaves the theta unchanged
+  expect_warning(
+    suppressMessages(newmod <- ini_transform(model2, fdepot = 3)),
+    regexp = "cannot transform the estimate for `fdepot`"
+  )
+  expect_equal(newmod$theta[["tf"]], 0)
+})
+
+test_that("pkncaParamMap skips thetas shared by more than one parameter", {
+  model <- function() {
+    ini({
+      tpop <- 1
+      tvc <- 3
+      tv <- 4
+      eta.ka ~ 0.1
+      prop.err <- 0.5
+    })
+    model({
+      ka <- tpop * exp(eta.ka)
+      cl <- exp(tpop)
+      vc <- tvc * exp(eta.ka)
+      v <- tv * exp(eta.ka)
+      cp <- linCmt()
+      cp ~ prop(prop.err)
+    })
+  }
+  suppressMessages(ui <- rxode2::rxode(model))
+  paramMap <- pkncaParamMap(ui)
+  expect_false("tpop" %in% paramMap$theta)
+  expect_true(all(c("vc", "v") %in% paramMap$param))
 })
 
 test_that("pkncaAssignedNames", {
@@ -377,4 +437,6 @@ test_that("pkncaSimplifyZeroEta", {
   expect_equal(pkncaSimplifyZeroEta(quote(tka * exp(-eta.ka)), "eta.ka"), quote(tka))
   expect_equal(pkncaSimplifyZeroEta(quote(expit(tf) * exp(eta.f)), "eta.f"), quote(expit(tf)))
   expect_equal(pkncaSimplifyZeroEta(3, "eta.ka"), 3)
+  expect_equal(pkncaSimplifyZeroEta(quote(tka * exp(0.5 * eta.ka)), "eta.ka"), quote(tka))
+  expect_equal(pkncaSimplifyZeroEta(quote(tka * exp(eta.ka / 2)), "eta.ka"), quote(tka))
 })
