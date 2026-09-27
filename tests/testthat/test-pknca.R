@@ -618,8 +618,8 @@ test_that("pkncaParamMap: covariates and linCmt() arguments", {
   }
   suppressMessages(ui <- rxode2::rxode(covModel))
   paramMap <- pkncaParamMap(ui)
-  expect_false("cl" %in% paramMap$param)
-  expect_true(all(c("ka", "vc") %in% paramMap$param))
+  # vc is divided into the derived CL, so it is not used plainly either
+  expect_equal(intersect(c("ka", "cl", "vc"), paramMap$param), "ka")
 
   linModel <- function() {
     ini({
@@ -687,36 +687,35 @@ test_that("pkncaParamMap: covariates and linCmt() arguments", {
 })
 
 test_that("pkncaTransformedNames", {
+  allowed <- c("depot", "center", "ka", "cl", "vc")
+  tn <- function(x) sort(pkncaTransformedNames(x, allowed = allowed))
+  # plain uses
+  expect_equal(tn(quote(-cl / vc * center)), character())
+  expect_equal(tn(quote(ka * depot - cl / vc * center)), character())
+  expect_equal(tn(quote(cp <- center / vc)), character())
+  expect_equal(tn(quote(cp <- linCmt(ka, cl, vc))), character())
   expect_equal(
-    sort(pkncaTransformedNames(list(
-      quote(CL <- exp(cl + 0.75 * log(WT / 70))),
-      quote(d / dt(center) <- -cl / vc * center),
-      quote(cp <- center / vc)
-    ))),
+    tn(quote(d / dt(center) <- ka * depot - cl / vc * center)),
+    character()
+  )
+  # transformations, scaling and shifts
+  expect_equal(
+    tn(quote(CL <- exp(cl + 0.75 * log(WT / 70)))),
     sort(c("cl", "WT"))
   )
-  expect_equal(pkncaTransformedNames(quote(base::exp(cl) / vc)), "cl")
+  expect_true("cl" %in% tn(quote(base::exp(cl) / vc)))
+  expect_equal(tn(quote(cl * WT / vc)), sort(c("cl", "WT", "vc")))
+  expect_equal(tn(quote(-cl / 70 / vc * center)), sort(c("cl", "vc", "center")))
   expect_equal(
-    pkncaTransformedNames(quote(cl * WT / vc), covs = "WT"),
-    c("cl", "WT", "vc")
-  )
-  expect_equal(pkncaTransformedNames(quote(-cl / 70 / vc * center)), c("cl"))
-  expect_equal(
-    pkncaTransformedNames(quote(-cl / vc * center)),
-    character()
+    tn(quote(-cl * (1 / 70) * f1 / vc * center)),
+    sort(c("cl", "f1", "vc", "center"))
   )
   expect_equal(
-    pkncaTransformedNames(quote(-cl / F1 / vc * center), others = "F1"),
-    c("cl", "F1", "vc", "center")
+    tn(quote(-cl / F1 / vc * center)),
+    sort(c("cl", "F1", "vc", "center"))
   )
-  expect_equal(
-    pkncaTransformedNames(quote(ka * depot - k2 * center), others = "k2"),
-    c("k2", "center")
-  )
-  expect_equal(
-    pkncaTransformedNames(quote(cp <- linCmt(ka, cl, vc))),
-    character()
-  )
+  expect_equal(tn(quote(ka * depot - k2 * center)), sort(c("k2", "center")))
+  expect_equal(tn(quote(CL <- cl + dcl)), sort(c("cl", "dcl")))
 })
 
 test_that("pkncaAssignedNames", {

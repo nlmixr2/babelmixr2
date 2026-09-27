@@ -528,8 +528,8 @@ pkncaParamMap <- function(ui) {
     }
   }
   # Thetas named like an NCA-estimated parameter and used directly as the
-  # parameter (like `ka` and `cl` in `-cl / vc * center`); only when never used
-  # within a transformation like `exp()` or scaled by something else
+  # parameter (like `ka` and `cl` in `-cl / vc * center`); only when every use
+  # is plain (see pkncaTransformedNames())
   directNames <- c("ka", "cl", "vc", "v", "q", "vp", "q2", "vp2")
   directThetas <- setdiff(
     intersect(thetaNames, directNames),
@@ -539,8 +539,7 @@ pkncaParamMap <- function(ui) {
     directThetas,
     pkncaTransformedNames(
       ui$lstExpr,
-      covs = ui$allCovs,
-      others = setdiff(thetaNames, directNames)
+      allowed = c(ui$state, directNames)
     )
   )
   if (length(directThetas) > 0) {
@@ -575,23 +574,23 @@ pkncaNumConst <- function(x) {
   NA_real_
 }
 
-#' Find the names used within a transformation
+#' Find the names not used as a plain rate or volume
+#'
+#' A name is used plainly when every product or quotient that contains it (like
+#' `cl / vc * center` or `ka * depot`) is made only of `allowed` names (like
+#' compartment states and NCA parameter names).  Anything else in the term (a
+#' number, covariate, other parameter or function call), use within a function
+#' (like `exp(cl)`), or being added to something (like `cl + dcl`) makes the
+#' names in it not plain.  Arguments of `linCmt()` are used plainly.
 #'
 #' @param x An R expression or a list of expressions
-#' @param covs Names of the data covariates
-#' @param others Names of other parameters that make a product or quotient a
-#'   transformation
-#' @return A character vector of variable names used within a function call
-#'   other than arithmetic (like `exp(cl)` or `log(WT / 70)`) or within an
-#'   arithmetic expression that includes a constant or covariate (like
-#'   `cl / 70` or `cl * WT`), or multiplied or divided by one of `others`
-#'   (like `cl / F1`).
-#'   Arguments of `linCmt()` are used directly, so they are not included.
+#' @param allowed Names allowed in a plain product or quotient
+#' @return A character vector of the names that are not used plainly
 #' @noRd
-pkncaTransformedNames <- function(x, covs = character(), others = character()) {
+pkncaTransformedNames <- function(x, allowed = character()) {
   if (is.list(x)) {
     return(unique(unlist(
-      lapply(x, pkncaTransformedNames, covs = covs, others = others),
+      lapply(x, pkncaTransformedNames, allowed = allowed),
       use.names = FALSE
     )))
   }
@@ -604,27 +603,35 @@ pkncaTransformedNames <- function(x, covs = character(), others = character()) {
     return(all.vars(x))
   }
   fun <- as.character(fun)
-  if (fun %in% c("+", "-", "*", "/", "(")) {
-    args <- as.list(x)[-1]
-    isConst <- vapply(args, is.numeric, logical(1))
-    if (any(isConst) || any(all.vars(x) %in% covs)) {
-      # Scaled by a constant or covariate, like cl / 70 or cl * WT
-      return(all.vars(x))
+  args <- as.list(x)[-1]
+  if (fun %in% c("*", "/")) {
+    leaves <- pkncaTermLeaves(x)
+    plain <- vapply(
+      leaves,
+      function(leaf) is.name(leaf) && as.character(leaf) %in% allowed,
+      logical(1)
+    )
+    if (all(plain)) {
+      return(character())
     }
-    if (fun %in% c("*", "/") && any(all.vars(x) %in% others)) {
-      # Scaled by another parameter, like cl / F1
-      return(all.vars(x))
-    }
+    return(all.vars(x))
+  }
+  if (fun %in% c("+", "-") && length(args) == 2) {
+    # A name added to or subtracted from something is shifted
+    bare <- unlist(lapply(args, function(a) {
+      if (is.name(a)) as.character(a) else character()
+    }))
+    return(unique(c(bare, pkncaTransformedNames(args, allowed = allowed))))
+  }
+  if (fun %in% c("<-", "=")) {
+    # Only the right hand side is used
+    return(pkncaTransformedNames(args[[2]], allowed = allowed))
   }
   passThrough <- c(
     "+",
     "-",
-    "*",
-    "/",
     "(",
     "{",
-    "<-",
-    "=",
     "~",
     "if",
     "dt",
@@ -633,7 +640,26 @@ pkncaTransformedNames <- function(x, covs = character(), others = character()) {
   if (!(fun %in% passThrough)) {
     return(all.vars(x))
   }
-  pkncaTransformedNames(as.list(x)[-1], covs = covs, others = others)
+  pkncaTransformedNames(args, allowed = allowed)
+}
+
+#' Get the factors of a product or quotient
+#'
+#' @param x An R expression
+#' @return A list of the factors of `x`, looking through `*`, `/`, `(` and a
+#'   unary minus
+#' @noRd
+pkncaTermLeaves <- function(x) {
+  if (
+    is.call(x) &&
+      (identical(x[[1]], quote(`*`)) ||
+        identical(x[[1]], quote(`/`)) ||
+        identical(x[[1]], quote(`(`)) ||
+        (identical(x[[1]], quote(`-`)) && length(x) == 2))
+  ) {
+    return(unlist(lapply(as.list(x)[-1], pkncaTermLeaves), recursive = FALSE))
+  }
+  list(x)
 }
 
 #' Find the names of all assigned variables (one per assignment)
