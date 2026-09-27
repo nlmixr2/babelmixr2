@@ -497,3 +497,76 @@ test_that("est='pknca' oral without a CMT column is extravascular (#102)", {
   expect_false(feNoCmt[["tka"]] == 0.45)
   expect_equal(feNoCmt[c("tka", "lcl", "lvc")], feCmt[c("tka", "lcl", "lvc")])
 })
+
+test_that("pkncaCmtOrder with linCmt() and ODEs (#102)", {
+  mLinEff <- function() {
+    ini({
+      tka <- 0
+      lcl <- 1
+      lv <- 3
+      lke0 <- 0
+      add.sd <- 0.1
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(lcl)
+      v <- exp(lv)
+      ke0 <- exp(lke0)
+      cp <- linCmt()
+      d/dt(eff) <- ke0 * (cp - eff)
+      cp ~ add(add.sd)
+    })
+  }
+  ui <- suppressMessages(rxode2::rxode2(mLinEff))
+  expect_equal(pkncaCmtOrder(ui), c("depot", "central", "eff"))
+})
+
+test_that("pkncaAutoIntervals (#102)", {
+  dose <- data.frame(ID = c(1, 2, 2, 2), TIME = c(0, 0, 24, 48))
+  obs <- data.frame(
+    ID = c(1, 1, 2, 2, 2, 2, 2, 2, 2),
+    TIME = c(1, 2, 1, 2, 4, 23.9, 49, 50, 52),
+    DV = 1
+  )
+  ret <- pkncaAutoIntervals(obs = obs, dose = dose, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  # Single dose uses the PKNCA defaults
+  expect_equal(ret$start[ret$ID == 1], c(0, 0))
+  expect_equal(ret$end[ret$ID == 1], c(24, Inf))
+  # Multiple doses use intervals with enough concentrations (not only the
+  # trough at 23.9 for 24 to 48)
+  expect_equal(ret$start[ret$ID == 2], c(0, 48))
+  expect_equal(ret$end[ret$ID == 2], c(24, Inf))
+  expect_equal(ret$half.life[ret$ID == 2], c(FALSE, TRUE))
+  expect_error(
+    pkncaAutoIntervals(obs = obs[obs$ID == 1, ], dose = dose[dose$ID == 2, ], groupCols = "ID", timeCol = "TIME", dvCol = "DV"),
+    "no NCA intervals"
+  )
+})
+
+test_that("est='pknca' multiple-dose extravascular without concentrations at dosing (#102)", {
+  mod <- function() {
+    ini({
+      tka <- 0
+      lcl <- 1
+      lv <- 3
+      add.sd <- 0.1
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(lcl)
+      v <- exp(lv)
+      cp <- linCmt()
+      cp ~ add(add.sd)
+    })
+  }
+  d <- nlmixr2data::Oral_1CPT
+  d <- d[d$SD == 0 & d$ID <= 40, ]
+  suppressMessages(suppressWarnings(
+    ret <- nlmixr2est::nlmixr(object = mod, data = d, est = "pknca")
+  ))
+  fe <- setNames(ret$ui$iniDf$est, ret$ui$iniDf$name)
+  trueCl <- log(median(d$CL[!duplicated(d$ID)]))
+  trueV <- log(median(d$V[!duplicated(d$ID)]))
+  expect_lt(abs(fe[["lcl"]] - trueCl), 0.5)
+  expect_lt(abs(fe[["lv"]] - trueV), 0.5)
+})

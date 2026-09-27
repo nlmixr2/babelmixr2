@@ -268,7 +268,7 @@ calcPknca <- function(env, pkncaUnits) {
   if (length(obsStates) > 0) {
     doseState <- doseCmt
     if (is.numeric(doseCmt)) {
-      doseState <- env$ui$state[doseCmt]
+      doseState <- pkncaCmtOrder(env$ui)[doseCmt]
     }
     isIvDose <- !is.na(doseState) & as.character(doseState) %in% obsStates
   } else {
@@ -298,14 +298,39 @@ calcPknca <- function(env, pkncaUnits) {
   oConc <- PKNCA::PKNCAconc(data = obsData, oConcFormula, sparse = control$sparse)
   oDose <- PKNCA::PKNCAdose(data = doseData, oDoseFormula, route = "pkncaRoute")
 
-  oData <- PKNCA::PKNCAdata(oConc, oDose, units = pkncaUnits, impute = "impute")
-  oData$intervals <-
+  intervals <-
     pkncaIntervals(
-      intervals = oData$intervals, dose = doseData, groupCols = groupCols,
+      intervals =
+        pkncaAutoIntervals(
+          obs = obsData, dose = doseData, groupCols = groupCols,
+          timeCol = cleanColNames[["time"]], dvCol = cleanColNames[["dv"]]
+        ),
+      dose = doseData, groupCols = groupCols,
       timeCol = cleanColNames[["time"]]
     )
+  oData <- PKNCA::PKNCAdata(oConc, oDose, intervals = intervals, units = pkncaUnits, impute = "impute")
   oNCA <- PKNCA::pk.nca(oData)
   oNCA
+}
+
+#' Model compartment names in rxode2's compartment number order
+#'
+#' With `linCmt()`, rxode2 numbers the `linCmt()` compartments (depot,
+#' central, and peripherals) before the ODE states.
+#'
+#' @param ui The rxode2 ui model
+#' @return A character vector of the compartment names, in order of the
+#'   compartment number
+#' @noRd
+pkncaCmtOrder <- function(ui) {
+  states <- ui$state
+  hasLinCmt <-
+    any(vapply(ui$lstExpr, function(x) "linCmt" %in% all.names(x), logical(1)))
+  if (hasLinCmt) {
+    linStates <- states[states %in% c("depot", "central", "peripheral1", "peripheral2")]
+    states <- c(linStates, setdiff(states, linStates))
+  }
+  states
 }
 
 #' Determine the model states that the observations are calculated from
@@ -457,6 +482,65 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
 #' @noRd
 pkncaKey <- function(data, cols) {
   do.call(paste, c(unname(as.list(data[, cols, drop = FALSE])), sep = "\r"))
+}
+
+#' Choose the NCA intervals from the dosing
+#'
+#' A single dose uses the PKNCA default single-dose intervals.  Multiple doses
+#' use each dose until the next dose and the last dose until infinity, when
+#' there are enough concentrations in the interval (unlike
+#' the PKNCA automatic intervals, a concentration at the time of dosing is not
+#' required; it is imputed, #102).
+#'
+#' @inheritParams pkncaAddIvC0
+#' @param minObs The minimum number of concentrations after the start of a
+#'   multiple-dose interval for the interval to be used
+#' @return A data.frame of intervals with the grouping columns
+#' @noRd
+pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 3) {
+  doseKey <- pkncaKey(dose, groupCols)
+  obsKey <- pkncaKey(obs, groupCols)
+  ret <- list()
+  for (key in unique(doseKey)) {
+    doseGroup <- dose[doseKey == key, , drop = FALSE]
+    doseTimes <- sort(unique(doseGroup[[timeCol]]))
+    if (length(doseTimes) == 1) {
+      intervals <- PKNCA::PKNCA.options("single.dose.aucs")
+      intervals$start <- intervals$start + doseTimes
+      intervals$end <- intervals$end + doseTimes
+    } else {
+      intervals <-
+        data.frame(
+          start = doseTimes,
+          end = c(doseTimes[-1], Inf),
+          auclast = TRUE,
+          cmax = TRUE,
+          tmax = TRUE,
+          half.life = c(rep(FALSE, length(doseTimes) - 1), TRUE)
+        )
+      # Intervals with few concentrations (like only a trough) are not used
+      obsTime <- obs[[timeCol]][obsKey == key & !is.na(obs[[dvCol]])]
+      nObs <-
+        vapply(
+          seq_len(nrow(intervals)),
+          function(i) sum(obsTime > intervals$start[i] & obsTime <= intervals$end[i]),
+          integer(1)
+        )
+      intervals <- intervals[nObs >= minObs, , drop = FALSE]
+      if (nrow(intervals) == 0) {
+        next
+      }
+    }
+    intervals <- PKNCA::check.interval.specification(intervals)
+    groupValues <- doseGroup[rep(1, nrow(intervals)), groupCols, drop = FALSE]
+    ret[[length(ret) + 1]] <- cbind(groupValues, intervals)
+  }
+  if (length(ret) == 0) {
+    cli::cli_abort("no NCA intervals with enough concentrations for PKNCA estimation")
+  }
+  ret <- do.call(rbind, ret)
+  rownames(ret) <- NULL
+  ret
 }
 
 #' Setup the NCA intervals based on the route of administration
