@@ -3,10 +3,11 @@
 * `est="pknca"` now works with covariates in the data and with a mix of
   intravascular and extravascular doses (#102).  With both routes, `ka`
   is estimated from the extravascular doses and `vc` and `cl` from the
-  intravascular doses.  Intravascular doses without a concentration at
-  the time of dosing have it back-extrapolated, and extravascular doses
-  have it imputed (as the predose concentration, or zero for the first
-  dose).  A central volume named `v` is now estimated like `vc`.
+  intravascular doses.  Intravascular bolus doses have the concentration
+  at the time of dosing back-extrapolated (replacing a predose
+  concentration at the first dose), and other doses have it imputed (as
+  the predose concentration, or zero for the first dose).  When no doses
+  are only extravascular, `ka` is not updated.  A central volume named `v` is now estimated like `vc`.
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,

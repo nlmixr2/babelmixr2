@@ -128,6 +128,9 @@ nlmixr2Est.pknca <- function(env, ...) {
   # What parameters should be modified?  And then modify them.
   murefNames <- env$ui$getSplitMuModel$pureMuRef
   updateNames <- intersect(murefNames, names(paramEstimates))
+  if ("ka" %in% murefNames && is.null(paramEstimates$ka)) {
+    cli::cli_alert_info("no NCA tmax with only extravascular doses, 'ka' initial estimate not updated")
+  }
   newEnv <- do.call(ini_transform, append(list(x=env$ui), paramEstimates[updateNames]))
 
   if (unitConversions[["cmax"]] != 1) {
@@ -298,7 +301,8 @@ calcPknca <- function(env, pkncaUnits) {
 #' have the concentration at the time of dosing (C0) back-extrapolated from the
 #' following concentrations (log-linear from the first two, or the first
 #' concentration when that is not possible) so that AUC and Cmax can be
-#' calculated from the time of dosing (#102).
+#' calculated from the time of dosing (#102).  A concentration at the time of
+#' the first dose is predose, so it is replaced by C0.
 #'
 #' @param obs,dose Observation and dose data (dose with `pkncaRoute` and
 #'   `pkncaBolus` columns)
@@ -324,7 +328,15 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
       !is.na(obs[[dvCol]]) &
       obs[[timeCol]] >= doseTime &
       obs[[timeCol]] <= nextDoseTime
-    if (!any(mask) || any(obs[[timeCol]][mask] == doseTime)) {
+    # A concentration at the time of dosing is predose; it is replaced with C0
+    # for the first dose (later doses keep it as the end of the prior interval)
+    atDose <- obsKey == doseKey[idx] & obs[[timeCol]] == doseTime
+    isFirstDose <- !any(doseKey == doseKey[idx] & dose[[timeCol]] < doseTime)
+    if (any(atDose) && !isFirstDose) {
+      next
+    }
+    mask <- mask & !atDose
+    if (!any(mask)) {
       next
     }
     # The data are in the original data order, which may not be sorted by time
@@ -336,10 +348,14 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
         time.dose = doseTime, method = c("logslope", "c1")
       )
     if (!is.na(c0)) {
-      newRow <- obs[maskIdx[1], , drop = FALSE]
-      newRow[[timeCol]] <- doseTime
-      newRow[[dvCol]] <- as.numeric(c0)
-      newRows[[length(newRows) + 1]] <- newRow
+      if (any(atDose)) {
+        obs[[dvCol]][atDose] <- as.numeric(c0)
+      } else {
+        newRow <- obs[maskIdx[1], , drop = FALSE]
+        newRow[[timeCol]] <- doseTime
+        newRow[[dvCol]] <- as.numeric(c0)
+        newRows[[length(newRows) + 1]] <- newRow
+      }
     }
   }
   if (length(newRows) > 0) {
@@ -397,9 +413,10 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
       NA_character_,
       "PKNCA_impute_method_start_predose,PKNCA_impute_method_start_conc0"
     )
-  if (any(isEv) && any(!isEv)) {
-    # Intervals with intravascular doses (alone or with extravascular doses at
-    # the same time) only calculate the parameters for vc and cl
+  if (any(!isIv) && any(!isEv)) {
+    # With both intravascular and extravascular doses, intervals with
+    # intravascular doses (alone or with extravascular doses at the same time)
+    # only calculate the parameters for vc and cl
     ivParams <-
       setdiff(
         intersect(names(intervals), names(PKNCA::get.interval.cols())),
@@ -437,7 +454,11 @@ calcPkncaEst <- function(objectPknca) {
 
   # Ensure that NCA as sufficiently successful
   naValues <- character()
-  if (any(is.na(tmaxValues))) {
+  if (!any(ncaParams$PPTESTCD == "tmax")) {
+    # tmax is not calculated when there are no intervals with only
+    # extravascular doses and intravascular doses are present (#102)
+    tmaxValues <- NULL
+  } else if (any(is.na(tmaxValues))) {
     naValues <- c(naValues, "tmax")
   }
   if (any(is.na(cmaxdnValues))) {
@@ -465,9 +486,6 @@ calcPkncaEst <- function(objectPknca) {
 ncaToEst <- function(tmax, cmaxdn, cl, control, unitConversions) {
   ncaEstimates <-
     list(
-      ka=
-        # 4 absorption half-lives
-        sort(log(2)/(tmax/4)),
       vc=
         sort(unitConversions[["vss.last"]] / cmaxdn),
       cl=
@@ -475,11 +493,14 @@ ncaToEst <- function(tmax, cmaxdn, cl, control, unitConversions) {
     )
   # Common alternate name for the central volume
   ncaEstimates$v <- ncaEstimates$vc
-  ncaEstimates$ka <-
-    pmin(
-      c(0.03, 3, Inf),
-      ncaEstimates$ka
-    )
+  if (!is.null(tmax)) {
+    ncaEstimates$ka <-
+      pmin(
+        c(0.03, 3, Inf),
+        # 4 absorption half-lives
+        sort(log(2)/(tmax/4))
+      )
+  }
   # two compartment parameters
   ncaEstimates$vp <- ncaEstimates$vc*control$vpMult
   ncaEstimates$q <-  ncaEstimates$cl*control$qMult

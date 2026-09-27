@@ -322,6 +322,30 @@ test_that("est='pknca' with covariates and mixed IV/oral dosing (#102)", {
   expect_true(all(!is.na(ncaOral$PPORRES[ncaOral$PPTESTCD %in% c("tmax", "cmax.dn", "cl.last")])))
 })
 
+test_that("pkncaIntervals without extravascular-only doses (#102)", {
+  dose <- data.frame(
+    ID = c(1, 3, 3),
+    TIME = 0,
+    pkncaRoute = c("intravascular", "intravascular", "extravascular"),
+    pkncaBolus = c(TRUE, TRUE, FALSE)
+  )
+  intervals <- data.frame(ID = c(1, 3), start = 0, end = Inf, cmax = TRUE, tmax = TRUE, auclast = TRUE)
+  ret <- pkncaIntervals(intervals = intervals, dose = dose, groupCols = "ID", timeCol = "TIME")
+  expect_equal(ret$tmax, c(FALSE, FALSE))
+  expect_equal(ret$cl.last, c(TRUE, FALSE))
+  # Intravascular only keeps tmax
+  ret <- pkncaIntervals(intervals = intervals, dose = dose[1:2, ], groupCols = "ID", timeCol = "TIME")
+  expect_equal(ret$tmax, c(TRUE, TRUE))
+  # No ka estimate without tmax
+  est <- ncaToEst(
+    tmax = NULL, cmaxdn = c(1, 2, 3), cl = c(1, 2, 3),
+    control = pkncaControl(),
+    unitConversions = c(vss.last = 1, cl.last = 1)
+  )
+  expect_null(est$ka)
+  expect_equal(est$v, est$vc)
+})
+
 test_that("pkncaIntervals route handling (#102)", {
   dose <- data.frame(
     ID = c(1, 2, 3, 3),
@@ -372,4 +396,12 @@ test_that("pkncaAddIvC0 (#102)", {
   dose3$pkncaBolus[2] <- FALSE
   ret3 <- pkncaAddIvC0(obs = obs, dose = dose3, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
   expect_equal(ret3, obs)
+  # A predose concentration at the first dose is replaced by C0 (missing or
+  # not)
+  for (dv0 in c(0, NA)) {
+    obs4 <- data.frame(ID = 1, TIME = c(0, 6, 12, 18), DV = c(dv0, 4, 2, 5))
+    ret4 <- pkncaAddIvC0(obs = obs4, dose = dose, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+    expect_equal(ret4$TIME, c(0, 6, 12, 18))
+    expect_equal(ret4$DV, c(8, 4, 2, 5))
+  }
 })
