@@ -1,5 +1,11 @@
 # babelmixr2 0.1.11.9000
 
+* `est="nonmem"` and `est="monolix"` fits with
+  `table=tableControl(cwres=TRUE)` no longer fail with "objective
+  function 'FOCEi' already present".  The fit keeps both the NONMEM (or
+  Monolix) objective, which stays in use, and nlmixr2's FOCEi objective
+  (#94).
+
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
   `ADVAN11` or `ADVAN12` with `TRANS1` micro-constants) or Monolix's
