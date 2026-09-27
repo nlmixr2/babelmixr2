@@ -345,7 +345,8 @@
       return(paste(.rxToMonolix(x[[2]], ui=ui), "^", .rxToMonolix(x[[3]], ui=ui)))
     } else if (.rxIsAssignmentOperator(x[[1]])) {
       .prop <- as.character(x[[2]])[1]
-      if (any(.prop == c("alag", "lag", "F", "f", "rate", "dur"))) {
+      if (is.call(x[[2]]) &&
+            any(.prop == c("alag", "lag", "F", "f", "rate", "dur"))) {
         return(.rxToMonolixCmtProp(x, .prop, ui))
       }
       .var <- .rxToMonolix(x[[2]], ui=ui)

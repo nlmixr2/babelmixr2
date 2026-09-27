@@ -255,6 +255,11 @@ test_that("monolix dsl", {
   .ee(.rxToM("f(depot)=3"), ";f defined in PK section\nrx_f_depot = 3")
   .ee(.rxToM("f(depot)=exp(a)"), ";f defined in PK section\nrx_f_depot = exp(a)")
   .ee(.rxToM("alag(depot)=0.1*a"), ";alag defined in PK section\nrx_lag_depot = 0.1*a")
+  .ee(.rxToM("rate(depot)=exp(a)"), ";rate defined in PK section\nrx_rate_depot = exp(a)")
+  .ee(.rxToM("dur(depot)=2*a"), ";dur defined in PK section\nrx_dur_depot = 2*a")
+  # variables named like a property are not a property
+  .ee(.rxToM("f=3"), "f = 3")
+  .ee(.rxToM("alag=3*a"), "alag = 3*a")
   .ee(.rxToM("a**b"), "a^b")
   .ee(.rxToM("if (a<=b){c=1} else if (a==4) {c=2} else {c=4}"), "if a<=b\n  c = 1\nelseif a==4\n  c = 2\nelse \n  c = 4\nend\n")
   .ee(.rxToM("if (a<=b){c=1} else if (a==4) {c=2} else if (a==30) {c=4} else {c=100}"), "if a<=b\n  c = 1\nelseif a==4\n  c = 2\nelseif a==30\n  c = 4\nelse \n  c = 100\nend\n")
