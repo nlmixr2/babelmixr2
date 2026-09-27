@@ -293,7 +293,7 @@ attr(rxUiGet.nonmemPkDesErr0, "rstudio") <- "nonmemPkDesErr0"
     .ret <- paste0(.ret, "\n",
                    paste(vapply(names(advan$par), function(n) {
                      .e <- advan$par[[n]]
-                     .v <- .rxToNonmem(.e, ui=ui)
+                     .v <- .rxToNonmem(.e, ui = ui)
                      paste0(.rxToNonmemFlushPrefixLines(ui),
                             "  ", n, "=", .v, .babelmixr2Deparse(.e))
                    }, character(1), USE.NAMES=FALSE),

@@ -492,9 +492,11 @@ rex::register_shortcuts("babelmixr2")
   # the indicator variables are only reused within the same line
   rxode2::rxAssignControlValue(ui, ".nmLogicalDf", NULL)
   .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
-  if (is.null(.prefixLines)) return("")
+  if (is.null(.prefixLines)) {
+    return("")
+  }
   rxode2::rxAssignControlValue(ui, ".nmPrefixLines", NULL)
-  paste0(paste(.prefixLines, collapse="\n"), "\n")
+  paste0(paste(.prefixLines, collapse = "\n"), "\n")
 }
 
 #' Translate a condition (like in `if ()`) to NONMEM
@@ -514,16 +516,22 @@ rex::register_shortcuts("babelmixr2")
     }
     .op <- as.character(x[[1]])
     if (length(x) == 3L && .op %in% c("&&", "||", "&", "|")) {
-      return(paste0(.rxToNonmemCondition(x[[2]], ui), .rxNMlogic[.op],
-                    .rxToNonmemCondition(x[[3]], ui)))
+      return(paste0(
+        .rxToNonmemCondition(x[[2]], ui),
+        .rxNMlogic[.op],
+        .rxToNonmemCondition(x[[3]], ui)
+      ))
     }
     if (length(x) == 3L && .rxIsLogicalOperator(x[[1]])) {
-      return(paste0(.rxToNonmem(x[[2]], ui=ui), .rxNMlogic[.op],
-                    .rxToNonmem(x[[3]], ui=ui)))
+      return(paste0(
+        .rxToNonmem(x[[2]], ui = ui),
+        .rxNMlogic[.op],
+        .rxToNonmem(x[[3]], ui = ui)
+      ))
     }
   }
   # a numeric expression is true when it is not zero
-  paste0("(", .rxToNonmem(x, ui=ui), ").NE.0")
+  paste0("(", .rxToNonmem(x, ui = ui), ").NE.0")
 }
 
 #' Translate a logical expression used as a number to NONMEM
@@ -540,44 +548,62 @@ rex::register_shortcuts("babelmixr2")
 #' @author Matthew L. Fidler
 .rxToNonmemLogicalIndicator <- function(x, ui) {
   .cond <- .rxToNonmemCondition(x, ui)
-  .df <- rxode2::rxGetControl(ui, ".nmLogicalDf",
-                              data.frame(cond=character(0), nm=character(0)))
+  .df <- rxode2::rxGetControl(
+    ui,
+    ".nmLogicalDf",
+    data.frame(cond = character(0), nm = character(0))
+  )
   .w <- which(.df$cond == .cond)
-  if (length(.w) == 1L) return(.df$nm[.w])
+  if (length(.w) == 1L) {
+    return(.df$nm[.w])
+  }
   .num <- rxode2::rxGetControl(ui, ".nmVarLNum", 1)
   .extra <- rxode2::rxGetControl(ui, ".nmVarExtra", "")
   .newVar <- sprintf("RXL%s%03d", .extra, .num)
   rxode2::rxAssignControlValue(ui, ".nmVarLNum", .num + 1)
   .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
-  .prefixLines <- c(.prefixLines,
-                    paste0(.rxToNonmemGetIndent(ui), .newVar, "=0"),
-                    paste0(.rxToNonmemGetIndent(ui), "IF (", .cond, ") ",
-                           .newVar, "=1"))
+  .prefixLines <- c(
+    .prefixLines,
+    paste0(.rxToNonmemGetIndent(ui), .newVar, "=0"),
+    paste0(.rxToNonmemGetIndent(ui), "IF (", .cond, ") ", .newVar, "=1")
+  )
   rxode2::rxAssignControlValue(ui, ".nmPrefixLines", .prefixLines)
-  rxode2::rxAssignControlValue(ui, ".nmLogicalDf",
-                               rbind(.df, data.frame(cond=.cond, nm=.newVar)))
+  rxode2::rxAssignControlValue(
+    ui,
+    ".nmLogicalDf",
+    rbind(.df, data.frame(cond = .cond, nm = .newVar))
+  )
   .newVar
 }
 
 .rxToNonmemIfErrorMessage <- function(what) {
-  paste0("babelmixr2 will not allow ", what, " statements in NONMEM models",
-         "; prune the if/else branches with `nonmemControl(prune=TRUE)`")
+  paste0(
+    "babelmixr2 will not allow ",
+    what,
+    " statements in NONMEM models",
+    "; prune the if/else branches with `nonmemControl(prune=TRUE)`"
+  )
 }
 
 .rxToNonmemHandleIfExpressions <- function(x, ui) {
   if (length(x) > 3L) {
-    stop(.rxToNonmemIfErrorMessage("`else if` or `else`"), call.=FALSE)
+    stop(.rxToNonmemIfErrorMessage("`else if` or `else`"), call. = FALSE)
   }
   if (rxode2::rxGetControl(ui, ".ifelse", FALSE)) {
-    stop(.rxToNonmemIfErrorMessage("nested `if`"), call.=FALSE)
+    stop(.rxToNonmemIfErrorMessage("nested `if`"), call. = FALSE)
   }
   .cond <- .rxToNonmemCondition(x[[2]], ui)
-  .ret <- paste0(.rxToNonmemFlushPrefixLines(ui),
-                 .rxToNonmemGetIndent(ui), "IF (", .cond, ") THEN\n")
+  .ret <- paste0(
+    .rxToNonmemFlushPrefixLines(ui),
+    .rxToNonmemGetIndent(ui),
+    "IF (",
+    .cond,
+    ") THEN\n"
+  )
   .rxToNonmemIndent(ui)
   rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
   on.exit(rxode2::rxAssignControlValue(ui, ".ifelse", FALSE))
-  .ret <- paste0(.ret, .rxToNonmem(x[[3]], ui=ui))
+  .ret <- paste0(.ret, .rxToNonmem(x[[3]], ui = ui))
   paste0(.ret, "\n", .rxToNonmemGetIndent(ui, FALSE), "END IF\n")
 }
 
@@ -601,7 +627,7 @@ rex::register_shortcuts("babelmixr2")
 #' @author Matthew L. Fidler
 .nonmemGetCmtPropertyPrefix <- function(ui) {
   .pre <- rxode2::rxGetControl(ui, ".cmtPropertyPre", list())
-  .pre <- unlist(.pre, use.names=FALSE)
+  .pre <- unlist(.pre, use.names = FALSE)
   .pre[.pre != ""]
 }
 
@@ -757,7 +783,7 @@ rex::register_shortcuts("babelmixr2")
   .extra <- paste0(.nonmemReplaceNonmemThetaWithMu(.rxToNonmem(.tmp, ui=ui), ui),
                    .babelmixr2Deparse(x))
   .pre <- .nonmemReplaceNonmemThetaWithMu(.rxToNonmemFlushPrefixLines(ui), ui)
-  .nonmemSetCmtProperty(ui, .state, .extra, type="init", pre=.pre)
+  .nonmemSetCmtProperty(ui, .state, .extra, type = "init", pre = .pre)
   return(paste0(.rxToNonmemGetIndent(ui),
                     ";", .state, "(0) defined in $PK block"))
 }
@@ -786,8 +812,11 @@ rex::register_shortcuts("babelmixr2")
   .tmp <- .nonmemReplaceThetaEtaWithNames(.tmp, ui)
   .extra <- paste0(.nonmemReplaceNonmemThetaWithMu(.rxToNonmem(.tmp, ui=ui), ui=ui),
                    .babelmixr2Deparse(x))
-  .pre <- .nonmemReplaceNonmemThetaWithMu(.rxToNonmemFlushPrefixLines(ui), ui=ui)
-  .nonmemSetCmtProperty(ui, .state, .extra, type=.prefix, pre=.pre)
+  .pre <- .nonmemReplaceNonmemThetaWithMu(
+    .rxToNonmemFlushPrefixLines(ui),
+    ui = ui
+  )
+  .nonmemSetCmtProperty(ui, .state, .extra, type = .prefix, pre = .pre)
   paste0("; ", .prefix, "(", .state, ") defined in $PK block")
 }
 

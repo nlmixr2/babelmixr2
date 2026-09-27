@@ -108,7 +108,7 @@
 nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           advanOde=c("advan13", "advan8", "advan6"),
                           linCmt=c("advan", "ode"),
-                          prune="auto",
+                          prune = "auto",
                           cov=c("r,s", "r", "s", ""),
                           maxeval=100000,
                           tol=6,
@@ -173,9 +173,9 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertIntegerish(mapiter, len=1, any.missing=FALSE)
   checkmate::assertLogical(muRefCovAlg, any.missing=FALSE, len=1)
   checkmate::assertLogical(run, any.missing=FALSE, len=1)
-  if (!(checkmate::testLogical(prune, any.missing=FALSE, len=1) ||
+  if (!(checkmate::testLogical(prune, any.missing = FALSE, len = 1) ||
           identical(prune, "auto"))) {
-    stop("'prune' must be \"auto\", TRUE or FALSE", call.=FALSE)
+    stop("'prune' must be \"auto\", TRUE or FALSE", call. = FALSE)
   }
   if (!is.null(modelName)) {
     checkmate::assertCharacter(modelName, len=1, any.missing=FALSE)
@@ -242,7 +242,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                cov=match.arg(cov),
                advanOde=match.arg(advanOde),
                linCmt=match.arg(linCmt),
-               prune=prune,
+               prune = prune,
                maxeval=maxeval,
                print=print,
                noabort=noabort,

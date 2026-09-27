@@ -7,13 +7,15 @@
 #' @author Matthew L. Fidler
 .bblHasIf <- function(ui) {
   .hasIf <- function(x) {
-    if (!is.call(x)) return(FALSE)
+    if (!is.call(x)) {
+      return(FALSE)
+    }
     if (identical(x[[1]], quote(`if`)) || identical(x[[1]], quote(`ifelse`))) {
       return(TRUE)
     }
-    any(vapply(as.list(x)[-1], .hasIf, logical(1), USE.NAMES=FALSE))
+    any(vapply(as.list(x)[-1], .hasIf, logical(1), USE.NAMES = FALSE))
   }
-  any(vapply(ui$lstExpr, .hasIf, logical(1), USE.NAMES=FALSE))
+  any(vapply(ui$lstExpr, .hasIf, logical(1), USE.NAMES = FALSE))
 }
 
 #' Does this model have `if`/`else` statements NONMEM cannot write directly?
@@ -26,16 +28,28 @@
 #' @noRd
 #' @author Matthew L. Fidler
 .bblNeedsPrune <- function(ui) {
-  .needs <- function(x, inIf=FALSE) {
-    if (!is.call(x)) return(FALSE)
-    if (identical(x[[1]], quote(`ifelse`))) return(TRUE)
+  .needs <- function(x, inIf = FALSE) {
+    if (!is.call(x)) {
+      return(FALSE)
+    }
+    if (identical(x[[1]], quote(`ifelse`))) {
+      return(TRUE)
+    }
     if (identical(x[[1]], quote(`if`))) {
-      if (inIf || length(x) > 3L) return(TRUE)
+      if (inIf || length(x) > 3L) {
+        return(TRUE)
+      }
       return(.needs(x[[2]], TRUE) || .needs(x[[3]], TRUE))
     }
-    any(vapply(as.list(x)[-1], .needs, logical(1), inIf=inIf, USE.NAMES=FALSE))
+    any(vapply(
+      as.list(x)[-1],
+      .needs,
+      logical(1),
+      inIf = inIf,
+      USE.NAMES = FALSE
+    ))
   }
-  any(vapply(ui$lstExpr, .needs, logical(1), USE.NAMES=FALSE))
+  any(vapply(ui$lstExpr, .needs, logical(1), USE.NAMES = FALSE))
 }
 
 #' Prune the `if`/`else` branches of the model to estimate
@@ -52,12 +66,17 @@
 #' @author Matthew L. Fidler
 .bblPruneIf <- function(env, software) {
   .ui <- rxode2::rxUiDecompress(env$ui)
-  if (!.bblHasIf(.ui)) return(invisible())
-  .env <- new.env(parent=emptyenv())
+  if (!.bblHasIf(.ui)) {
+    return(invisible())
+  }
+  .env <- new.env(parent = emptyenv())
   .env$.if <- NULL
   .env$.def1 <- NULL
-  .pruned <- rxode2::.rxPrune(as.call(c(quote(`{`), .ui$lstExpr)), envir=.env,
-                              strAssign=rxode2::rxModelVars(.ui)$strAssign)
+  .pruned <- rxode2::.rxPrune(
+    as.call(c(quote(`{`), .ui$lstExpr)),
+    envir = .env,
+    strAssign = rxode2::rxModelVars(.ui)$strAssign
+  )
   .pruned <- as.list(str2lang(paste0("{", .pruned, "}")))[-1]
   .new <- rxode2::rxUiDecompress(.ui)
   suppressMessages(rxode2::model(.new) <- .pruned)
@@ -65,8 +84,8 @@
   # keep what nlmixr2 attached to the ui (like the model name used for
   # the output files)
   for (.v in c("modelName", "boundedTransforms")) {
-    if (exists(.v, envir=.ui, inherits=FALSE)) {
-      assign(.v, get(.v, envir=.ui, inherits=FALSE), envir=.new)
+    if (exists(.v, envir = .ui, inherits = FALSE)) {
+      assign(.v, get(.v, envir = .ui, inherits = FALSE), envir = .new)
     }
   }
   env$ui <- .new
@@ -89,7 +108,11 @@
   if (is.list(.control) && !is.null(.control$prune)) {
     .prune <- .control$prune[1]
   }
-  if (isTRUE(.prune)) return(TRUE)
-  if (isFALSE(.prune)) return(FALSE)
+  if (isTRUE(.prune)) {
+    return(TRUE)
+  }
+  if (isFALSE(.prune)) {
+    return(FALSE)
+  }
   .bblNeedsPrune(rxode2::rxUiDecompress(env$ui))
 }
