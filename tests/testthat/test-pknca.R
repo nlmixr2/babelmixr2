@@ -635,6 +635,36 @@ test_that("pkncaParamMap: covariates and linCmt() arguments", {
   }
   suppressMessages(ui <- rxode2::rxode(linModel))
   expect_true(all(c("ka", "cl", "vc") %in% pkncaParamMap(ui)$param))
+  suppressMessages(
+    fit <- nlmixr(linModel, data = nlmixr2data::theo_sd, est = "pknca")
+  )
+  expect_false(isTRUE(all.equal(fit$ui$theta[["cl"]], 1)))
+  expect_false(isTRUE(all.equal(fit$ui$theta[["vc"]], 3.45)))
+
+  # Scaled by a constant or another parameter: left unchanged with a message
+  scaledModel <- function() {
+    ini({
+      ka <- 0.45
+      cl <- 1
+      vc <- 3.45
+      f1 <- 0.8
+      prop.err <- 0.5
+    })
+    model({
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / f1 / vc * center
+      cp <- center / vc
+      cp ~ prop(prop.err)
+    })
+  }
+  suppressMessages(ui <- rxode2::rxode(scaledModel))
+  expect_equal(intersect(c("ka", "cl", "vc"), pkncaParamMap(ui)$param), "ka")
+  expect_message(
+    fit <- nlmixr(scaledModel, data = nlmixr2data::theo_sd, est = "pknca"),
+    regexp = "NCA initial estimates not applied"
+  )
+  expect_equal(fit$ui$theta[["cl"]], 1)
+  expect_equal(fit$ui$theta[["vc"]], 3.45)
 
   vModel <- function() {
     ini({
@@ -674,6 +704,14 @@ test_that("pkncaTransformedNames", {
   expect_equal(
     pkncaTransformedNames(quote(-cl / vc * center)),
     character()
+  )
+  expect_equal(
+    pkncaTransformedNames(quote(-cl / F1 / vc * center), others = "F1"),
+    c("cl", "F1", "vc", "center")
+  )
+  expect_equal(
+    pkncaTransformedNames(quote(ka * depot - k2 * center), others = "k2"),
+    c("k2", "center")
   )
   expect_equal(
     pkncaTransformedNames(quote(cp <- linCmt(ka, cl, vc))),

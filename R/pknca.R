@@ -527,12 +527,21 @@ pkncaParamMap <- function(ui) {
       )
     }
   }
-  # Thetas used directly as the parameter (like `ka` in `ini()` with `linCmt()`)
-  # (only when never used within a transformation like `exp()`)
-  directThetas <- setdiff(thetaNames, c(ret$theta, ret$param, allLhs))
+  # Thetas named like an NCA-estimated parameter and used directly as the
+  # parameter (like `ka` and `cl` in `-cl / vc * center`); only when never used
+  # within a transformation like `exp()` or scaled by something else
+  directNames <- c("ka", "cl", "vc", "v", "q", "vp", "q2", "vp2")
+  directThetas <- setdiff(
+    intersect(thetaNames, directNames),
+    c(ret$theta, ret$param, allLhs)
+  )
   directThetas <- setdiff(
     directThetas,
-    pkncaTransformedNames(ui$lstExpr, covs = ui$allCovs)
+    pkncaTransformedNames(
+      ui$lstExpr,
+      covs = ui$allCovs,
+      others = setdiff(thetaNames, directNames)
+    )
   )
   if (length(directThetas) > 0) {
     ret <- rbind(
@@ -570,16 +579,19 @@ pkncaNumConst <- function(x) {
 #'
 #' @param x An R expression or a list of expressions
 #' @param covs Names of the data covariates
+#' @param others Names of other parameters that make a product or quotient a
+#'   transformation
 #' @return A character vector of variable names used within a function call
 #'   other than arithmetic (like `exp(cl)` or `log(WT / 70)`) or within an
 #'   arithmetic expression that includes a constant or covariate (like
-#'   `cl / 70` or `cl * WT`).
+#'   `cl / 70` or `cl * WT`), or multiplied or divided by one of `others`
+#'   (like `cl / F1`).
 #'   Arguments of `linCmt()` are used directly, so they are not included.
 #' @noRd
-pkncaTransformedNames <- function(x, covs = character()) {
+pkncaTransformedNames <- function(x, covs = character(), others = character()) {
   if (is.list(x)) {
     return(unique(unlist(
-      lapply(x, pkncaTransformedNames, covs = covs),
+      lapply(x, pkncaTransformedNames, covs = covs, others = others),
       use.names = FALSE
     )))
   }
@@ -597,6 +609,10 @@ pkncaTransformedNames <- function(x, covs = character()) {
     isConst <- vapply(args, is.numeric, logical(1))
     if (any(isConst) || any(all.vars(x) %in% covs)) {
       # Scaled by a constant or covariate, like cl / 70 or cl * WT
+      return(all.vars(x))
+    }
+    if (fun %in% c("*", "/") && any(all.vars(x) %in% others)) {
+      # Scaled by another parameter, like cl / F1
       return(all.vars(x))
     }
   }
@@ -617,7 +633,7 @@ pkncaTransformedNames <- function(x, covs = character()) {
   if (!(fun %in% passThrough)) {
     return(all.vars(x))
   }
-  pkncaTransformedNames(as.list(x)[-1], covs = covs)
+  pkncaTransformedNames(as.list(x)[-1], covs = covs, others = others)
 }
 
 #' Find the names of all assigned variables (one per assignment)
