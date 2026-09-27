@@ -97,6 +97,10 @@
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
   .nonmemControlToFoceiControl(env, TRUE)
+  # nlmixr2CreateOutputFromUi() may add its own objective (like FOCEi
+  # with tableControl(cwres=TRUE)) and switch env$ofvType to it, so keep
+  # the NONMEM objective type here (#94)
+  .ofvType <- env$ofvType
   env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData,
                                                control=env$control, table=env$table,
                                                env=env, est="nonmem")
@@ -119,7 +123,7 @@
   assign("time",
          cbind(.time, data.frame(NONMEM=.ui$nonmemRunTime)),
          .env)
-  nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .env$ofvType)
+  nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .ofvType)
   env
 }
 
@@ -313,6 +317,9 @@ nlmixr2Est.nonmem <- function(env, ...) {
   # linCmt() is written as NONMEM's closed-form ADVAN or as ODEs
   .micro <- .bblLinCmtToOde(env, "NONMEM",
                             native=(.bblLinCmtControl(env$control, "advan") == "advan"))
+  # nested if/else branches are pruned (written as arithmetic), as
+  # set by the prune option of nonmemControl
+  if (.bblPruneControl(env, nested = FALSE)) .bblPruneIf(env, "NONMEM")
   .ui <- env$ui
   .nonmemFamilyControl(env, ...)
   rxode2::rxAssignControlValue(.ui, ".linCmtMicro", .micro)

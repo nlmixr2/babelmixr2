@@ -146,6 +146,35 @@ test_that("a Monolix fit uses the SAEM etas, like nlmixr2est's saem", {
   expect_equal(.eta$eta.cl, -0.529241, tolerance=1e-6)
 })
 
+test_that("a Monolix fit works with tableControl(cwres=TRUE) (#94)", {
+  skip_if_not(file.exists(test_path("monolix2024-priors.zip")))
+  .zip <- normalizePath(test_path("monolix2024-priors.zip"))
+  .u <- .mlx2024Ui("mle")
+  withr::with_tempdir({
+    utils::unzip(.zip)
+    setwd(file.path("monolix2024", "mle"))
+    .f <- suppressWarnings(suppressMessages(
+      nlmixr2(
+        .u,
+        .mlx2024Data(),
+        "monolix",
+        monolixControl(modelName = "mle"),
+        table = tableControl(cwres = TRUE)
+      )
+    ))
+  })
+  expect_true(inherits(.f, "nlmixr2FitData"))
+  expect_true("CWRES" %in% names(.f))
+  # the Monolix objective stays in use alongside nlmixr2's FOCEi objective
+  expect_true("FOCEi" %in% row.names(.f$objDf))
+  expect_equal(nrow(.f$objDf), 2L)
+  expect_false(.f$ofvType == "FOCEi")
+  expect_equal(.f$objective, .f$objDf[.f$ofvType, "OBJF"])
+  expect_equal(AIC(.f), .f$objDf[.f$ofvType, "AIC"])
+  expect_equal(BIC(.f), .f$objDf[.f$ofvType, "BIC"])
+  expect_equal(as.numeric(logLik(.f)), .f$objDf[.f$ofvType, "Log-likelihood"])
+})
+
 test_that("the PRED absolute difference to Monolix is absolute", {
   skip_if_not(file.exists(test_path("monolix2024-priors.zip")))
   .b <- loadNamespace("babelmixr2")

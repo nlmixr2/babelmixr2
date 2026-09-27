@@ -197,7 +197,7 @@ withr::with_tempdir({
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
     .des <- which(.mod == "$DES")
     .alag <- which(.mod == "  ALAG1=DLOG(RXDZ001) ; alag(central) = log(cl)")
-    .dz <- which(.mod == "  RXDZ001=ETA(1)+THETA(1)")
+    .dz <- which(.mod == "  RXDZ001=ETA(1)+MU_1")
     expect_length(.alag, 1L)
     expect_length(.dz, 1L)
     # the protection is calculated in $PK before ALAG1 uses it
