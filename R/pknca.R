@@ -650,13 +650,11 @@ pkncaTransformedNames <- function(x, allowed = character()) {
 #'   unary minus
 #' @noRd
 pkncaTermLeaves <- function(x) {
-  if (
-    is.call(x) &&
-      (identical(x[[1]], quote(`*`)) ||
-        identical(x[[1]], quote(`/`)) ||
-        identical(x[[1]], quote(`(`)) ||
-        (identical(x[[1]], quote(`-`)) && length(x) == 2))
-  ) {
+  if (!is.call(x) || !is.name(x[[1]])) {
+    return(list(x))
+  }
+  fun <- as.character(x[[1]])
+  if (fun %in% c("*", "/", "(") || (fun == "-" && length(x) == 2)) {
     return(unlist(lapply(as.list(x)[-1], pkncaTermLeaves), recursive = FALSE))
   }
   list(x)
