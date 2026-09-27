@@ -386,9 +386,11 @@ test_that("pkncaIntervals route handling (#102)", {
   ret <- pkncaIntervals(intervals = intervalsMulti, dose = doseMulti, groupCols = "ID", timeCol = "TIME")
   expect_equal(ret$cmax.dn, c(TRUE, FALSE))
   expect_equal(ret$cl.last, c(TRUE, FALSE))
+  # Without others, they are used (cmax.dn only from the first)
   doseMulti$pkncaNoC0 <- TRUE
   ret <- pkncaIntervals(intervals = intervalsMulti, dose = doseMulti, groupCols = "ID", timeCol = "TIME")
-  expect_equal(ret$cmax.dn, c(TRUE, TRUE))
+  expect_equal(ret$cmax.dn, c(TRUE, FALSE))
+  expect_equal(ret$cl.last, c(TRUE, TRUE))
 })
 
 test_that("pkncaAddIvC0 (#102)", {
@@ -553,22 +555,33 @@ test_that("pkncaAutoIntervals (#102)", {
   expect_equal(ret$start[ret$ID == 2], c(0, 48))
   expect_equal(ret$end[ret$ID == 2], c(23.9, 72))
   expect_equal(ret$auclast[ret$ID == 2], c(TRUE, TRUE))
-  # Cmax only from the first dose
-  expect_equal(ret$cmax[ret$ID == 2], c(TRUE, FALSE))
-  # Cmax from the first dose of each route (crossover)
-  doseCross <- dose[dose$ID == 2, ]
-  doseCross$pkncaRoute[3] <- "intravascular"
-  ret <- pkncaAutoIntervals(obs = obs, dose = doseCross, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
-  expect_equal(ret$cmax, c(TRUE, TRUE))
   # Peak and trough sampling keeps the intervals
   obsPt <- data.frame(ID = 2, TIME = c(2, 24, 26, 48, 50, 72), DV = 1)
   ret <- pkncaAutoIntervals(obs = obsPt, dose = dose[dose$ID == 2, ], groupCols = "ID", timeCol = "TIME", dvCol = "DV")
   expect_equal(ret$start, c(0, 24, 48))
   expect_equal(ret$end, c(24, 48, 72))
-  # With too few concentrations everywhere, all intervals are kept
-  obsFew <- data.frame(ID = 2, TIME = c(2, 26, 50), DV = 1)
+  # With too few concentrations everywhere, intervals with any concentrations
+  # are kept
+  obsFew <- data.frame(ID = 2, TIME = c(26, 50), DV = 1)
   ret <- pkncaAutoIntervals(obs = obsFew, dose = dose[dose$ID == 2, ], groupCols = "ID", timeCol = "TIME", dvCol = "DV")
-  expect_equal(ret$start, c(0, 24, 48))
+  expect_equal(ret$start, c(24, 48))
+})
+
+test_that("pkncaIntervals cmax.dn from the first usable interval per route (#102)", {
+  dose <- data.frame(
+    ID = 1,
+    TIME = c(0, 24, 48, 72),
+    pkncaRoute = c("intravascular", "intravascular", "extravascular", "extravascular"),
+    pkncaBolus = c(TRUE, TRUE, FALSE, FALSE),
+    pkncaNoC0 = c(TRUE, FALSE, FALSE, FALSE)
+  )
+  intervals <- data.frame(ID = 1, start = c(0, 24, 48, 72), end = c(24, 48, 72, 96), cmax = TRUE, tmax = TRUE, auclast = TRUE)
+  ret <- pkncaIntervals(intervals = intervals, dose = dose, groupCols = "ID", timeCol = "TIME")
+  # The first IV dose has no log-linear C0, so the second IV dose is used
+  expect_equal(ret$cmax.dn, c(FALSE, TRUE, FALSE, FALSE))
+  # Without IV doses, the first oral dose is used
+  ret <- pkncaIntervals(intervals = intervals[3:4, ], dose = dose[3:4, ], groupCols = "ID", timeCol = "TIME")
+  expect_equal(ret$cmax.dn, c(TRUE, FALSE))
 })
 
 test_that("pkncaCollapseDose (#102)", {

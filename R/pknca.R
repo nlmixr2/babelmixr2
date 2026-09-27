@@ -525,15 +525,14 @@ pkncaCollapseDose <- function(dose, groupCols, timeCol, amtCol) {
 #' A single dose uses the PKNCA default single-dose intervals.  Multiple doses
 #' use each dose until the next dose (or the last concentration before it) and
 #' the last dose for the last dosing interval, when there are enough
-#' concentrations in the interval (with Cmax only from the first dose of each
-#' route) (unlike
+#' concentrations in the interval (unlike
 #' the PKNCA automatic intervals, a concentration at the time of dosing is not
 #' required; it is imputed, #102).
 #'
 #' @inheritParams pkncaAddIvC0
 #' @param minObs The minimum number of concentrations after the start of a
 #'   multiple-dose interval for the interval to be used (unless no intervals
-#'   have enough)
+#'   have enough, then intervals with any concentrations are used)
 #' @return A data.frame of intervals with the grouping columns
 #' @noRd
 pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 2) {
@@ -580,19 +579,21 @@ pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 2)
           integer(1)
         )
       if (any(nObs >= minObs)) {
-        intervals <- intervals[nObs >= minObs, , drop = FALSE]
+        keep <- nObs >= minObs
+      } else {
+        keep <- nObs > 0
       }
-      # Cmax (for vc) from the first dose of each route, since later doses
-      # include accumulation
-      doseGroupKey <- pkncaKey(doseGroup, timeCol)
-      routeAtStart <-
-        tapply(doseGroup$pkncaRoute, doseGroupKey, function(x) paste(sort(unique(x)), collapse = "+"))
-      intervalRoute <- as.vector(routeAtStart[pkncaKey(intervals, "start")])
-      intervals$cmax <- !duplicated(intervalRoute)
+      intervals <- intervals[keep, , drop = FALSE]
+      if (nrow(intervals) == 0) {
+        next
+      }
     }
     intervals <- PKNCA::check.interval.specification(intervals)
     groupValues <- doseGroup[rep(1, nrow(intervals)), groupCols, drop = FALSE]
     ret[[length(ret) + 1]] <- cbind(groupValues, intervals)
+  }
+  if (length(ret) == 0) {
+    cli::cli_abort("no NCA intervals with concentrations for PKNCA estimation")
   }
   ret <- do.call(rbind, ret)
   rownames(ret) <- NULL
@@ -607,7 +608,8 @@ pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 2)
 #' with only intravascular doses are present, cmax.dn and cl.last (used for vc
 #' and cl) are only calculated for them (#102).  Intervals starting with both
 #' intravascular and extravascular doses at the same time are used for neither
-#' when intervals with a single route are available.
+#' when intervals with a single route are available.  cmax.dn is only
+#' calculated for the first remaining interval of each group and route.
 #'
 #' @param intervals The automatically-generated intervals from `PKNCAdata()`
 #' @param dose Dose data with `pkncaRoute`, `pkncaBolus`, and (optionally)
@@ -655,13 +657,13 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
   }
   if (!is.null(dose$pkncaNoC0)) {
     # Intravascular intervals without a log-linear back-extrapolated C0 are not
-    # used for vc and cl when others are available
+    # used for vc and cl when others are available for the group
     doseNoC0 <- tapply(dose$pkncaNoC0, doseKey, any)
     isNoC0 <- as.vector(doseNoC0[intervalKey])
     isNoC0 <- !is.na(isNoC0) & isNoC0
-    if (any(isIv & !isNoC0)) {
-      isIv <- isIv & !isNoC0
-    }
+    groupKey <- pkncaKey(intervals, groupCols)
+    hasC0 <- tapply(isIv & !isNoC0, groupKey, any)
+    isIv <- isIv & !(isNoC0 & as.vector(hasC0[groupKey]))
   }
   if (any(isIv) && any(!isIv)) {
     # Only intervals with only intravascular doses calculate vc and cl
@@ -669,6 +671,16 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
     intervals$cl.last[!isIv] <- FALSE
     intervals$vss.last[!isIv] <- FALSE
   }
+  # vc only from the first remaining interval for each group and route of
+  # administration, since later doses include accumulation
+  doseRoute <-
+    tapply(dose$pkncaRoute, doseKey, function(x) paste(sort(unique(x)), collapse = "+"))
+  intervalGroupRoute <-
+    paste(pkncaKey(intervals, groupCols), as.vector(doseRoute[intervalKey]), sep = "\r")
+  useCmax <- which(intervals$cmax.dn)
+  useCmax <- useCmax[order(intervals$start[useCmax])]
+  laterCmax <- useCmax[duplicated(intervalGroupRoute[useCmax])]
+  intervals$cmax.dn[laterCmax] <- FALSE
   intervals
 }
 
