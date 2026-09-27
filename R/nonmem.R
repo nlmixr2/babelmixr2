@@ -658,6 +658,14 @@ rex::register_shortcuts("babelmixr2")
 #' @author Matthew L. Fidler
 #' @noRd
 .rxToNonmemHandleBinaryOperator <- function(x, ui) {
+  if (identical(x[[1]], quote(`/`)) && .nonmemProtect(ui)) {
+    # $ABBR PROTECT writes a/b with PDZ(), a protected function, so a
+    # division of numbers is written as a number
+    .ret <- .rxToNonmemFormatNumber(.rxToNonmemNumber(x))
+    if (!is.null(.ret)) {
+      return(.ret)
+    }
+  }
   if (identical(x[[1]], quote(`/`))) {
     .x2 <- x[[2]]
     .x3 <- x[[3]]

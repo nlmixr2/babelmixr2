@@ -1056,6 +1056,10 @@ withr::with_tempdir({
     expect_equal(.rxToN("log1pmx(1)"), "(-0.30685281944005471)")
     expect_equal(.rxToN("expit(tka)"), "1/(1+DEXP(-(THETA(1))))")
     # powers above .rxNMmaxIntPow are powers of x*x, which is never negative
+    # PROTECT writes a/b with PDZ(), so divisions of numbers are folded
+    expect_equal(.rxToN("2/4"), "0.5")
+    expect_equal(.rxToN("tka*(1/pi)"), "THETA(1)*(0.31830988618379069)")
+    expect_equal(.rxToN("tka/70"), "THETA(1)/70")
     expect_equal(.rxToN("tka^13"), "(THETA(1)*((THETA(1)*THETA(1))**6))")
     expect_equal(.rxToN("tka^14"), "((THETA(1)*THETA(1))**7)")
     expect_equal(.rxToN("(tka-3)^-14"), "(1/(((THETA(1)-3)*(THETA(1)-3))**7))")

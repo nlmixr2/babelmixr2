@@ -7,7 +7,7 @@
   Since NM-TRAN writes `B**E` as `PEXP(E*PLOG(B))`, integer powers are
   written as products (or powers of `x*x`, which is never negative) and
   powers of a positive number with `DEXP()`.  Functions of numbers (like `exp(0)`, `log(2*pi)` or
-  `expit(0)`) are written as numbers, and model
+  `expit(0)`) and divisions of numbers are written as numbers, and model
   variables named like a protected function (like `plog`) are renamed.
   babelmixr2's own zero protection (`protectZeros`) is now only used
   with `protect=FALSE`, like for NONMEM before 7.4 (#62).
