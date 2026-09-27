@@ -85,6 +85,17 @@ withr::with_tempdir({
     expect_true(all(.r$data$LIMIT[.r$data$EVID == 0] == 0.5))
   })
 
+  test_that("CENS=0 with a finite LIMIT uses M2 next to M3 (#92)", {
+    .d <- .cens
+    .d$LIMIT <- ifelse(.d$CENS == 0 & .d$EVID == 0, 0.5, NA)
+    .r <- .export(.d, "m2m3")
+    expect_true("$INPUT ID TIME EVID AMT DV CMT CENS LIMIT RXROW" %in% .r$ctl)
+    expect_true(any(grepl("Y = Y/PHI(ABS(LIMIT-IPRED)/W)", .r$ctl, fixed=TRUE)))
+    .obs <- .r$data$EVID == 0
+    expect_true(all(.r$data$LIMIT[.obs & .r$data$CENS == 0] == 0.5))
+    expect_true(all(abs(.r$data$LIMIT[.r$data$CENS == 1]) == 1000000))
+  })
+
   test_that("right censoring keeps finite limits and missing limits are infinite (#92)", {
     .d <- .cens
     .d$CENS[.d$CENS == 1] <- -1
