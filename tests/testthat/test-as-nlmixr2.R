@@ -71,6 +71,70 @@ test_that("nlmixr2 translation from nonmem2x", {
 
 })
 
+test_that("as.nlmixr2 gives a clear error for untranslated eps/err (#95)", {
+  skip_on_cran()
+
+  mod <- .nonmem2rx(
+    system.file("mods/cpt/runODE032.ctl", package = "nonmem2rx"),
+    determineError = FALSE,
+    lst = ".res",
+    save = FALSE
+  )
+
+  expect_error(as.nlmixr2(mod), "'eps1'")
+
+  mod2 <- function() {
+    ini({
+      lcl <- 1.37034036528946
+      lvc <- 4.19814911033061
+      lq <- 1.38003493562413
+      lvp <- 3.87657341967489
+      RSV <- c(0, 0.196446108190896, 1)
+      eta.cl ~ 0.101251418415006
+      eta.v ~ 0.0993872449483344
+      eta.q ~ 0.101302674763154
+      eta.v2 ~ 0.0730497519364148
+    })
+    model({
+      cmt(CENTRAL)
+      cmt(PERI)
+      cl <- exp(lcl + eta.cl)
+      v <- exp(lvc + eta.v)
+      q <- exp(lq + eta.q)
+      v2 <- exp(lvp + eta.v2)
+      k21 <- q / v2
+      k12 <- q / v
+      d / dt(CENTRAL) <- k21 * PERI - k12 * CENTRAL - cl * CENTRAL / v
+      d / dt(PERI) <- -k21 * PERI + k12 * CENTRAL
+      f <- CENTRAL / v
+      y <- f + f * eps1
+      f ~ prop(RSV)
+    })
+  }
+
+  new <- .as.nonmem2rx(mod2, mod)
+
+  expect_error(
+    as.nlmixr2(new),
+    "untranslated NONMEM residual variable\\(s\\): 'eps1'"
+  )
+
+  expect_error(
+    .nonmem2rxAssertNoEps(list(
+      allCovs = c("WT", "err1", "eps2", "eps1x"),
+      nonmemData = data.frame(WT = 1)
+    )),
+    "'err1', 'eps2'\\n"
+  )
+  expect_error(
+    .nonmem2rxAssertNoEps(list(
+      allCovs = c("WT", "eps1"),
+      nonmemData = data.frame(WT = 1, eps1 = 0)
+    )),
+    NA
+  )
+})
+
 .monolix2rx <- function(...) suppressWarnings(suppressMessages(monolix2rx::monolix2rx(...)))
 
 test_that("nlmixr2 translation from monolix2rx", {
