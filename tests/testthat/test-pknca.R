@@ -366,4 +366,10 @@ test_that("pkncaAddIvC0 (#102)", {
   dose2 <- rbind(dose[1, ], dose[1, ])
   ret2 <- pkncaAddIvC0(obs = obs, dose = dose2, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
   expect_equal(sum(ret2$TIME == 0), 1)
+  # No C0 when an extravascular dose is at the same time
+  dose3 <- rbind(dose[1, ], dose[1, ])
+  dose3$pkncaRoute[2] <- "extravascular"
+  dose3$pkncaBolus[2] <- FALSE
+  ret3 <- pkncaAddIvC0(obs = obs, dose = dose3, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  expect_equal(ret3, obs)
 })

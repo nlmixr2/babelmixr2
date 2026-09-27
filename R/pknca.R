@@ -309,9 +309,11 @@ calcPknca <- function(env, pkncaUnits) {
 pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
   obsKey <- pkncaKey(obs, groupCols)
   doseKey <- pkncaKey(dose, groupCols)
-  # Only one C0 for multiple doses at the same time
-  bolusIdx <- which(dose$pkncaBolus)
-  bolusIdx <- bolusIdx[!duplicated(pkncaKey(dose[bolusIdx, , drop = FALSE], c(groupCols, timeCol)))]
+  # Only one C0 for multiple doses at the same time, and only when all doses at
+  # that time are intravascular boluses
+  doseTimeKey <- pkncaKey(dose, c(groupCols, timeCol))
+  allBolus <- as.vector(tapply(dose$pkncaBolus, doseTimeKey, all)[doseTimeKey])
+  bolusIdx <- which(allBolus & !duplicated(doseTimeKey))
   newRows <- list()
   for (idx in bolusIdx) {
     doseTime <- dose[[timeCol]][idx]
