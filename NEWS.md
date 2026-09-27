@@ -1,5 +1,11 @@
 # babelmixr2 0.1.11.9000
 
+* When a NONMEM run fails, `est="nonmem"` now says why and where to look
+  instead of failing with an unclear error: a run command that was not
+  found or wrote no output, a NONMEM license problem, an NM-TRAN error in
+  the control stream or the data, NONMEM not starting (for example a
+  compiler problem), NONMEM crashing or stopping during estimation, and
+  output babelmixr2 cannot read (#46).
 * `est="pknca"` now updates the initial estimates of models that are not
   mu-referenced, like `ka <- tka * exp(eta.ka)`, instead of failing with
   "Must have names" (#101).  When there is no `vc`, a central volume
