@@ -107,12 +107,12 @@ lin.cmt <- function() {
                                       tnpri=nonmemTnpri(.datA)))
        }),
   list(name="tnpri-lincmt", type="babelmixr2",
-       description="lin.cmt (closed form ADVAN2 TRANS1 when rxode2 has linCmtMicro(), otherwise ODEs; omega block; combined error): dataset prior",
+       description="lin.cmt (closed form ADVAN2 TRANS1 when rxode2 has linCmtMicro(), otherwise ODEs; omega block; combined error): dataset prior with MODE=1",
        fit=function(runCommand, generate) {
          nlmixr(lin.cmt, .datB, est="nonmem",
                 control=nonmemControl(runCommand=runCommand, run=!generate,
                                       modelName="tnprilin",
-                                      tnpri=nonmemTnpri(.datA, plev=0.999)))
+                                      tnpri=nonmemTnpri(.datA, mode=1)))
        }),
   list(name="tnpri-fit", type="babelmixr2",
        description="one.cmt: prior from an nlmixr2 focei fit (babelmixr2 refits its data with NONMEM)",
@@ -124,18 +124,18 @@ lin.cmt <- function() {
                                       modelName="tnprifit",
                                       tnpri=nonmemTnpri(.f)))
        }),
-  list(name="tnpri-imp", type="babelmixr2",
-       description="one.cmt with est='imp' (prior run and TNPRI fit both IMP)",
+  list(name="tnpri-imp", type="refused",
+       description="est='imp' with TNPRI is refused before NONMEM runs (NONMEM: do not use TNPRI with the NONMEM 7 methods)",
        fit=function(runCommand, generate) {
          nlmixr(one.cmt, .datB, est="nonmem",
                 control=nonmemControl(runCommand=runCommand, run=!generate,
                                       modelName="tnpriimp", est="imp",
                                       tnpri=nonmemTnpri(.datA)))
        }),
-  list(name="variant-ivar1", type="variant",
-       description="as written by babelmixr2, with PLEV=0.9999 IVAR=1",
+  list(name="variant-no-plev", type="variant",
+       description="as written by babelmixr2, without PLEV=0 (NONMEM's own default)",
        edit=function(p1, p2) {
-         list(sub("(\\$PRIOR TNPRI \\(PROBLEM 2\\))[^\n]*", "\\1 PLEV=0.9999 IVAR=1", p1), p2)
+         list(sub("(\\$PRIOR TNPRI \\(PROBLEM 2\\))[^\n]*", "\\1", p1), p2)
        }),
   list(name="variant-no-input2", type="variant",
        description="no $INPUT in problem 2 (is it needed?)",
@@ -305,7 +305,20 @@ for (.c in .cases) {
   dir.create(.dir, showWarnings=FALSE, recursive=TRUE)
   message("\n== ", .c$name, ": ", .c$description)
   .t0 <- proc.time()[["elapsed"]]
-  if (.c$type == "babelmixr2") {
+  if (.c$type == "refused") {
+    # nothing may be run or written
+    .try0 <- .try(withr::with_dir(.dir, suppressMessages(.c$fit(.runCommand, .generate))))
+    .files <- list.files(.dir, recursive=TRUE)
+    .ok <- !is.null(.try0$error) && length(.files) == 0L
+    .msg <- if (is.null(.try0$error)) "not refused" else conditionMessage(.try0$error)
+    writeLines(c(paste0("case: ", .c$name), .c$description, "",
+                 paste0("status: ", if (.ok) "refused" else "problem"),
+                 paste0("message: ", .msg),
+                 paste0("files written: ", paste(.files, collapse=", "))),
+               file.path(.dir, "case.txt"))
+    .addRes(.c$name, if (.ok) "refused" else "problem", message=.msg,
+            seconds=proc.time()[["elapsed"]] - .t0)
+  } else if (.c$type == "babelmixr2") {
     .try0 <- .try(withr::with_dir(.dir, suppressMessages(.c$fit(.runCommand, .generate))))
     .r <- .try0$value
     .sec <- proc.time()[["elapsed"]] - .t0

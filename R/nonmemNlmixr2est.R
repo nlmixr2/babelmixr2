@@ -361,6 +361,9 @@ nlmixr2Est.nonmem <- function(env, ...) {
                               " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   # refuse a prior NWPRI cannot express before anything is written
   .nonmemPriorSpec(.ui)
+  # a TNPRI fit prior is compared with the model as given, before
+  # linCmt() may be written as ODEs
+  env$tnpriModelSig <- .nonmemTnpriModelSig(.ui)
   # linCmt() is written as NONMEM's closed-form ADVAN or as ODEs
   .micro <- .bblLinCmtToOde(env, "NONMEM",
                             native=(.bblLinCmtControl(env$control, "advan") == "advan"))

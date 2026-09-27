@@ -23,10 +23,10 @@ study and subjects 61-120 the new one.
 |---|---|
 | `reference` | the model fit to the new data **without** a prior, to compare objective functions with |
 | `tnpri` | babelmixr2 end to end: prior fit (dataset prior), then the TNPRI fit, read back into nlmixr2 |
-| `tnpri-lincmt` | the same with `linCmt()` (closed form ADVAN when available), an omega block, combined error and `PLEV=0.999` |
+| `tnpri-lincmt` | the same with `linCmt()` (closed form ADVAN when available), an omega block, combined error and `MODE=1` |
 | `tnpri-fit` | the prior given as an nlmixr2 `focei` fit (babelmixr2 refits its data with NONMEM) |
-| `tnpri-imp` | the same with `est="imp"` |
-| `variant-ivar1` | the `tnpri` control stream with `PLEV=0.9999 IVAR=1` |
+| `tnpri-imp` | `est="imp"` with TNPRI must be refused before anything is written or run (NONMEM's help: do not use TNPRI with the NONMEM 7 methods) |
+| `variant-no-plev` | the `tnpri` control stream without `PLEV=0` (NONMEM's own default) |
 | `variant-no-input2` | ... without `$INPUT` in problem 2 |
 | `variant-code2` | ... with the model code repeated in problem 2 |
 | `variant-no-code1` | ... with the model code only in problem 2 |
@@ -38,7 +38,7 @@ them are *expected* to fail; that is the information they give. They
 reuse the prior's model specification file, so they need the `tnpri`
 case.
 
-About 12 NONMEM runs in total; each is a small FOCEI fit with the
+About 10 NONMEM runs in total; each is a small FOCEI fit with the
 covariance step.
 
 ## Requirements

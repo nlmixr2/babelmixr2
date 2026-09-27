@@ -4,15 +4,7 @@
 \alias{nonmemTnpri}
 \title{NONMEM TNPRI prior from a previous NONMEM run}
 \usage{
-nonmemTnpri(
-  prior,
-  plev = NULL,
-  ivar = NULL,
-  ityp = NULL,
-  ifnd = NULL,
-  mode = NULL,
-  display = FALSE
-)
+nonmemTnpri(prior, plev = 0, mode = NULL, display = FALSE)
 }
 \arguments{
 \item{prior}{Where the prior comes from:
@@ -28,18 +20,14 @@ be a run of the same model, with the same \code{THETA}s, \code{OMEGA}s and
 cannot check this.
 }}
 
-\item{plev}{NONMEM's \code{PLEV} option of \verb{$PRIOR TNPRI}; \code{NULL} uses
-NONMEM's default}
+\item{plev}{NONMEM's \code{PLEV} option of \verb{$PRIOR TNPRI}.  NONMEM's help
+says it should be \code{0} when the prior is used for estimation (and
+not for simulation), which is how babelmixr2 uses it, so \code{0} is
+the default; \code{NULL} leaves it out and uses NONMEM's default.}
 
-\item{ivar}{NONMEM's \code{IVAR} option of \verb{$PRIOR TNPRI} (for example \code{1}
-to use the variance-covariance matrix of the prior problem); \code{NULL}
-uses NONMEM's default}
-
-\item{ityp}{NONMEM's \code{ITYP} option; \code{NULL} uses NONMEM's default}
-
-\item{ifnd}{NONMEM's \code{IFND} option; \code{NULL} uses NONMEM's default}
-
-\item{mode}{NONMEM's \code{MODE} option; \code{NULL} uses NONMEM's default}
+\item{mode}{NONMEM's \code{MODE} option: how a parameter fixed in the new
+fit but estimated in the prior is handled (\code{0} or \code{1} treat it as
+specific to the prior, \code{2} as shared); \code{NULL} uses NONMEM's default}
 
 \item{display}{add NONMEM's \code{DISPLAY} option}
 }
@@ -66,6 +54,10 @@ model with the new data and the prior.
 
 The prior and the new fit have to use the same NONMEM version.
 
+NONMEM's help says not to use TNPRI with the estimation methods added
+in NONMEM 7, so a TNPRI prior needs \code{nonmemControl(est="focei")} (or
+\code{"posthoc"}); \code{"imp"} and \code{"its"} are refused.
+
 A TNPRI prior cannot be combined with the priors written in the
 \code{ini({})} block (those become \verb{$PRIOR NWPRI}); a NONMEM problem has
 only one \verb{$PRIOR}.
@@ -76,7 +68,7 @@ it.
 }
 \examples{
 
-nonmemTnpri("prior-run/prior.msf", plev=0.999)
+nonmemTnpri("prior-run/prior.msf")
 
 }
 \author{

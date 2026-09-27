@@ -8,8 +8,11 @@
   the model to the prior data with NONMEM (`$MSFO` and `$COVARIANCE`),
   and writes a two problem control stream: problem 1 reads the model
   specification file and holds the model code, and problem 2 fits the
-  new data with the prior.  The objective type ends in `tnpri`.  A TNPRI
-  prior cannot be combined with `ini({})` priors (`$PRIOR NWPRI`).
+  new data with the prior (`PLEV=0`, as NONMEM asks for estimation).
+  The objective type ends in `tnpri`.  A TNPRI prior cannot be combined
+  with `ini({})` priors (`$PRIOR NWPRI`), nor with `est="imp"` or
+  `est="its"` (NONMEM does not support TNPRI with its NONMEM 7
+  methods).
   `nonmemControl(msfo=TRUE)` writes a model specification file for any
   NONMEM fit.  A test kit for a machine with NONMEM is in `inst/tnpri/`.
 

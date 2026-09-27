@@ -1,15 +1,18 @@
 test_that("nonmemTnpri() checks and describes the prior (#206)", {
   expect_error(nonmemTnpri(1), "has to be a dataset")
-  expect_error(nonmemTnpri("a.msf", plev=1), "between 0 and 1")
-  expect_error(nonmemTnpri("a.msf", ivar=-1))
+  expect_error(nonmemTnpri("a.msf", plev=1), "fraction below 1")
+  expect_error(nonmemTnpri("a.msf", plev=-0.1))
+  expect_error(nonmemTnpri("a.msf", mode=3))
   expect_error(nonmemTnpri("a.msf", display=NA))
-  .t <- nonmemTnpri("run/a.msf", plev=0.999, ivar=1, display=TRUE)
+  .t <- nonmemTnpri("run/a.msf", mode=2, display=TRUE)
   expect_s3_class(.t, "nonmemTnpri")
   expect_equal(.t$type, "msf")
-  expect_equal(.nonmemTnpriOptions(.t), "(PROBLEM 2) PLEV=0.999 IVAR=1 DISPLAY")
-  expect_equal(.nonmemTnpriOptions(nonmemTnpri("a.msf")), "(PROBLEM 2)")
-  expect_equal(.nonmemTnpriOptions(nonmemTnpri("a.msf", ityp=0, ifnd=2, mode=1)),
-               "(PROBLEM 2) ITYP=0 IFND=2 MODE=1")
+  # PLEV=0 is what NONMEM asks for when the prior is used for estimation
+  expect_equal(.nonmemTnpriOptions(.t), "(PROBLEM 2) PLEV=0 MODE=2 DISPLAY")
+  expect_equal(.nonmemTnpriOptions(nonmemTnpri("a.msf")), "(PROBLEM 2) PLEV=0")
+  expect_equal(.nonmemTnpriOptions(nonmemTnpri("a.msf", plev=NULL)), "(PROBLEM 2)")
+  expect_equal(.nonmemTnpriOptions(nonmemTnpri("a.msf", plev=0.999)),
+               "(PROBLEM 2) PLEV=0.999")
   expect_output(print(.t), "run/a.msf")
   # already a nonmemTnpri
   expect_identical(nonmemTnpri(.t), .t)
@@ -65,7 +68,7 @@ withr::with_tempdir({
   })
 
   test_that("a TNPRI prior gives a two problem control stream (#206)", {
-    ui <- .ui(nonmemControl(tnpri=nonmemTnpri("prior/run1.msf", plev=0.999)))
+    ui <- .ui(nonmemControl(tnpri="prior/run1.msf"))
     expect_equal(
       ui$nonmemModel,
       paste(
@@ -80,7 +83,7 @@ withr::with_tempdir({
           "",
           "$SUBROUTINES ADVAN13 TOL=6 ATOL=12 SSTOL=6 SSATOL=12",
           "",
-          "$PRIOR TNPRI (PROBLEM 2) PLEV=0.999",
+          "$PRIOR TNPRI (PROBLEM 2) PLEV=0",
           "",
           "$MSFI run1.msf ONLYREAD",
           "",
@@ -153,6 +156,25 @@ withr::with_tempdir({
     expect_equal(.ui(nonmemControl())$nonmemObjfType, "nonmem focei")
   })
 
+  test_that("TNPRI is refused with the NONMEM 7 estimation methods (#206)", {
+    for (.est in c("imp", "its")) {
+      expect_error(.ui(nonmemControl(est=.est, tnpri="a.msf"))$nonmemModel,
+                   paste0("method '", .est, "'"))
+    }
+    withr::with_tempdir({
+      expect_error(
+        suppressMessages(
+          nlmixr2est::nlmixr(one.cmt, nlmixr2data::Oral_1CPT, est="nonmem",
+                             control=nonmemControl(runCommand=NA, est="imp",
+                                                   tnpri=nlmixr2data::Oral_1CPT))),
+        "method 'imp'")
+      # refused before the prior run was written
+      expect_false(dir.exists("one.cmt_prior-nonmem"))
+    })
+    expect_true(grepl("POSTHOC",
+                      .ui(nonmemControl(est="posthoc", tnpri="a.msf"))$nonmemModel))
+  })
+
   test_that("ini() priors cannot be combined with a TNPRI prior (#206)", {
     one.cmt.prior <- function() {
       ini({
@@ -194,7 +216,7 @@ withr::with_tempdir({
       expect_message(
         nlmixr2est::nlmixr(one.cmt, .dB, est="nonmem",
                            control=nonmemControl(runCommand=NA, cov="r",
-                                                 tnpri=nonmemTnpri(.dA, ivar=1))),
+                                                 tnpri=nonmemTnpri(.dA, mode=1))),
         regexp="run the TNPRI prior 'one.cmt_prior-nonmem/one.cmt_prior.nmctl'")
       .prior <- readLines(file.path("one.cmt_prior-nonmem", "one.cmt_prior.nmctl"))
       # the prior run writes the MSF and has the covariance step TNPRI needs
@@ -205,7 +227,7 @@ withr::with_tempdir({
                    length(unique(.dA$ID)))
       .ctl <- readLines(file.path("one.cmt-nonmem", "one.cmt.nmctl"))
       expect_equal(sum(grepl("^\\$PROBLEM", .ctl)), 2L)
-      expect_true("$PRIOR TNPRI (PROBLEM 2) IVAR=1" %in% .ctl)
+      expect_true("$PRIOR TNPRI (PROBLEM 2) PLEV=0 MODE=1" %in% .ctl)
       expect_true("$MSFI one.cmt_prior.msf ONLYREAD" %in% .ctl)
       expect_true("$COVARIANCE MATRIX=R" %in% .ctl)
       expect_false(any(grepl("MSFO", .ctl)))
@@ -284,6 +306,36 @@ withr::with_tempdir({
         "creates the TNPRI prior was not successful")
       # the fit itself was never written
       expect_false(dir.exists("one.cmt-nonmem"))
+    })
+  })
+
+  test_that("a linCmt() fit prior is the same model when NONMEM uses ODEs (#206)", {
+    lin.cmt <- function() {
+      ini({
+        tka <- 0.45
+        tcl <- 1.0
+        tv <- 3.45
+        add.sd <- 0.7
+        eta.cl ~ 0.3
+      })
+      model({
+        ka <- exp(tka)
+        cl <- exp(tcl + eta.cl)
+        v <- exp(tv)
+        cp <- linCmt()
+        cp ~ add(add.sd)
+      })
+    }
+    withr::with_tempdir({
+      .f <- suppressMessages(suppressWarnings(
+        nlmixr2est::nlmixr(lin.cmt, .dA, est="posthoc")))
+      suppressMessages(
+        nlmixr2est::nlmixr(lin.cmt, .dB, est="nonmem",
+                           control=nonmemControl(runCommand=NA, linCmt="ode", tnpri=.f)))
+      expect_true(any(grepl("^\\$DES",
+                            readLines(file.path("lin.cmt_prior-nonmem", "lin.cmt_prior.nmctl")))))
+      expect_true("$MSFI lin.cmt_prior.msf ONLYREAD" %in%
+                    readLines(file.path("lin.cmt-nonmem", "lin.cmt.nmctl")))
     })
   })
 

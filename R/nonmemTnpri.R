@@ -53,14 +53,13 @@
 #'   `SIGMA`s in the same order, and with the covariance step; babelmixr2
 #'   cannot check this.
 #'
-#' @param plev NONMEM's `PLEV` option of `$PRIOR TNPRI`; `NULL` uses
-#'   NONMEM's default
-#' @param ivar NONMEM's `IVAR` option of `$PRIOR TNPRI` (for example `1`
-#'   to use the variance-covariance matrix of the prior problem); `NULL`
-#'   uses NONMEM's default
-#' @param ityp NONMEM's `ITYP` option; `NULL` uses NONMEM's default
-#' @param ifnd NONMEM's `IFND` option; `NULL` uses NONMEM's default
-#' @param mode NONMEM's `MODE` option; `NULL` uses NONMEM's default
+#' @param plev NONMEM's `PLEV` option of `$PRIOR TNPRI`.  NONMEM's help
+#'   says it should be `0` when the prior is used for estimation (and
+#'   not for simulation), which is how babelmixr2 uses it, so `0` is
+#'   the default; `NULL` leaves it out and uses NONMEM's default.
+#' @param mode NONMEM's `MODE` option: how a parameter fixed in the new
+#'   fit but estimated in the prior is handled (`0` or `1` treat it as
+#'   specific to the prior, `2` as shared); `NULL` uses NONMEM's default
 #' @param display add NONMEM's `DISPLAY` option
 #'
 #' @return a `nonmemTnpri` object for `nonmemControl(tnpri=)`
@@ -68,6 +67,10 @@
 #' @details
 #'
 #' The prior and the new fit have to use the same NONMEM version.
+#'
+#' NONMEM's help says not to use TNPRI with the estimation methods added
+#' in NONMEM 7, so a TNPRI prior needs `nonmemControl(est="focei")` (or
+#' `"posthoc"`); `"imp"` and `"its"` are refused.
 #'
 #' A TNPRI prior cannot be combined with the priors written in the
 #' `ini({})` block (those become `$PRIOR NWPRI`); a NONMEM problem has
@@ -81,10 +84,9 @@
 #' @export
 #' @examples
 #'
-#' nonmemTnpri("prior-run/prior.msf", plev=0.999)
+#' nonmemTnpri("prior-run/prior.msf")
 #'
-nonmemTnpri <- function(prior, plev=NULL, ivar=NULL, ityp=NULL, ifnd=NULL,
-                        mode=NULL, display=FALSE) {
+nonmemTnpri <- function(prior, plev=0, mode=NULL, display=FALSE) {
   if (inherits(prior, "nonmemTnpri")) return(prior)
   if (is.character(prior)) {
     checkmate::assertCharacter(prior, len=1, any.missing=FALSE, min.chars=1)
@@ -98,24 +100,17 @@ nonmemTnpri <- function(prior, plev=NULL, ivar=NULL, ityp=NULL, ifnd=NULL,
          call.=FALSE)
   }
   if (!is.null(plev)) {
-    checkmate::assertNumber(plev, lower=0, upper=1, finite=TRUE)
-    if (plev <= 0 || plev >= 1) {
-      stop("'plev' has to be between 0 and 1", call.=FALSE)
+    checkmate::assertNumber(plev, lower=0, finite=TRUE)
+    if (plev >= 1) {
+      stop("'plev' has to be 0 or a fraction below 1", call.=FALSE)
     }
   }
-  for (.n in c("ivar", "ityp", "ifnd", "mode")) {
-    .v <- get(.n)
-    if (!is.null(.v)) {
-      checkmate::assertIntegerish(.v, lower=0, len=1, any.missing=FALSE,
-                                  .var.name=.n)
-    }
+  if (!is.null(mode)) {
+    checkmate::assertIntegerish(mode, lower=0, upper=2, len=1, any.missing=FALSE)
+    mode <- as.integer(mode)
   }
   checkmate::assertLogical(display, len=1, any.missing=FALSE)
-  .ret <- list(prior=prior, type=.type, plev=plev,
-               ivar=if (is.null(ivar)) NULL else as.integer(ivar),
-               ityp=if (is.null(ityp)) NULL else as.integer(ityp),
-               ifnd=if (is.null(ifnd)) NULL else as.integer(ifnd),
-               mode=if (is.null(mode)) NULL else as.integer(mode),
+  .ret <- list(prior=prior, type=.type, plev=plev, mode=mode,
                display=display)
   class(.ret) <- "nonmemTnpri"
   .ret
@@ -141,9 +136,7 @@ print.nonmemTnpri <- function(x, ...) {
 .nonmemTnpriOptions <- function(tnpri) {
   .ret <- "(PROBLEM 2)"
   if (!is.null(tnpri$plev)) .ret <- paste0(.ret, " PLEV=", format(tnpri$plev, digits=15))
-  for (.n in c("ivar", "ityp", "ifnd", "mode")) {
-    if (!is.null(tnpri[[.n]])) .ret <- paste0(.ret, " ", toupper(.n), "=", tnpri[[.n]])
-  }
+  if (!is.null(tnpri$mode)) .ret <- paste0(.ret, " MODE=", tnpri$mode)
   if (isTRUE(tnpri$display)) .ret <- paste0(.ret, " DISPLAY")
   .ret
 }
@@ -158,6 +151,12 @@ print.nonmemTnpri <- function(x, ...) {
   .t <- rxode2::rxGetControl(ui, "tnpri", NULL)
   if (is.null(.t)) return(NULL)
   if (!inherits(.t, "nonmemTnpri")) .t <- nonmemTnpri(.t)
+  .est <- rxode2::rxGetControl(ui, "est", "focei")
+  if (!(.est %in% c("focei", "posthoc"))) {
+    stop("NONMEM's TNPRI cannot be used with the NONMEM 7 estimation method '",
+         .est, "'; use nonmemControl(est=\"focei\")",
+         call.=FALSE)
+  }
   if (.nonmemHasPriors(ui)) {
     stop("a NONMEM problem has only one $PRIOR: the `ini({})` priors ($PRIOR NWPRI) ",
          "cannot be combined with nonmemControl(tnpri=) ($PRIOR TNPRI)",
@@ -255,7 +254,10 @@ print.nonmemTnpri <- function(x, ...) {
   if (.t$type == "fit") {
     .fit <- .t$prior
     .fitUi <- .fit$ui
-    if (!identical(.nonmemTnpriModelSig(.fitUi), .nonmemTnpriModelSig(.ui))) {
+    # the model as given, before linCmt() may have been written as ODEs
+    .sig <- env$tnpriModelSig
+    if (is.null(.sig)) .sig <- .nonmemTnpriModelSig(.ui)
+    if (!identical(.nonmemTnpriModelSig(.fitUi), .sig)) {
       stop("the TNPRI prior has to be a fit of the same model: NONMEM uses one model ",
            "code for both problems and lines the parameters up by position",
            call.=FALSE)
