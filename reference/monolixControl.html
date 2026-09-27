@@ -51,6 +51,7 @@
 <span>  useLinearization <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  stiff <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  linCmt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pkmodel"</span>, <span class="st">"ode"</span><span class="op">)</span>,</span>
+<span>  prune <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  addProp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"combined2"</span>, <span class="st">"combined1"</span><span class="op">)</span>,</span>
 <span>  exploratoryAutoStop <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  smoothingAutoStop <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -102,6 +103,17 @@ fim.</p></dd>
 model allows it and otherwise translates the model to ODEs;
 <code>"ode"</code> always translates the model to ODEs (with
 <code><a href="https://nlmixr2.github.io/rxode2/reference/linToOde.html" class="external-link">rxode2::linToOde()</a></code>)</p></dd>
+
+
+<dt id="arg-prune">prune<a class="anchor" aria-label="anchor" href="#arg-prune"></a></dt>
+<dd><p>How <code>if</code>/<code>else</code> statements are written for Monolix:
+<code>"auto"</code> (default) writes <code>if</code>/<code>elseif</code>/<code>else</code> statements as
+Monolix <code>if</code> blocks and prunes the <code>if</code>/<code>else</code> branches only when
+the model uses <code><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse()</a></code> (which Monolix cannot write); <code>TRUE</code>
+always prunes a model with <code>if</code>/<code>else</code> statements and <code>FALSE</code>
+never prunes.  Pruning uses <code>rxode2</code>'s branch pruning, which writes
+each branch as an arithmetic expression.  A pruned fit contains the
+pruned model.</p></dd>
 
 
 <dt id="arg-addprop">addProp<a class="anchor" aria-label="anchor" href="#arg-addprop"></a></dt>

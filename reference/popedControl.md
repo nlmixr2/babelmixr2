@@ -181,10 +181,15 @@ popedControl(
 
 - sigdig:
 
-  Optimization significant digits; controls the inner/outer optimization
-  tolerance (`10^-sigdig`), ODE solver tolerance (`0.5*10^(-sigdig-2)`,
-  or `0.5*10^(-sigdig-1.5)` for sensitivity/steady-state with liblsoda),
-  and boundary check tolerance (`5*10^(-sigdig+1)`).
+  Significant digits used to derive the ODE solver tolerances when
+  `rxControl` is not supplied. The tolerances are fixed here rather than
+  taken from `rxode2::rxControl(sigdig=)` so they do not change with the
+  rxode2 version: `atol`/`rtol` are `0.5*10^(-sigdig-2)`, the
+  sensitivity tolerances are `0.5*10^(-sigdig-1.5)`, the steady-state
+  tolerances are `0.5*10^(-sigdig)` and the steady-state sensitivity
+  tolerances are `0.5*10^(-sigdig+0.625)`. PopED computes the FIM by
+  finite differences (see `hm1` and `hm2`), so the ODE solve must be
+  much more accurate than those step sizes.
 
 - important:
 

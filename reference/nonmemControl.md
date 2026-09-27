@@ -9,6 +9,7 @@ nonmemControl(
   est = c("focei", "imp", "its", "posthoc"),
   advanOde = c("advan13", "advan8", "advan6"),
   linCmt = c("advan", "ode"),
+  prune = "auto",
   cov = c("r,s", "r", "s", ""),
   maxeval = 1e+05,
   tol = 6,
@@ -73,6 +74,20 @@ nonmemControl(
   ODEs (with
   [`rxode2::linToOde()`](https://nlmixr2.github.io/rxode2/reference/linToOde.html))
   and solves it with `advanOde`
+
+- prune:
+
+  How `if`/`else` statements are written for NONMEM: `"auto"` (default)
+  writes a model whose `if` blocks are simple (no `else`, `else if`,
+  nesting or [`ifelse()`](https://rdrr.io/r/base/ifelse.html)) as NONMEM
+  `IF` blocks, and otherwise prunes the `if`/`else` branches; `TRUE`
+  always prunes a model with `if`/`else` statements and `FALSE` never
+  prunes (so NONMEM can only use simple `if` blocks). Pruning uses
+  `rxode2`'s branch pruning (the same pruning `nlmixr2` uses for its
+  symbolic derivatives), which writes each branch as an arithmetic
+  expression; this allows the nested `if`/`else if`/`else` statements
+  NONMEM models cannot otherwise use. A pruned fit contains the pruned
+  model.
 
 - cov:
 
@@ -283,6 +298,9 @@ nonmemControl()
 #> 
 #> $linCmt
 #> [1] "advan"
+#> 
+#> $prune
+#> [1] "auto"
 #> 
 #> $maxeval
 #> [1] 1e+05

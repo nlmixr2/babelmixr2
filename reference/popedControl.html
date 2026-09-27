@@ -223,11 +223,16 @@ in the babelmixr2 dataset (when <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-sigdig">sigdig<a class="anchor" aria-label="anchor" href="#arg-sigdig"></a></dt>
-<dd><p>Optimization significant digits; controls the inner/outer
-optimization tolerance (<code>10^-sigdig</code>), ODE solver tolerance
-(<code>0.5*10^(-sigdig-2)</code>, or <code>0.5*10^(-sigdig-1.5)</code> for
-sensitivity/steady-state with liblsoda), and boundary check tolerance
-(<code>5*10^(-sigdig+1)</code>).</p></dd>
+<dd><p>Significant digits used to derive the ODE solver
+tolerances when <code>rxControl</code> is not supplied.  The tolerances are
+fixed here rather than taken from <code>rxode2::rxControl(sigdig=)</code> so
+they do not change with the rxode2 version: <code>atol</code>/<code>rtol</code> are
+<code>0.5*10^(-sigdig-2)</code>, the sensitivity tolerances are
+<code>0.5*10^(-sigdig-1.5)</code>, the steady-state tolerances are
+<code>0.5*10^(-sigdig)</code> and the steady-state sensitivity tolerances
+are <code>0.5*10^(-sigdig+0.625)</code>.  PopED computes the FIM by finite
+differences (see <code>hm1</code> and <code>hm2</code>), so the ODE solve must be much
+more accurate than those step sizes.</p></dd>
 
 
 <dt id="arg-important">important<a class="anchor" aria-label="anchor" href="#arg-important"></a></dt>

@@ -50,6 +50,7 @@
 <span>  est <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"focei"</span>, <span class="st">"imp"</span>, <span class="st">"its"</span>, <span class="st">"posthoc"</span><span class="op">)</span>,</span>
 <span>  advanOde <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"advan13"</span>, <span class="st">"advan8"</span>, <span class="st">"advan6"</span><span class="op">)</span>,</span>
 <span>  linCmt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"advan"</span>, <span class="st">"ode"</span><span class="op">)</span>,</span>
+<span>  prune <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  cov <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"r,s"</span>, <span class="st">"r"</span>, <span class="st">"s"</span>, <span class="st">""</span><span class="op">)</span>,</span>
 <span>  maxeval <span class="op">=</span> <span class="fl">1e+05</span>,</span>
 <span>  tol <span class="op">=</span> <span class="fl">6</span>,</span>
@@ -116,6 +117,19 @@ with <code>TRANS1</code> micro-constants) when the model allows it and
 otherwise translates the model to ODEs; <code>"ode"</code> always
 translates the model to ODEs (with <code><a href="https://nlmixr2.github.io/rxode2/reference/linToOde.html" class="external-link">rxode2::linToOde()</a></code>) and
 solves it with <code>advanOde</code></p></dd>
+
+
+<dt id="arg-prune">prune<a class="anchor" aria-label="anchor" href="#arg-prune"></a></dt>
+<dd><p>How <code>if</code>/<code>else</code> statements are written for NONMEM:
+<code>"auto"</code> (default) writes a model whose <code>if</code> blocks are simple
+(no <code>else</code>, <code>else if</code>, nesting or <code><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse()</a></code>) as NONMEM <code>IF</code>
+blocks, and otherwise prunes the <code>if</code>/<code>else</code> branches; <code>TRUE</code>
+always prunes a model with <code>if</code>/<code>else</code> statements and <code>FALSE</code>
+never prunes (so NONMEM can only use simple <code>if</code> blocks).  Pruning
+uses <code>rxode2</code>'s branch pruning (the same pruning <code>nlmixr2</code> uses for
+its symbolic derivatives), which writes each branch as an
+arithmetic expression; this allows the nested <code>if</code>/<code>else if</code>/<code>else</code> statements NONMEM models cannot otherwise use.  A pruned
+fit contains the pruned model.</p></dd>
 
 
 <dt id="arg-cov">cov<a class="anchor" aria-label="anchor" href="#arg-cov"></a></dt>
@@ -313,6 +327,9 @@ the model files and without starting NONMEM.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $linCmt</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "advan"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $prune</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "auto"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $maxeval</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1e+05</span>

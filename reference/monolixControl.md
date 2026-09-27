@@ -10,6 +10,7 @@ monolixControl(
   useLinearization = FALSE,
   stiff = FALSE,
   linCmt = c("pkmodel", "ode"),
+  prune = "auto",
   addProp = c("combined2", "combined1"),
   exploratoryAutoStop = FALSE,
   smoothingAutoStop = FALSE,
@@ -59,6 +60,17 @@ monolixControl(
   otherwise translates the model to ODEs; `"ode"` always translates the
   model to ODEs (with
   [`rxode2::linToOde()`](https://nlmixr2.github.io/rxode2/reference/linToOde.html))
+
+- prune:
+
+  How `if`/`else` statements are written for Monolix: `"auto"` (default)
+  writes `if`/`elseif`/`else` statements as Monolix `if` blocks and
+  prunes the `if`/`else` branches only when the model uses
+  [`ifelse()`](https://rdrr.io/r/base/ifelse.html) (which Monolix cannot
+  write); `TRUE` always prunes a model with `if`/`else` statements and
+  `FALSE` never prunes. Pruning uses `rxode2`'s branch pruning, which
+  writes each branch as an arithmetic expression. A pruned fit contains
+  the pruned model.
 
 - addProp:
 
