@@ -417,6 +417,14 @@ pkncaParamMap <- function(ui) {
       ))
     }
   }
+  # Thetas used directly as the parameter (like `ka` in `ini()` with `linCmt()`)
+  directThetas <- setdiff(thetaNames, c(ret$theta, ret$param, allLhs))
+  if (length(directThetas) > 0) {
+    ret <- rbind(ret, data.frame(
+      theta = directThetas, param = directThetas, curEval = "",
+      low = NA_real_, hi = NA_real_, stringsAsFactors = FALSE
+    ))
+  }
   # A theta defining more than one parameter cannot take one NCA estimate
   ret[!(ret$theta %in% ret$theta[duplicated(ret$theta)]), , drop = FALSE]
 }

@@ -350,9 +350,11 @@ test_that("pkncaParamMap", {
   }
   suppressMessages(ui <- rxode2::rxode(model))
   paramMap <- pkncaParamMap(ui)
+  paramMap <- paramMap[paramMap$param %in% c("cl", "fdepot", "ka", "q", "vc", "vp"), ]
   paramMap <- paramMap[order(paramMap$param), c("theta", "param", "curEval")]
   rownames(paramMap) <- NULL
-  # q is also assigned in an if block, so it is ambiguous and not mapped
+  # q is also assigned in an if block, so it is ambiguous and not mapped; vp
+  # is not a simple function of a single theta
   expect_equal(paramMap$param, c("cl", "fdepot", "ka", "vc"))
   expect_equal(paramMap$theta, c("lcl", "tf", "tka", "tvc"))
   expect_equal(paramMap$curEval, c("exp", "expit", "", ""))
@@ -427,6 +429,33 @@ test_that("pkncaParamMap skips thetas shared by more than one parameter", {
   paramMap <- pkncaParamMap(ui)
   expect_false("tpop" %in% paramMap$theta)
   expect_true(all(c("vc", "v") %in% paramMap$param))
+})
+
+test_that("est='pknca' with parameters defined in ini()", {
+  model <- function() {
+    ini({
+      ka <- 0.45
+      cl <- 1
+      vc <- 3.45
+      prop.err <- 0.5
+    })
+    model({
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / vc * center
+      cp <- center / vc
+      cp ~ prop(prop.err)
+    })
+  }
+  suppressMessages(ui <- rxode2::rxode(model))
+  paramMap <- pkncaParamMap(ui)
+  expect_true(all(c("ka", "cl", "vc") %in% paramMap$param))
+  suppressMessages(
+    fit <- nlmixr(model, data = nlmixr2data::theo_sd, est = "pknca")
+  )
+  expect_false(isTRUE(all.equal(fit$ui$theta[["ka"]], 0.45)))
+  expect_false(isTRUE(all.equal(fit$ui$theta[["cl"]], 1)))
+  expect_false(isTRUE(all.equal(fit$ui$theta[["vc"]], 3.45)))
+  expect_equal(fit$ui$theta[["prop.err"]], 0.5)
 })
 
 test_that("pkncaAssignedNames", {
