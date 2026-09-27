@@ -445,6 +445,20 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
   # ... and V gets the central volume estimate
   expect_equal(fitVPeriph$ui$theta[["tV"]], feNonMu[["tv"]])
 
+  # V1 is preferred to V for the central volume
+  suppressMessages(
+    v1Mod <- rxode2::rxRename(
+      rxode2::rxRename(vPeriphMod, V1 = V, tV1 = tV),
+      V = v,
+      tV = tv
+    )
+  )
+  suppressMessages(
+    fitV1 <- nlmixr(v1Mod, data = dModNoZero, est = "pknca", control = ctl)
+  )
+  expect_equal(fitV1$ui$theta[["tV1"]], feNonMu[["tv"]])
+  expect_equal(fitV1$ui$theta[["tV"]], 0.003)
+
   # A v that cannot be updated (and no vc) is reported
   suppressMessages(
     vComplexMod <- rxode2::model(nonmumod, v <- tv * 2 * exp(eta.v))
@@ -794,6 +808,29 @@ test_that("ini_transform with logit() parameters", {
   suppressMessages(newmod <- ini_transform(ui, ka = 1.5, fx = 0.3))
   expect_equal(newmod$theta[["tka"]], rxode2::expit(1.5))
   expect_equal(newmod$theta[["tf"]], rxode2::expit(0.3, -1, 2))
+})
+
+test_that("pkncaParamMap keeps a theta that also has an alias", {
+  model <- function() {
+    ini({
+      tka <- 0
+      tcl <- 1
+      tvc <- 3
+      eta.ka ~ 0.1
+      prop.err <- 0.5
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      myTka <- tka
+      cl <- exp(tcl)
+      vc <- exp(tvc)
+      cp <- linCmt()
+      cp ~ prop(prop.err)
+    })
+  }
+  suppressMessages(ui <- rxode2::rxode(model))
+  paramMap <- pkncaParamMap(ui)
+  expect_equal(paramMap$param[paramMap$theta == "tka"], "ka")
 })
 
 test_that("pkncaAssignedNames", {

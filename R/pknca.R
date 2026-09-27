@@ -123,7 +123,7 @@ nlmixr2Est.pknca <- function(env, ...) {
   # The central volume may have another name (like with rxode2's linCmt()); the
   # first name the model defines gets the central volume estimate
   modelNames <- c(pkncaAssignedNames(env$ui$lstExpr), env$ui$iniDf$name)
-  centralNames <- c("vc", "Vc", "VC", "V", "v1", "V1", "v")
+  centralNames <- c("vc", "Vc", "VC", "v1", "V1", "V", "v")
   centralName <- intersect(centralNames, modelNames)
   if (length(centralName) > 0 && centralName[1] != "vc") {
     paramEstimates[[centralName[1]]] <- paramEstimates$vc
@@ -434,6 +434,23 @@ ncaToEst <- function(tmax, cmaxdn, cl, control, unitConversions) {
 #'   `hi`
 #' @noRd
 pkncaParamMap <- function(ui) {
+  # Names of the parameters with NCA estimates (including other names of the
+  # central volume)
+  directNames <- c(
+    "ka",
+    "cl",
+    "vc",
+    "Vc",
+    "VC",
+    "V",
+    "v1",
+    "V1",
+    "v",
+    "q",
+    "vp",
+    "q2",
+    "vp2"
+  )
   murefNames <- ui$getSplitMuModel$pureMuRef
   murefTrans <- ui$muRefCurEval
   ret <- data.frame(
@@ -529,21 +546,6 @@ pkncaParamMap <- function(ui) {
   # Thetas named like an NCA-estimated parameter and used directly as the
   # parameter (like `ka` and `cl` in `-cl / vc * center`); only when every use
   # is plain (see pkncaTransformedNames())
-  directNames <- c(
-    "ka",
-    "cl",
-    "vc",
-    "Vc",
-    "VC",
-    "V",
-    "v1",
-    "V1",
-    "v",
-    "q",
-    "vp",
-    "q2",
-    "vp2"
-  )
   directThetas <- setdiff(
     intersect(thetaNames, directNames),
     c(ret$theta, ret$param, allLhs)
@@ -568,8 +570,18 @@ pkncaParamMap <- function(ui) {
       )
     )
   }
-  # A theta defining more than one parameter cannot take one NCA estimate
-  ret[!(ret$theta %in% ret$theta[duplicated(ret$theta)]), , drop = FALSE]
+  # A theta defining more than one NCA parameter cannot take one NCA estimate;
+  # other parameters defined by the theta (like an alias) are dropped
+  keep <- rep(TRUE, nrow(ret))
+  for (theta in unique(ret$theta[duplicated(ret$theta)])) {
+    w <- which(ret$theta == theta)
+    ncaRows <- w[ret$param[w] %in% directNames]
+    keep[setdiff(w, ncaRows)] <- FALSE
+    if (length(ncaRows) > 1) {
+      keep[ncaRows] <- FALSE
+    }
+  }
+  ret[keep, , drop = FALSE]
 }
 
 #' Get the value of a numeric constant expression like `2` or `-1`
