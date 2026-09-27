@@ -1055,8 +1055,10 @@ withr::with_tempdir({
     expect_equal(.rxToN("logit(0.5)"), "0")
     expect_equal(.rxToN("log1pmx(1)"), "(-0.30685281944005471)")
     expect_equal(.rxToN("expit(tka)"), "1/(1+DEXP(-(THETA(1))))")
-    # powers above .rxNMmaxIntPow keep **
-    expect_equal(.rxToN("tka^13"), "THETA(1)**13")
+    # powers above .rxNMmaxIntPow are powers of x*x, which is never negative
+    expect_equal(.rxToN("tka^13"), "(THETA(1)*((THETA(1)*THETA(1))**6))")
+    expect_equal(.rxToN("tka^14"), "((THETA(1)*THETA(1))**7)")
+    expect_equal(.rxToN("(tka-3)^-14"), "(1/(((THETA(1)-3)*(THETA(1)-3))**7))")
     # large whole numbers are not written as Fortran integers
     expect_equal(.rxToN("2^31"), "2.1474836480000000D+09")
     expect_equal(.rxToN("2^30"), "1073741824")

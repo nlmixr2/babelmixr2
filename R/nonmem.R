@@ -97,7 +97,7 @@ rex::register_shortcuts("babelmixr2")
 .rxNMfoldOp <- c("+", "-", "*", "/", "^", "**")
 
 # Largest integer power written as a product with `$ABBR PROTECT`;
-# larger powers are written with `**`
+# larger powers are written as powers of `x*x`
 .rxNMmaxIntPow <- 12
 
 #' Should the control stream use NONMEM's `$ABBR PROTECT`?
@@ -248,7 +248,7 @@ rex::register_shortcuts("babelmixr2")
     .ret <- .rxToNonmemFormatNumber(.b^.e)
     if (!is.null(.ret)) return(.ret)
   }
-  if (!is.null(.e) && .e == round(.e) && abs(.e) <= .rxNMmaxIntPow) {
+  if (!is.null(.e) && .e == round(.e)) {
     if (.e == 0) {
       return("1")
     }
@@ -258,7 +258,16 @@ rex::register_shortcuts("babelmixr2")
     if (!.simple) {
       .base <- paste0("(", .base, ")")
     }
-    .ret <- paste0("(", paste(rep(.base, abs(.e)), collapse = "*"), ")")
+    if (abs(.e) <= .rxNMmaxIntPow) {
+      .ret <- paste0("(", paste(rep(.base, abs(.e)), collapse = "*"), ")")
+    } else {
+      # x^n = (x*x)^(n/2) (times x when n is odd); x*x is never
+      # negative, so PEXP(E*PLOG(x*x)) keeps the value
+      .ret <- paste0("((", .base, "*", .base, ")**", abs(.e) %/% 2, ")")
+      if (abs(.e) %% 2 == 1) {
+        .ret <- paste0("(", .base, "*", .ret, ")")
+      }
+    }
     if (.e < 0) {
       .ret <- paste0("(1/", .ret, ")")
     }
