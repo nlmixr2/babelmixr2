@@ -33,6 +33,17 @@
 #'   otherwise translates the model to ODEs; \code{"ode"} always
 #'   translates the model to ODEs (with \code{rxode2::linToOde()}) and
 #'   solves it with \code{advanOde}
+#' @param prune How `if`/`else` statements are written for NONMEM:
+#'   `"auto"` (default) writes a model whose `if` blocks are simple
+#'   (no `else`, `else if`, nesting or `ifelse()`) as NONMEM `IF`
+#'   blocks, and otherwise prunes the `if`/`else` branches; `TRUE`
+#'   always prunes a model with `if`/`else` statements and `FALSE`
+#'   never prunes (so NONMEM can only use simple `if` blocks).  Pruning
+#'   uses `rxode2`'s branch pruning (the same pruning `nlmixr2` uses for
+#'   its symbolic derivatives), which writes each branch as an
+#'   arithmetic expression; this allows the nested `if`/`else
+#'   if`/`else` statements NONMEM models cannot otherwise use.  A pruned
+#'   fit contains the pruned model.
 #' @param cov The NONMEM covariance method
 #' @param maxeval NONMEM's maxeval (for non posthoc methods)
 #' @param tol NONMEM tolerance for ODE solving advan
@@ -53,7 +64,9 @@
 #'   protection numbers
 #' @param protectZeros Add babelmixr2's own code to protect divide
 #'   by zero (and the domains of `log()`, `sqrt()` and similar
-#'   functions) in the control stream
+#'   functions) in the control stream.  This is only used when
+#'   `protect=FALSE` (for example with NONMEM before 7.4); with
+#'   `protect=TRUE`, NONMEM's `$ABBR PROTECT` protects these instead
 #' @param protect Add `$ABBR PROTECT` to the control stream so NM-TRAN
 #'   replaces `LOG`, `EXP`, `SQRT`, division and powers with NONMEM's
 #'   protected functions (`PLOG`, `PEXP`, `PSQRT`, `PDZ`); this requires
@@ -104,6 +117,7 @@
 nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           advanOde=c("advan13", "advan8", "advan6"),
                           linCmt=c("advan", "ode"),
+                          prune = "auto",
                           cov=c("r,s", "r", "s", ""),
                           maxeval=100000,
                           tol=6,
@@ -170,6 +184,10 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertIntegerish(mapiter, len=1, any.missing=FALSE)
   checkmate::assertLogical(muRefCovAlg, any.missing=FALSE, len=1)
   checkmate::assertLogical(run, any.missing=FALSE, len=1)
+  if (!(checkmate::testLogical(prune, any.missing = FALSE, len = 1) ||
+          identical(prune, "auto"))) {
+    stop("'prune' must be \"auto\", TRUE or FALSE", call. = FALSE)
+  }
   if (!is.null(modelName)) {
     checkmate::assertCharacter(modelName, len=1, any.missing=FALSE)
   }
@@ -235,6 +253,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                cov=match.arg(cov),
                advanOde=match.arg(advanOde),
                linCmt=match.arg(linCmt),
+               prune = prune,
                maxeval=maxeval,
                print=print,
                noabort=noabort,

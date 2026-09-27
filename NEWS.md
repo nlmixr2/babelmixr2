@@ -8,8 +8,45 @@
   12 are written as products and powers of a positive number with
   `DEXP()`.  Functions of numbers (like `exp(0)`, `log(2*pi)` or
   `expit(0)`) are written as numbers, and model
-  variables named like a protected function (like `plog`) are renamed
-  (#62).
+  variables named like a protected function (like `plog`) are renamed.
+  babelmixr2's own zero protection (`protectZeros`) is now only used
+  with `protect=FALSE`, like for NONMEM before 7.4 (#62).
+
+* `est="pknca"` now updates the initial estimates of models that are not
+  mu-referenced, like `ka <- tka * exp(eta.ka)`, instead of failing with
+  "Must have names" (#101).  When there is no `vc`, a central volume
+  named `v`, `V`, `Vc`, `VC`, `v1` or `V1` (only one of them) now gets
+  the NCA central volume estimate.  Parameters defined as `expit()` of a
+  theta are now transformed back correctly.  A message lists the
+  parameters that could not be updated.
+* NONMEM models can now use nested `if`/`else if`/`else` statements
+  (and `ifelse()`): their branches are pruned with rxode2's branch
+  pruning before the model is translated to NONMEM (#11).  With the
+  default `nonmemControl(prune="auto")` a model whose `if` blocks are
+  simple is still written with NONMEM `IF` blocks and only a model that
+  needs it is pruned; `prune=TRUE` always prunes and `prune=FALSE` never
+  prunes (the error for unsupported `if`/`else` statements suggests
+  `prune=TRUE`).
+
+* `monolixControl(prune=)` has the same option for Monolix.  Monolix
+  writes `if`/`elseif`/`else` (and nested `if`) statements directly, so
+  `prune="auto"` (the default) only prunes a model that uses `ifelse()`,
+  which Monolix cannot write; `prune=TRUE` always prunes and
+  `prune=FALSE` never prunes.  A logical expression used as a number in
+  a Monolix model is written as a 0/1 indicator variable (#11).
+
+* A logical expression used as a number in a NONMEM model (like
+  `cl <- tcl * (WT > 70)`) is now written as a 0/1 indicator variable,
+  since NONMEM cannot use a logical expression as a number.  A numeric
+  `if ()` condition is written as not equal to zero.
+* `est="nonmem"` and `est="monolix"` fits with
+  `table=tableControl(cwres=TRUE)` no longer fail with "objective
+  function 'FOCEi' already present".  The fit keeps both the NONMEM (or
+  Monolix) objective, which stays in use, and nlmixr2's FOCEi objective
+  (#94).  `as.nlmixr2()` of a `nonmem2rx` or `monolix2rx` model now also
+  keeps the imported objective in use with `cwres=TRUE`, and no longer
+  fails after an earlier import with `cwres=TRUE` (it started from that
+  fit's etas).
 
 * `est="monolix"` now translates compartment properties (`f()`,
   `alag()`, `rate()` and `dur()`) that are expressions, like
@@ -26,6 +63,12 @@
   error when the model still contains untranslated NONMEM residual
   variables (`eps#` or `err#`) instead of failing inside the estimation
   routine (#95).
+* `popedControl(sigdig=)` now sets the ODE solver tolerances itself
+  (`atol = rtol = 0.5*10^(-sigdig-2)`, the same values as before) instead
+  of using `rxode2::rxControl(sigdig=)`.  rxode2 5.1.5 loosened the
+  tolerances that `rxControl(sigdig=)` gives, which made the
+  finite-difference FIM, and so the design OFV and RSEs, less accurate
+  (#223).
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,

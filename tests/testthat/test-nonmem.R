@@ -1069,7 +1069,7 @@ withr::with_tempdir({
       "((THETA(1)-3)*(THETA(1)-3)*(THETA(1)-3))"
     )
     expect_equal(.rxToN("exp(tka)^2"), "((DEXP(THETA(1)))*(DEXP(THETA(1))))")
-    expect_equal(.rxToN("tka^-2"), "(1/(RXDZ001*RXDZ001))")
+    expect_equal(.rxToN("tka^-2"), "(1/(THETA(1)*THETA(1)))")
     expect_equal(.rxToN("tka^0"), "1")
     expect_equal(.rxToN("2^tka"), "DEXP((THETA(1))*0.69314718055994529)")
     expect_equal(.rxToN("2^3"), "8")
@@ -1083,10 +1083,13 @@ withr::with_tempdir({
     expect_equal(rxToNonmem("2^tka", .ui), "2**THETA(1)")
     expect_warning(rxToNonmem("(-2)^tka", .ui), NA)
 
-    # negative integer powers keep babelmixr2's own zero protection
+    # babelmixr2's own zero protection is only used without $ABBR PROTECT
     .ui <- rxode2::rxUiDecompress(one.cmt())
     rxode2::rxAssignControlValue(.ui, "protectZeros", TRUE)
-    expect_equal(rxToNonmem("tka^-2", .ui), "(1/(RXDZ001*RXDZ001))")
+    expect_equal(rxToNonmem("log(tka)", .ui), "DLOG(THETA(1))")
+    expect_equal(rxToNonmem("1/tka", .ui), "1/THETA(1)")
+    rxode2::rxAssignControlValue(.ui, "protect", FALSE)
+    expect_equal(rxToNonmem("1/tka", .ui), "1/RXDZ001")
 
     .nm <- suppressMessages(.ctl(protect = FALSE))
     expect_false(any(grepl("$ABBR", .nm, fixed = TRUE)))
