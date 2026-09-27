@@ -537,6 +537,30 @@
       cp ~ add(add.sd)
     })
   },
+  fExpr = function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      lfdepot <- log(0.8)
+      llag <- log(0.2)
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      f(depot) <- exp(lfdepot)
+      alag(depot) <- exp(llag)
+      d / dt(depot) <- -ka * depot
+      d / dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  },
   iov=function() {
     ini({
       tka <- 0.45; tcl <- 1; tv <- 3.45
@@ -717,11 +741,11 @@ stressCases <- function() {
                 checkMonolix="k13=rx_k13"),
     .stressCase("linCmt modeled duration", .m$lin1ivDur, .ivModelDur,
                 checkNonmem=c("ADVAN1 TRANS1", "D1=", "\\$INPUT.* RATE"),
-                checkMonolix=c("ddt_central", "Tk0="),
+                checkMonolix = c("ddt_central", "Tk0=rx_dur_central"),
                 description="Monolix pkmodel() cannot model the duration: ODEs"),
     .stressCase("linCmt modeled rate", .m$lin1ivRate, .ivModelRate,
                 checkNonmem=c("ADVAN1 TRANS1", "R1=", "\\$INPUT.* RATE"),
-                checkMonolix=c("ddt_central", "Tk0=amtDose/"),
+                checkMonolix = c("ddt_central", "Tk0=amtDose/rx_rate_central"),
                 description="Monolix pkmodel() cannot model the rate: ODEs"),
     .stressCase("linCmt weight covariate", .m$lin1oralWt, .theoWt,
                 checkNonmem=c("ADVAN2 TRANS1", "\\$INPUT.* NLMIXRMUDERCOV1",
@@ -806,6 +830,12 @@ stressCases <- function() {
     .stressCase("time-varying covariate", .stressCode$timeVaryingCov, .theoCrcl,
                 checkMonolix="CRCL"),
     .stressCase("probitInv", .stressCode$probitInv, .theo),
+    .stressCase(
+      "f()/alag() expressions", .stressCode$fExpr, .theo,
+      checkNonmem = c("F1=", "ALAG1="),
+      checkMonolix = c("Tlag=rx_lag_depot, p=rx_f_depot", "rx_f_depot = exp"),
+      description = "issue #115"
+    ),
     .stressCase("between-occasion variability", .stressCode$iov, .theoOcc,
                 nonmem="id|occasion|level|random", monolix="id|occasion|level|random",
                 run=FALSE),
