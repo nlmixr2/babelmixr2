@@ -119,7 +119,8 @@ nlmixr2Est.pknca <- function(env, ...) {
     )
   # What parameters should be modified?  And then modify them.
   paramMap <- pkncaParamMap(env$ui)
-  if (!("vc" %in% pkncaAssignedNames(env$ui$lstExpr)) && ("v" %in% paramMap$param)) {
+  vcDefined <- "vc" %in% c(pkncaAssignedNames(env$ui$lstExpr), env$ui$iniDf$name)
+  if (!vcDefined && ("v" %in% paramMap$param)) {
     # Models without `vc` commonly name the central volume `v`
     paramEstimates$v <- paramEstimates$vc
   }

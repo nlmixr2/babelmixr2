@@ -316,6 +316,32 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
   )
   expect_equal(fitVcCov$ui$theta[["tv"]], 0.003)
   expect_equal(fitVcCov$ui$theta[["tvc"]], 0.004)
+
+  # ... or when vc is a theta used directly
+  vcThetaMod <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 0.009
+      vc <- 0.004
+      tv  <- 0.003
+      eta.v ~ 0.1
+      prop.sd <- 0.7
+    })
+    model({
+      ka <- tka
+      cl <- tcl
+      v <- tv * exp(eta.v)
+      d/dt(depot) = -ka * depot
+      d/dt(center) = ka * depot - cl / vc * center
+      cp = center / vc + 0 * v
+      cp ~ prop(prop.sd)
+    })
+  }
+  suppressMessages(
+    fitVcTheta <- nlmixr(vcThetaMod, data = dModNoZero, est = "pknca", control = ctl)
+  )
+  expect_equal(fitVcTheta$ui$theta[["tv"]], 0.003)
+  expect_equal(fitVcTheta$ui$theta[["vc"]], feNonMu[["tv"]])
 })
 
 test_that("pkncaParamMap", {
