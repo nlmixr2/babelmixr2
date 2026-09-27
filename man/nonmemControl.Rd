@@ -8,6 +8,7 @@ nonmemControl(
   est = c("focei", "imp", "its", "posthoc"),
   advanOde = c("advan13", "advan8", "advan6"),
   linCmt = c("advan", "ode"),
+  prune = "auto",
   cov = c("r,s", "r", "s", ""),
   maxeval = 1e+05,
   tol = 6,
@@ -65,6 +66,17 @@ with \code{TRANS1} micro-constants) when the model allows it and
 otherwise translates the model to ODEs; \code{"ode"} always
 translates the model to ODEs (with \code{rxode2::linToOde()}) and
 solves it with \code{advanOde}}
+
+\item{prune}{How \code{if}/\verb{else} statements are written for NONMEM:
+\code{"auto"} (default) writes a model whose \code{if} blocks are simple
+(no \verb{else}, \verb{else if}, nesting or \code{ifelse()}) as NONMEM \code{IF}
+blocks, and otherwise prunes the \code{if}/\verb{else} branches; \code{TRUE}
+always prunes a model with \code{if}/\verb{else} statements and \code{FALSE}
+never prunes (so NONMEM can only use simple \code{if} blocks).  Pruning
+uses \code{rxode2}'s branch pruning (the same pruning \code{nlmixr2} uses for
+its symbolic derivatives), which writes each branch as an
+arithmetic expression; this allows the nested \code{if}/\verb{else if}/\verb{else} statements NONMEM models cannot otherwise use.  A pruned
+fit contains the pruned model.}
 
 \item{cov}{The NONMEM covariance method}
 
