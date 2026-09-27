@@ -2704,6 +2704,12 @@ attr(rxUiGet.popedParameters, "rstudio") <- ""
 #'   more accurate than those step sizes.
 #' @param ... other parameters for PopED control
 #' @return popedControl object
+#' @references Fidler ML, Denney W, Harrold J, Hooijmaijers R,
+#'   Papathanasiou T, Schoemaker R, Taubert M, Trame M, Wilkins J
+#'   (2024). babelmixr2 and PopED: Quick Conversion of NONMEM, Monolix
+#'   and nlmixr2/rxode2 Models to PopED Optimal Design Analysis.
+#'   American Conference on Pharmacometrics (ACoP) 2024.
+#'   \doi{10.70534/XUMG6226}
 #' @export
 #' @author Matthew L. Fidler
 popedControl <- function(stickyRecalcN=4,
@@ -3316,6 +3322,13 @@ print.babelmixr2popedScript <- function(x, ...) {
 #' @return babelmixr2 PopED database (with $babelmixr2 in database)
 #'
 #' @inheritParams popedControl
+#'
+#' @references Fidler ML, Denney W, Harrold J, Hooijmaijers R,
+#'   Papathanasiou T, Schoemaker R, Taubert M, Trame M, Wilkins J
+#'   (2024). babelmixr2 and PopED: Quick Conversion of NONMEM, Monolix
+#'   and nlmixr2/rxode2 Models to PopED Optimal Design Analysis.
+#'   American Conference on Pharmacometrics (ACoP) 2024.
+#'   \doi{10.70534/XUMG6226}
 #'
 #' @export
 #'
