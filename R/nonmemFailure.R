@@ -23,7 +23,8 @@
 #'
 #' NONMEM's output starts with a copy of the control stream; those
 #' lines are dropped so the model's own code is never mistaken for a
-#' NONMEM message.
+#' NONMEM message.  Control stream lines NM-TRAN shows with an error
+#' are kept.
 #'
 #' @param exportPath The NONMEM run directory
 #' @param lst The NONMEM output file name
@@ -37,14 +38,21 @@
   .files <- file.path(exportPath, c(lst, "FMSG"))
   .files <- .files[file.exists(.files)]
   if (length(.files) == 0L) return(NULL)
-  .ret <- unlist(lapply(.files, .nonmemFailureReadLines), use.names=FALSE)
+  .ret <- lapply(.files, .nonmemFailureReadLines)
   .ctlFile <- file.path(exportPath, ctl)
-  if (file.exists(.ctlFile)) {
+  if (file.exists(.lstFile <- file.path(exportPath, lst)) && file.exists(.ctlFile)) {
     .ctl <- trimws(.nonmemFailureReadLines(.ctlFile))
     .ctl <- .ctl[.ctl != ""]
-    .ret <- .ret[!(trimws(.ret) %in% .ctl)]
+    .lst <- .ret[[1]]
+    # the copy is before NM-TRAN's messages and NONMEM's banner; later
+    # copies of control stream lines are NM-TRAN showing an error
+    .end <- grep("NM-TRAN MESSAGES|WARNINGS AND ERRORS|NONLINEAR MIXED EFFECTS MODEL PROGRAM",
+                 .lst)
+    .end <- if (length(.end) == 0L) length(.lst) else .end[1] - 1L
+    .echo <- seq_along(.lst) <= .end & trimws(.lst) %in% .ctl
+    .ret[[1]] <- .lst[!.echo]
   }
-  .ret
+  unlist(.ret, use.names=FALSE)
 }
 
 #' Pick the lines around the first match of a pattern
@@ -229,7 +237,9 @@
         paste0("  - a runCommand function did not write '", .lst, "' in the run directory")))
   }
   .started <- any(grepl("NONLINEAR MIXED EFFECTS MODEL PROGRAM", .lines, fixed=TRUE))
-  .finished <- any(grepl("#TERM:|MINIMIZATION SUCCESSFUL|MINIMIZATION TERMINATED|OPTIMIZATION WAS COMPLETED|OPTIMIZATION WAS NOT COMPLETED|STOCHASTIC PORTION WAS|EXPECTATION ONLY PROCESS",
+  # an evaluation (MAXEVALS=0) has no termination message, only the
+  # omitted estimation step
+  .finished <- any(grepl("#TERM:|MINIMIZATION SUCCESSFUL|MINIMIZATION TERMINATED|OPTIMIZATION WAS COMPLETED|OPTIMIZATION WAS NOT COMPLETED|STOCHASTIC PORTION WAS|EXPECTATION ONLY PROCESS|ESTIMATION STEP OMITTED: +YES",
                          .nonmemDropModelName(.lines, ui$nonmemModelName)))
   if (!.started) {
     .nonmemFailureStop(

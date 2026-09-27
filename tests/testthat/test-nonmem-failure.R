@@ -86,6 +86,12 @@ test_that("real NONMEM output is classified (#46)", {
     for (.f in names(.expected)) {
       expect_equal(.cause(file.path(.d, .f)), .expected[[.f]], info=.f)
     }
+    # the control stream line NM-TRAN shows with an error is kept
+    .e <- file.path("PsN", "test_files", "modelfit", "diagnose_lst_errors")
+    .ctl <- .nonmemClassifyFailure(.nonmemFailureLines(.e, "psn.lst", "psn.mod"), "psn")
+    expect_equal(.ctl$cause, "controlStream")
+    expect_true(any(grepl("HEJSAN", .ctl$lines, fixed=TRUE) &
+                      grepl("$ESTIMATION", .ctl$lines, fixed=TRUE)))
     # no finished run in the collection is read as a failure
     .fs <- list.files(.d, pattern="[.]lst$", recursive=TRUE, full.names=TRUE)
     .fs <- .fs[!(.fs %in% file.path(.d, names(.expected)))]
@@ -237,10 +243,16 @@ withr::with_tempdir({
     expect_match(.msg, "solving errors: 'fail_prderr-nonmem/PRDERR'", fixed=TRUE)
   })
 
-  test_that("unreadable NONMEM output is reported (#46)", {
-    .msg <- .failure(.fakeNonmem(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
-                         " #TERM:",
-                         " garbled")), "fail_read")
+  test_that("a NONMEM evaluation (MAXEVALS=0) is not a crash (#46)", {
+    # evaluations have no termination message, only the omitted
+    # estimation step
+    .eval <- c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
+               " TOT. NO. OF INDIVIDUALS:       12",
+               " ESTIMATION STEP OMITTED:                 YES ",
+               " #OBJV:*******************      742.051       *******")
+    .msg <- .failure(.fakeNonmem(.eval), "eval_stop")
+    expect_match(.msg, "minimization not successful")
+    .msg <- .failure(.fakeNonmem(.eval), "eval_read", list(readBadOpt=TRUE))
     expect_match(.msg, "could not read or use NONMEM's output")
   })
 
@@ -324,7 +336,7 @@ withr::with_tempdir({
            lines=c("0MINIMIZATION TERMINATED", " DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED")),
       list(name="read_its", ctl=list(readBadOpt=TRUE),
            lines=" OPTIMIZATION WAS COMPLETED"),
-      list(name="read_posthoc", ctl=list(readBadOpt=TRUE),
+      list(name="read_empty", ctl=list(readBadOpt=TRUE),
            lines=""))
     for (.c in .cases) {
       # the fake output has no estimates, so with the flag the run gets
