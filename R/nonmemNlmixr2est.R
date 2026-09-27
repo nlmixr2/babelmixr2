@@ -217,6 +217,7 @@
   }
   .status <- NULL
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
+    .nonmemRemoveOldOutput(.ui)
     .status <- .nonmemRunner(ui=.ui)
   }
   .read <- tryCatch(.ui$nonmemSuccessful,

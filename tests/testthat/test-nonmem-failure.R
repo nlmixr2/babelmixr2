@@ -46,6 +46,10 @@ test_that("NONMEM failures are classified from the output (#46)", {
   expect_equal(.nonmemDropModelName(c("a.csv a-nonmem/a.lst", "data", "pk.1+a"), "a"),
                c(".csv -nonmem/.lst", "data", "pk.1+"))
   expect_equal(.nonmemDropModelName("x (m.1) m.1.csv", "m.1"), "x () .csv")
+  # directories are not license messages, but license files are
+  expect_null(.nonmemClassifyFailure("gfortran: error: /home/u/missing_license/FSUBS.f90: failed"))
+  expect_equal(.nonmemClassifyFailure("Cannot find /opt/nm/license/nonmem.lic")$cause,
+               "license")
 })
 
 withr::with_tempdir({
@@ -209,6 +213,28 @@ withr::with_tempdir({
                  "could not read NONMEM's output(.|\n)*mock post-processing error")
     local_mocked_bindings(.nonmemFinalizeEnv=function(env, oldUi) "fit")
     expect_equal(.nonmemFinalizeOrExplain(new.env(), .ui), "fit")
+  })
+
+  test_that("an earlier failed run does not explain a new failure (#46)", {
+    skip_on_os("windows")
+    .msg <- .failure(.fakeNonmem(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
+                                   "0PROGRAM TERMINATED BY OBJ")), "fail_stale")
+    expect_match(.msg, "NONMEM stopped during the run")
+    writeLines(" (DATA ERROR) RECORD 1", file.path("fail_stale-nonmem", "FMSG"))
+    .msg <- .failure("babelmixr2-no-such-nmfe", "fail_stale")
+    expect_match(.msg, "exit status: 127", fixed=TRUE)
+    expect_no_match(.msg, "PROGRAM TERMINATED|DATA ERROR")
+  })
+
+  test_that("an NM-TRAN error without NONMEM output is reported (#46)", {
+    .nmtranOnly <- function(ctl, directory, ui) {
+      writeLines(c(" (DATA ERROR) RECORD         3, DATA ITEM   6, CONTENTS: 1",
+                   " ITEM IS OUT OF RANGE."),
+                 file.path(directory, "FMSG"))
+    }
+    .msg <- .failure(.nmtranOnly, "fail_fmsg")
+    expect_match(.msg, "NM-TRAN found an error in the NONMEM data")
+    expect_match(.msg, "ITEM IS OUT OF RANGE", fixed=TRUE)
   })
 
   test_that("an unset run command says how to set it (#46)", {

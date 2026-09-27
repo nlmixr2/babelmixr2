@@ -107,8 +107,11 @@
   # checked last, so a license warning never hides another failure;
   # the registration line and warnings (like a license about to
   # expire) are not failures
-  lines <- .nonmemDropModelName(lines, modelName)
-  .lic <- grepl("licen[cs]e", lines, ignore.case=TRUE) &
+  # directories in file paths (like a compiler's) are not license
+  # messages; a license file (.lic) is
+  lines <- gsub("[^[:space:]]*[/\\\\]", "",
+                .nonmemDropModelName(lines, modelName))
+  .lic <- grepl("licen[cs]e|[.]lic\\b", lines, ignore.case=TRUE) &
     grepl("expired|not valid|invalid|not found|cannot find|could not find|missing|no valid|unable to|failed",
           lines, ignore.case=TRUE) &
     !grepl("registered to|warning", lines, ignore.case=TRUE)
@@ -164,17 +167,6 @@
            if (identical(as.integer(status), 127L)) " (the command was not found)" else "")
   }
   .lines <- .nonmemFailureLines(.exportPath, .lst, ui$nonmemNmctl)
-  if (!file.exists(.lstFile)) {
-    .nonmemFailureStop(
-      c(paste0("NONMEM did not create its output file '", .lstFile, "'"),
-        .cmdMsg, .statusMsg,
-        .nonmemFailureTail(.lines),
-        "likely causes:",
-        "  - nonmemControl(runCommand=) is not the right command or path to NONMEM (for example 'nmfe75'); check it runs from a terminal",
-        "  - the command cannot run NONMEM on this system (ask your IT support)",
-        "  - the NONMEM license is missing or expired (see the NONMEM messages printed above)",
-        paste0("  - a runCommand function did not write '", .lst, "' in the run directory")))
-  }
   .fail <- .nonmemClassifyFailure(.lines, ui$nonmemModelName)
   if (!is.null(.fail)) {
     .msg <- switch(
@@ -204,6 +196,17 @@
               paste0("  output: '", .lstFile, "'"),
               "changing the initial estimates or the model may help"))
     .nonmemFailureStop(.msg)
+  }
+  if (!file.exists(.lstFile)) {
+    .nonmemFailureStop(
+      c(paste0("NONMEM did not create its output file '", .lstFile, "'"),
+        .cmdMsg, .statusMsg,
+        .nonmemFailureTail(.lines),
+        "likely causes:",
+        "  - nonmemControl(runCommand=) is not the right command or path to NONMEM (for example 'nmfe75'); check it runs from a terminal",
+        "  - the command cannot run NONMEM on this system (ask your IT support)",
+        "  - the NONMEM license is missing or expired (see the NONMEM messages printed above)",
+        paste0("  - a runCommand function did not write '", .lst, "' in the run directory")))
   }
   .started <- any(grepl("NONLINEAR MIXED EFFECTS MODEL PROGRAM", .lines, fixed=TRUE))
   .finished <- any(grepl("#TERM:|MINIMIZATION SUCCESSFUL|MINIMIZATION TERMINATED|OPTIMIZATION WAS COMPLETED|OPTIMIZATION WAS NOT COMPLETED|STOCHASTIC PORTION WAS|EXPECTATION ONLY PROCESS",
@@ -246,4 +249,20 @@
            error=function(e) {
              .nonmemCheckRun(ui, status, readError=e)
            })
+}
+
+#' Remove the output of an earlier NONMEM run before running again
+#'
+#' An earlier run that did not finish leaves its output behind; it is
+#' removed so a failure of the new run is never explained with the
+#' old run's output.
+#'
+#' @param ui The rxode2 ui being run
+#' @return Nothing, called for side effects
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemRemoveOldOutput <- function(ui) {
+  .exportPath <- ui$nonmemExportPath
+  unlink(file.path(.exportPath, c(ui$nonmemNmlst, "FMSG", "PRDERR")))
+  invisible()
 }
