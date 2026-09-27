@@ -356,7 +356,9 @@ attr(rxUiGet.nonmemTermMessage, "rstudio") <- "nonmemTermMessage"
 #' @export
 rxUiGet.nonmemSuccessful <- function(x, ...) {
   .term <- rxUiGet.nonmemTermMessage(x, ...)
-  if (is.null(.term)) return(FALSE)
+  if (is.null(.term)) {
+    return(FALSE)
+  }
   any(regexpr("0MINIMIZATION SUCCESSFUL", .term) != -1)
 }
 attr(rxUiGet.nonmemSuccessful, "rstudio") <- "nonmemSuccessful"
@@ -364,7 +366,9 @@ attr(rxUiGet.nonmemSuccessful, "rstudio") <- "nonmemSuccessful"
 #' @export
 rxUiGet.nonmemRoundingErrors <- function(x, ...) {
   .term <- rxUiGet.nonmemTermMessage(x, ...)
-  if (is.null(.term)) return(FALSE)
+  if (is.null(.term)) {
+    return(FALSE)
+  }
   any(regexpr("DUE TO ROUNDING ERRORS", .term) != -1)
 }
 attr(rxUiGet.nonmemRoundingErrors, "rstudio") <- "nonmemRoundingErrors"

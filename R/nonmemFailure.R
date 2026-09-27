@@ -5,7 +5,7 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .nonmemFailureStop <- function(msg) {
-  stop(paste(msg, collapse="\n"), call.=FALSE)
+  stop(paste(msg, collapse = "\n"), call. = FALSE)
 }
 
 #' Read a NONMEM file's lines as valid UTF-8
@@ -16,7 +16,12 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .nonmemFailureReadLines <- function(file) {
-  iconv(suppressWarnings(readLines(file, warn=FALSE)), "UTF-8", "UTF-8", sub="byte")
+  iconv(
+    suppressWarnings(readLines(file, warn = FALSE)),
+    "UTF-8",
+    "UTF-8",
+    sub = "byte"
+  )
 }
 
 #' Read the lines NONMEM and NM-TRAN wrote about a run
@@ -37,22 +42,26 @@
 .nonmemFailureLines <- function(exportPath, lst, ctl) {
   .files <- file.path(exportPath, c(lst, "FMSG"))
   .files <- .files[file.exists(.files)]
-  if (length(.files) == 0L) return(NULL)
+  if (length(.files) == 0L) {
+    return(NULL)
+  }
   .ret <- lapply(.files, .nonmemFailureReadLines)
   .ctlFile <- file.path(exportPath, ctl)
-  if (file.exists(.lstFile <- file.path(exportPath, lst)) && file.exists(.ctlFile)) {
+  if (file.exists(file.path(exportPath, lst)) && file.exists(.ctlFile)) {
     .ctl <- trimws(.nonmemFailureReadLines(.ctlFile))
     .ctl <- .ctl[.ctl != ""]
     .lst <- .ret[[1]]
     # the copy is before NM-TRAN's messages and NONMEM's banner; later
     # copies of control stream lines are NM-TRAN showing an error
-    .end <- grep("NM-TRAN MESSAGES|WARNINGS AND ERRORS|NONLINEAR MIXED EFFECTS MODEL PROGRAM",
-                 .lst)
+    .end <- grep(
+      "NM-TRAN MESSAGES|WARNINGS AND ERRORS|NONLINEAR MIXED EFFECTS MODEL PROGRAM",
+      .lst
+    )
     .end <- if (length(.end) == 0L) length(.lst) else .end[1] - 1L
     .echo <- seq_along(.lst) <= .end & trimws(.lst) %in% .ctl
     .ret[[1]] <- .lst[!.echo]
   }
-  unlist(.ret, use.names=FALSE)
+  unlist(.ret, use.names = FALSE)
 }
 
 #' Pick the lines around the first match of a pattern
@@ -65,12 +74,14 @@
 #'   `character(0)` without a match
 #' @author Matthew L. Fidler
 #' @noRd
-.nonmemFailureContext <- function(lines, pattern, before=0L, after=4L) {
-  .w <- grep(pattern, lines, ignore.case=TRUE)
-  if (length(.w) == 0L) return(character(0))
+.nonmemFailureContext <- function(lines, pattern, before = 0L, after = 4L) {
+  .w <- grep(pattern, lines, ignore.case = TRUE)
+  if (length(.w) == 0L) {
+    return(character(0))
+  }
   .w <- .w[1]
   .ret <- lines[seq(max(1L, .w - before), min(length(lines), .w + after))]
-  .ret <- trimws(.ret, which="right")
+  .ret <- trimws(.ret, which = "right")
   .ret[.ret != ""]
 }
 
@@ -86,9 +97,16 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .nonmemDropModelName <- function(lines, modelName) {
-  if (is.null(modelName) || modelName == "" || length(lines) == 0L) return(lines)
+  if (is.null(modelName) || modelName == "" || length(lines) == 0L) {
+    return(lines)
+  }
   .name <- gsub("([][{}()+*^$|\\\\?.])", "\\\\\\1", modelName)
-  gsub(paste0("(?<![[:alnum:]_.])", .name, "(?![[:alnum:]_])"), "", lines, perl=TRUE)
+  gsub(
+    paste0("(?<![[:alnum:]_.])", .name, "(?![[:alnum:]_])"),
+    "",
+    lines,
+    perl = TRUE
+  )
 }
 
 #' Classify what went wrong in a NONMEM run from its output
@@ -100,54 +118,95 @@
 #'   `lines` that show it, or `NULL` when no failure is recognized
 #' @author Matthew L. Fidler
 #' @noRd
-.nonmemClassifyFailure <- function(lines, modelName=NULL) {
-  if (length(lines) == 0L) return(NULL)
-  if (any(grepl("(DATA ERROR)", lines, fixed=TRUE))) {
-    return(list(cause="data",
-                lines=.nonmemFailureContext(lines, "\\(DATA ERROR\\)")))
+.nonmemClassifyFailure <- function(lines, modelName = NULL) {
+  if (length(lines) == 0L) {
+    return(NULL)
   }
-  if (any(grepl("DATA FILE DOES NOT EXIST", lines, fixed=TRUE))) {
-    return(list(cause="data",
-                lines=.nonmemFailureContext(lines, "DATA FILE DOES NOT EXIST",
-                                            before=3L, after=0L)))
+  if (any(grepl("(DATA ERROR)", lines, fixed = TRUE))) {
+    return(list(
+      cause = "data",
+      lines = .nonmemFailureContext(lines, "\\(DATA ERROR\\)")
+    ))
   }
-  if (any(grepl("AN ERROR WAS FOUND IN THE CONTROL STATEMENTS", lines, fixed=TRUE))) {
-    return(list(cause="controlStream",
-                lines=.nonmemFailureContext(lines,
-                                            "AN ERROR WAS FOUND IN THE CONTROL STATEMENTS",
-                                            after=6L)))
+  if (any(grepl("DATA FILE DOES NOT EXIST", lines, fixed = TRUE))) {
+    return(list(
+      cause = "data",
+      lines = .nonmemFailureContext(
+        lines,
+        "DATA FILE DOES NOT EXIST",
+        before = 3L,
+        after = 0L
+      )
+    ))
   }
-  .term <- grep("PROGRAM TERMINATED", lines, fixed=TRUE)
-  .tere <- grep("#TERE:", lines, fixed=TRUE)
+  if (
+    any(grepl(
+      "AN ERROR WAS FOUND IN THE CONTROL STATEMENTS",
+      lines,
+      fixed = TRUE
+    ))
+  ) {
+    return(list(
+      cause = "controlStream",
+      lines = .nonmemFailureContext(
+        lines,
+        "AN ERROR WAS FOUND IN THE CONTROL STATEMENTS",
+        after = 6L
+      )
+    ))
+  }
+  .term <- grep("PROGRAM TERMINATED", lines, fixed = TRUE)
+  .tere <- grep("#TERE:", lines, fixed = TRUE)
   if (length(.tere) > 0L) {
     # after the estimation's termination block, NONMEM stopping is a
     # failure of the covariance or table step; estimation finished
     .term <- .term[.term < .tere[1]]
   }
   if (length(.term) > 0L) {
-    .start <- grep("NONLINEAR MIXED EFFECTS MODEL PROGRAM", lines, fixed=TRUE)
+    .start <- grep("NONLINEAR MIXED EFFECTS MODEL PROGRAM", lines, fixed = TRUE)
     # before NONMEM starts, it is NM-TRAN that stopped
-    .cause <- if (length(.start) > 0L && .start[1] < .term[1]) "crash" else "nmtran"
-    return(list(cause=.cause,
-                lines=.nonmemFailureContext(lines, "PROGRAM TERMINATED",
-                                            before=2L, after=6L)))
+    .cause <- if (length(.start) > 0L && .start[1] < .term[1]) {
+      "crash"
+    } else {
+      "nmtran"
+    }
+    return(list(
+      cause = .cause,
+      lines = .nonmemFailureContext(
+        lines,
+        "PROGRAM TERMINATED",
+        before = 2L,
+        after = 6L
+      )
+    ))
   }
   # checked last, so a license warning never hides another failure;
   # the registration line and warnings (like a license about to
   # expire) are not failures
   # directories in file paths (like a compiler's) are not license
   # messages; a license file (.lic) is
-  lines <- gsub("[^[:space:]]*[/\\\\]", "",
-                .nonmemDropModelName(lines, modelName))
-  .lic <- grepl("licen[cs]e|[.]lic\\b", lines, ignore.case=TRUE) &
-    grepl("expired|not valid|invalid|not found|cannot find|could not find|missing|no valid|unable to|failed|error|terminating",
-          lines, ignore.case=TRUE) &
-    !grepl("registered to|warning", lines, ignore.case=TRUE)
+  lines <- gsub(
+    "[^[:space:]]*[/\\\\]",
+    "",
+    .nonmemDropModelName(lines, modelName)
+  )
+  .lic <- grepl("licen[cs]e|[.]lic\\b", lines, ignore.case = TRUE) &
+    grepl(
+      "expired|not valid|invalid|not found|cannot find|could not find|missing|no valid|unable to|failed|error|terminating",
+      lines,
+      ignore.case = TRUE
+    ) &
+    !grepl("registered to|warning", lines, ignore.case = TRUE)
 
   if (any(.lic)) {
-    return(list(cause="license",
-                lines=.nonmemFailureContext(lines[which(.lic)[1]:length(lines)],
-                                            ".", after=2L)))
+    return(list(
+      cause = "license",
+      lines = .nonmemFailureContext(
+        lines[which(.lic)[1]:length(lines)],
+        ".",
+        after = 2L
+      )
+    ))
   }
   NULL
 }
@@ -159,8 +218,8 @@
 #' @return The last `n` non-empty lines, indented
 #' @author Matthew L. Fidler
 #' @noRd
-.nonmemFailureTail <- function(lines, n=10L) {
-  .l <- trimws(lines, which="right")
+.nonmemFailureTail <- function(lines, n = 10L) {
+  .l <- trimws(lines, which = "right")
   .l <- .l[.l != ""]
   paste0("  ", utils::tail(.l, n))
 }
@@ -176,7 +235,7 @@
 #'   invisibly
 #' @author Matthew L. Fidler
 #' @noRd
-.nonmemCheckRun <- function(ui, status=NULL, readError=NULL) {
+.nonmemCheckRun <- function(ui, status = NULL, readError = NULL) {
   .exportPath <- ui$nonmemExportPath
   .lst <- ui$nonmemNmlst
   .lstFile <- file.path(.exportPath, .lst)
@@ -184,93 +243,160 @@
   .dataFile <- file.path(.exportPath, ui$nonmemCsv)
   .cmd <- rxode2::rxGetControl(ui, "runCommand", "")
   .cmdMsg <- if (is.character(.cmd)) {
-    paste0("  run command: '", paste(.cmd, ui$nonmemNmctl, .lst), "' in '", .exportPath, "'")
+    paste0(
+      "  run command: '",
+      paste(.cmd, ui$nonmemNmctl, .lst),
+      "' in '",
+      .exportPath,
+      "'"
+    )
   } else {
-    paste0("  run command: the function given in nonmemControl(runCommand=) in '", .exportPath, "'")
+    paste0(
+      "  run command: the function given in nonmemControl(runCommand=) in '",
+      .exportPath,
+      "'"
+    )
   }
   .statusMsg <- if (is.null(status) || identical(as.integer(status), 0L)) {
     NULL
   } else {
-    paste0("  exit status: ", status,
-           if (identical(as.integer(status), 127L)) " (the command was not found)" else "")
+    paste0(
+      "  exit status: ",
+      status,
+      if (identical(as.integer(status), 127L)) {
+        " (the command was not found)"
+      } else {
+        ""
+      }
+    )
   }
   .lines <- .nonmemFailureLines(.exportPath, .lst, ui$nonmemNmctl)
   .fail <- .nonmemClassifyFailure(.lines, ui$nonmemModelName)
   if (!is.null(.fail)) {
     .msg <- switch(
       .fail$cause,
-      license=c("NONMEM could not run because of a license problem:",
-                paste0("  ", .fail$lines),
-                "check NONMEM's license file (typically 'nonmem.lic' in the NONMEM 'license' directory)"),
-      data=c("NM-TRAN found an error in the NONMEM data:",
-             paste0("  ", .fail$lines),
-             paste0("  data: '", .dataFile, "'"),
-             paste0("  control stream: '", .ctlFile, "'"),
-             "this is likely a problem in how babelmixr2 wrote the data; please report it at https://github.com/nlmixr2/babelmixr2/issues"),
-      controlStream=c("NM-TRAN found an error in the NONMEM control stream:",
-                      paste0("  ", .fail$lines),
-                      paste0("  control stream: '", .ctlFile, "'"),
-                      "this is likely a problem in how babelmixr2 translated the model; please report it at https://github.com/nlmixr2/babelmixr2/issues"),
-      nmtran=c("NM-TRAN stopped before NONMEM could run:",
-               paste0("  ", .fail$lines),
-               paste0("  control stream: '", .ctlFile, "'"),
-               paste0("  data: '", .dataFile, "'"),
-               "this is likely a problem in how babelmixr2 translated the model or data; please report it at https://github.com/nlmixr2/babelmixr2/issues"),
-      crash=c("NONMEM stopped during the run:",
-              paste0("  ", .fail$lines),
-              if (file.exists(file.path(.exportPath, "PRDERR"))) {
-                paste0("  solving errors: '", file.path(.exportPath, "PRDERR"), "'")
-              },
-              paste0("  output: '", .lstFile, "'"),
-              "changing the initial estimates or the model may help"))
+      license = c(
+        "NONMEM could not run because of a license problem:",
+        paste0("  ", .fail$lines),
+        "check NONMEM's license file (typically 'nonmem.lic' in the NONMEM 'license' directory)"
+      ),
+      data = c(
+        "NM-TRAN found an error in the NONMEM data:",
+        paste0("  ", .fail$lines),
+        paste0("  data: '", .dataFile, "'"),
+        paste0("  control stream: '", .ctlFile, "'"),
+        "this is likely a problem in how babelmixr2 wrote the data; please report it at https://github.com/nlmixr2/babelmixr2/issues"
+      ),
+      controlStream = c(
+        "NM-TRAN found an error in the NONMEM control stream:",
+        paste0("  ", .fail$lines),
+        paste0("  control stream: '", .ctlFile, "'"),
+        "this is likely a problem in how babelmixr2 translated the model; please report it at https://github.com/nlmixr2/babelmixr2/issues"
+      ),
+      nmtran = c(
+        "NM-TRAN stopped before NONMEM could run:",
+        paste0("  ", .fail$lines),
+        paste0("  control stream: '", .ctlFile, "'"),
+        paste0("  data: '", .dataFile, "'"),
+        "this is likely a problem in how babelmixr2 translated the model or data; please report it at https://github.com/nlmixr2/babelmixr2/issues"
+      ),
+      crash = c(
+        "NONMEM stopped during the run:",
+        paste0("  ", .fail$lines),
+        if (file.exists(file.path(.exportPath, "PRDERR"))) {
+          paste0("  solving errors: '", file.path(.exportPath, "PRDERR"), "'")
+        },
+        paste0("  output: '", .lstFile, "'"),
+        "changing the initial estimates or the model may help"
+      )
+    )
     .nonmemFailureStop(.msg)
   }
   if (!file.exists(.lstFile)) {
     .nonmemFailureStop(
-      c(paste0("NONMEM did not create its output file '", .lstFile, "'"),
-        .cmdMsg, .statusMsg,
+      c(
+        paste0("NONMEM did not create its output file '", .lstFile, "'"),
+        .cmdMsg,
+        .statusMsg,
         .nonmemFailureTail(.lines),
         "likely causes:",
         "  - nonmemControl(runCommand=) is not the right command or path to NONMEM (for example 'nmfe75'); check it runs from a terminal",
         "  - the command cannot run NONMEM on this system (ask your IT support)",
         "  - the NONMEM license is missing or expired (see the NONMEM messages printed above)",
-        paste0("  - a runCommand function did not write '", .lst, "' in the run directory")))
+        paste0(
+          "  - a runCommand function did not write '",
+          .lst,
+          "' in the run directory"
+        )
+      )
+    )
   }
-  .started <- any(grepl("NONLINEAR MIXED EFFECTS MODEL PROGRAM", .lines, fixed=TRUE))
+  .started <- any(grepl(
+    "NONLINEAR MIXED EFFECTS MODEL PROGRAM",
+    .lines,
+    fixed = TRUE
+  ))
   # an evaluation (MAXEVALS=0) or a model with every parameter fixed
   # has no termination message
-  .finished <- any(grepl("#TERM:|MINIMIZATION SUCCESSFUL|MINIMIZATION TERMINATED|OPTIMIZATION WAS COMPLETED|OPTIMIZATION WAS NOT COMPLETED|STOCHASTIC PORTION WAS|EXPECTATION ONLY PROCESS|ESTIMATION STEP OMITTED: +YES|NUMBER OF PARAMETERS TO BE ESTIMATED IS 0",
-                         .nonmemDropModelName(.lines, ui$nonmemModelName)))
+  .finished <- any(grepl(
+    "#TERM:|MINIMIZATION SUCCESSFUL|MINIMIZATION TERMINATED|OPTIMIZATION WAS COMPLETED|OPTIMIZATION WAS NOT COMPLETED|STOCHASTIC PORTION WAS|EXPECTATION ONLY PROCESS|ESTIMATION STEP OMITTED: +YES|NUMBER OF PARAMETERS TO BE ESTIMATED IS 0",
+    .nonmemDropModelName(.lines, ui$nonmemModelName)
+  ))
   if (!.started) {
     .nonmemFailureStop(
-      c(paste0("NONMEM did not start estimation (see '", .lstFile, "')"),
-        .cmdMsg, .statusMsg,
+      c(
+        paste0("NONMEM did not start estimation (see '", .lstFile, "')"),
+        .cmdMsg,
+        .statusMsg,
         .nonmemFailureTail(.lines),
-        "likely causes: the NONMEM license, the Fortran compiler, or NONMEM's installation; see the NONMEM messages printed above"))
+        "likely causes: the NONMEM license, the Fortran compiler, or NONMEM's installation; see the NONMEM messages printed above"
+      )
+    )
   }
   if (!.finished) {
     .nonmemFailureStop(
-      c(paste0("NONMEM started but did not finish (it may have crashed, run out of memory or been stopped); see '", .lstFile, "'"),
+      c(
+        paste0(
+          "NONMEM started but did not finish (it may have crashed, run out of memory or been stopped); see '",
+          .lstFile,
+          "'"
+        ),
         .statusMsg,
         "  last output:",
-        .nonmemFailureTail(.lines)))
+        .nonmemFailureTail(.lines)
+      )
+    )
   }
   if (!is.null(readError)) {
     if (!is.null(.statusMsg)) {
       # NONMEM finished estimating but then exited abnormally (for
       # example killed while computing the covariance or tables)
       .nonmemFailureStop(
-        c(paste0("NONMEM exited with an error after estimation and babelmixr2 could not use its output; see '", .lstFile, "'"),
+        c(
+          paste0(
+            "NONMEM exited with an error after estimation and babelmixr2 could not use its output; see '",
+            .lstFile,
+            "'"
+          ),
           .statusMsg,
           paste0("  error: ", conditionMessage(readError)),
           .nonmemFailureTail(.lines),
-          "NONMEM may have crashed, run out of memory or been stopped while writing its output"))
+          "NONMEM may have crashed, run out of memory or been stopped while writing its output"
+        )
+      )
     }
     .nonmemFailureStop(
-      c(paste0("babelmixr2 could not read or use NONMEM's output '", .lstFile, "':"),
+      c(
+        paste0(
+          "babelmixr2 could not read or use NONMEM's output '",
+          .lstFile,
+          "':"
+        ),
         paste0("  ", conditionMessage(readError)),
         .nonmemFailureTail(.lines),
-        "if NONMEM finished, please report this at https://github.com/nlmixr2/babelmixr2/issues"))
+        "if NONMEM finished, please report this at https://github.com/nlmixr2/babelmixr2/issues"
+      )
+    )
   }
   invisible(NULL)
 }
@@ -284,11 +410,10 @@
 #'   output cannot be read
 #' @author Matthew L. Fidler
 #' @noRd
-.nonmemFinalizeOrExplain <- function(ret, ui, status=NULL) {
-  tryCatch(.nonmemFinalizeEnv(ret, ui),
-           error=function(e) {
-             .nonmemCheckRun(ui, status, readError=e)
-           })
+.nonmemFinalizeOrExplain <- function(ret, ui, status = NULL) {
+  tryCatch(.nonmemFinalizeEnv(ret, ui), error = function(e) {
+    .nonmemCheckRun(ui, status, readError = e)
+  })
 }
 
 #' Remove the output of an earlier NONMEM run before running again

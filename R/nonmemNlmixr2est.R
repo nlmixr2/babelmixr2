@@ -217,12 +217,11 @@
   }
   .status <- NULL
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
-    .status <- .nonmemRunner(ui=.ui)
+    .status <- .nonmemRunner(ui = .ui)
   }
-  .read <- tryCatch(.ui$nonmemSuccessful,
-                    error=function(e) {
-                      .nonmemCheckRun(.ui, .status, readError=e)
-                    })
+  .read <- tryCatch(.ui$nonmemSuccessful, error = function(e) {
+    .nonmemCheckRun(.ui, .status, readError = e)
+  })
   if (!.read) {
     # tell the user why NONMEM failed when it did not finish; a
     # finished run that did not converge continues below
@@ -286,17 +285,20 @@
 .nonmemRunner <- function(ui) {
   cmd <- rxode2::rxGetControl(ui, "runCommand", "")
   if (is.character(cmd)) {
-    if (cmd == "") .nonmemRunCommandUnset(ui)
+    if (cmd == "") {
+      .nonmemRunCommandUnset(ui)
+    }
     cmd <- .nonmemRunCommand
   } else if (!is.function(cmd)) {
-    stop("invalid value for nonmemControl(runCommand=)",
-         call.=FALSE)
+    stop("invalid value for nonmemControl(runCommand=)", call. = FALSE)
   }
   # only once NONMEM will run, so output from running it manually is
   # kept when it cannot
   .nonmemRemoveOldOutput(ui)
-  .status <- cmd(ctl=ui$nonmemNmctl, directory=ui$nonmemExportPath, ui=ui)
-  if (identical(cmd, .nonmemRunCommand)) return(.status)
+  .status <- cmd(ctl = ui$nonmemNmctl, directory = ui$nonmemExportPath, ui = ui)
+  if (identical(cmd, .nonmemRunCommand)) {
+    return(.status)
+  }
   # the exit status is unknown for a user function
   NULL
 }
@@ -313,9 +315,12 @@
 }
 
 .nonmemRunCommandUnset <- function(ui) {
-  stop("NONMEM's run command is not set; set nonmemControl(runCommand=) (for example to the path of 'nmfe75'), or run NONMEM manually in '",
-       ui$nonmemExportPath, "' and rerun nlmixr()",
-       call.=FALSE)
+  stop(
+    "NONMEM's run command is not set; set nonmemControl(runCommand=) (for example to the path of 'nmfe75'), or run NONMEM manually in '",
+    ui$nonmemExportPath,
+    "' and rerun nlmixr()",
+    call. = FALSE
+  )
 }
 
 #' @export
