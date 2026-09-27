@@ -2953,7 +2953,7 @@ popedControl <- function(stickyRecalcN=4,
   }
 
   if (!is.null(sigdig)) {
-    checkmate::assertNumeric(sigdig, lower=1, finite=TRUE, any.missing=TRUE, len=1)
+    checkmate::assertNumeric(sigdig, lower=1, finite=TRUE, any.missing=FALSE, len=1)
   }
   .genRxControl <- FALSE
   if (!is.null(.xtra$genRxControl)) {

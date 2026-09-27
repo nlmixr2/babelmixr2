@@ -1167,4 +1167,5 @@ test_that("popedControl(sigdig=) ODE tolerances do not depend on rxode2 (#223)",
   # an explicit rxControl still wins
   .rx <- popedControl(rxControl=rxode2::rxControl(atol=1e-3, rtol=1e-3))$rxControl
   expect_equal(.rx$rtol, 1e-3)
+  expect_error(popedControl(sigdig=NA))
 })
