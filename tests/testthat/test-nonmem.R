@@ -127,6 +127,45 @@ withr::with_tempdir({
     .has("  RXDZ002=CL")
     .has("  RXR2=DLOG(RXDZ002) ; b = log(cl)")
   })
+
+  test_that("zero protection handles if conditions, compound expressions and high sigdig (#91)", {
+    f <- function() {
+      ini({
+        tcl <- 1
+        tv <- 1
+        eta.cl ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        cl <- tcl + eta.cl
+        v <- tv
+        q <- 1
+        if (1/cl > 0) {
+          q <- 2
+        }
+        a <- log(cl + v) + lfactorial(v)
+        cl <- cl * 2
+        b <- log(cl + v)
+        d/dt(central) <- -q*central
+        cp <- central + a + b
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protectZeros=TRUE, iniSigDig=16)
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    .has <- function(x) expect_true(x %in% .mod, info=x)
+    # the condition's protection is calculated before the IF uses it
+    .wIf <- which(.mod == "  IF (1/RXDZ001.GT.0) THEN")
+    expect_length(.wIf, 1L)
+    expect_true(which(.mod == "  RXDZ001=CL") < .wIf)
+    # x+1 protection does not round to -1 with many significant digits
+    .has("  IF (RXDZ003 .LE. -0.9999999999999) THEN")
+    # compound expressions using a reassigned variable are protected again
+    .has("  RXDZ002=CL+V")
+    .has("  RXDZ004=CL+V")
+    .has("  RXR3=DLOG(RXDZ004) ; b = log(cl + v)")
+  })
   withr::with_options(list(babelmixr2.protectZeros=FALSE), {
     test_that("NONMEM dsl, individual lines", {
 

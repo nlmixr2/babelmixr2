@@ -9,7 +9,9 @@
   negative), `log(x)` and `1/x` no longer share one protected
   variable, so `1/x` keeps the sign of a negative `x`, and a variable
   reassigned in the model is protected again instead of reusing the
-  protection of its old value.
+  protection of its old value.  Zero protection needed by an `if()`
+  condition is now calculated before the NONMEM `IF` that uses it
+  (instead of inside its body).
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,

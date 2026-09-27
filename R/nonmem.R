@@ -335,7 +335,9 @@ rex::register_shortcuts("babelmixr2")
       .newVar <- sprintf("RXDZ%s%03d", .extra, .num)
       rxode2::rxAssignControlValue(ui, ".nmVarDZNum", .num + 1)
       .sigdig <- rxode2::rxGetControl(ui, "iniSigDig", 5)
-      # For x+1 protection keep x just above -1 (e.g. -0.999999) so x+1 stays positive
+      # For x+1 protection keep x just above -1 (e.g. -0.999999) so x+1
+      # stays positive; more than ~15 nines rounds to -1 in double precision
+      if (one) .sigdig <- min(.sigdig, 12)
       .num <- ifelse(one,
                      paste0("-0.", paste(rep("9", .sigdig + 1), collapse="")),
                      paste0("0.", paste(rep("0", .sigdig), collapse=""), "1"))
@@ -519,7 +521,16 @@ rex::register_shortcuts("babelmixr2")
     stop("babelmixr2 NONMEM translator will not handle nested if/else models")
   }
     #rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
-  .ret <- paste0(.rxToNonmemGetIndent(ui), "IF (", .rxToNonmem(x[[2]], ui=ui), ") THEN\n")
+  .cond <- .rxToNonmem(x[[2]], ui=ui)
+  # Zero protection of the condition has to be calculated before the
+  # IF statement that uses it (not inside its body)
+  .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
+  .ret <- ""
+  if (!is.null(.prefixLines)) {
+    .ret <- paste0(paste(.prefixLines, collapse="\n"), "\n")
+    rxode2::rxAssignControlValue(ui, ".nmPrefixLines", NULL)
+  }
+  .ret <- paste0(.ret, .rxToNonmemGetIndent(ui), "IF (", .cond, ") THEN\n")
   .rxToNonmemIndent(ui)
   rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
   on.exit(rxode2::rxAssignControlValue(ui, ".ifelse", FALSE))
