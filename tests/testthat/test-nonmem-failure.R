@@ -37,8 +37,15 @@ test_that("NONMEM failures are classified from the output (#46)", {
   expect_equal(.crash$cause, "crash")
   expect_true("0PROGRAM TERMINATED BY OBJ" %in% .crash$lines)
   # the model name is not read as a license message
-  expect_null(.nonmemClassifyFailure(c(" PROBLEM NO.:  1  license_missing translated from babelmixr2"),
+  expect_null(.nonmemClassifyFailure(c(" PROBLEM NO.:  1  license_missing translated from babelmixr2",
+                                       " DATA FILE: license_missing.csv"),
                                      modelName="license_missing"))
+  # but a short model name does not hide a license message
+  expect_equal(.nonmemClassifyFailure("License file has expired", modelName="a")$cause,
+               "license")
+  expect_equal(.nonmemDropModelName(c("a.csv a-nonmem/a.lst", "data", "pk.1+a"), "a"),
+               c(".csv -nonmem/.lst", "data", "pk.1+"))
+  expect_equal(.nonmemDropModelName("x (m.1) m.1.csv", "m.1"), "x () .csv")
 })
 
 withr::with_tempdir({

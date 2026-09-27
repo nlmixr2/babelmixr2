@@ -57,11 +57,28 @@
   .ret[.ret != ""]
 }
 
+#' Drop the model name from NONMEM's output lines
+#'
+#' The model name is in NONMEM's problem title and file names, so it
+#' is removed (as a whole name) before the output is searched for
+#' messages.
+#'
+#' @param lines The output lines
+#' @param modelName The model name, or `NULL`
+#' @return The lines without the model name
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemDropModelName <- function(lines, modelName) {
+  if (is.null(modelName) || modelName == "" || length(lines) == 0L) return(lines)
+  .name <- gsub("([][{}()+*^$|\\\\?.])", "\\\\\\1", modelName)
+  gsub(paste0("(?<![[:alnum:]_.])", .name, "(?![[:alnum:]_])"), "", lines, perl=TRUE)
+}
+
 #' Classify what went wrong in a NONMEM run from its output
 #'
 #' @param lines The output lines (from `.nonmemFailureLines()`)
-#' @param modelName The model name; lines naming it (like NONMEM's
-#'   problem title or file names) are not read as license messages
+#' @param modelName The model name, which is never read as a license
+#'   message (it is in NONMEM's problem title and file names)
 #' @return A list with the `cause` of the failure and the output
 #'   `lines` that show it, or `NULL` when no failure is recognized
 #' @author Matthew L. Fidler
@@ -90,13 +107,12 @@
   # checked last, so a license warning never hides another failure;
   # the registration line and warnings (like a license about to
   # expire) are not failures
+  lines <- .nonmemDropModelName(lines, modelName)
   .lic <- grepl("licen[cs]e", lines, ignore.case=TRUE) &
     grepl("expired|not valid|invalid|not found|cannot find|could not find|missing|no valid|unable to|failed",
           lines, ignore.case=TRUE) &
     !grepl("registered to|warning", lines, ignore.case=TRUE)
-  if (!is.null(modelName)) {
-    .lic <- .lic & !grepl(modelName, lines, fixed=TRUE)
-  }
+
   if (any(.lic)) {
     return(list(cause="license",
                 lines=.nonmemFailureContext(lines[which(.lic)[1]:length(lines)],
@@ -190,11 +206,8 @@
     .nonmemFailureStop(.msg)
   }
   .started <- any(grepl("NONLINEAR MIXED EFFECTS MODEL PROGRAM", .lines, fixed=TRUE))
-  # the model name is in NONMEM's problem title and file names, so
-  # lines naming it do not show that NONMEM finished
-  .done <- grepl("#TERM:|MINIMIZATION SUCCESSFUL|MINIMIZATION TERMINATED|OPTIMIZATION WAS COMPLETED|OPTIMIZATION WAS NOT COMPLETED|STOCHASTIC PORTION WAS|EXPECTATION ONLY PROCESS",
-                 .lines)
-  .finished <- any(.done & !grepl(ui$nonmemModelName, .lines, fixed=TRUE))
+  .finished <- any(grepl("#TERM:|MINIMIZATION SUCCESSFUL|MINIMIZATION TERMINATED|OPTIMIZATION WAS COMPLETED|OPTIMIZATION WAS NOT COMPLETED|STOCHASTIC PORTION WAS|EXPECTATION ONLY PROCESS",
+                         .nonmemDropModelName(.lines, ui$nonmemModelName)))
   if (!.started) {
     .nonmemFailureStop(
       c(paste0("NONMEM did not start estimation (see '", .lstFile, "')"),
