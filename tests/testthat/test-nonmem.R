@@ -1312,6 +1312,9 @@ withr::with_tempdir({
     expect_equal(.rxToN("acos(1)"), "0")
     expect_equal(.rxToN("log1pexp(0)"), "0.69314718055994529")
     expect_equal(.rxToN("factorial(3)"), "6")
+    expect_equal(.rxToN("exp(sum(0, 0))"), "1")
+    expect_equal(.rxToN("exp(tka)*prod(2, 3)"), "DEXP(THETA(1))*6")
+    expect_equal(.rxToN("log(max(1, 2))"), "0.69314718055994529")
     # partly constant calls and rxode2's normalized powers
     expect_equal(
       .rxToN("expit(0, tka, tcl)"),
@@ -1369,6 +1372,21 @@ withr::with_tempdir({
     expect_equal(rxToNonmem("tka^2", .ui), "THETA(1)**2")
     expect_equal(rxToNonmem("2^tka", .ui), "2**THETA(1)")
     expect_warning(rxToNonmem("(-2)^tka", .ui), NA)
+
+    # a renamed protected name does not merge with a variable already
+    # named like the new name
+    .ui2 <- rxode2::rxUiDecompress(one.cmt())
+    expect_equal(
+      suppressMessages(rxToNonmem(
+        "plog <- tka\nRXR1 <- 2 * tka\ncp <- plog + RXR1",
+        .ui2
+      )),
+      paste0(
+        "  RXR1=THETA(1) ; plog <- tka\n",
+        "  RX001=2*THETA(1) ; RXR1 <- 2 * tka\n",
+        "  CP=RXR1+RX001 ; cp <- plog + RXR1"
+      )
+    )
 
     # babelmixr2's own zero protection is only used without $ABBR PROTECT
     .ui <- rxode2::rxUiDecompress(one.cmt())

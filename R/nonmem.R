@@ -91,6 +91,10 @@ rex::register_shortcuts("babelmixr2")
   factorial = factorial,
   lfactorial = lfactorial,
   lgamma1p = function(x) lgamma(x + 1),
+  sum = sum,
+  prod = prod,
+  max = max,
+  min = min,
   expit = .rxNMexpit,
   invLogit = .rxNMexpit,
   logitInv = .rxNMexpit,
@@ -436,6 +440,27 @@ rex::register_shortcuts("babelmixr2")
                       "IERPRD", "MSEC", "MFIRST", "NETEXT", "IPRED",
                       "IPRE", "IPR"),
                    end)
+#' Remember the NONMEM name of a renamed reserved variable
+#'
+#' The name is recorded under the original variable, so a model
+#' variable that is literally named like the new name (like `RXR1`)
+#' gets a different name
+#'
+#' @param var rxode2 variable name
+#' @param nm NONMEM name
+#' @param .var current `.nmGetVarDf`
+#' @param ui rxode2 ui
+#' @return `nm`
+#' @author Matthew L. Fidler
+#' @noRd
+.nmGetVarRegister <- function(var, nm, .var, ui) {
+  if (!any(.var$var == var)) {
+    .var <- rbind(.var, data.frame(var = var, nm = nm))
+    rxode2::rxAssignControlValue(ui, ".nmGetVarDf", .var)
+  }
+  nm
+}
+
 #' Gets variable, respecting the many reserved names in NONMEM
 #'
 #'
@@ -449,25 +474,30 @@ rex::register_shortcuts("babelmixr2")
                                     data.frame(var=character(0),
                                                nm=character(0)))
   .uvar <- gsub(".", "_", toupper(var), fixed=TRUE)
+  .var <- rxode2::rxGetControl(
+    ui,
+    ".nmGetVarDf",
+    data.frame(var = character(0), nm = character(0))
+  )
   .w <- which(.reserved$var == var)
   if (length(.w) == 1) {
-    var <- .reserved$nm[.w]
+    return(.nmGetVarRegister(var, .reserved$nm[.w], .var, ui))
   } else if (regexpr(.nmRes, .uvar, perl=TRUE) != -1 ||
                .uvar %in% rxode2::rxGetControl(ui, ".nmLinCmtReserved", character(0)) ||
                .nonmemIsProtectFun(.uvar, ui)) {
     .num <- rxode2::rxGetControl(ui, ".nmVarResNum", 1)
+    # skip names the model already uses (like a variable named RXR1)
+    while (sprintf("RXR%d", .num) %in% c(.var$nm, .reserved$nm)) {
+      .num <- .num + 1
+    }
     .newVar <- sprintf("RXR%d", .num)
     rxode2::rxAssignControlValue(ui, ".nmVarResNum", .num + 1)
     .reserved <- rbind(.reserved, data.frame(var=var, nm=.newVar))
     rxode2::rxAssignControlValue(ui, ".nmGetVarReservedDf", .reserved)
     rxode2::.minfo(paste0("renamed model variable '", var, "' to '", .newVar,
                           "' because '", .uvar, "' collides with a NONMEM reserved name"))
-    var <- .newVar
+    return(.nmGetVarRegister(var, .newVar, .var, ui))
   }
-  .uvar <- gsub(".", "_", toupper(var), fixed=TRUE)
-  .var <- rxode2::rxGetControl(ui, ".nmGetVarDf",
-                               data.frame(var=character(0),
-                                          nm=character(0)))
   .w <- which(.var$var == var)
   if (length(.w) == 1) return(.var$nm[.w])
   .w <- which(.var$nm == .uvar)
