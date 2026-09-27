@@ -195,7 +195,8 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                    if (is.null(.ret)) return(NA_character_)
                    paste(.ret, collapse="\n")
                  }, character(1), USE.NAMES=FALSE)
-  .pk2 <- c(rxode2::rxGetControl(.ui, ".nmCmtPrefixLines", NULL), .pk2[!is.na(.pk2)])
+  .pk2 <- c(rxode2::rxGetControl(.ui, ".nmCmtPrefixLines", NULL),
+            .pk2[!is.na(.pk2)])
   .pk2 <- ifelse(length(.pk2) > 0, paste0("\n", paste(.pk2, collapse="\n")), "")
   if (!is.null(.advan)) {
     return(paste0(.pk, .des, .pk2,

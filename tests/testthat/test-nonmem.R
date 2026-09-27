@@ -71,23 +71,31 @@ withr::with_tempdir({
         cl <- tcl + eta.cl
         v <- tv
         a <- log(cl) + lfactorial(v)
-        b <- (cl - 1)^e + 3/v + 2/cl
-        d/dt(central) <- -cl/v*central
-        cp <- central/v
+        b <- (cl - 1)^e + 3 / v + 2 / cl
+        d / dt(central) <- -cl / v * central
+        cp <- central / v
         cp ~ add(add.sd)
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros=TRUE)
+    ui$control <- nonmemControl(protectZeros = TRUE)
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
-    .has <- function(x) expect_true(x %in% .mod, info=x)
-    .has("  ; IF block below keeps RXDZ001 positive (log, sqrt, etc. need x > 0)")
-    .has("  ; IF block below keeps RXDZ002 above -1 (lfactorial, log1p, etc. need x+1 > 0)")
+    .has <- function(x) expect_true(x %in% .mod, info = x)
+    .has(
+      "  ; IF block below keeps RXDZ001 positive (log, sqrt, etc. need x > 0)"
+    )
+    .has(
+      "  ; IF block below keeps RXDZ002 above -1 (lfactorial, log1p, etc. need x+1 > 0)"
+    )
     # x+1 must stay positive, so x is kept above -1
     .has("  IF (RXDZ002 .LE. -0.999999) THEN")
     .has("    RXDZ002=-0.999999")
-    .has("  ; IF block below keeps RXDZ003 away from zero keeping its sign (avoids 1/0 and 0**-n)")
-    .has("  ; IF block below keeps RXDZ004 away from zero keeping its sign (avoids 1/0 and 0**-n)")
+    .has(
+      "  ; IF block below keeps RXDZ003 away from zero keeping its sign (avoids 1/0 and 0**-n)"
+    )
+    .has(
+      "  ; IF block below keeps RXDZ004 away from zero keeping its sign (avoids 1/0 and 0**-n)"
+    )
     # 2/cl keeps the sign of cl, so it cannot reuse the positive-only log(cl) protection
     .has("  RXDZ001=CL")
     .has("  RXDZ005=CL")
@@ -113,22 +121,22 @@ withr::with_tempdir({
         a <- log(cl)
         cl <- cl * 2
         b <- log(cl)
-        d/dt(central) <- -cl*central
+        d / dt(central) <- -cl * central
         cp <- central + a + b
         cp ~ add(add.sd)
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros=TRUE)
+    ui$control <- nonmemControl(protectZeros = TRUE)
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
-    .has <- function(x) expect_true(x %in% .mod, info=x)
+    .has <- function(x) expect_true(x %in% .mod, info = x)
     .has("  RXR1=DLOG(RXDZ001) ; a = log(cl)")
     # the new cl is protected again rather than reusing the old value
     .has("  RXDZ002=CL")
     .has("  RXR2=DLOG(RXDZ002) ; b = log(cl)")
   })
 
-  test_that("zero protection handles if conditions, compound expressions and high sigdig (#91)", {
+  test_that("zero protection: if conditions, reassignment, high sigdig (#91)", {
     f <- function() {
       ini({
         tcl <- 1
@@ -140,21 +148,21 @@ withr::with_tempdir({
         cl <- tcl + eta.cl
         v <- tv
         q <- 1
-        if (1/cl > 0) {
+        if (1 / cl > 0) {
           q <- 2
         }
         a <- log(cl + v) + lfactorial(v)
         cl <- cl * 2
         b <- log(cl + v)
-        d/dt(central) <- -q*central
+        d / dt(central) <- -q * central
         cp <- central + a + b
         cp ~ add(add.sd)
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros=TRUE, iniSigDig=16)
+    ui$control <- nonmemControl(protectZeros = TRUE, iniSigDig = 16)
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
-    .has <- function(x) expect_true(x %in% .mod, info=x)
+    .has <- function(x) expect_true(x %in% .mod, info = x)
     # the condition's protection is calculated before the IF uses it
     .wIf <- which(.mod == "  IF (1/RXDZ001.GT.0) THEN")
     expect_length(.wIf, 1L)
@@ -179,13 +187,13 @@ withr::with_tempdir({
         cl <- tcl + eta.cl
         v <- tv
         alag(central) <- log(cl)
-        d/dt(central) <- -central
-        cp <- central/v
+        d / dt(central) <- -central
+        cp <- central / v
         cp ~ add(add.sd)
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros=TRUE)
+    ui$control <- nonmemControl(protectZeros = TRUE)
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
     .des <- which(.mod == "$DES")
     .alag <- which(.mod == "  ALAG1=DLOG(RXDZ001) ; alag(central) = log(cl)")
@@ -197,17 +205,23 @@ withr::with_tempdir({
     expect_true(.alag < .des)
   })
 
-  test_that("compartment property zero protection is not shared across blocks (#91)", {
+  test_that("compartment property zero protection is kept in $PK (#91)", {
     # Every RXDZ variable a $PK line uses must be assigned earlier in $PK
     .expectPkDefined <- function(mod) {
-      .pk <- mod[seq(which(mod == "$PK"), which(mod %in% c("$DES", "$ERROR"))[1] - 1L)]
+      .pk <- mod[seq(
+        which(mod == "$PK"),
+        which(mod %in% c("$DES", "$ERROR"))[1] - 1L
+      )]
       .defined <- character(0)
       for (.l in .pk) {
         .code <- sub(";.*$", "", .l)
-        .lhs <- regmatches(.code, regexpr("^ *RXDZ[0-9]+(?= *=)", .code, perl=TRUE))
+        .lhs <- regmatches(
+          .code,
+          regexpr("^ *RXDZ[0-9]+(?= *=)", .code, perl = TRUE)
+        )
         .rhs <- sub("^[^=]*=", "", .code)
         .used <- regmatches(.rhs, gregexpr("RXDZ[0-9]+", .rhs))[[1]]
-        expect_true(all(.used %in% .defined), info=.l)
+        expect_true(all(.used %in% .defined), info = .l)
         .defined <- c(.defined, trimws(.lhs))
       }
     }
@@ -222,13 +236,13 @@ withr::with_tempdir({
         cl <- exp(tcl + eta.cl)
         lw <- log(-70 + WT)
         alag(central) <- log(WT - 70)
-        d/dt(central) <- -cl*lw*central
+        d / dt(central) <- -cl * lw * central
         cp <- central
         cp ~ add(add.sd)
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros=TRUE)
+    ui$control <- nonmemControl(protectZeros = TRUE)
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
     expect_true(any(grepl("^  ALAG1=DLOG\\(RXDZ", .mod)))
     .expectPkDefined(.mod)
@@ -245,15 +259,18 @@ withr::with_tempdir({
         v <- exp(tv)
         alag(central) <- log(WT - 70)
         lw <- log(-70 + WT)
-        d/dt(central) <- -cl/v*central
-        cp <- central/v*lw
+        d / dt(central) <- -cl / v * central
+        cp <- central / v * lw
         cp ~ add(add.sd)
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros=TRUE)
-    rxode2::rxAssignControlValue(ui, ".linCmtMicro",
-                                 list(ncmt=1L, oral0=0L, k=quote(cl/v)))
+    ui$control <- nonmemControl(protectZeros = TRUE)
+    rxode2::rxAssignControlValue(
+      ui,
+      ".linCmtMicro",
+      list(ncmt = 1L, oral0 = 0L, k = quote(cl / v))
+    )
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
     expect_true("$SUBROUTINES ADVAN1 TRANS1" %in% .mod)
     expect_true(any(grepl("^  LW=DLOG\\(RXDZ", .mod)))

@@ -298,13 +298,20 @@ rex::register_shortcuts("babelmixr2")
 #' @return NONMEM comment line
 #' @author Matthew L. Fidler
 #' @noRd
-.rxProtectZeroComment <- function(newVar, type=c("plus", "one", "sign"), ui) {
+.rxProtectZeroComment <- function(newVar, type = c("plus", "one", "sign"), ui) {
   type <- match.arg(type)
-  paste0(.rxToNonmemGetIndent(ui), "; IF block below keeps ", newVar, " ",
-         switch(type,
-                plus="positive (log, sqrt, etc. need x > 0)",
-                one="above -1 (lfactorial, log1p, etc. need x+1 > 0)",
-                sign="away from zero keeping its sign (avoids 1/0 and 0**-n)"))
+  paste0(
+    .rxToNonmemGetIndent(ui),
+    "; IF block below keeps ",
+    newVar,
+    " ",
+    switch(
+      type,
+      plus = "positive (log, sqrt, etc. need x > 0)",
+      one = "above -1 (lfactorial, log1p, etc. need x+1 > 0)",
+      sign = "away from zero keeping its sign (avoids 1/0 and 0**-n)"
+    )
+  )
 }
 
 #' Protect Zeros for dlog(x) or dsqrt(x)
@@ -338,11 +345,14 @@ rex::register_shortcuts("babelmixr2")
       # For x+1 protection keep x just above -1 (e.g. -0.999999) so x+1
       # stays positive; more than ~15 nines rounds to -1 in double precision
       if (one) .sigdig <- min(.sigdig, 12)
-      .num <- ifelse(one,
-                     paste0("-0.", paste(rep("9", .sigdig + 1), collapse="")),
-                     paste0("0.", paste(rep("0", .sigdig), collapse=""), "1"))
+      .num <- ifelse(
+        one,
+        paste0("-0.", paste(rep("9", .sigdig + 1), collapse = "")),
+        paste0("0.", paste(rep("0", .sigdig), collapse = ""), "1")
+      )
+      .type <- ifelse(one, "one", "plus")
       .prefixLines <- c(.prefixLines,
-                        .rxProtectZeroComment(.newVar, ifelse(one, "one", "plus"), ui),
+                        .rxProtectZeroComment(.newVar, .type, ui),
                         paste0(.rxToNonmemGetIndent(ui),
                                .newVar, "=", .ret),
                         paste0(.rxToNonmemGetIndent(ui),
@@ -521,13 +531,13 @@ rex::register_shortcuts("babelmixr2")
     stop("babelmixr2 NONMEM translator will not handle nested if/else models")
   }
     #rxode2::rxAssignControlValue(ui, ".ifelse", TRUE)
-  .cond <- .rxToNonmem(x[[2]], ui=ui)
+  .cond <- .rxToNonmem(x[[2]], ui = ui)
   # Zero protection of the condition has to be calculated before the
   # IF statement that uses it (not inside its body)
   .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
   .ret <- ""
   if (!is.null(.prefixLines)) {
-    .ret <- paste0(paste(.prefixLines, collapse="\n"), "\n")
+    .ret <- paste0(paste(.prefixLines, collapse = "\n"), "\n")
     rxode2::rxAssignControlValue(ui, ".nmPrefixLines", NULL)
   }
   .ret <- paste0(.ret, .rxToNonmemGetIndent(ui), "IF (", .cond, ") THEN\n")
@@ -627,12 +637,18 @@ rex::register_shortcuts("babelmixr2")
 #' @noRd
 .rxNmForgetZeroProtection <- function(var, ui) {
   .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf", NULL)
-  if (is.null(.df) || nrow(.df) == 0L) return(invisible())
+  if (is.null(.df) || nrow(.df) == 0L) {
+    return(invisible())
+  }
   # NONMEM variable names are only letters, digits and underscores
   .reg <- paste0("(^|[^A-Za-z0-9_])", var, "($|[^A-Za-z0-9_(])")
-  .w <- grepl(.reg, .df$expr, perl=TRUE)
+  .w <- grepl(.reg, .df$expr, perl = TRUE)
   if (any(.w)) {
-    rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf", .df[!.w, , drop=FALSE])
+    rxode2::rxAssignControlValue(
+      ui,
+      ".nmGetDivideZeroDf",
+      .df[!.w, , drop = FALSE]
+    )
   }
   invisible()
 }
@@ -789,8 +805,11 @@ rex::register_shortcuts("babelmixr2")
   # neither reuses a protection defined elsewhere (like $DES) nor lets
   # other lines reuse its protection before it is defined
   .zeroDf <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf", NULL)
-  rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf",
-                               data.frame(expr=character(0), nm=character(0)))
+  rxode2::rxAssignControlValue(
+    ui,
+    ".nmGetDivideZeroDf",
+    data.frame(expr = character(0), nm = character(0))
+  )
   .extra <- paste0(.nonmemReplaceNonmemThetaWithMu(.rxToNonmem(.tmp, ui=ui), ui=ui),
                    .babelmixr2Deparse(x))
   rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf", .zeroDf)
@@ -798,9 +817,11 @@ rex::register_shortcuts("babelmixr2")
   # (before the property)
   .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
   if (!is.null(.prefixLines)) {
-    rxode2::rxAssignControlValue(ui, ".nmCmtPrefixLines",
-                                 c(rxode2::rxGetControl(ui, ".nmCmtPrefixLines", NULL),
-                                   .prefixLines))
+    rxode2::rxAssignControlValue(
+      ui,
+      ".nmCmtPrefixLines",
+      c(rxode2::rxGetControl(ui, ".nmCmtPrefixLines", NULL), .prefixLines)
+    )
     rxode2::rxAssignControlValue(ui, ".nmPrefixLines", NULL)
   }
   .nonmemSetCmtProperty(ui, .state, .extra, type=.prefix)
