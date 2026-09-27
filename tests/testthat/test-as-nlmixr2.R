@@ -63,8 +63,12 @@ test_that("nlmixr2 translation from nonmem2x", {
 test_that("as.nlmixr2 gives a clear error for untranslated eps/err (#95)", {
   skip_on_cran()
 
-  mod <- .nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
-                    determineError=FALSE, lst=".res", save=FALSE)
+  mod <- .nonmem2rx(
+    system.file("mods/cpt/runODE032.ctl", package = "nonmem2rx"),
+    determineError = FALSE,
+    lst = ".res",
+    save = FALSE
+  )
 
   expect_error(as.nlmixr2(mod), "'eps1'")
 
@@ -87,11 +91,11 @@ test_that("as.nlmixr2 gives a clear error for untranslated eps/err (#95)", {
       v <- exp(lvc + eta.v)
       q <- exp(lq + eta.q)
       v2 <- exp(lvp + eta.v2)
-      k21 <- q/v2
-      k12 <- q/v
-      d/dt(CENTRAL) <- k21 * PERI - k12 * CENTRAL - cl * CENTRAL/v
-      d/dt(PERI) <- -k21 * PERI + k12 * CENTRAL
-      f <- CENTRAL/v
+      k21 <- q / v2
+      k12 <- q / v
+      d / dt(CENTRAL) <- k21 * PERI - k12 * CENTRAL - cl * CENTRAL / v
+      d / dt(PERI) <- -k21 * PERI + k12 * CENTRAL
+      f <- CENTRAL / v
       y <- f + f * eps1
       f ~ prop(RSV)
     })
@@ -99,15 +103,25 @@ test_that("as.nlmixr2 gives a clear error for untranslated eps/err (#95)", {
 
   new <- .as.nonmem2rx(mod2, mod)
 
-  expect_error(as.nlmixr2(new),
-               "untranslated NONMEM residual variable\\(s\\): 'eps1'")
+  expect_error(
+    as.nlmixr2(new),
+    "untranslated NONMEM residual variable\\(s\\): 'eps1'"
+  )
 
-  expect_error(.nonmem2rxAssertNoEps(list(allCovs=c("WT", "err1", "eps2", "eps1x"),
-                                          nonmemData=data.frame(WT=1))),
-               "'err1', 'eps2'\\n")
-  expect_error(.nonmem2rxAssertNoEps(list(allCovs=c("WT", "eps1"),
-                                          nonmemData=data.frame(WT=1, eps1=0))),
-               NA)
+  expect_error(
+    .nonmem2rxAssertNoEps(list(
+      allCovs = c("WT", "err1", "eps2", "eps1x"),
+      nonmemData = data.frame(WT = 1)
+    )),
+    "'err1', 'eps2'\\n"
+  )
+  expect_error(
+    .nonmem2rxAssertNoEps(list(
+      allCovs = c("WT", "eps1"),
+      nonmemData = data.frame(WT = 1, eps1 = 0)
+    )),
+    NA
+  )
 })
 
 .monolix2rx <- function(...) suppressWarnings(suppressMessages(monolix2rx::monolix2rx(...)))

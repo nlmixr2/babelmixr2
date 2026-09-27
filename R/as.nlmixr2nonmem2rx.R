@@ -46,14 +46,19 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
   # can still be solved (nonmem2rx keeps data case, ie EPS1 != eps1)
   .covs <- setdiff(.covs, names(x$nonmemData))
   .eps <- .covs[grepl("^(eps|err)[0-9]+$", .covs)]
-  if (length(.eps) == 0L) return(invisible())
-  stop("the model still contains untranslated NONMEM residual variable(s): ",
-       paste(paste0("'", .eps, "'"), collapse=", "),
-       "\nthe residual error needs to be expressed in nlmixr2 format (ie `ipred ~ prop(prop.sd)`)",
-       " and these variables removed;",
-       " adjust manually and then use `as.nonmem2rx(new, old)` to update",
-       " and re-verify the manual model translation",
-       call.=FALSE)
+  if (length(.eps) == 0L) {
+    return(invisible())
+  }
+  stop(
+    "the model still contains untranslated NONMEM residual variable(s): ",
+    paste(paste0("'", .eps, "'"), collapse = ", "),
+    "\nthe residual error needs to be expressed in nlmixr2 format",
+    " (ie `ipred ~ prop(prop.sd)`)",
+    " and these variables removed;",
+    " adjust manually and then use `as.nonmem2rx(new, old)` to update",
+    " and re-verify the manual model translation",
+    call. = FALSE
+  )
 }
 
 #' @export
