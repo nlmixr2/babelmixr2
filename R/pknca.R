@@ -122,7 +122,7 @@ nlmixr2Est.pknca <- function(env, ...) {
   paramMap <- pkncaParamMap(env$ui)
   vcDefined <- "vc" %in%
     c(pkncaAssignedNames(env$ui$lstExpr), env$ui$iniDf$name)
-  if (!vcDefined && ("v" %in% paramMap$param)) {
+  if (!vcDefined) {
     # Models without `vc` commonly name the central volume `v`
     paramEstimates$v <- paramEstimates$vc
   }
@@ -619,6 +619,7 @@ pkncaTransformedNames <- function(x, allowed = character()) {
   if (fun %in% c("+", "-") && length(args) == 2) {
     # A name added to or subtracted from something is shifted
     bare <- unlist(lapply(args, function(a) {
+      a <- pkncaUnwrapSign(a)
       if (is.name(a)) as.character(a) else character()
     }))
     return(unique(c(bare, pkncaTransformedNames(args, allowed = allowed))))
@@ -641,6 +642,22 @@ pkncaTransformedNames <- function(x, allowed = character()) {
     return(all.vars(x))
   }
   pkncaTransformedNames(args, allowed = allowed)
+}
+
+#' Remove enclosing parentheses and unary signs
+#'
+#' @param x An R expression
+#' @return `x` without enclosing `(`, unary `-` or unary `+`
+#' @noRd
+pkncaUnwrapSign <- function(x) {
+  while (
+    is.call(x) &&
+      length(x) == 2 &&
+      as.character(x[[1]])[1] %in% c("(", "-", "+")
+  ) {
+    x <- x[[2]]
+  }
+  x
 }
 
 #' Get the factors of a product or quotient

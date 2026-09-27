@@ -403,6 +403,15 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
   )
   expect_equal(fitVcTheta$ui$theta[["tv"]], 0.003)
   expect_equal(fitVcTheta$ui$theta[["vc"]], feNonMu[["tv"]])
+
+  # A v that cannot be updated (and no vc) is reported
+  suppressMessages(
+    vComplexMod <- rxode2::model(nonmumod, v <- tv * 2 * exp(eta.v))
+  )
+  expect_message(
+    nlmixr(vComplexMod, data = dModNoZero, est = "pknca", control = ctl),
+    regexp = "NCA initial estimates not applied to `v`"
+  )
 })
 
 test_that("pkncaParamMap", {
@@ -716,6 +725,8 @@ test_that("pkncaTransformedNames", {
   )
   expect_equal(tn(quote(ka * depot - k2 * center)), sort(c("k2", "center")))
   expect_equal(tn(quote(CL <- cl + dcl)), sort(c("cl", "dcl")))
+  expect_true("cl" %in% tn(quote(cp <- center / vc + (cl) + bsl)))
+  expect_true("cl" %in% tn(quote(cp <- center / vc + -cl)))
 })
 
 test_that("pkncaAssignedNames", {
