@@ -3,7 +3,8 @@
 * `est="pknca"` now updates the initial estimates of models that are not
   mu-referenced, like `ka <- tka * exp(eta.ka)`, instead of failing with
   "Must have names" (#101).  A central volume named `v` (when there is
-  no `vc`, `V`, `V1` or `v1`) now gets the NCA central volume estimate.
+  no `vc`) and the other central volume names `Vc`, `VC`, `V`, `v1` and
+  `V1` now get the NCA central volume estimate.
   Parameters defined as `expit()` of a theta are now transformed back
   correctly.  A message lists the parameters that could not be updated.
 

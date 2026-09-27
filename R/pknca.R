@@ -120,21 +120,17 @@ nlmixr2Est.pknca <- function(env, ...) {
     )
   # What parameters should be modified?  And then modify them.
   paramMap <- pkncaParamMap(env$ui)
-  # Other names of the central volume (like rxode2's linCmt())
-  vcDefined <- any(
-    c("vc", "Vc", "VC", "V", "v1", "V1") %in%
-      c(pkncaAssignedNames(env$ui$lstExpr), env$ui$iniDf$name)
-  )
-  if (!vcDefined) {
-    # Models without `vc` commonly name the central volume `v`
-    paramEstimates$v <- paramEstimates$vc
+  # The central volume may have another name (like with rxode2's linCmt()); the
+  # first name the model defines gets the central volume estimate
+  modelNames <- c(pkncaAssignedNames(env$ui$lstExpr), env$ui$iniDf$name)
+  centralNames <- c("vc", "Vc", "VC", "V", "v1", "V1", "v")
+  centralName <- intersect(centralNames, modelNames)
+  if (length(centralName) > 0 && centralName[1] != "vc") {
+    paramEstimates[[centralName[1]]] <- paramEstimates$vc
   }
   updateNames <- intersect(paramMap$param, names(paramEstimates))
   notUpdated <- setdiff(
-    intersect(
-      names(paramEstimates),
-      c(pkncaAssignedNames(env$ui$lstExpr), env$ui$iniDf$name)
-    ),
+    intersect(names(paramEstimates), modelNames),
     updateNames
   )
   if (length(notUpdated) > 0) {
@@ -533,7 +529,21 @@ pkncaParamMap <- function(ui) {
   # Thetas named like an NCA-estimated parameter and used directly as the
   # parameter (like `ka` and `cl` in `-cl / vc * center`); only when every use
   # is plain (see pkncaTransformedNames())
-  directNames <- c("ka", "cl", "vc", "v", "q", "vp", "q2", "vp2")
+  directNames <- c(
+    "ka",
+    "cl",
+    "vc",
+    "Vc",
+    "VC",
+    "V",
+    "v1",
+    "V1",
+    "v",
+    "q",
+    "vp",
+    "q2",
+    "vp2"
+  )
   directThetas <- setdiff(
     intersect(thetaNames, directNames),
     c(ret$theta, ret$param, allLhs)

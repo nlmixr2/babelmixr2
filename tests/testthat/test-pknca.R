@@ -442,6 +442,8 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
     )
   )
   expect_equal(fitVPeriph$ui$theta[["tv"]], 0.003)
+  # ... and V gets the central volume estimate
+  expect_equal(fitVPeriph$ui$theta[["tV"]], feNonMu[["tv"]])
 
   # A v that cannot be updated (and no vc) is reported
   suppressMessages(
