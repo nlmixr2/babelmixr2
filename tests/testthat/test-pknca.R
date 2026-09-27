@@ -329,6 +329,36 @@ test_that("pkncaParamMap", {
   expect_equal(newmod$theta[["lvp"]], 3)
 })
 
+test_that("ini_transform with the same theta and parameter name", {
+  model <- function() {
+    ini({
+      cl <- 1
+      tv <- 3
+      tf <- 0
+      eta.cl ~ 0.1
+      eta.f ~ 0.1
+      prop.err <- 0.5
+    })
+    model({
+      cl <- exp(cl + eta.cl)
+      v <- tv * exp(-eta.cl)
+      fdepot <- expit(tf) * exp(eta.f)
+      cp <- linCmt()
+      cp ~ prop(prop.err)
+    })
+  }
+  suppressMessages(ui <- rxode2::rxode(model))
+  suppressMessages(newmod <- ini_transform(ui, cl = 2, v = 5, fdepot = 0.25))
+  expect_equal(newmod$theta[["cl"]], log(2))
+  expect_equal(newmod$theta[["tv"]], 5)
+  expect_equal(newmod$theta[["tf"]], rxode2::logit(0.25))
+
+  # expit() bounds are respected
+  model2 <- rxode2::model(ui, fdepot <- expit(tf, -1, 2) * exp(eta.f))
+  suppressMessages(newmod <- ini_transform(model2, fdepot = 0.25))
+  expect_equal(newmod$theta[["tf"]], rxode2::logit(0.25, -1, 2))
+})
+
 test_that("pkncaAssignedNames", {
   expect_equal(
     pkncaAssignedNames(list(quote(a <- 1), quote(if (x) {b <- 2} else {a = 3}), quote(y ~ add(z)))),
@@ -344,5 +374,7 @@ test_that("pkncaSimplifyZeroEta", {
   expect_equal(pkncaSimplifyZeroEta(quote(tka / exp(eta.ka)), "eta.ka"), quote(tka))
   expect_equal(pkncaSimplifyZeroEta(quote(eta.ka + tka), "eta.ka"), quote(tka))
   expect_equal(pkncaSimplifyZeroEta(quote(tka * WT), "eta.ka"), quote(tka * WT))
+  expect_equal(pkncaSimplifyZeroEta(quote(tka * exp(-eta.ka)), "eta.ka"), quote(tka))
+  expect_equal(pkncaSimplifyZeroEta(quote(expit(tf) * exp(eta.f)), "eta.f"), quote(expit(tf)))
   expect_equal(pkncaSimplifyZeroEta(3, "eta.ka"), 3)
 })

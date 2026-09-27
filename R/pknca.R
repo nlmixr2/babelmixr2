@@ -389,21 +389,50 @@ pkncaParamMap <- function(ui) {
     rhs <- pkncaSimplifyZeroEta(ui$lstExpr[[idx]][[3]], etaNames)
     theta <- NULL
     curEval <- ""
+    low <- NA_real_
+    hi <- NA_real_
     if (is.name(rhs)) {
       theta <- as.character(rhs)
-    } else if (is.call(rhs) && length(rhs) == 2 && identical(rhs[[1]], quote(exp)) &&
-      is.name(rhs[[2]])) {
+    } else if (is.call(rhs) && length(rhs) == 2 && is.name(rhs[[2]]) &&
+      identical(rhs[[1]], quote(exp))) {
       theta <- as.character(rhs[[2]])
       curEval <- "exp"
+    } else if (is.call(rhs) && length(rhs) %in% c(2, 4) && is.name(rhs[[2]]) &&
+      identical(rhs[[1]], quote(expit))) {
+      # rxode2 normalizes expit(x) to expit(x, low, hi)
+      bounds <- vapply(as.list(rhs)[-(1:2)], pkncaNumConst, numeric(1))
+      if (!anyNA(bounds)) {
+        theta <- as.character(rhs[[2]])
+        curEval <- "expit"
+        if (length(bounds) == 2) {
+          low <- bounds[1]
+          hi <- bounds[2]
+        }
+      }
     }
     if (!is.null(theta) && theta %in% thetaNames && !(theta %in% ret$theta)) {
       ret <- rbind(ret, data.frame(
         theta = theta, param = param, curEval = curEval,
-        low = NA_real_, hi = NA_real_, stringsAsFactors = FALSE
+        low = low, hi = hi, stringsAsFactors = FALSE
       ))
     }
   }
   ret
+}
+
+#' Get the value of a numeric constant expression like `2` or `-1`
+#'
+#' @param x An R expression
+#' @return The numeric value or `NA_real_` when it is not a numeric constant
+#' @noRd
+pkncaNumConst <- function(x) {
+  if (is.numeric(x) && length(x) == 1) {
+    return(as.numeric(x))
+  }
+  if (is.call(x) && length(x) == 2 && identical(x[[1]], quote(`-`))) {
+    return(-pkncaNumConst(x[[2]]))
+  }
+  NA_real_
 }
 
 #' Find the names of all assigned variables (one per assignment)
@@ -450,8 +479,9 @@ pkncaSimplifyZeroEta <- function(x, etaNames) {
   if (identical(fun, quote(`(`))) {
     return(args[[1]])
   }
-  if (length(args) == 1 && identical(fun, quote(exp)) && isNum(args[[1]], 0)) {
-    return(1)
+  if (length(args) == 1 && isNum(args[[1]], 0)) {
+    if (identical(fun, quote(exp))) return(1)
+    if (identical(fun, quote(`-`)) || identical(fun, quote(`+`))) return(0)
   }
   if (length(args) == 2) {
     if (identical(fun, quote(`+`))) {
@@ -487,7 +517,7 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
     )
 
   for (nm in names(changeArgs)) {
-    if (nm %in% paramMap$theta) {
+    if (!(nm %in% paramMap$param) && (nm %in% paramMap$theta)) {
       # It is already the transformed parameter, no modification required
       x <- do.call(rxode2::ini, append(list(x=x), changeArgs[nm]))
     } else if (nm %in% paramMap$param) {
