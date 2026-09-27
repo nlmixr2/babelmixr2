@@ -53,6 +53,15 @@ test_that("nlmixr2 translation from nonmem2x", {
   expect_true(inherits(fit, "nlmixr2FitData"))
   expect_true(any(names(fit$time) == "NONMEM"))
 
+  # tableControl(cwres=TRUE) adds nlmixr2's FOCEi objective, but the
+  # imported NONMEM objective stays in use (#94)
+  fit <- .as.nlmixr(new, table=tableControl(cwres=TRUE))
+  expect_true("CWRES" %in% names(fit))
+  expect_setequal(row.names(fit$objDf), c("nonmem2rx", "FOCEi"))
+  expect_equal(fit$ofvType, "nonmem2rx")
+  expect_equal(fit$objective, fit$objDf["nonmem2rx", "OBJF"])
+  expect_equal(AIC(fit), fit$objDf["nonmem2rx", "AIC"])
+
   rx <- .nonmem2rx(system.file("mods/err/run006.lst", package="nonmem2rx"))
   fit <- .as.nlmixr(rx)
   expect_true(inherits(fit, "nlmixr2FitData"))
@@ -69,8 +78,18 @@ test_that("nlmixr2 translation from monolix2rx", {
 
   mod <- .monolix2rx(pkgTheo)
 
+  # this also checks the import does not start from the etas of the last
+  # nlmixr2() fit, like the FOCEi objective of the cwres=TRUE import above
   fit <- .as.nlmixr2(mod)
 
   expect_true(inherits(fit, "nlmixr2FitData"))
+
+  # the imported Monolix objective stays in use with cwres=TRUE (#94)
+  fit <- .as.nlmixr2(mod, table=tableControl(cwres=TRUE))
+  expect_true("CWRES" %in% names(fit))
+  expect_true("FOCEi" %in% row.names(fit$objDf))
+  expect_equal(nrow(fit$objDf), 2L)
+  expect_false(fit$ofvType == "FOCEi")
+  expect_equal(fit$objective, fit$objDf[fit$ofvType, "OBJF"])
 
 })

@@ -30,6 +30,26 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
   .foceiControl
 }
 
+#' Get the eta matrix of an imported NONMEM/Monolix fit
+#'
+#' @param ui rxode2 ui of the imported model
+#' @param etaObf data frame with ID, the etas and OBJI
+#' @return matrix of the etas in the order of the model's etas, or
+#'   `NULL` when the model has no etas or they are not all in `etaObf`
+#' @author Matthew L. Fidler
+#' @noRd
+.importEtaMat <- function(ui, etaObf) {
+  .iniDf <- ui$iniDf
+  .iniDf <- .iniDf[is.na(.iniDf$ntheta) & .iniDf$neta1 == .iniDf$neta2, ]
+  .etaNames <- .iniDf$name[order(.iniDf$neta1)]
+  if (length(.etaNames) == 0L || !all(.etaNames %in% names(etaObf))) {
+    return(NULL)
+  }
+  .ret <- as.matrix(etaObf[, .etaNames, drop = FALSE])
+  dimnames(.ret) <- NULL
+  .ret
+}
+
 #' @export
 as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl(), ci=0.95) {
   #need x$nonmemData
@@ -104,13 +124,24 @@ as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxCon
     env$nobs2<- x$dfObs
     # Run before converting to nonmemControl
     .objf <- .ui$nonmemObjf
+    # Start from the imported etas; otherwise nlmixr2est may start from
+    # the etas of the last nlmixr2() fit (like the one run for the FOCEi
+    # objective of an earlier import with tableControl(cwres=TRUE))
+    env$etaMat <- .importEtaMat(.ui, env$etaObf)
     # When running the focei problem to create the nlmixr object, you also need a
     #  foceiControl object
     .nonmem2rxToFoceiControl(env, x, TRUE)
+    .ofvType <- env$ofvType
     .ret <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData,
                                                   control=env$control, table=env$table,
                                                   env=env, est="nonmem2rx")
     if (inherits(.ret, "nlmixr2FitData")) {
+      # nlmixr2CreateOutputFromUi() may add its own objective (like FOCEi
+      # with tableControl(cwres=TRUE)) and make it the one in use; keep
+      # the imported NONMEM objective in use, like the fit itself (#94)
+      if (any(row.names(.ret$objDf) == .ofvType)) {
+        nlmixr2est::setOfv(.ret, .ofvType)
+      }
       assign("nonmemControl", list(ci=ci), .ret$env)
       .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
       rm("nonmemControl", envir=.ret$env)

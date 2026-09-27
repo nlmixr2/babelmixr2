@@ -171,6 +171,10 @@ test_that("pheno NONMEM reading with tableControl(cwres=TRUE) (#94)", {
     expect_setequal(row.names(f$objDf), c("nonmem focei", "FOCEi"))
     expect_equal(f$ofvType, "nonmem focei")
     expect_equal(f$objective, f$objDf["nonmem focei", "OBJF"])
+    expect_equal(AIC(f), f$objDf["nonmem focei", "AIC"])
+    expect_equal(BIC(f), f$objDf["nonmem focei", "BIC"])
+    expect_equal(as.numeric(logLik(f)),
+                 f$objDf["nonmem focei", "Log-likelihood"])
     expect_equal(f$objDf["FOCEi", "OBJF"], f$objDf["nonmem focei", "OBJF"],
                  tolerance=1e-4)
   })

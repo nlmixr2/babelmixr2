@@ -4,7 +4,10 @@
   `table=tableControl(cwres=TRUE)` no longer fail with "objective
   function 'FOCEi' already present".  The fit keeps both the NONMEM (or
   Monolix) objective, which stays in use, and nlmixr2's FOCEi objective
-  (#94).
+  (#94).  `as.nlmixr2()` of a `nonmem2rx` or `monolix2rx` model now also
+  keeps the imported objective in use with `cwres=TRUE`, and no longer
+  fails after an earlier import with `cwres=TRUE` (it started from that
+  fit's etas).
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
