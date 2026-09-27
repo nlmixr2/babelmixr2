@@ -537,7 +537,18 @@ pkncaParamMap <- function(ui) {
         }
       }
     }
-    if (!is.null(theta) && theta %in% thetaNames) {
+    # The theta must not be used elsewhere (like `cl <- tpop * WT` with
+    # `ka <- tpop`)
+    if (
+      !is.null(theta) &&
+        theta %in% thetaNames &&
+        sum(vapply(
+          ui$lstExpr,
+          function(e) theta %in% all.vars(e),
+          logical(1)
+        )) ==
+          1
+    ) {
       ret <- rbind(
         ret,
         data.frame(

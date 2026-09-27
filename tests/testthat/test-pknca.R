@@ -804,6 +804,27 @@ test_that("ini_transform with logit() parameters", {
   expect_equal(newmod$theta[["tf"]], rxode2::expit(0.3, -1, 2))
 })
 
+test_that("pkncaParamMap skips thetas also used elsewhere", {
+  model <- function() {
+    ini({
+      tpop <- 1
+      tvc <- 3
+      prop.err <- 0.5
+    })
+    model({
+      ka <- tpop
+      cl <- tpop * WT
+      vc <- tvc
+      cp <- linCmt()
+      cp ~ prop(prop.err)
+    })
+  }
+  suppressMessages(ui <- rxode2::rxode(model))
+  paramMap <- pkncaParamMap(ui)
+  expect_false("tpop" %in% paramMap$theta)
+  expect_true("tvc" %in% paramMap$theta)
+})
+
 test_that("pkncaParamMap keeps a theta that also has an alias", {
   model <- function() {
     ini({
