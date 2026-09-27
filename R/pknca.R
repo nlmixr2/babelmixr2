@@ -454,7 +454,8 @@ pkncaObsStates <- function(ui) {
 #' @return `obs` with rows added for back-extrapolated C0 and the attribute
 #'   "noC0" with the group and time keys (see `pkncaKey()`) of doses where C0
 #'   was not back-extrapolated log-linearly (because the prior trough is at the
-#'   time of dosing or there is no log-linear decline)
+#'   time of dosing or there is no log-linear decline); their Cmax is not used
+#'   for vc when others are available
 #' @noRd
 pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
   obsKey <- pkncaKey(obs, groupCols)
@@ -776,20 +777,15 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
   }
   if (!is.null(dose$pkncaNoC0)) {
     # Intravascular intervals without a log-linear back-extrapolated C0 are not
-    # used for vc (or cl) when others calculating it are available for the
-    # group
+    # used for vc when others calculating it are available for the group (the
+    # AUC starting from a measured trough is still used for cl)
     doseNoC0 <- tapply(dose$pkncaNoC0, doseKey, any)
     isNoC0 <- as.vector(doseNoC0[intervalKey])
     isNoC0 <- !is.na(isNoC0) & isNoC0
     groupKey <- pkncaKey(intervals, groupCols)
-    for (nm in c("cmax.dn", "cl.last")) {
-      hasC0 <- tapply(isIv & !isNoC0 & intervals[[nm]], groupKey, any)
-      dropNoC0 <- isIv & isNoC0 & as.vector(hasC0[groupKey])
-      intervals[[nm]][dropNoC0] <- FALSE
-      if (nm == "cl.last") {
-        intervals$vss.last[dropNoC0] <- FALSE
-      }
-    }
+    hasC0 <- tapply(isIv & !isNoC0 & intervals$cmax.dn, groupKey, any)
+    dropNoC0 <- isIv & isNoC0 & as.vector(hasC0[groupKey])
+    intervals$cmax.dn[dropNoC0] <- FALSE
   }
   # vc only from the first remaining interval for each group and route of
   # administration, since later doses include accumulation

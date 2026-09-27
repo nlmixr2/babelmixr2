@@ -441,7 +441,7 @@ test_that("pkncaIntervals route handling (#102)", {
   expect_equal(is.na(ret$impute), c(TRUE, FALSE, FALSE))
 
   # Intravascular intervals starting from the prior trough are not used for vc
-  # and cl when others are available
+  # when others are available
   doseMulti <- data.frame(
     ID = 1,
     TIME = c(0, 12),
@@ -463,7 +463,8 @@ test_that("pkncaIntervals route handling (#102)", {
     timeCol = "TIME"
   )
   expect_equal(ret$cmax.dn, c(TRUE, FALSE))
-  expect_equal(ret$cl.last, c(TRUE, FALSE))
+  # The AUC from the trough is still used for cl
+  expect_equal(ret$cl.last, c(TRUE, TRUE))
   # Without others calculating the parameter, they are used
   intervalsNoAuc <- intervalsMulti
   intervalsNoAuc$auclast <- c(FALSE, TRUE)
