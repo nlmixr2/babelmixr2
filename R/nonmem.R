@@ -602,11 +602,36 @@ rex::register_shortcuts("babelmixr2")
   }
 }
 
+#' Forget zero protections of expressions using a reassigned variable
+#'
+#' A zero-protected expression is cached so later uses share one
+#' `RXDZ###` variable.  Once a variable in that expression is
+#' reassigned, the cached variable holds the old value, so the
+#' protection has to be recalculated.
+#'
+#' @param var NONMEM variable being assigned
+#' @param ui rxode2 ui
+#' @return nothing, called for side effects
+#' @author Matthew L. Fidler
+#' @noRd
+.rxNmForgetZeroProtection <- function(var, ui) {
+  .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf", NULL)
+  if (is.null(.df) || nrow(.df) == 0L) return(invisible())
+  # NONMEM variable names are only letters, digits and underscores
+  .reg <- paste0("(^|[^A-Za-z0-9_])", var, "($|[^A-Za-z0-9_(])")
+  .w <- grepl(.reg, .df$expr, perl=TRUE)
+  if (any(.w)) {
+    rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf", .df[!.w, , drop=FALSE])
+  }
+  invisible()
+}
+
 # When there is a simple left-hand-side assignment (e.g. set a variable)
 .rxToNonmemHandleAssignmentOperatorSimpleLHS <- function(x, ui) {
   stopifnot(length(x[[2]]) == 1)
   .var <- .rxToNonmem(x[[2]], ui=ui)
   .val <- .rxToNonmem(x[[3]], ui=ui)
+  .rxNmForgetZeroProtection(.var, ui)
   .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
   .extra <- ""
   if (!is.null(.prefixLines)) {

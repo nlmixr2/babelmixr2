@@ -91,11 +91,41 @@ withr::with_tempdir({
     # 2/cl keeps the sign of cl, so it cannot reuse the positive-only log(cl) protection
     .has("  RXDZ001=CL")
     .has("  RXDZ005=CL")
-    .has("  IF (W1 .EQ. 0.0) W1 = 1 ; protect W1 from zero (zero residual variance)")
+    .has("  IF (RXDZ005 .GE. -0.000001 .AND. RXDZ005 .LT. 0.) THEN")
+    .has("    RXDZ005= -0.000001")
+    .has("  ; keep W1 away from zero (a zero residual variance is undefined)")
+    .has("  IF (W1 .EQ. 0.0) W1 = 1")
     # every protection block is preceded by its comment
     .w <- grep("^  RXDZ[0-9]+=", .mod)
     expect_length(.w, 5L)
     expect_true(all(grepl("; IF block below keeps", .mod[.w - 1])))
+  })
+
+  test_that("zero protection is recalculated after reassignment (#91)", {
+    f <- function() {
+      ini({
+        tcl <- 1
+        eta.cl ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        cl <- tcl + eta.cl
+        a <- log(cl)
+        cl <- cl * 2
+        b <- log(cl)
+        d/dt(central) <- -cl*central
+        cp <- central + a + b
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protectZeros=TRUE)
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    .has <- function(x) expect_true(x %in% .mod, info=x)
+    .has("  RXR1=DLOG(RXDZ001) ; a = log(cl)")
+    # the new cl is protected again rather than reusing the old value
+    .has("  RXDZ002=CL")
+    .has("  RXR2=DLOG(RXDZ002) ; b = log(cl)")
   })
   withr::with_options(list(babelmixr2.protectZeros=FALSE), {
     test_that("NONMEM dsl, individual lines", {
@@ -297,7 +327,8 @@ withr::with_tempdir({
             "  RX_IP1 = RX_PF1",
             "  RX_P1 = RX_IP1",
             "  W1=DSQRT((THETA(4))**2) ; W1 ~ sqrt((add.sd)^2)",
-            "  IF (W1 .EQ. 0.0) W1 = 1 ; protect W1 from zero (zero residual variance)",
+            "  ; keep W1 away from zero (a zero residual variance is undefined)",
+            "  IF (W1 .EQ. 0.0) W1 = 1",
             "  IPRED = RX_IP1",
             "  W     = W1",
             "  Y     = IPRED + W*EPS(1)",
@@ -500,7 +531,8 @@ withr::with_tempdir({
           "  END IF",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((add.err)^2)",
-          "  IF (W1 .EQ. 0.0) W1 = 1 ; protect W1 from zero (zero residual variance)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
+          "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
           "  Y     = IPRED + W*EPS(1)",
@@ -563,7 +595,8 @@ withr::with_tempdir({
           "  END IF",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((add.err)^2)",
-          "  IF (W1 .EQ. 0.0) W1 = 1 ; protect W1 from zero (zero residual variance)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
+          "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
           "  Y     = IPRED + W*EPS(1)",
@@ -609,7 +642,8 @@ withr::with_tempdir({
           "  END IF",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((lnorm.err)^2)",
-          "  IF (W1 .EQ. 0.0) W1 = 1 ; protect W1 from zero (zero residual variance)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
+          "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
           "  Y     = IPRED + W*EPS(1)",
@@ -652,7 +686,8 @@ withr::with_tempdir({
           "  RX_IP1 = -DLOG(1.0/XL - 1.0)",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((lnorm.err)^2)",
-          "  IF (W1 .EQ. 0.0) W1 = 1 ; protect W1 from zero (zero residual variance)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
+          "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
           "  Y     = IPRED + W*EPS(1)",
@@ -712,7 +747,8 @@ withr::with_tempdir({
           "  END IF",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((lnorm.err)^2)",
-          "  IF (W1 .EQ. 0.0) W1 = 1 ; protect W1 from zero (zero residual variance)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
+          "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
           "  Y     = IPRED + W*EPS(1)",
@@ -781,7 +817,8 @@ withr::with_tempdir({
           "  RX_IP1 = RX_PF1",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT((RX_PF1*THETA(5))**2) ; W1 ~ sqrt((rx_pred_f_ * prop.err)^2)",
-          "  IF (W1 .EQ. 0.0) W1 = 1 ; protect W1 from zero (zero residual variance)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
+          "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
           "  Y     = IPRED + W*EPS(1)",
@@ -863,7 +900,8 @@ withr::with_tempdir({
           "  END IF",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT((THETA(5))**2) ; W1 ~ sqrt((cpadd.sd)^2)",
-          "  IF (W1 .EQ. 0.0) W1 = 1 ; protect W1 from zero (zero residual variance)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
+          "  IF (W1 .EQ. 0.0) W1 = 1",
           "  RX_IP2 = RX_PF2",
           "  IF (RX_IP2 .GE. 0.0) THEN",
           "     IF (THETA(11) .EQ. 0.0) THEN",
@@ -884,7 +922,8 @@ withr::with_tempdir({
           "  END IF",
           "  RX_P2 = RX_IP2",
           "  W2=DSQRT((THETA(12))**2) ; W2 ~ sqrt((pdadd.err)^2)",
-          "  IF (W2 .EQ. 0.0) W2 = 1 ; protect W2 from zero (zero residual variance)",
+          "  ; keep W2 away from zero (a zero residual variance is undefined)",
+          "  IF (W2 .EQ. 0.0) W2 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
           "  IF (DVID .EQ. 2) THEN",
