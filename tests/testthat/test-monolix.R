@@ -376,6 +376,7 @@ test_that("monolix bioavailability set in a conditional keeps its default (issue
         d/dt(central) <- depot*ka - cl*central/v
         if (WT > 70) {
           f(depot) <- 0.5
+          alag(depot) <- 2
         }
         cp <- central/v
         cp ~ add(add.sd)
@@ -385,11 +386,12 @@ test_that("monolix bioavailability set in a conditional keeps its default (issue
     nlmixr2(one.cmt, nlmixr2data::theo_sd, "monolix",
             monolixControl(runCommand=NA, modelName="monolixIfF"))
     .txt <- readLines("monolixIfF-monolix.txt")
-    expect_true(any(grepl("Tlag=0, p=rx_f_depot)", .txt, fixed=TRUE)))
+    expect_true(any(grepl("Tlag=rx_lag_depot, p=rx_f_depot)", .txt, fixed=TRUE)))
     .eq <- which(.txt == "EQUATION:")
-    # the default comes first, then the conditional value
-    expect_equal(trimws(.txt[.eq + 1]), "rx_f_depot = 1")
+    # the defaults come first, then the conditional values
+    expect_equal(trimws(.txt[.eq + 1:2]), c("rx_f_depot = 1", "rx_lag_depot = 0"))
     expect_true(any(grepl("^ *rx_f_depot = 0.5$", .txt)))
+    expect_true(any(grepl("^ *rx_lag_depot = 2$", .txt)))
   })
 })
 
