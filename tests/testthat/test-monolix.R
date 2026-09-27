@@ -252,11 +252,16 @@ test_that("monolix dsl", {
   .ee(.rxToM("probit(a,b,c)"), "probit(((a)-(b))/((c)-(b)))")
   .ee(.rxToM("d/dt(depot)=-depot*kel"), "ddt_depot = - depot*kel")
   .ee(.rxToM("depot(0)=50"), "depot_0 = 50")
-  .ee(.rxToM("f(depot)=3"), ";f defined in PK section\nrx_f_depot = 3")
-  .ee(.rxToM("f(depot)=exp(a)"), ";f defined in PK section\nrx_f_depot = exp(a)")
-  .ee(.rxToM("alag(depot)=0.1*a"), ";alag defined in PK section\nrx_lag_depot = 0.1*a")
-  .ee(.rxToM("rate(depot)=exp(a)"), ";rate defined in PK section\nrx_rate_depot = exp(a)")
-  .ee(.rxToM("dur(depot)=2*a"), ";dur defined in PK section\nrx_dur_depot = 2*a")
+  .ee(.rxToM("f(depot)=3"),
+      ";f defined in PK section\nrx_f_depot = 3")
+  .ee(.rxToM("f(depot)=exp(a)"),
+      ";f defined in PK section\nrx_f_depot = exp(a)")
+  .ee(.rxToM("alag(depot)=0.1*a"),
+      ";alag defined in PK section\nrx_lag_depot = 0.1*a")
+  .ee(.rxToM("rate(depot)=exp(a)"),
+      ";rate defined in PK section\nrx_rate_depot = exp(a)")
+  .ee(.rxToM("dur(depot)=2*a"),
+      ";dur defined in PK section\nrx_dur_depot = 2*a")
   # variables named like a property are not a property
   .ee(.rxToM("f=3"), "f = 3")
   .ee(.rxToM("alag=3*a"), "alag = 3*a")
@@ -338,25 +343,36 @@ test_that("monolix complex bioavailability and lag time (issue #115)", {
         ka <- exp(tka + eta.ka)
         cl <- exp(tcl + eta.cl)
         v <- exp(tv + eta.v)
-        d/dt(depot) <- -depot*ka
-        d/dt(central) <- depot*ka - cl*central/v
+        d / dt(depot) <- -depot * ka
+        d / dt(central) <- depot * ka - cl * central / v
         f(depot) <- exp(lfdepot)
         alag(depot) <- exp(lalag) * ka
-        cp <- central/v
+        cp <- central / v
         cp ~ add(add.sd)
       })
     }
 
-    nlmixr2(one.cmt, nlmixr2data::theo_sd, "monolix",
-            monolixControl(runCommand=NA, modelName="monolixF"))
+    nlmixr2(
+      one.cmt,
+      nlmixr2data::theo_sd,
+      "monolix",
+      monolixControl(runCommand = NA, modelName = "monolixF")
+    )
     .txt <- readLines("monolixF-monolix.txt")
-    expect_true(any(grepl("Tlag=rx_lag_depot, p=rx_f_depot)", .txt, fixed=TRUE)))
+    expect_true(any(grepl(
+      "Tlag=rx_lag_depot, p=rx_f_depot)",
+      .txt,
+      fixed = TRUE
+    )))
     expect_true(any(grepl("^ *rx_f_depot = exp\\(rx__lfdepot\\)$", .txt)))
     expect_true(any(grepl("^ *rx_lag_depot = exp\\(rx__lalag\\)\\*ka$", .txt)))
+    # unconditional properties need no default
+    expect_false(any(grepl("^ *rx_f_depot = 1$", .txt)))
+    expect_false(any(grepl("^ *rx_lag_depot = 0$", .txt)))
   })
 })
 
-test_that("monolix bioavailability set in a conditional keeps its default (issue #115)", {
+test_that("monolix conditional f() keeps its default (issue #115)", {
   withr::with_tempdir({
     one.cmt <- function() {
       ini({
@@ -372,24 +388,35 @@ test_that("monolix bioavailability set in a conditional keeps its default (issue
         ka <- exp(tka + eta.ka)
         cl <- exp(tcl + eta.cl)
         v <- exp(tv + eta.v)
-        d/dt(depot) <- -depot*ka
-        d/dt(central) <- depot*ka - cl*central/v
+        d / dt(depot) <- -depot * ka
+        d / dt(central) <- depot * ka - cl * central / v
         if (WT > 70) {
           f(depot) <- 0.5
           alag(depot) <- 2
         }
-        cp <- central/v
+        cp <- central / v
         cp ~ add(add.sd)
       })
     }
 
-    nlmixr2(one.cmt, nlmixr2data::theo_sd, "monolix",
-            monolixControl(runCommand=NA, modelName="monolixIfF"))
+    nlmixr2(
+      one.cmt,
+      nlmixr2data::theo_sd,
+      "monolix",
+      monolixControl(runCommand = NA, modelName = "monolixIfF")
+    )
     .txt <- readLines("monolixIfF-monolix.txt")
-    expect_true(any(grepl("Tlag=rx_lag_depot, p=rx_f_depot)", .txt, fixed=TRUE)))
+    expect_true(any(grepl(
+      "Tlag=rx_lag_depot, p=rx_f_depot)",
+      .txt,
+      fixed = TRUE
+    )))
     .eq <- which(.txt == "EQUATION:")
     # the defaults come first, then the conditional values
-    expect_equal(trimws(.txt[.eq + 1:2]), c("rx_f_depot = 1", "rx_lag_depot = 0"))
+    expect_equal(
+      trimws(.txt[.eq + 1:2]),
+      c("rx_f_depot = 1", "rx_lag_depot = 0")
+    )
     expect_true(any(grepl("^ *rx_f_depot = 0.5$", .txt)))
     expect_true(any(grepl("^ *rx_lag_depot = 2$", .txt)))
   })

@@ -166,20 +166,27 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .rxToMonolixCmtProp <- function(x, prop, ui) {
-  .type <- switch(prop, alag="lag", F="f", prop)
+  .type <- switch(prop, alag = "lag", F = "f", prop)
   .state <- as.character(x[[2]][[2]])
   .var <- paste0("rx_", .type, "_", gsub("[.]", "__", .state))
-  .monolixSetAdm(ui, .state, .var, type=.type)
-  .default <- switch(.type, f="1", lag="0", NA_character_)
-  if (!is.na(.default) &&
-        rxode2::rxGetControl(ui, ".mIndent", 0) > 0) {
-    assignInMyNamespace(".monolixCmtPropDefaults",
-                        unique(c(.monolixCmtPropDefaults,
-                                 paste0("   ", .var, " = ", .default))))
+  .monolixSetAdm(ui, .state, .var, type = .type)
+  .default <- switch(.type, f = "1", lag = "0", NA_character_)
+  if (
+    !is.na(.default) &&
+      rxode2::rxGetControl(ui, ".mIndent", 0) > 0
+  ) {
+    assignInMyNamespace(
+      ".monolixCmtPropDefaults",
+      unique(c(.monolixCmtPropDefaults, paste0("   ", .var, " = ", .default)))
+    )
   }
-  paste0(.rxToMonolixGetIndent(ui), ";", prop, " defined in PK section\n",
-         paste(.rxToMonolixGetIndent(ui),
-               .var, "=", .rxToMonolix(x[[3]], ui=ui)))
+  paste0(
+    .rxToMonolixGetIndent(ui),
+    ";",
+    prop,
+    " defined in PK section\n",
+    paste(.rxToMonolixGetIndent(ui), .var, "=", .rxToMonolix(x[[3]], ui = ui))
+  )
 }
 
 .rxToMonolixHandleBinaryOperator <- function(x, ui) {
