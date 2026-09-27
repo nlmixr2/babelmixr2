@@ -183,7 +183,12 @@ rex::register_shortcuts("babelmixr2")
   }
   if (!is.null(.e) && .e == round(.e) && abs(.e) <= .rxNMmaxIntPow) {
     if (.e == 0) return("1")
-    .base <- .rxToNonmem(base, ui=ui)
+    if (.e < 0) {
+      # a denominator, so it gets babelmixr2's zero protection too
+      .base <- .rxProtectPlusOrMinusZero(base, ui)
+    } else {
+      .base <- .rxToNonmem(base, ui=ui)
+    }
     if (!(is.name(base) || is.numeric(base) ||
             (is.call(base) && identical(base[[1]], quote(`(`))))) {
       .base <- paste0("(", .base, ")")
