@@ -685,6 +685,21 @@ test_that("pkncaAutoIntervals (#102)", {
   # the dosing interval (48 to 72 only has concentrations until 52)
   expect_equal(ret$auclast[ret$ID == 2], c(TRUE, FALSE))
   expect_null(ret$pkncaCoverage)
+  # Coverage is decided separately for intravascular intervals
+  doseIv <- rbind(
+    dose,
+    data.frame(ID = 3, TIME = c(0, 24), pkncaRoute = "intravascular")
+  )
+  obsIv <- rbind(obs, data.frame(ID = 3, TIME = c(1, 2, 4, 25, 26, 28), DV = 1))
+  ret <- pkncaAutoIntervals(
+    obs = obsIv,
+    dose = doseIv,
+    groupCols = "ID",
+    timeCol = "TIME",
+    dvCol = "DV"
+  )
+  expect_equal(ret$auclast[ret$ID == 2], c(TRUE, FALSE))
+  expect_equal(ret$auclast[ret$ID == 3], c(TRUE, TRUE))
   # Peak and trough sampling keeps the intervals
   obsPt <- data.frame(ID = 2, TIME = c(2, 24, 26, 48, 50, 72), DV = 1)
   ret <- pkncaAutoIntervals(

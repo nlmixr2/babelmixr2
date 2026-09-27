@@ -593,7 +593,7 @@ pkncaCollapseDose <- function(dose, groupCols, timeCol, amtCol) {
 #'   have enough, then intervals with any concentrations are used)
 #' @param minCoverage The minimum fraction of a multiple-dose interval covered
 #'   by concentrations for the interval AUC to be used for cl (unless no
-#'   intervals have enough coverage)
+#'   intervals of the same route have enough coverage)
 #' @return A data.frame of intervals with the grouping columns
 #' @noRd
 pkncaAutoIntervals <- function(
@@ -690,10 +690,24 @@ pkncaAutoIntervals <- function(
   ret <- do.call(rbind, ret)
   rownames(ret) <- NULL
   # AUC (for cl) is only from multiple-dose intervals with concentrations
-  # covering most of the dosing interval, when there are any
+  # covering most of the dosing interval, when there are any (separately for
+  # intravascular-only and other intervals since cl may only use one)
+  doseIv <-
+    tapply(
+      dose$pkncaRoute == "intravascular",
+      pkncaKey(dose, c(groupCols, timeCol)),
+      all
+    )
+  intervalStart <- ret[, c(groupCols, "start"), drop = FALSE]
+  names(intervalStart)[names(intervalStart) == "start"] <- timeCol
+  isIv <- as.vector(doseIv[pkncaKey(intervalStart, c(groupCols, timeCol))])
+  isIv <- !is.na(isIv) & isIv
   wellCovered <- ret$pkncaCoverage >= minCoverage
-  if (any(wellCovered & ret$auclast)) {
-    ret$auclast <- ret$auclast & wellCovered
+  for (routeClass in unique(isIv)) {
+    inClass <- isIv == routeClass
+    if (any(wellCovered & ret$auclast & inClass)) {
+      ret$auclast[inClass] <- ret$auclast[inClass] & wellCovered[inClass]
+    }
   }
   ret$pkncaCoverage <- NULL
   ret
