@@ -1,5 +1,4 @@
 withr::with_tempdir({
-
   one.cmt <- function() {
     ini({
       tka <- 0.45
@@ -14,8 +13,8 @@ withr::with_tempdir({
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d/dt(depot) <- -ka * depot
-      d/dt(center) <- ka * depot - cl / v * center
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / v * center
       cp <- center / v
       cp ~ add(add.sd)
     })
@@ -26,21 +25,27 @@ withr::with_tempdir({
   .cens$CENS <- ifelse(.cens$DV < 1 & .cens$EVID == 0, 1, 0)
   .cens$DV[.cens$CENS == 1] <- 1
 
-  .export <- function(data, name, model=one.cmt, ...) {
+  .export <- function(data, name, model = one.cmt, ...) {
     suppressMessages(suppressWarnings(
-      nlmixr2est::nlmixr(model, data=data, est="nonmem",
-                         control=nonmemControl(runCommand=NA,
-                                               modelName=name, ...))))
+      nlmixr2est::nlmixr(
+        model,
+        data = data,
+        est = "nonmem",
+        control = nonmemControl(runCommand = NA, modelName = name, ...)
+      )
+    ))
     .dir <- paste0(name, "-nonmem")
-    list(ctl=readLines(file.path(.dir, paste0(name, ".nmctl"))),
-         data=utils::read.csv(file.path(.dir, paste0(name, ".csv"))))
+    list(
+      ctl = readLines(file.path(.dir, paste0(name, ".nmctl"))),
+      data = utils::read.csv(file.path(.dir, paste0(name, ".csv")))
+    )
   }
 
   test_that("CENS uses M3 censoring with LAPLACIAN in NONMEM (#92)", {
     .r <- .export(.cens, "m3")
     expect_true("$INPUT ID TIME EVID AMT DV CMT CENS RXROW" %in% .r$ctl)
-    expect_true(any(grepl("F_FLAG = 1", .r$ctl, fixed=TRUE)))
-    expect_true(any(grepl("Y = PHI(CENS*(DV-IPRED)/W)", .r$ctl, fixed=TRUE)))
+    expect_true(any(grepl("F_FLAG = 1", .r$ctl, fixed = TRUE)))
+    expect_true(any(grepl("Y = PHI(CENS*(DV-IPRED)/W)", .r$ctl, fixed = TRUE)))
     expect_false(any(grepl("LIMIT", .r$ctl)))
     expect_true(any(grepl("^\\$ESTIMATION METHOD=1 LAPLACIAN INTER ", .r$ctl)))
     expect_equal(sum(.r$data$CENS), 16)
@@ -59,8 +64,11 @@ withr::with_tempdir({
     .d$LIMIT <- ifelse(.d$CENS == 1, 0, NA)
     .r <- .export(.d, "m4")
     expect_true("$INPUT ID TIME EVID AMT DV CMT CENS LIMIT RXROW" %in% .r$ctl)
-    expect_true(any(grepl("Y = (CUM1-CUM2)/PHI(-CENS*(LIMIT-IPRED)/W)",
-                          .r$ctl, fixed=TRUE)))
+    expect_true(any(grepl(
+      "Y = (CUM1-CUM2)/PHI(-CENS*(LIMIT-IPRED)/W)",
+      .r$ctl,
+      fixed = TRUE
+    )))
     expect_true(any(grepl("^\\$ESTIMATION METHOD=1 LAPLACIAN INTER ", .r$ctl)))
     # missing limits are NONMEM's infinity
     expect_equal(.r$data$LIMIT[.r$data$CENS == 1], rep(0, 16))
@@ -70,9 +78,11 @@ withr::with_tempdir({
   test_that("posthoc with censoring uses the Laplacian method (#92)", {
     .d <- .cens
     .d$LIMIT <- ifelse(.d$CENS == 1, 0, NA)
-    .r <- .export(.d, "m4post", est="posthoc")
-    expect_true(any(grepl("^\\$ESTIMATION METHOD=1 LAPLACIAN INTER MAXEVALS=0 POSTHOC ",
-                          .r$ctl)))
+    .r <- .export(.d, "m4post", est = "posthoc")
+    expect_true(any(grepl(
+      "^\\$ESTIMATION METHOD=1 LAPLACIAN INTER MAXEVALS=0 POSTHOC ",
+      .r$ctl
+    )))
   })
 
   test_that("LIMIT without CENS uses M2 in NONMEM (#92)", {
@@ -80,7 +90,11 @@ withr::with_tempdir({
     .d$LIMIT <- ifelse(.d$EVID == 0, 0.5, NA)
     .r <- .export(.d, "m2")
     expect_true("$INPUT ID TIME EVID AMT DV CMT CENS LIMIT RXROW" %in% .r$ctl)
-    expect_true(any(grepl("Y = Y/PHI(ABS(LIMIT-IPRED)/W)", .r$ctl, fixed=TRUE)))
+    expect_true(any(grepl(
+      "Y = Y/PHI(ABS(LIMIT-IPRED)/W)",
+      .r$ctl,
+      fixed = TRUE
+    )))
     expect_true(all(.r$data$CENS == 0))
     expect_true(all(.r$data$LIMIT[.r$data$EVID == 0] == 0.5))
   })
@@ -90,13 +104,17 @@ withr::with_tempdir({
     .d$LIMIT <- ifelse(.d$CENS == 0 & .d$EVID == 0, 0.5, NA)
     .r <- .export(.d, "m2m3")
     expect_true("$INPUT ID TIME EVID AMT DV CMT CENS LIMIT RXROW" %in% .r$ctl)
-    expect_true(any(grepl("Y = Y/PHI(ABS(LIMIT-IPRED)/W)", .r$ctl, fixed=TRUE)))
+    expect_true(any(grepl(
+      "Y = Y/PHI(ABS(LIMIT-IPRED)/W)",
+      .r$ctl,
+      fixed = TRUE
+    )))
     .obs <- .r$data$EVID == 0
     expect_true(all(.r$data$LIMIT[.obs & .r$data$CENS == 0] == 0.5))
     expect_true(all(abs(.r$data$LIMIT[.r$data$CENS == 1]) == 1000000))
   })
 
-  test_that("right censoring keeps finite limits and missing limits are infinite (#92)", {
+  test_that("right censoring keeps finite limits, missing are infinite (#92)", {
     .d <- .cens
     .d$CENS[.d$CENS == 1] <- -1
     .d$LIMIT <- NA
@@ -110,8 +128,10 @@ withr::with_tempdir({
   test_that("finite limits that are NONMEM's infinity are refused (#92)", {
     .d <- .cens
     .d$LIMIT <- ifelse(.d$CENS == 1, -2000000, NA)
-    expect_error(suppressMessages(bblDatToNonmem(one.cmt, .d)),
-                 "between -1000000 and 1000000")
+    expect_error(
+      suppressMessages(bblDatToNonmem(one.cmt, .d)),
+      "between -1000000 and 1000000"
+    )
   })
 
   test_that("no censored values means no censoring in NONMEM (#92)", {
@@ -126,9 +146,13 @@ withr::with_tempdir({
   test_that("censored and limited observations adjust the objective (#92)", {
     .nFlag <- function(data) {
       .ui <- rxode2::rxUiDecompress(rxode2::rxode2(one.cmt))
-      assign("control", nonmemControl(), envir=.ui)
-      .env <- new.env(parent=emptyenv())
-      .d <- suppressMessages(suppressWarnings(bblDatToNonmem(.ui, data, env=.env)))
+      assign("control", nonmemControl(), envir = .ui)
+      .env <- new.env(parent = emptyenv())
+      .d <- suppressMessages(suppressWarnings(bblDatToNonmem(
+        .ui,
+        data,
+        env = .env
+      )))
       .nonmemFormatCensData(.d, .ui)
       rxode2::rxGetControl(.ui, ".nFlag", NA_integer_)
     }
@@ -144,23 +168,33 @@ withr::with_tempdir({
 
   test_that("missing CENS values are not censored in NONMEM (#92)", {
     .ui <- rxode2::rxUiDecompress(rxode2::rxode2(one.cmt))
-    .d <- data.frame(ID=1, TIME=0:3, EVID=c(1, 0, 0, 0), AMT=c(1, 0, 0, 0),
-                     DV=c(NA, 1, 2, 3), CMT=1, CENS=c(NA, 1, NA, 0),
-                     nlmixrRowNums=1:4)
+    .d <- data.frame(
+      ID = 1,
+      TIME = 0:3,
+      EVID = c(1, 0, 0, 0),
+      AMT = c(1, 0, 0, 0),
+      DV = c(NA, 1, 2, 3),
+      CMT = 1,
+      CENS = c(NA, 1, NA, 0),
+      nlmixrRowNums = 1:4
+    )
     .r <- .nonmemFormatCensData(.d, .ui)
     expect_equal(.r$CENS, c(0, 1, 0, 0))
     expect_equal(rxode2::rxGetControl(.ui, ".nFlag", NA_integer_), 1L)
   })
 
-  test_that("censoring with a transformed endpoint is refused in NONMEM (#92)", {
+  test_that("censoring with a transformed endpoint is refused (#92)", {
     .m <- rxode2::model(one.cmt, cp ~ lnorm(add.sd))
     expect_error(
       suppressMessages(
-        nlmixr2est::nlmixr(.m, data=.cens, est="nonmem",
-                           control=nonmemControl(runCommand=NA,
-                                                 modelName="lnorm"))),
+        nlmixr2est::nlmixr(
+          .m,
+          data = .cens,
+          est = "nonmem",
+          control = nonmemControl(runCommand = NA, modelName = "lnorm")
+        )
+      ),
       "transformed endpoints"
     )
   })
-
 })

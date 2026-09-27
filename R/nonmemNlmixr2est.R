@@ -35,7 +35,9 @@
   .n <- names(data)
   .obs <- data$EVID == 0
   .cens <- rep(0, length(.obs))
-  if (any(.n == "CENS")) .cens <- data$CENS
+  if (any(.n == "CENS")) {
+    .cens <- data$CENS
+  }
   .cens[is.na(.cens)] <- 0
   .limit <- rep(FALSE, length(.obs))
   if (any(.n == "LIMIT")) {
@@ -49,11 +51,13 @@
     return(data[, !(.n %in% c("CENS", "LIMIT"))])
   }
   if (any(ui$predDf$transform != "untransformed")) {
-    stop("censoring (CENS/LIMIT) is not supported with transformed endpoints in babelmixr2 NONMEM",
-         call.=FALSE)
+    stop(
+      "censoring (CENS/LIMIT) is not supported with transformed ",
+      "endpoints in babelmixr2 NONMEM",
+      call. = FALSE
+    )
   }
-  rxode2::rxAssignControlValue(ui, ".nFlag",
-                               sum(.censored | (.obs & .limit)))
+  rxode2::rxAssignControlValue(ui, ".nFlag", sum(.censored | (.obs & .limit)))
   data$CENS <- .cens
   if (!.hasLimit) {
     return(data[, names(data) != "LIMIT"])
