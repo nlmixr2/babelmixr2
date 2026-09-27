@@ -1028,6 +1028,13 @@ withr::with_tempdir({
     expect_true(startsWith(.rxToN("log(-1)"), "DLOG("))
     expect_equal(.rxToN("sqrt(+(4))"), "2")
     expect_equal(.rxToN("log(0.5)"), "(-0.69314718055994529)")
+    expect_equal(.rxToN("exp(log(2))"), "2")
+    expect_equal(.rxToN("log(1+1)"), "0.69314718055994529")
+    expect_equal(.rxToN("log(2*3^2)"), .rxToN("log(18)"))
+    expect_equal(.rxToN("tan(0)"), "0")
+    expect_equal(.rxToN("acos(1)"), "0")
+    expect_equal(.rxToN("log1pexp(0)"), "0.69314718055994529")
+    expect_equal(.rxToN("exp(tka)*exp(1-1)"), "DEXP(THETA(1))*1")
     # PROTECT writes B**E as PEXP(E*PLOG(B)), which is wrong for B < 0,
     # so integer powers are products and powers of numbers use DEXP()
     expect_equal(.rxToN("tka^2"), "(THETA(1)*THETA(1))")
@@ -1037,6 +1044,7 @@ withr::with_tempdir({
     expect_equal(.rxToN("tka^0"), "1")
     expect_equal(.rxToN("2^tka"), "DEXP((THETA(1))*0.69314718055994529)")
     expect_equal(.rxToN("2^3"), "8")
+    expect_equal(.rxToN("tka^(1+1)"), "(THETA(1)*THETA(1))")
     expect_equal(.rxToN("tka^0.5"), "THETA(1)**0.5")
 
     .nm <- suppressMessages(.ctl(protect=FALSE))

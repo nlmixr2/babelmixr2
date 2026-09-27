@@ -53,7 +53,13 @@ rex::register_shortcuts("babelmixr2")
 # Functions evaluated in R when their argument is a number.  NM-TRAN's
 # `$ABBR PROTECT` mistranslates a protected function of a constant (like
 # `EXP(0)`), so these are written as numbers instead
-.rxNMfoldConstant <- c("exp", "log", "sqrt", "log10", "log2", "log1p", "expm1")
+.rxNMfoldConstant <- list(exp=exp, log=log, sqrt=sqrt, log10=log10, log2=log2,
+                          log1p=log1p, expm1=expm1, tan=tan, atan=atan,
+                          asin=asin, acos=acos,
+                          log1pexp=function(x) log1p(exp(x)))
+
+# Arithmetic evaluated in R when all its arguments are numbers
+.rxNMfoldOp <- c("+", "-", "*", "/", "^", "**")
 
 # Largest integer power written as a product with `$ABBR PROTECT`
 .rxNMmaxIntPow <- 12
@@ -69,20 +75,33 @@ rex::register_shortcuts("babelmixr2")
                               getOption("babelmixr2.nmProtect", TRUE)))
 }
 
-#' Numeric value of a number written in R
+#' Numeric value of a constant expression written in R
 #'
-#' @param x R expression like `2`, `-2`, `(2)` or `-(2)`
-#' @return the number, or `NULL` when `x` is not a number
+#' @param x R expression like `2`, `-(2)`, `1+1` or `log(2)`
+#' @return the number, or `NULL` when `x` is not a finite constant
+#'   expression
 #' @author Matthew L. Fidler
 #' @noRd
 .rxToNonmemNumber <- function(x) {
-  if (is.numeric(x) && length(x) == 1L) return(x)
-  if (!is.call(x) || length(x) != 2L) return(NULL)
-  .ret <- .rxToNonmemNumber(x[[2]])
-  if (is.null(.ret)) return(NULL)
-  if (identical(x[[1]], quote(`(`)) || identical(x[[1]], quote(`+`))) return(.ret)
-  if (identical(x[[1]], quote(`-`))) return(-.ret)
-  NULL
+  if (is.numeric(x) && length(x) == 1L) {
+    if (!is.finite(x)) return(NULL)
+    return(x)
+  }
+  if (!is.call(x) || !is.name(x[[1]])) return(NULL)
+  .f <- as.character(x[[1]])
+  if (.f == "(" && length(x) == 2L) return(.rxToNonmemNumber(x[[2]]))
+  .fun <- NULL
+  if (.f %in% .rxNMfoldOp && length(x) %in% 2:3) {
+    .fun <- match.fun(ifelse(.f == "**", "^", .f))
+  } else if (length(x) == 2L) {
+    .fun <- .rxNMfoldConstant[[.f]]
+  }
+  if (is.null(.fun)) return(NULL)
+  .args <- lapply(as.list(x)[-1], .rxToNonmemNumber)
+  if (any(vapply(.args, is.null, logical(1)))) return(NULL)
+  .ret <- suppressWarnings(do.call(.fun, .args))
+  if (length(.ret) != 1L || !is.finite(.ret)) return(NULL)
+  .ret
 }
 
 #' Write a number computed in R for NONMEM
@@ -101,17 +120,16 @@ rex::register_shortcuts("babelmixr2")
 
 #' Fold a single-argument function of a number into a number
 #'
-#' @param x call like `exp(0)` or `log(-1)`
+#' @param x call like `exp(0)` or `log(1+1)`
 #' @return the value formatted for NONMEM, or `NULL` when the call
 #'   should not be folded
 #' @author Matthew L. Fidler
 #' @noRd
 .rxToNonmemFoldConstant <- function(x) {
-  .x1 <- as.character(x[[1]])
-  if (!(.x1 %in% .rxNMfoldConstant)) return(NULL)
-  .arg <- .rxToNonmemNumber(x[[2]])
-  if (is.null(.arg)) return(NULL)
-  .rxToNonmemFormatNumber(suppressWarnings(match.fun(.x1)(.arg)))
+  if (is.null(.rxNMfoldConstant[[as.character(x[[1]])]])) return(NULL)
+  .val <- .rxToNonmemNumber(x)
+  if (is.null(.val)) return(NULL)
+  .rxToNonmemFormatNumber(.val)
 }
 
 #' Write a power so `$ABBR PROTECT` keeps its value
