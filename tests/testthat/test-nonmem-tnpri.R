@@ -214,6 +214,29 @@ withr::with_tempdir({
     })
   })
 
+  test_that("a fit exported before its prior was run is found again afterwards (#206)", {
+    withr::with_tempdir({
+      .fit <- function() {
+        suppressMessages(
+          nlmixr2est::nlmixr(one.cmt, .dB, est="nonmem",
+                             control=nonmemControl(runCommand=NA, tnpri=.dA)))
+      }
+      .fit()
+      # NONMEM run by hand writes the prior's MSF...
+      writeLines("msf", file.path("one.cmt_prior-nonmem", "one.cmt_prior.msf"))
+      .fit()
+      # ...and the fit is still the one that was exported, not a new one
+      expect_false(dir.exists("one.cmt-001-nonmem"))
+      expect_false(dir.exists("one.cmt_prior-001-nonmem"))
+      expect_equal(readLines(file.path("one.cmt-nonmem", "one.cmt_prior.msf")), "msf")
+      # while a different prior is a different fit
+      suppressMessages(
+        nlmixr2est::nlmixr(one.cmt, .dB, est="nonmem",
+                           control=nonmemControl(runCommand=NA, tnpri=.dA[.dA$ID <= 30, ])))
+      expect_true(dir.exists("one.cmt-001-nonmem"))
+    })
+  })
+
   test_that("an MSF prior is copied next to the control stream, and changes the fit (#206)", {
     withr::with_tempdir({
       dir.create("prior")

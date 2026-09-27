@@ -246,6 +246,10 @@ print.nonmemTnpri <- function(x, ...) {
     }
     .msf <- .t$prior
     rxode2::rxAssignControlValue(.ui, ".tnpriMsf", .msf)
+    # a different model specification file is a different fit
+    rxode2::rxAssignControlValue(.ui, ".tnpriHash",
+                                 if (file.exists(.msf)) digest::digest(.msf, file=TRUE)
+                                 else normalizePath(.msf, mustWork=FALSE))
     return(invisible(.msf))
   }
   if (.t$type == "fit") {
@@ -299,5 +303,9 @@ print.nonmemTnpri <- function(x, ...) {
                   "' with NONMEM first; it creates '", basename(.msf), "'"))
   }
   rxode2::rxAssignControlValue(.ui, ".tnpriMsf", .msf)
+  # the prior run's own control stream and data identify the prior, and
+  # are known before NONMEM runs, so a fit exported before the prior was
+  # run is still found when NONMEM's results are read back
+  rxode2::rxAssignControlValue(.ui, ".tnpriHash", .exp$hash)
   invisible(.msf)
 }

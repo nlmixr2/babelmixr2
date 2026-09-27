@@ -129,7 +129,8 @@
 #'   control
 #' @return list with the `ui`, the environment the fit is built in
 #'   (`ret`), the `exportPath`, the control stream file (`nmctlFile`),
-#'   the fit cache file (`qs`), a `cachedFit` (or `NULL`) and whether
+#'   the fit cache file (`qs`), the `hash` of the control stream and
+#'   data, a `cachedFit` (or `NULL`) and whether
 #'   NONMEM was (or had been) run (`ran`)
 #' @noRd
 #' @author Matthew L. Fidler
@@ -168,9 +169,10 @@
   .contra <- .ui$nonmemContra
   .hash <- list(.nmctl, .contra, .ret$nonmemData)
   .msfSource <- rxode2::rxGetControl(.ui, ".tnpriMsf", NULL)
-  if (!is.null(.msfSource) && file.exists(.msfSource)) {
+  .tnpriHash <- rxode2::rxGetControl(.ui, ".tnpriHash", NULL)
+  if (!is.null(.tnpriHash)) {
     # a different prior is a different fit
-    .hash <- c(.hash, list(digest::digest(.msfSource, file=TRUE)))
+    .hash <- c(.hash, list(.tnpriHash))
   }
   .hashMd5 <- digest::digest(.hash)
   .foundModelName <- FALSE
@@ -201,7 +203,7 @@
   .qs <- file.path(.exportPath, .ui$nonmemQs)
 
   .exp <- list(ui=.ui, ret=.ret, exportPath=.exportPath, nmctlFile=.nmctlFile,
-               qs=.qs, cachedFit=NULL, ran=FALSE)
+               qs=.qs, hash=.hashMd5, cachedFit=NULL, ran=FALSE)
   .cachedFit <- .babelmixr2LoadFitCache(.qs)
   if (!is.null(.cachedFit)) {
     .exp$cachedFit <- .cachedFit
