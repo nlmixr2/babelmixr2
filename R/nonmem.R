@@ -84,6 +84,13 @@ rex::register_shortcuts("babelmixr2")
   acos = acos,
   log1pexp = function(x) log1p(exp(x)),
   log1pmx = function(x) log1p(x) - x,
+  gammafn = gamma,
+  lgammafn = lgamma,
+  lgamma = lgamma,
+  loggamma = lgamma,
+  factorial = factorial,
+  lfactorial = lfactorial,
+  lgamma1p = function(x) lgamma(x + 1),
   expit = .rxNMexpit,
   invLogit = .rxNMexpit,
   logitInv = .rxNMexpit,
@@ -263,7 +270,15 @@ rex::register_shortcuts("babelmixr2")
     } else {
       # x^n = (x*x)^(n/2) (times x when n is odd); x*x is never
       # negative, so PEXP(E*PLOG(x*x)) keeps the value
-      .ret <- paste0("((", .base, "*", .base, ")**", abs(.e) %/% 2, ")")
+      .ret <- paste0(
+        "((",
+        .base,
+        "*",
+        .base,
+        ")**",
+        sprintf("%.0f", abs(.e) %/% 2),
+        ")"
+      )
       if (abs(.e) %% 2 == 1) {
         .ret <- paste0("(", .base, "*", .ret, ")")
       }

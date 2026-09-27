@@ -1045,6 +1045,13 @@ withr::with_tempdir({
     expect_equal(.rxToN("tan(0)"), "0")
     expect_equal(.rxToN("acos(1)"), "0")
     expect_equal(.rxToN("log1pexp(0)"), "0.69314718055994529")
+    expect_equal(.rxToN("factorial(3)"), "6")
+    expect_equal(.rxToN("gammafn(5)"), "24")
+    expect_equal(.rxToN("lfactorial(1)"), "0")
+    expect_equal(
+      .rxToN("tka^(2e15+1)"),
+      "(THETA(1)*((THETA(1)*THETA(1))**1000000000000000))"
+    )
     expect_equal(.rxToN("exp(tka)*exp(1-1)"), "DEXP(THETA(1))*1")
     # named constants and hand-written translations fold too
     expect_equal(.rxToN("sqrt(pi)"), "1.7724538509055159")
