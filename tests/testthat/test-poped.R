@@ -1151,7 +1151,7 @@ test_that("PopED designs linCmt() models like their ODE version", {
                tolerance=1e-4)
 })
 
-test_that("popedControl(sigdig=) ODE tolerances do not depend on rxode2 (#223)", {
+test_that("popedControl(sigdig=) tolerances ignore rxode2 version (#223)", {
   skip_if_not_installed("PopED")
   .rx <- popedControl()$rxControl
   expect_equal(.rx$atol, 5e-7)
@@ -1162,14 +1162,16 @@ test_that("popedControl(sigdig=) ODE tolerances do not depend on rxode2 (#223)",
   expect_equal(.rx$ssRtol, 5e-5)
   expect_equal(.rx$ssAtolSens, 0.5 * 10^(-3.375))
   expect_equal(.rx$ssRtolSens, 0.5 * 10^(-3.375))
-  .rx <- popedControl(sigdig=6)$rxControl
+  .rx <- popedControl(sigdig = 6)$rxControl
   expect_equal(.rx$rtol, 5e-9)
   # an explicit rxControl still wins
-  .rx <- popedControl(rxControl=rxode2::rxControl(atol=1e-3, rtol=1e-3))$rxControl
+  .rx <- popedControl(
+    rxControl = rxode2::rxControl(atol = 1e-3, rtol = 1e-3)
+  )$rxControl
   expect_equal(.rx$rtol, 1e-3)
-  expect_error(popedControl(sigdig=NA))
+  expect_error(popedControl(sigdig = NA))
   # without sigdig, the looser fallback is kept
-  .rx <- popedControl(sigdig=NULL)$rxControl
+  .rx <- popedControl(sigdig = NULL)$rxControl
   expect_equal(.rx$atol, 1e-4)
   expect_equal(.rx$rtol, 1e-4)
 })

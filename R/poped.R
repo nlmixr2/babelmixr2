@@ -2482,10 +2482,16 @@ attr(rxUiGet.popedParameters, "rstudio") <- ""
   .tolSens <- 0.5 * 10^(-sigdig - 1.5)
   .ssTol <- 0.5 * 10^(-sigdig)
   .ssTolSens <- 0.5 * 10^(-sigdig + 0.625)
-  rxode2::rxControl(atol=.tol, rtol=.tol,
-                    atolSens=.tolSens, rtolSens=.tolSens,
-                    ssAtol=.ssTol, ssRtol=.ssTol,
-                    ssAtolSens=.ssTolSens, ssRtolSens=.ssTolSens)
+  rxode2::rxControl(
+    atol = .tol,
+    rtol = .tol,
+    atolSens = .tolSens,
+    rtolSens = .tolSens,
+    ssAtol = .ssTol,
+    ssRtol = .ssTol,
+    ssAtolSens = .ssTolSens,
+    ssRtolSens = .ssTolSens
+  )
 }
 
 #' Control for a PopED design task
@@ -2953,7 +2959,13 @@ popedControl <- function(stickyRecalcN=4,
   }
 
   if (!is.null(sigdig)) {
-    checkmate::assertNumeric(sigdig, lower=1, finite=TRUE, any.missing=FALSE, len=1)
+    checkmate::assertNumeric(
+      sigdig,
+      lower = 1,
+      finite = TRUE,
+      any.missing = FALSE,
+      len = 1
+    )
   }
   .genRxControl <- FALSE
   if (!is.null(.xtra$genRxControl)) {
