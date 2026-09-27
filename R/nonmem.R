@@ -785,10 +785,17 @@ rex::register_shortcuts("babelmixr2")
   .tmp <- get(.tmp, envir=rxUiGetNonememModelEnv$rxS)
   .tmp <- rxode2::rxFromSE(.tmp)
   .tmp <- .nonmemReplaceThetaEtaWithNames(.tmp, ui)
+  # The property is written in $PK apart from the other lines, so it
+  # neither reuses a protection defined elsewhere (like $DES) nor lets
+  # other lines reuse its protection before it is defined
+  .zeroDf <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf", NULL)
+  rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf",
+                               data.frame(expr=character(0), nm=character(0)))
   .extra <- paste0(.nonmemReplaceNonmemThetaWithMu(.rxToNonmem(.tmp, ui=ui), ui=ui),
                    .babelmixr2Deparse(x))
-  # The property is written in $PK, so any zero protection it needs has
-  # to be written there too (before the property)
+  rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf", .zeroDf)
+  # Any zero protection the property needs is written in $PK too
+  # (before the property)
   .prefixLines <- rxode2::rxGetControl(ui, ".nmPrefixLines", NULL)
   if (!is.null(.prefixLines)) {
     rxode2::rxAssignControlValue(ui, ".nmCmtPrefixLines",

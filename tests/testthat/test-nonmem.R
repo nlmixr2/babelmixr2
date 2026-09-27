@@ -196,6 +196,69 @@ withr::with_tempdir({
     expect_true(.dz < .alag)
     expect_true(.alag < .des)
   })
+
+  test_that("compartment property zero protection is not shared across blocks (#91)", {
+    # Every RXDZ variable a $PK line uses must be assigned earlier in $PK
+    .expectPkDefined <- function(mod) {
+      .pk <- mod[seq(which(mod == "$PK"), which(mod %in% c("$DES", "$ERROR"))[1] - 1L)]
+      .defined <- character(0)
+      for (.l in .pk) {
+        .code <- sub(";.*$", "", .l)
+        .lhs <- regmatches(.code, regexpr("^ *RXDZ[0-9]+(?= *=)", .code, perl=TRUE))
+        .rhs <- sub("^[^=]*=", "", .code)
+        .used <- regmatches(.rhs, gregexpr("RXDZ[0-9]+", .rhs))[[1]]
+        expect_true(all(.used %in% .defined), info=.l)
+        .defined <- c(.defined, trimws(.lhs))
+      }
+    }
+    # ODE: $DES protects the same expression before alag() is translated
+    f <- function() {
+      ini({
+        tcl <- 1
+        eta.cl ~ 0.3
+        add.sd <- 0.7
+      })
+      model({
+        cl <- exp(tcl + eta.cl)
+        lw <- log(-70 + WT)
+        alag(central) <- log(WT - 70)
+        d/dt(central) <- -cl*lw*central
+        cp <- central
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protectZeros=TRUE)
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    expect_true(any(grepl("^  ALAG1=DLOG\\(RXDZ", .mod)))
+    .expectPkDefined(.mod)
+    # closed-form ADVAN: the $PK lines come before the properties
+    f <- function() {
+      ini({
+        tcl <- 1
+        tv <- 1
+        eta.cl ~ 0.3
+        add.sd <- 0.7
+      })
+      model({
+        cl <- exp(tcl + eta.cl)
+        v <- exp(tv)
+        alag(central) <- log(WT - 70)
+        lw <- log(-70 + WT)
+        d/dt(central) <- -cl/v*central
+        cp <- central/v*lw
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protectZeros=TRUE)
+    rxode2::rxAssignControlValue(ui, ".linCmtMicro",
+                                 list(ncmt=1L, oral0=0L, k=quote(cl/v)))
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    expect_true("$SUBROUTINES ADVAN1 TRANS1" %in% .mod)
+    expect_true(any(grepl("^  LW=DLOG\\(RXDZ", .mod)))
+    .expectPkDefined(.mod)
+  })
   withr::with_options(list(babelmixr2.protectZeros=FALSE), {
     test_that("NONMEM dsl, individual lines", {
 
