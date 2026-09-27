@@ -86,14 +86,14 @@ withr::with_tempdir({
     }
   }
 
-  .fit <- function(runCommand, modelName) {
+  .fit <- function(runCommand, modelName, ...) {
     nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
-            nonmemControl(runCommand=runCommand, modelName=modelName))
+            nonmemControl(runCommand=runCommand, modelName=modelName, ...))
   }
 
   # the error message from fitting with a runCommand
-  .failure <- function(runCommand, modelName) {
-    .e <- tryCatch(suppressMessages(.fit(runCommand, modelName)),
+  .failure <- function(runCommand, modelName, ctl=list()) {
+    .e <- tryCatch(suppressMessages(do.call(.fit, c(list(runCommand, modelName), ctl))),
                    error=function(e) e)
     expect_s3_class(.e, "error")
     conditionMessage(.e)
@@ -179,6 +179,17 @@ withr::with_tempdir({
     expect_match(.msg, "minimization not successful")
   })
 
+  test_that("a crash points to NONMEM's solving errors (#46)", {
+    .withPrderr <- function(ctl, directory, ui) {
+      writeLines(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
+                   "0PROGRAM TERMINATED BY PRED"),
+                 file.path(directory, ui$nonmemNmlst))
+      writeLines("ERROR IN LSODA", file.path(directory, "PRDERR"))
+    }
+    .msg <- .failure(.withPrderr, "fail_prderr")
+    expect_match(.msg, "solving errors: 'fail_prderr-nonmem/PRDERR'", fixed=TRUE)
+  })
+
   test_that("unreadable NONMEM output is reported (#46)", {
     .msg <- .failure(.fakeNonmem(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
                          " #TERM:",
@@ -235,6 +246,52 @@ withr::with_tempdir({
     .msg <- .failure(.nmtranOnly, "fail_fmsg")
     expect_match(.msg, "NM-TRAN found an error in the NONMEM data")
     expect_match(.msg, "ITEM IS OUT OF RANGE", fixed=TRUE)
+  })
+
+  test_that("finished runs that did not converge can still be read (#46)", {
+    .head <- c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
+               " TOT. NO. OF OBS RECS:      132",
+               " TOT. NO. OF INDIVIDUALS:       12",
+               " #TERM:")
+    .cases <- list(
+      list(name="read_round", ctl=list(readRounding=TRUE),
+           lines=c("0MINIMIZATION TERMINATED", " DUE TO ROUNDING ERRORS (ERROR=134)")),
+      list(name="read_badopt", ctl=list(readBadOpt=TRUE),
+           lines=c("0MINIMIZATION TERMINATED", " DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED")),
+      list(name="read_its", ctl=list(readBadOpt=TRUE),
+           lines=" OPTIMIZATION WAS COMPLETED"),
+      list(name="read_posthoc", ctl=list(readBadOpt=TRUE),
+           lines=""))
+    for (.c in .cases) {
+      # the fake output has no estimates, so with the flag the run gets
+      # past the failure checks and only reading the estimates fails
+      .msg <- .failure(.fakeNonmem(c(.head, .c$lines, " #TERE:")), .c$name, .c$ctl)
+      expect_match(.msg, "could not read NONMEM's output", info=.c$name)
+      # without the flag the run stops as not successful
+      .msg <- .failure(.fakeNonmem(c(.head, .c$lines, " #TERE:")), paste0(.c$name, "_stop"))
+      expect_match(.msg, "minimization not successful", info=.c$name)
+    }
+  })
+
+  test_that("NONMEM exiting abnormally after estimation is reported (#46)", {
+    skip_on_os("windows")
+    .sh <- normalizePath(tempfile(fileext=".sh"), mustWork=FALSE)
+    writeLines(c("printf '%s\\n' '1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1' \\",
+                 "  ' TOT. NO. OF INDIVIDUALS:       12' ' #TERM:' '0MINIMIZATION SUCCESSFUL' > \"$2\"",
+                 "exit 137"),
+               .sh)
+    .msg <- .failure(paste("sh", shQuote(.sh)), "fail_killed")
+    expect_match(.msg, "exited abnormally after estimation")
+    expect_match(.msg, "exit status: 137", fixed=TRUE)
+    unlink(.sh)
+  })
+
+  test_that("output from a manual run is kept without a run command (#46)", {
+    expect_error(suppressMessages(.fit("", "keep_lst")), "runCommand")
+    .lst <- file.path("keep_lst-nonmem", "keep_lst.lst")
+    writeLines("manual run", .lst)
+    expect_error(suppressMessages(.fit("", "keep_lst")), "runCommand")
+    expect_true(file.exists(.lst))
   })
 
   test_that("an unset run command says how to set it (#46)", {

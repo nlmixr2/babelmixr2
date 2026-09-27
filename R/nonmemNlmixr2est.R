@@ -217,7 +217,6 @@
   }
   .status <- NULL
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
-    .nonmemRemoveOldOutput(.ui)
     .status <- .nonmemRunner(ui=.ui)
   }
   .read <- tryCatch(.ui$nonmemSuccessful,
@@ -291,11 +290,15 @@
 .nonmemRunner <- function(ui) {
   cmd <- rxode2::rxGetControl(ui, "runCommand", "")
   if (is.character(cmd)) {
+    if (cmd == "") .nonmemRunCommandUnset(ui)
     cmd <- .nonmemRunCommand
   } else if (!is.function(cmd)) {
     stop("invalid value for nonmemControl(runCommand=)",
          call.=FALSE)
   }
+  # only once NONMEM will run, so output from running it manually is
+  # kept when it cannot
+  .nonmemRemoveOldOutput(ui)
   .status <- cmd(ctl=ui$nonmemNmctl, directory=ui$nonmemExportPath, ui=ui)
   if (identical(cmd, .nonmemRunCommand)) return(.status)
   # the exit status is unknown for a user function
@@ -309,10 +312,14 @@
     .minfo(paste0("run NONMEM: ", fullCmd))
     withr::with_dir(ui$nonmemExportPath, system(fullCmd))
   } else {
-    stop("NONMEM's run command is not set; set nonmemControl(runCommand=) (for example to the path of 'nmfe75'), or run NONMEM manually in '",
-         ui$nonmemExportPath, "' and rerun nlmixr()",
-         call.=FALSE)
+    .nonmemRunCommandUnset(ui)
   }
+}
+
+.nonmemRunCommandUnset <- function(ui) {
+  stop("NONMEM's run command is not set; set nonmemControl(runCommand=) (for example to the path of 'nmfe75'), or run NONMEM manually in '",
+       ui$nonmemExportPath, "' and rerun nlmixr()",
+       call.=FALSE)
 }
 
 #' @export

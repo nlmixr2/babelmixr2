@@ -226,6 +226,16 @@
         .nonmemFailureTail(.lines)))
   }
   if (!is.null(readError)) {
+    if (!is.null(.statusMsg)) {
+      # NONMEM finished estimating but then exited abnormally (for
+      # example killed while computing the covariance or tables)
+      .nonmemFailureStop(
+        c(paste0("NONMEM exited abnormally after estimation, so its output is incomplete; see '", .lstFile, "'"),
+          .statusMsg,
+          paste0("  reading the output failed with: ", conditionMessage(readError)),
+          .nonmemFailureTail(.lines),
+          "it may have crashed, run out of memory or been stopped"))
+    }
     .nonmemFailureStop(
       c(paste0("babelmixr2 could not read NONMEM's output '", .lstFile, "':"),
         paste0("  ", conditionMessage(readError)),
