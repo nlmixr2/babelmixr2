@@ -2,6 +2,22 @@
 
 ## babelmixr2 0.1.11.9000
 
+- NONMEM control streams now explain the zero-protection code babelmixr2
+  adds: each `RXDZ###` `IF` block is preceded by a comment saying what
+  it keeps the variable away from and why, as is the `IF (W1 .EQ. 0.0)`
+  residual variance protection
+  ([\#91](https://github.com/nlmixr2/babelmixr2/issues/91)). The
+  protection for
+  [`lfactorial()`](https://rdrr.io/r/base/Special.html)/`lgamma1p()` now
+  keeps its argument above `-1` (it previously clamped it just below
+  `-1`, making `x+1` negative), `log(x)` and `1/x` no longer share one
+  protected variable, so `1/x` keeps the sign of a negative `x`, and a
+  variable reassigned in the model is protected again instead of reusing
+  the protection of its old value. Zero protection needed by `f()`,
+  `alag()`, `rate()` or `dur()` (written in `$PK`) is no longer shared
+  with other lines, which could use it before (or without) it being
+  calculated.
+
 - `est="pknca"` now works with covariates in the data and with a mix of
   intravascular and extravascular doses
   ([\#102](https://github.com/nlmixr2/babelmixr2/issues/102)). Doses
@@ -98,6 +114,19 @@
   the tolerances that `rxControl(sigdig=)` gives, which made the
   finite-difference FIM, and so the design OFV and RSEs, less accurate
   ([\#223](https://github.com/nlmixr2/babelmixr2/issues/223)).
+
+- `est="nonmem"` now fits censored data the way nlmixr2 does
+  ([\#92](https://github.com/nlmixr2/babelmixr2/issues/92)). M3
+  (`CENS`), M4 (`CENS` with a finite `LIMIT`) and M2 (`CENS=0` with a
+  finite `LIMIT`, including data with a `LIMIT` but no `CENS` column)
+  use `F_FLAG` likelihoods in `$ERROR` with `LAPLACIAN` estimation. A
+  missing `LIMIT` is now written as NONMEM’s infinity instead of `0`,
+  `CENS`/`LIMIT` columns that do not censor anything are dropped, the
+  objective function is adjusted so the log-likelihood includes the
+  censored observations correctly, and censoring with a transformed
+  endpoint (like `lnorm()`) is refused instead of giving the wrong
+  likelihood. The censored observations are left out of the NONMEM
+  `PRED` comparison since NONMEM’s `PRED` is their likelihood.
 
 - `est="nonmem"` and `est="monolix"` now fit `linCmt()` models. A pure
   `linCmt()` model uses NONMEM’s closed-form solutions
