@@ -533,9 +533,12 @@ pkncaCollapseDose <- function(dose, groupCols, timeCol, amtCol) {
 #' @param minObs The minimum number of concentrations after the start of a
 #'   multiple-dose interval for the interval to be used (unless no intervals
 #'   have enough, then intervals with any concentrations are used)
+#' @param minCoverage The minimum fraction of a multiple-dose interval covered
+#'   by concentrations for the interval AUC to be used for cl (unless no
+#'   intervals have enough coverage)
 #' @return A data.frame of intervals with the grouping columns
 #' @noRd
-pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 2) {
+pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 2, minCoverage = 0.8) {
   doseKey <- pkncaKey(dose, groupCols)
   obsKey <- pkncaKey(obs, groupCols)
   ret <- list()
@@ -551,6 +554,7 @@ pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 2)
       obsTime <- obs[[timeCol]][obsKey == key & !is.na(obs[[dvCol]])]
       # The last dose uses the last dosing interval (tau), like PKNCA
       end <- c(doseTimes[-1], 2 * doseTimes[nDose] - doseTimes[nDose - 1])
+      nominalEnd <- end
       for (i in seq_len(nDose - 1)) {
         # Without a concentration at the next dose, end at the last
         # concentration before it (so that a C0 back-extrapolated for the next
@@ -578,6 +582,20 @@ pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 2)
           function(i) sum(obsTime > intervals$start[i] & obsTime <= intervals$end[i]),
           integer(1)
         )
+      # Fraction of the dosing interval covered by concentrations (the AUC for
+      # cl is only to the last concentration)
+      intervals$pkncaCoverage <-
+        vapply(
+          seq_len(nrow(intervals)),
+          function(i) {
+            inInterval <- obsTime[obsTime > intervals$start[i] & obsTime <= nominalEnd[i]]
+            if (length(inInterval) == 0) {
+              return(0)
+            }
+            (max(inInterval) - intervals$start[i]) / (nominalEnd[i] - intervals$start[i])
+          },
+          numeric(1)
+        )
       if (any(nObs >= minObs)) {
         keep <- nObs >= minObs
       } else {
@@ -588,6 +606,9 @@ pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 2)
         next
       }
     }
+    if (is.null(intervals$pkncaCoverage)) {
+      intervals$pkncaCoverage <- 1
+    }
     intervals <- PKNCA::check.interval.specification(intervals)
     groupValues <- doseGroup[rep(1, nrow(intervals)), groupCols, drop = FALSE]
     ret[[length(ret) + 1]] <- cbind(groupValues, intervals)
@@ -597,6 +618,13 @@ pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 2)
   }
   ret <- do.call(rbind, ret)
   rownames(ret) <- NULL
+  # AUC (for cl) is only from multiple-dose intervals with concentrations
+  # covering most of the dosing interval, when there are any
+  wellCovered <- ret$pkncaCoverage >= minCoverage
+  if (any(wellCovered & ret$auclast)) {
+    ret$auclast <- ret$auclast & wellCovered
+  }
+  ret$pkncaCoverage <- NULL
   ret
 }
 
@@ -611,7 +639,7 @@ pkncaAutoIntervals <- function(obs, dose, groupCols, timeCol, dvCol, minObs = 2)
 #' when intervals with a single route are available.  cmax.dn is only
 #' calculated for the first remaining interval of each group and route.
 #'
-#' @param intervals The automatically-generated intervals from `PKNCAdata()`
+#' @param intervals The intervals from `pkncaAutoIntervals()`
 #' @param dose Dose data with `pkncaRoute`, `pkncaBolus`, and (optionally)
 #'   `pkncaNoC0` columns
 #' @inheritParams pkncaAddIvC0

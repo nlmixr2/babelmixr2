@@ -554,7 +554,10 @@ test_that("pkncaAutoIntervals (#102)", {
   # next dose, and the last dosing interval for the last dose
   expect_equal(ret$start[ret$ID == 2], c(0, 48))
   expect_equal(ret$end[ret$ID == 2], c(23.9, 72))
-  expect_equal(ret$auclast[ret$ID == 2], c(TRUE, TRUE))
+  # AUC (for cl) only from the interval with concentrations covering most of
+  # the dosing interval (48 to 72 only has concentrations until 52)
+  expect_equal(ret$auclast[ret$ID == 2], c(TRUE, FALSE))
+  expect_null(ret$pkncaCoverage)
   # Peak and trough sampling keeps the intervals
   obsPt <- data.frame(ID = 2, TIME = c(2, 24, 26, 48, 50, 72), DV = 1)
   ret <- pkncaAutoIntervals(obs = obsPt, dose = dose[dose$ID == 2, ], groupCols = "ID", timeCol = "TIME", dvCol = "DV")

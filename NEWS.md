@@ -12,7 +12,7 @@
   extravascular, `ka` is not updated.  Multiple-dose data no longer need
   a concentration at each dose time; each dose until the next (with at
   least 2 concentrations) is used, with `vc` from the first dose of each
-  route.  Doses at the same time are combined.  A central volume named `v` is now
+  route and `cl` from dosing intervals mostly covered by concentrations.  Doses at the same time are combined.  A central volume named `v` is now
   estimated like `vc`.
 * `est="monolix"` now translates compartment properties (`f()`,
   `alag()`, `rate()` and `dur()`) that are expressions, like
