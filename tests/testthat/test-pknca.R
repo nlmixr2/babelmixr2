@@ -211,49 +211,66 @@ test_that("getDvLines", {
 })
 
 test_that("est='pknca' with covariates and mixed IV/oral dosing (#102)", {
-  dat <- structure(list(ID = c(11, 11, 11, 11, 11, 11, 11, 12, 12, 12,
-                               12, 12, 12, 12, 13, 13, 13, 13, 13, 13, 13, 13, 21, 21, 21, 21,
-                               21, 21, 21, 22, 22, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 23, 23),
-                        TIME = c(0, 0.05, 0.25, 0.5, 1, 3, 5, 0, 0.05, 0.25, 0.5,
-                                 1, 3, 5, 0, 0.05, 0.25, 0.5, 1, 3, 5, 8, 0, 0.25, 0.5, 1, 3,
-                                 5, 8, 0, 0.25, 0.5, 1, 3, 5, 8, 0, 0.25, 0.5, 1, 3, 5, 8),
-                        DV = c(NA,2017.85, 1323.74, 792.5, 822.72, 36.27, 3.33, NA, 1702, 1290.75,
-                               1095.95, 907.6, 125.44, 14.44, NA, 1933.04, 1242.43, 661.22,
-                               193.52, 1.75, NA, NA, NA, 706.58, 1063.14, 2257.62, 941.33, 629.69,
-                               100, NA, 1462.95, 2217.76, 2739.5, 705.3, 108.47, 8.75, NA, 211.66,
-                               467.23, 174.24, 153.6, 27.07, 2.81),
-                        AMT = c(1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0,
-                                0, 0, 5, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0),
-                        EVID = c(1,0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-                                 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0),
-                        CMT = c(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2,
-                                2, 2, 2, 2, 2),
-                        DOSE = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
-                        ROUTE = c(1, 1, 1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)),
-                   row.names = c(NA, -43L), class = "data.frame")
+  # Data from the issue: IDs 11-13 IV (CMT 2), IDs 21-23 oral (CMT 1)
+  # fmt: skip
+  dat <- data.frame(
+    ID = rep(c(11, 12, 13, 21, 22, 23), c(7, 7, 8, 7, 7, 7)),
+    TIME = c(
+      0, 0.05, 0.25, 0.5, 1, 3, 5, 0, 0.05, 0.25, 0.5, 1, 3, 5,
+      0, 0.05, 0.25, 0.5, 1, 3, 5, 8, rep(c(0, 0.25, 0.5, 1, 3, 5, 8), 3)
+    ),
+    DV = c(
+      NA, 2017.85, 1323.74, 792.5, 822.72, 36.27, 3.33,
+      NA, 1702, 1290.75, 1095.95, 907.6, 125.44, 14.44,
+      NA, 1933.04, 1242.43, 661.22, 193.52, 1.75, NA, NA,
+      NA, 706.58, 1063.14, 2257.62, 941.33, 629.69, 100,
+      NA, 1462.95, 2217.76, 2739.5, 705.3, 108.47, 8.75,
+      NA, 211.66, 467.23, 174.24, 153.6, 27.07, 2.81
+    ),
+    AMT = rep(rep(c(1, 5), each = 3), c(7, 7, 8, 7, 7, 7)) *
+      (c(1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+         rep(c(1, 0, 0, 0, 0, 0, 0), 3))),
+    EVID = c(1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+             rep(c(1, 0, 0, 0, 0, 0, 0), 3)),
+    CMT = c(rep(2, 22), rep(c(1, 2, 2, 2, 2, 2, 2), 3)),
+    DOSE = rep(c(1, 5), c(22, 21)),
+    ROUTE = rep(c(1, 2), c(22, 21))
+  )
   modA <- function() {
     ini({
       tka <- 0.45
       tcl <- -7
-      tv  <- -8
+      tv <- -8
       eta.ka ~ 0.6
       eta.cl ~ 0.3
       eta.v ~ 0.1
       prop.sd <- 0.7
     })
     model({
-      if (ROUTE != 1) ka <- exp(tka + eta.ka)
+      if (ROUTE != 1) {
+        ka <- exp(tka + eta.ka)
+      }
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d/dt(depot) <- -ka * depot
-      d/dt(center) <- ka * depot - cl / v * center
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / v * center
       cp <- center / v
       cp ~ prop(prop.sd)
     })
   }
-  ctl <- pkncaControl(concu = "mg/L", doseu = "mg/kg", timeu = "hr", volumeu = "L/kg")
+  ctl <- pkncaControl(
+    concu = "mg/L",
+    doseu = "mg/kg",
+    timeu = "hr",
+    volumeu = "L/kg"
+  )
   suppressMessages(suppressWarnings(
-    ret <- nlmixr2est::nlmixr(object = modA, data = dat, est = "pknca", control = ctl)
+    ret <- nlmixr2est::nlmixr(
+      object = modA,
+      data = dat,
+      est = "pknca",
+      control = ctl
+    )
   ))
   expect_s3_class(ret, "pkncaEst")
   ncaRes <- as.data.frame(ret$nca)
@@ -286,10 +303,17 @@ test_that("est='pknca' with covariates and mixed IV/oral dosing (#102)", {
   # The same C0 when the data are not sorted by time
   datShuffle <- dat[rev(seq_len(nrow(dat))), ]
   suppressMessages(suppressWarnings(
-    retShuffle <- nlmixr2est::nlmixr(object = modA, data = datShuffle, est = "pknca", control = ctl)
+    retShuffle <- nlmixr2est::nlmixr(
+      object = modA,
+      data = datShuffle,
+      est = "pknca",
+      control = ctl
+    )
   ))
   ncaShuffle <- as.data.frame(retShuffle$nca)
-  cmaxShuffle <- ncaShuffle[ncaShuffle$PPTESTCD == "cmax" & ncaShuffle$ID %in% ivId, ]
+  cmaxShuffle <- ncaShuffle[
+    ncaShuffle$PPTESTCD == "cmax" & ncaShuffle$ID %in% ivId,
+  ]
   expect_equal(
     cmaxShuffle$PPORRES[order(cmaxShuffle$ID)],
     cmaxIv$PPORRES[order(cmaxIv$ID)]
@@ -306,7 +330,12 @@ test_that("est='pknca' with covariates and mixed IV/oral dosing (#102)", {
   datInf <- dat[dat$ROUTE == 1, ]
   datInf$RATE <- ifelse(datInf$EVID == 1, 100, 0)
   suppressMessages(suppressWarnings(
-    retInf <- nlmixr2est::nlmixr(object = modA, data = datInf, est = "pknca", control = ctl)
+    retInf <- nlmixr2est::nlmixr(
+      object = modA,
+      data = datInf,
+      est = "pknca",
+      control = ctl
+    )
   ))
   ncaInf <- as.data.frame(retInf$nca)
   cmaxInf <- ncaInf[ncaInf$PPTESTCD == "cmax", ]
@@ -316,10 +345,19 @@ test_that("est='pknca' with covariates and mixed IV/oral dosing (#102)", {
   # Extravascular only works without a concentration at the time of dosing
   datOral <- dat[dat$ROUTE == 2, ]
   suppressMessages(suppressWarnings(
-    retOral <- nlmixr2est::nlmixr(object = modA, data = datOral, est = "pknca", control = ctl)
+    retOral <- nlmixr2est::nlmixr(
+      object = modA,
+      data = datOral,
+      est = "pknca",
+      control = ctl
+    )
   ))
   ncaOral <- as.data.frame(retOral$nca)
-  expect_true(all(!is.na(ncaOral$PPORRES[ncaOral$PPTESTCD %in% c("tmax", "cmax.dn", "cl.last")])))
+  expect_true(all(
+    !is.na(ncaOral$PPORRES[
+      ncaOral$PPTESTCD %in% c("tmax", "cmax.dn", "cl.last")
+    ])
+  ))
 })
 
 test_that("pkncaIntervals without extravascular-only doses (#102)", {
@@ -329,17 +367,36 @@ test_that("pkncaIntervals without extravascular-only doses (#102)", {
     pkncaRoute = c("intravascular", "intravascular", "extravascular"),
     pkncaBolus = c(TRUE, TRUE, FALSE)
   )
-  intervals <- data.frame(ID = c(1, 3), start = 0, end = Inf, cmax = TRUE, tmax = TRUE, auclast = TRUE)
-  ret <- pkncaIntervals(intervals = intervals, dose = dose, groupCols = "ID", timeCol = "TIME")
+  intervals <- data.frame(
+    ID = c(1, 3),
+    start = 0,
+    end = Inf,
+    cmax = TRUE,
+    tmax = TRUE,
+    auclast = TRUE
+  )
+  ret <- pkncaIntervals(
+    intervals = intervals,
+    dose = dose,
+    groupCols = "ID",
+    timeCol = "TIME"
+  )
   expect_equal(ret$tmax, c(FALSE, FALSE))
   expect_equal(ret$cl.last, c(TRUE, FALSE))
   # No tmax with intravascular only
-  ret <- pkncaIntervals(intervals = intervals, dose = dose[1:2, ], groupCols = "ID", timeCol = "TIME")
+  ret <- pkncaIntervals(
+    intervals = intervals,
+    dose = dose[1:2, ],
+    groupCols = "ID",
+    timeCol = "TIME"
+  )
   expect_equal(ret$tmax, c(FALSE, FALSE))
   expect_equal(ret$cl.last, c(TRUE, TRUE))
   # No ka estimate without tmax
   est <- ncaToEst(
-    tmax = NULL, cmaxdn = c(1, 2, 3), cl = c(1, 2, 3),
+    tmax = NULL,
+    cmaxdn = c(1, 2, 3),
+    cl = c(1, 2, 3),
     control = pkncaControl(),
     unitConversions = c(vss.last = 1, cl.last = 1)
   )
@@ -351,7 +408,12 @@ test_that("pkncaIntervals route handling (#102)", {
   dose <- data.frame(
     ID = c(1, 2, 3, 3),
     TIME = 0,
-    pkncaRoute = c("intravascular", "extravascular", "intravascular", "extravascular"),
+    pkncaRoute = c(
+      "intravascular",
+      "extravascular",
+      "intravascular",
+      "extravascular"
+    ),
     pkncaBolus = c(TRUE, FALSE, TRUE, FALSE)
   )
   intervals <- data.frame(
@@ -363,7 +425,12 @@ test_that("pkncaIntervals route handling (#102)", {
     auclast = TRUE,
     half.life = TRUE
   )
-  ret <- pkncaIntervals(intervals = intervals, dose = dose, groupCols = "ID", timeCol = "TIME")
+  ret <- pkncaIntervals(
+    intervals = intervals,
+    dose = dose,
+    groupCols = "ID",
+    timeCol = "TIME"
+  )
   # tmax only from the extravascular dose
   expect_equal(ret$tmax, c(FALSE, TRUE, FALSE))
   expect_equal(ret$half.life, c(FALSE, TRUE, FALSE))
@@ -382,13 +449,29 @@ test_that("pkncaIntervals route handling (#102)", {
     pkncaBolus = TRUE,
     pkncaNoC0 = c(FALSE, TRUE)
   )
-  intervalsMulti <- data.frame(ID = 1, start = c(0, 12), end = c(12, 24), cmax = TRUE, auclast = TRUE)
-  ret <- pkncaIntervals(intervals = intervalsMulti, dose = doseMulti, groupCols = "ID", timeCol = "TIME")
+  intervalsMulti <- data.frame(
+    ID = 1,
+    start = c(0, 12),
+    end = c(12, 24),
+    cmax = TRUE,
+    auclast = TRUE
+  )
+  ret <- pkncaIntervals(
+    intervals = intervalsMulti,
+    dose = doseMulti,
+    groupCols = "ID",
+    timeCol = "TIME"
+  )
   expect_equal(ret$cmax.dn, c(TRUE, FALSE))
   expect_equal(ret$cl.last, c(TRUE, FALSE))
   # Without others, they are used (cmax.dn only from the first)
   doseMulti$pkncaNoC0 <- TRUE
-  ret <- pkncaIntervals(intervals = intervalsMulti, dose = doseMulti, groupCols = "ID", timeCol = "TIME")
+  ret <- pkncaIntervals(
+    intervals = intervalsMulti,
+    dose = doseMulti,
+    groupCols = "ID",
+    timeCol = "TIME"
+  )
   expect_equal(ret$cmax.dn, c(TRUE, FALSE))
   expect_equal(ret$cl.last, c(TRUE, TRUE))
 })
@@ -401,7 +484,13 @@ test_that("pkncaAddIvC0 (#102)", {
     pkncaBolus = TRUE
   )
   obs <- data.frame(ID = 1, TIME = c(6, 12, 18), DV = c(4, 2, 5))
-  ret <- pkncaAddIvC0(obs = obs, dose = dose, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  ret <- pkncaAddIvC0(
+    obs = obs,
+    dose = dose,
+    groupCols = "ID",
+    timeCol = "TIME",
+    dvCol = "DV"
+  )
   # The trough at the next dose is used for back-extrapolation; the second
   # dose has a concentration at the time of dosing
   expect_equal(ret$TIME, c(0, 6, 12, 18))
@@ -409,18 +498,36 @@ test_that("pkncaAddIvC0 (#102)", {
   expect_equal(attr(ret, "noC0"), pkncaKey(dose[2, ], c("ID", "TIME")))
   # Only one C0 for simultaneous doses
   dose2 <- rbind(dose[1, ], dose[1, ])
-  ret2 <- pkncaAddIvC0(obs = obs, dose = dose2, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  ret2 <- pkncaAddIvC0(
+    obs = obs,
+    dose = dose2,
+    groupCols = "ID",
+    timeCol = "TIME",
+    dvCol = "DV"
+  )
   expect_equal(sum(ret2$TIME == 0), 1)
   # No C0 when an extravascular dose is at the same time
   dose3 <- rbind(dose[1, ], dose[1, ])
   dose3$pkncaRoute[2] <- "extravascular"
   dose3$pkncaBolus[2] <- FALSE
-  ret3 <- pkncaAddIvC0(obs = obs, dose = dose3, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  ret3 <- pkncaAddIvC0(
+    obs = obs,
+    dose = dose3,
+    groupCols = "ID",
+    timeCol = "TIME",
+    dvCol = "DV"
+  )
   expect_equal(ret3, obs, ignore_attr = TRUE)
   # A single concentration uses the first concentration, flagged as not
   # log-linearly back-extrapolated
   obs5 <- data.frame(ID = 1, TIME = c(11.9, 18), DV = c(2, 5))
-  ret5 <- pkncaAddIvC0(obs = obs5, dose = dose, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  ret5 <- pkncaAddIvC0(
+    obs = obs5,
+    dose = dose,
+    groupCols = "ID",
+    timeCol = "TIME",
+    dvCol = "DV"
+  )
   expect_equal(ret5$TIME, c(0, 11.9, 12, 18))
   expect_equal(ret5$DV, c(2, 2, 5, 5))
   expect_equal(attr(ret5, "noC0"), pkncaKey(dose, c("ID", "TIME")))
@@ -428,7 +535,13 @@ test_that("pkncaAddIvC0 (#102)", {
   # not)
   for (dv0 in c(0, NA)) {
     obs4 <- data.frame(ID = 1, TIME = c(0, 6, 12, 18), DV = c(dv0, 4, 2, 5))
-    ret4 <- pkncaAddIvC0(obs = obs4, dose = dose, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+    ret4 <- pkncaAddIvC0(
+      obs = obs4,
+      dose = dose,
+      groupCols = "ID",
+      timeCol = "TIME",
+      dvCol = "DV"
+    )
     expect_equal(ret4$TIME, c(0, 6, 12, 18))
     expect_equal(ret4$DV, c(8, 4, 2, 5))
   }
@@ -446,8 +559,8 @@ test_that("pkncaObsStates (#102)", {
       ka <- exp(tka)
       cl <- exp(tcl)
       v <- exp(tv)
-      d/dt(depot) <- -ka * depot
-      d/dt(center) <- ka * depot - cl / v * center
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / v * center
       conc <- center
       cp <- conc / v
       cp ~ add(add.sd)
@@ -506,9 +619,13 @@ test_that("est='pknca' oral without a CMT column is extravascular (#102)", {
     })
   }
   d <- nlmixr2data::theo_sd
-  suppressMessages(retCmt <- nlmixr2est::nlmixr(object = modelGood, data = d, est = "pknca"))
+  suppressMessages(
+    retCmt <- nlmixr2est::nlmixr(object = modelGood, data = d, est = "pknca")
+  )
   d$CMT <- NULL
-  suppressMessages(retNoCmt <- nlmixr2est::nlmixr(object = modelGood, data = d, est = "pknca"))
+  suppressMessages(
+    retNoCmt <- nlmixr2est::nlmixr(object = modelGood, data = d, est = "pknca")
+  )
   feCmt <- setNames(retCmt$ui$iniDf$est, retCmt$ui$iniDf$name)
   feNoCmt <- setNames(retNoCmt$ui$iniDf$est, retNoCmt$ui$iniDf$name)
   expect_false(feNoCmt[["tka"]] == 0.45)
@@ -530,7 +647,7 @@ test_that("pkncaCmtOrder with linCmt() and ODEs (#102)", {
       v <- exp(lv)
       ke0 <- exp(lke0)
       cp <- linCmt()
-      d/dt(eff) <- ke0 * (cp - eff)
+      d / dt(eff) <- ke0 * (cp - eff)
       cp ~ add(add.sd)
     })
   }
@@ -539,13 +656,23 @@ test_that("pkncaCmtOrder with linCmt() and ODEs (#102)", {
 })
 
 test_that("pkncaAutoIntervals (#102)", {
-  dose <- data.frame(ID = c(1, 2, 2, 2), TIME = c(0, 0, 24, 48), pkncaRoute = "extravascular")
+  dose <- data.frame(
+    ID = c(1, 2, 2, 2),
+    TIME = c(0, 0, 24, 48),
+    pkncaRoute = "extravascular"
+  )
   obs <- data.frame(
     ID = c(1, 1, 2, 2, 2, 2, 2, 2, 2),
     TIME = c(1, 2, 1, 2, 4, 23.9, 49, 50, 52),
     DV = 1
   )
-  ret <- pkncaAutoIntervals(obs = obs, dose = dose, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  ret <- pkncaAutoIntervals(
+    obs = obs,
+    dose = dose,
+    groupCols = "ID",
+    timeCol = "TIME",
+    dvCol = "DV"
+  )
   # Single dose uses the PKNCA defaults
   expect_equal(ret$start[ret$ID == 1], c(0, 0))
   expect_equal(ret$end[ret$ID == 1], c(24, Inf))
@@ -560,30 +687,64 @@ test_that("pkncaAutoIntervals (#102)", {
   expect_null(ret$pkncaCoverage)
   # Peak and trough sampling keeps the intervals
   obsPt <- data.frame(ID = 2, TIME = c(2, 24, 26, 48, 50, 72), DV = 1)
-  ret <- pkncaAutoIntervals(obs = obsPt, dose = dose[dose$ID == 2, ], groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  ret <- pkncaAutoIntervals(
+    obs = obsPt,
+    dose = dose[dose$ID == 2, ],
+    groupCols = "ID",
+    timeCol = "TIME",
+    dvCol = "DV"
+  )
   expect_equal(ret$start, c(0, 24, 48))
   expect_equal(ret$end, c(24, 48, 72))
   # With too few concentrations everywhere, intervals with any concentrations
   # are kept
   obsFew <- data.frame(ID = 2, TIME = c(26, 50), DV = 1)
-  ret <- pkncaAutoIntervals(obs = obsFew, dose = dose[dose$ID == 2, ], groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  ret <- pkncaAutoIntervals(
+    obs = obsFew,
+    dose = dose[dose$ID == 2, ],
+    groupCols = "ID",
+    timeCol = "TIME",
+    dvCol = "DV"
+  )
   expect_equal(ret$start, c(24, 48))
 })
 
-test_that("pkncaIntervals cmax.dn from the first usable interval per route (#102)", {
+test_that("pkncaIntervals first usable cmax.dn per route (#102)", {
   dose <- data.frame(
     ID = 1,
     TIME = c(0, 24, 48, 72),
-    pkncaRoute = c("intravascular", "intravascular", "extravascular", "extravascular"),
+    pkncaRoute = c(
+      "intravascular",
+      "intravascular",
+      "extravascular",
+      "extravascular"
+    ),
     pkncaBolus = c(TRUE, TRUE, FALSE, FALSE),
     pkncaNoC0 = c(TRUE, FALSE, FALSE, FALSE)
   )
-  intervals <- data.frame(ID = 1, start = c(0, 24, 48, 72), end = c(24, 48, 72, 96), cmax = TRUE, tmax = TRUE, auclast = TRUE)
-  ret <- pkncaIntervals(intervals = intervals, dose = dose, groupCols = "ID", timeCol = "TIME")
+  intervals <- data.frame(
+    ID = 1,
+    start = c(0, 24, 48, 72),
+    end = c(24, 48, 72, 96),
+    cmax = TRUE,
+    tmax = TRUE,
+    auclast = TRUE
+  )
+  ret <- pkncaIntervals(
+    intervals = intervals,
+    dose = dose,
+    groupCols = "ID",
+    timeCol = "TIME"
+  )
   # The first IV dose has no log-linear C0, so the second IV dose is used
   expect_equal(ret$cmax.dn, c(FALSE, TRUE, FALSE, FALSE))
   # Without IV doses, the first oral dose is used
-  ret <- pkncaIntervals(intervals = intervals[3:4, ], dose = dose[3:4, ], groupCols = "ID", timeCol = "TIME")
+  ret <- pkncaIntervals(
+    intervals = intervals[3:4, ],
+    dose = dose[3:4, ],
+    groupCols = "ID",
+    timeCol = "TIME"
+  )
   expect_equal(ret$cmax.dn, c(TRUE, FALSE))
 })
 
@@ -592,13 +753,34 @@ test_that("pkncaCollapseDose (#102)", {
     ID = c(1, 1, 1, 2),
     TIME = c(0, 0, 12, 0),
     AMT = c(1, 2, 3, 4),
-    pkncaRoute = c("intravascular", "extravascular", "intravascular", "intravascular")
+    pkncaRoute = c(
+      "intravascular",
+      "extravascular",
+      "intravascular",
+      "intravascular"
+    )
   )
-  ret <- pkncaCollapseDose(dose = dose, groupCols = "ID", timeCol = "TIME", amtCol = "AMT")
+  ret <- pkncaCollapseDose(
+    dose = dose,
+    groupCols = "ID",
+    timeCol = "TIME",
+    amtCol = "AMT"
+  )
   expect_equal(ret$TIME, c(0, 12, 0))
   expect_equal(ret$AMT, c(3, 3, 4))
-  expect_equal(ret$pkncaRoute, c("extravascular", "intravascular", "intravascular"))
-  expect_equal(pkncaCollapseDose(dose = dose[-1, ], groupCols = "ID", timeCol = "TIME", amtCol = "AMT"), dose[-1, ])
+  expect_equal(
+    ret$pkncaRoute,
+    c("extravascular", "intravascular", "intravascular")
+  )
+  expect_equal(
+    pkncaCollapseDose(
+      dose = dose[-1, ],
+      groupCols = "ID",
+      timeCol = "TIME",
+      amtCol = "AMT"
+    ),
+    dose[-1, ]
+  )
 })
 
 test_that("est='pknca' with simultaneous IV and oral doses (#102)", {
@@ -628,7 +810,7 @@ test_that("est='pknca' with simultaneous IV and oral doses (#102)", {
   expect_s3_class(ret, "pkncaEst")
 })
 
-test_that("est='pknca' multiple-dose extravascular without concentrations at dosing (#102)", {
+test_that("est='pknca' multiple-dose oral without dose-time conc (#102)", {
   mod <- function() {
     ini({
       tka <- 0
