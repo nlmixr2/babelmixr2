@@ -193,3 +193,41 @@ test_that("prune=\"auto\" only prunes Monolix models when needed (#11)", {
     expect_true(any(grepl("^ *fd = .*rx_l[0-9]+", .m)))
   })
 })
+
+test_that("Monolix compartment properties write their indicators first (#11)", {
+  one.cmt <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d / dt(depot) <- -ka * depot
+      d / dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+  ui <- rxode2::rxode2(one.cmt)
+  expect_equal(
+    rxToMonolix("f(depot) <- (sex == 1)*0.8 + (1 - (sex == 1))", ui),
+    paste(
+      c(
+        "  ;f defined in PK section",
+        "  rx_l001 = 0",
+        "  if sex==1",
+        "    rx_l001 = 1",
+        "  end",
+        "   rx_f_depot = (rx_l001)*0.8+(1-(rx_l001))"
+      ),
+      collapse = "\n"
+    )
+  )
+})
