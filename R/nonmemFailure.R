@@ -8,6 +8,17 @@
   stop(paste(msg, collapse="\n"), call.=FALSE)
 }
 
+#' Read a NONMEM file's lines as valid UTF-8
+#'
+#' @param file The file to read
+#' @return The lines, with bytes that are not UTF-8 (like a Latin-1
+#'   path) written as `<xx>`
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemFailureReadLines <- function(file) {
+  iconv(suppressWarnings(readLines(file, warn=FALSE)), "UTF-8", "UTF-8", sub="byte")
+}
+
 #' Read the lines NONMEM and NM-TRAN wrote about a run
 #'
 #' NONMEM's output starts with a copy of the control stream; those
@@ -26,12 +37,10 @@
   .files <- file.path(exportPath, c(lst, "FMSG"))
   .files <- .files[file.exists(.files)]
   if (length(.files) == 0L) return(NULL)
-  .ret <- unlist(lapply(.files, function(f) {
-    suppressWarnings(readLines(f, warn=FALSE))
-  }), use.names=FALSE)
+  .ret <- unlist(lapply(.files, .nonmemFailureReadLines), use.names=FALSE)
   .ctlFile <- file.path(exportPath, ctl)
   if (file.exists(.ctlFile)) {
-    .ctl <- trimws(suppressWarnings(readLines(.ctlFile, warn=FALSE)))
+    .ctl <- trimws(.nonmemFailureReadLines(.ctlFile))
     .ctl <- .ctl[.ctl != ""]
     .ret <- .ret[!(trimws(.ret) %in% .ctl)]
   }
@@ -89,6 +98,11 @@
     return(list(cause="data",
                 lines=.nonmemFailureContext(lines, "\\(DATA ERROR\\)")))
   }
+  if (any(grepl("DATA FILE DOES NOT EXIST", lines, fixed=TRUE))) {
+    return(list(cause="data",
+                lines=.nonmemFailureContext(lines, "DATA FILE DOES NOT EXIST",
+                                            before=3L, after=0L)))
+  }
   if (any(grepl("AN ERROR WAS FOUND IN THE CONTROL STATEMENTS", lines, fixed=TRUE))) {
     return(list(cause="controlStream",
                 lines=.nonmemFailureContext(lines,
@@ -96,6 +110,12 @@
                                             after=6L)))
   }
   .term <- grep("PROGRAM TERMINATED", lines, fixed=TRUE)
+  .tere <- grep("#TERE:", lines, fixed=TRUE)
+  if (length(.tere) > 0L) {
+    # after the estimation's termination block, NONMEM stopping is a
+    # failure of the covariance or table step; estimation finished
+    .term <- .term[.term < .tere[1]]
+  }
   if (length(.term) > 0L) {
     .start <- grep("NONLINEAR MIXED EFFECTS MODEL PROGRAM", lines, fixed=TRUE)
     # before NONMEM starts, it is NM-TRAN that stopped
@@ -112,7 +132,7 @@
   lines <- gsub("[^[:space:]]*[/\\\\]", "",
                 .nonmemDropModelName(lines, modelName))
   .lic <- grepl("licen[cs]e|[.]lic\\b", lines, ignore.case=TRUE) &
-    grepl("expired|not valid|invalid|not found|cannot find|could not find|missing|no valid|unable to|failed",
+    grepl("expired|not valid|invalid|not found|cannot find|could not find|missing|no valid|unable to|failed|error|terminating",
           lines, ignore.case=TRUE) &
     !grepl("registered to|warning", lines, ignore.case=TRUE)
 
@@ -230,14 +250,14 @@
       # NONMEM finished estimating but then exited abnormally (for
       # example killed while computing the covariance or tables)
       .nonmemFailureStop(
-        c(paste0("NONMEM exited abnormally after estimation, so its output is incomplete; see '", .lstFile, "'"),
+        c(paste0("NONMEM exited with an error after estimation and babelmixr2 could not use its output; see '", .lstFile, "'"),
           .statusMsg,
-          paste0("  reading the output failed with: ", conditionMessage(readError)),
+          paste0("  error: ", conditionMessage(readError)),
           .nonmemFailureTail(.lines),
-          "it may have crashed, run out of memory or been stopped"))
+          "NONMEM may have crashed, run out of memory or been stopped while writing its output"))
     }
     .nonmemFailureStop(
-      c(paste0("babelmixr2 could not read NONMEM's output '", .lstFile, "':"),
+      c(paste0("babelmixr2 could not read or use NONMEM's output '", .lstFile, "':"),
         paste0("  ", conditionMessage(readError)),
         .nonmemFailureTail(.lines),
         "if NONMEM finished, please report this at https://github.com/nlmixr2/babelmixr2/issues"))

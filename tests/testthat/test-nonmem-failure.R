@@ -36,6 +36,11 @@ test_that("NONMEM failures are classified from the output (#46)", {
                                      "0PROGRAM TERMINATED BY OBJ"))
   expect_equal(.crash$cause, "crash")
   expect_true("0PROGRAM TERMINATED BY OBJ" %in% .crash$lines)
+  # NONMEM stopping after estimation finished is not an estimation crash
+  expect_null(.nonmemClassifyFailure(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM",
+                                       " #TERM:", "0MINIMIZATION SUCCESSFUL", " #TERE:",
+                                       "0PROGRAM TERMINATED BY FNLETA",
+                                       " MESSAGE ISSUED FROM TABLE STEP")))
   # the model name is not read as a license message
   expect_null(.nonmemClassifyFailure(c(" PROBLEM NO.:  1  license_missing translated from babelmixr2",
                                        " DATA FILE: license_missing.csv"),
@@ -50,6 +55,47 @@ test_that("NONMEM failures are classified from the output (#46)", {
   expect_null(.nonmemClassifyFailure("gfortran: error: /home/u/missing_license/FSUBS.f90: failed"))
   expect_equal(.nonmemClassifyFailure("Cannot find /opt/nm/license/nonmem.lic")$cause,
                "license")
+})
+
+test_that("real NONMEM output is classified (#46)", {
+  # PsN's collection of NONMEM output, shipped with nonmem2rx
+  .zip <- system.file("PsN.zip", package="nonmem2rx")
+  skip_if(.zip == "")
+  withr::with_tempdir({
+    unzip(.zip)
+    .cause <- function(f) {
+      .l <- .nonmemFailureLines(dirname(f), basename(f), "none.nmctl")
+      .c <- .nonmemClassifyFailure(.l, "run1")
+      if (is.null(.c)) "none" else .c$cause
+    }
+    .d <- file.path("PsN", "test_files", "output")
+    .expected <- c(
+      "special_mod/license_missing.lst"="license",
+      "special_mod/license_dummy.lst"="license",
+      "special_mod/license_expired.lst"="license",
+      "special_mod/data_missing.lst"="data",
+      "onePROB/oneEST/noSIM/hessian_error.lst"="crash",
+      "onePROB/oneEST/noSIM/nm710_fail_negV.lst"="crash",
+      # the first of two estimations crashed
+      "onePROB/multEST/firstEstTerm.lst"="crash",
+      # NONMEM stopped in the covariance or table step, after estimation
+      "onePROB/oneEST/noSIM/large_s_matrix_cov_fail.lst"="none",
+      "special_mod/interrupted_at_eigen.lst"="none",
+      "nm73/UseCase7.lst"="none",
+      "nm73/mox_fail_nonp.lst"="none")
+    for (.f in names(.expected)) {
+      expect_equal(.cause(file.path(.d, .f)), .expected[[.f]], info=.f)
+    }
+    # no finished run in the collection is read as a failure
+    .fs <- list.files(.d, pattern="[.]lst$", recursive=TRUE, full.names=TRUE)
+    .fs <- .fs[!(.fs %in% file.path(.d, names(.expected)))]
+    .done <- vapply(.fs, function(f) {
+      any(grepl("#TERE:", .nonmemFailureReadLines(f), fixed=TRUE))
+    }, logical(1))
+    for (.f in .fs[.done]) {
+      expect_equal(.cause(.f), "none", info=.f)
+    }
+  })
 })
 
 withr::with_tempdir({
@@ -155,14 +201,15 @@ withr::with_tempdir({
   })
 
   test_that("a crash after NONMEM read the data is reported (#46)", {
-    # with the data summary, nonmem2rx reads the crash as NONMEM's
-    # termination message
+    # as NONMEM writes it: the crash, then an empty termination block
     .msg <- .failure(.fakeNonmem(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
                                    " TOT. NO. OF OBS RECS:      132",
                                    " TOT. NO. OF INDIVIDUALS:       12",
-                                   " #TERM:",
                                    "0PROGRAM TERMINATED BY OBJ",
-                                   " ERROR IN NCONTR WHILE COMPUTING OBJECTIVE")), "fail_obj2")
+                                   " ERROR IN NCONTR WHILE COMPUTING OBJECTIVE",
+                                   " MESSAGE ISSUED FROM ESTIMATION STEP",
+                                   " #TERM:",
+                                   " #TERE:")), "fail_obj2")
     expect_match(.msg, "NONMEM stopped during the run")
     expect_match(.msg, "PROGRAM TERMINATED BY OBJ", fixed=TRUE)
     expect_no_match(.msg, "minimization not successful")
@@ -194,7 +241,19 @@ withr::with_tempdir({
     .msg <- .failure(.fakeNonmem(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
                          " #TERM:",
                          " garbled")), "fail_read")
-    expect_match(.msg, "could not read NONMEM's output")
+    expect_match(.msg, "could not read or use NONMEM's output")
+  })
+
+  test_that("NONMEM output that is not UTF-8 is still explained (#46)", {
+    .dir <- file.path(tempfile(), "enc-nonmem")
+    dir.create(.dir, recursive=TRUE)
+    writeBin(c(charToRaw("gfortran: error: C:\\Users\\M"), as.raw(0xfc),
+               charToRaw("ller\\FSUBS.f90\nLicense file has expired\n")),
+             file.path(.dir, "enc.lst"))
+    .lines <- .nonmemFailureLines(.dir, "enc.lst", "enc.nmctl")
+    expect_true(all(validUTF8(.lines)))
+    expect_equal(.nonmemClassifyFailure(.lines, "enc")$cause, "license")
+    unlink(dirname(.dir), recursive=TRUE)
   })
 
   test_that("the echoed control stream is not read as a NONMEM message (#46)", {
@@ -221,7 +280,7 @@ withr::with_tempdir({
       stop("mock post-processing error", call.=FALSE)
     })
     expect_error(.nonmemFinalizeOrExplain(new.env(), .ui),
-                 "could not read NONMEM's output(.|\n)*mock post-processing error")
+                 "could not read or use NONMEM's output(.|\n)*mock post-processing error")
     local_mocked_bindings(.nonmemFinalizeEnv=function(env, oldUi) "fit")
     expect_equal(.nonmemFinalizeOrExplain(new.env(), .ui), "fit")
   })
@@ -253,7 +312,12 @@ withr::with_tempdir({
                " TOT. NO. OF OBS RECS:      132",
                " TOT. NO. OF INDIVIDUALS:       12",
                " #TERM:")
+    # a covariance step failure after the termination block
+    .cov <- c("0PROGRAM TERMINATED BY OBJ", " MESSAGE ISSUED FROM COVARIANCE STEP")
     .cases <- list(
+      list(name="read_round_cov", ctl=list(readRounding=TRUE),
+           lines=c("0MINIMIZATION TERMINATED", " DUE TO ROUNDING ERRORS (ERROR=134)",
+                   " #TERE:", .cov)),
       list(name="read_round", ctl=list(readRounding=TRUE),
            lines=c("0MINIMIZATION TERMINATED", " DUE TO ROUNDING ERRORS (ERROR=134)")),
       list(name="read_badopt", ctl=list(readBadOpt=TRUE),
@@ -266,7 +330,7 @@ withr::with_tempdir({
       # the fake output has no estimates, so with the flag the run gets
       # past the failure checks and only reading the estimates fails
       .msg <- .failure(.fakeNonmem(c(.head, .c$lines, " #TERE:")), .c$name, .c$ctl)
-      expect_match(.msg, "could not read NONMEM's output", info=.c$name)
+      expect_match(.msg, "could not read or use NONMEM's output", info=.c$name)
       # without the flag the run stops as not successful
       .msg <- .failure(.fakeNonmem(c(.head, .c$lines, " #TERE:")), paste0(.c$name, "_stop"))
       expect_match(.msg, "minimization not successful", info=.c$name)
@@ -281,7 +345,7 @@ withr::with_tempdir({
                  "exit 137"),
                .sh)
     .msg <- .failure(paste("sh", shQuote(.sh)), "fail_killed")
-    expect_match(.msg, "exited abnormally after estimation")
+    expect_match(.msg, "exited with an error after estimation")
     expect_match(.msg, "exit status: 137", fixed=TRUE)
     unlink(.sh)
   })
