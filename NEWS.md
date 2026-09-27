@@ -1,11 +1,13 @@
 # babelmixr2 0.1.11.9000
 
-* `nonmemControl(prune=TRUE)` prunes the `if`/`else` branches of a model
-  with rxode2's branch pruning before it is translated to NONMEM, so
-  models with nested `if`/`else if`/`else` statements can be fit with
-  NONMEM (#11).  The default (`prune=FALSE`) keeps writing simple `if`
-  blocks as NONMEM `IF` blocks, and the error for unsupported
-  `if`/`else` statements now suggests `prune=TRUE`.
+* NONMEM models can now use nested `if`/`else if`/`else` statements
+  (and `ifelse()`): their branches are pruned with rxode2's branch
+  pruning before the model is translated to NONMEM (#11).  With the
+  default `nonmemControl(prune="auto")` a model whose `if` blocks are
+  simple is still written with NONMEM `IF` blocks and only a model that
+  needs it is pruned; `prune=TRUE` always prunes and `prune=FALSE` never
+  prunes (the error for unsupported `if`/`else` statements suggests
+  `prune=TRUE`).
 
 * A logical expression used as a number in a NONMEM model (like
   `cl <- tcl * (WT > 70)`) is now written as a 0/1 indicator variable,

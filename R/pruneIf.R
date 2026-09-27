@@ -16,6 +16,28 @@
   any(vapply(ui$lstExpr, .hasIf, logical(1), USE.NAMES=FALSE))
 }
 
+#' Does this model have `if`/`else` statements NONMEM cannot write directly?
+#'
+#' NONMEM `IF` blocks are written for simple `if` blocks; an `else`,
+#' `else if`, a nested `if` or `ifelse()` needs the branches pruned.
+#'
+#' @param ui rxode2 ui
+#' @return boolean saying if the model needs its branches pruned
+#' @noRd
+#' @author Matthew L. Fidler
+.bblNeedsPrune <- function(ui) {
+  .needs <- function(x, inIf=FALSE) {
+    if (!is.call(x)) return(FALSE)
+    if (identical(x[[1]], quote(`ifelse`))) return(TRUE)
+    if (identical(x[[1]], quote(`if`))) {
+      if (inIf || length(x) > 3L) return(TRUE)
+      return(.needs(x[[2]], TRUE) || .needs(x[[3]], TRUE))
+    }
+    any(vapply(as.list(x)[-1], .needs, logical(1), inIf=inIf, USE.NAMES=FALSE))
+  }
+  any(vapply(ui$lstExpr, .needs, logical(1), USE.NAMES=FALSE))
+}
+
 #' Prune the `if`/`else` branches of the model to estimate
 #'
 #' This uses `rxode2`'s branch pruning to write each `if`/`else`
@@ -52,15 +74,22 @@
   invisible()
 }
 
-#' Get the prune option from a (possibly incomplete) control
+#' Should the model be pruned for the estimation software?
 #'
-#' @param control control object or list (may be `NULL`)
-#' @return boolean, should the model be pruned
+#' @param env nlmixr2 estimation environment with `env$ui` and
+#'   `env$control`
+#' @return boolean, should the model be pruned; `"auto"` (the default)
+#'   prunes only when the `if`/`else` statements cannot be written
+#'   directly
 #' @noRd
 #' @author Matthew L. Fidler
-.bblPruneControl <- function(control) {
-  if (is.list(control) && !is.null(control$prune)) {
-    return(isTRUE(control$prune[1]))
+.bblPruneControl <- function(env) {
+  .prune <- "auto"
+  .control <- env$control
+  if (is.list(.control) && !is.null(.control$prune)) {
+    .prune <- .control$prune[1]
   }
-  FALSE
+  if (isTRUE(.prune)) return(TRUE)
+  if (isFALSE(.prune)) return(FALSE)
+  .bblNeedsPrune(rxode2::rxUiDecompress(env$ui))
 }

@@ -1,8 +1,9 @@
 test_that("nonmemControl(prune=) option", {
-  expect_false(nonmemControl()$prune)
+  expect_equal(nonmemControl()$prune, "auto")
   expect_true(nonmemControl(prune=TRUE)$prune)
-  expect_error(nonmemControl(prune="a"))
-  expect_error(nonmemControl(prune=NA))
+  expect_false(nonmemControl(prune=FALSE)$prune)
+  expect_error(nonmemControl(prune="a"), "prune")
+  expect_error(nonmemControl(prune=NA), "prune")
 })
 
 test_that("NONMEM logical expressions used as numbers use indicator variables (#11)", {
@@ -93,7 +94,8 @@ test_that("NONMEM models with nested if/else can be pruned (#11)", {
   withr::with_tempdir({
     expect_error(
       suppressMessages(nlmixr2(f, d, "nonmem",
-                               nonmemControl(runCommand=NA, modelName="noprune"))),
+                               nonmemControl(runCommand=NA, modelName="noprune",
+                                             prune=FALSE))),
       "nonmemControl\\(prune=TRUE\\)")
 
     suppressMessages(
@@ -102,6 +104,13 @@ test_that("NONMEM models with nested if/else can be pruned (#11)", {
                                          prune=TRUE)),
                    NA))
     .ctl <- readLines(file.path("prune-nonmem", "prune.nmctl"))
+    # prune="auto" (the default) prunes this model too
+    suppressMessages(
+      expect_error(nlmixr2(f, d, "nonmem",
+                           nonmemControl(runCommand=NA, modelName="auto")),
+                   NA))
+    expect_equal(gsub("auto", "prune", readLines(file.path("auto-nonmem", "auto.nmctl"))),
+                 .ctl)
     # no ELSE statements are written
     expect_false(any(grepl("ELSE", .ctl)))
     # the conditions are written as indicator variables
@@ -150,4 +159,63 @@ test_that("models without if/else are not changed by pruning (#11)", {
   .ui <- .env$ui
   .bblPruneIf(.env, "NONMEM")
   expect_identical(.env$ui, .ui)
+})
+
+test_that("prune=\"auto\" only prunes when the if/else statements need it (#11)", {
+  .simple <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      cl2 <- cl
+      if (WT > 70) {
+        cl2 <- cl * 1.2
+      }
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl2 / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+  .ui <- rxode2::rxode2(.simple)
+  expect_false(.bblNeedsPrune(.ui))
+  .env <- new.env(parent=emptyenv())
+  .env$ui <- .ui
+  .env$control <- nonmemControl()
+  expect_false(.bblPruneControl(.env))
+  .env$control <- nonmemControl(prune=TRUE)
+  expect_true(.bblPruneControl(.env))
+  .env$control <- NULL
+  expect_false(.bblPruneControl(.env))
+
+  .needs <- function(expr) {
+    .bblNeedsPrune(list(lstExpr=list(expr)))
+  }
+  expect_false(.needs(quote(a <- b)))
+  expect_false(.needs(quote(if (a > 1) {b <- 1})))
+  expect_true(.needs(quote(if (a > 1) {b <- 1} else {b <- 2})))
+  expect_true(.needs(quote(if (a > 1) {if (c > 1) {b <- 1}})))
+  expect_true(.needs(quote(b <- ifelse(a > 1, 1, 2))))
+
+  d <- nlmixr2data::theo_sd
+  d$WT <- ifelse(d$ID %% 2 == 0, 80, 60)
+  withr::with_tempdir({
+    suppressMessages(
+      expect_error(nlmixr2(.simple, d, "nonmem",
+                           nonmemControl(runCommand=NA, modelName="simple")),
+                   NA))
+    .ctl <- readLines(file.path("simple-nonmem", "simple.nmctl"))
+    # the simple if block is written as a NONMEM IF block (not pruned)
+    expect_true(any(grepl("^ +IF \\(WT\\.GT\\.70\\) THEN$", .ctl)))
+    expect_false(any(grepl("RXL", .ctl)))
+  })
 })

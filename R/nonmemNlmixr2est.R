@@ -313,8 +313,9 @@ nlmixr2Est.nonmem <- function(env, ...) {
   # linCmt() is written as NONMEM's closed-form ADVAN or as ODEs
   .micro <- .bblLinCmtToOde(env, "NONMEM",
                             native=(.bblLinCmtControl(env$control, "advan") == "advan"))
-  # nonmemControl(prune=TRUE) writes if/else branches as arithmetic
-  if (.bblPruneControl(env$control)) .bblPruneIf(env, "NONMEM")
+  # nested if/else branches are pruned (written as arithmetic); see
+  # nonmemControl(prune=)
+  if (.bblPruneControl(env)) .bblPruneIf(env, "NONMEM")
   .ui <- env$ui
   .nonmemFamilyControl(env, ...)
   rxode2::rxAssignControlValue(.ui, ".linCmtMicro", .micro)
