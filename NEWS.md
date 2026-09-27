@@ -44,6 +44,12 @@
   error when the model still contains untranslated NONMEM residual
   variables (`eps#` or `err#`) instead of failing inside the estimation
   routine (#95).
+* `popedControl(sigdig=)` now sets the ODE solver tolerances itself
+  (`atol = rtol = 0.5*10^(-sigdig-2)`, the same values as before) instead
+  of using `rxode2::rxControl(sigdig=)`.  rxode2 5.1.5 loosened the
+  tolerances that `rxControl(sigdig=)` gives, which made the
+  finite-difference FIM, and so the design OFV and RSEs, less accurate
+  (#223).
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
