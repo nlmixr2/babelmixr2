@@ -91,7 +91,9 @@ bibentry(bibtype="Article",
          abstract="The free and open-source package nlmixr implements pharmacometric nonlinear mixed effects model parameter estimation in R. It provides a uniform language to define pharmacometric models using ordinary differential equations. Performances of the stochastic approximation expectation-maximization (SAEM) and first order-conditional estimation with interaction (FOCEI) algorithms in nlmixr were compared with those found in the industry standards, Monolix and NONMEM, using the following two scenarios: a simple model fit to 500 sparsely sampled data sets and a range of more complex compartmental models with linear and nonlinear clearance fit to data sets with rich sampling. Estimation results obtained from nlmixr for FOCEI and SAEM matched the corresponding output from NONMEM/FOCEI and Monolix/SAEM closely both in terms of parameter estimates and associated standard errors. These results indicate that nlmixr may provide a viable alternative to existing tools for pharmacometric parameter estimation.")
 
 bibentry(bibtype = "InProceedings",
-         title = "{babelmixr2} and {PopED}: Quick Conversion of {NONMEM}, {Monolix} and {nlmixr2}/{rxode2} Models to {PopED} Optimal Design Analysis",
+         title = paste("{babelmixr2} and {PopED}: Quick Conversion of {NONMEM},",
+                       "{Monolix} and {nlmixr2}/{rxode2} Models to {PopED}",
+                       "Optimal Design Analysis"),
          author = c(person(c("Matthew", "L."), "Fidler",
                            comment = c(ORCID = "0000-0001-8538-6691")),
                     person("William", "Denney",
