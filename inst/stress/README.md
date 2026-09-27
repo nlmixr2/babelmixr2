@@ -22,7 +22,8 @@ The cases are in `stress.R` (in this directory). They cover:
 - residual errors (additive, proportional, combined1/2, pow, lognormal,
   logit, Box-Cox, Yeo-Johnson, t distribution, fixed)
 - censoring (`CENS`, `CENS` + `LIMIT`, `LIMIT` only)
-- model code (`if`/`else`, `else if`, names reserved by NONMEM, long
+- model code (`if`/`else`, `else if`, nested `if`/`else` and `ifelse()`
+  (pruned, #11), names reserved by NONMEM, long
   dotted names, fixed and block random effects, parameters without
   random effects, initial conditions, time-varying covariates,
   `probitInv()`, between-occasion variability, models that are not

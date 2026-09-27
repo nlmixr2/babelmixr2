@@ -147,6 +147,10 @@
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
   .nonmemControlToFoceiControl(env, TRUE)
+  # nlmixr2CreateOutputFromUi() may add its own objective (like FOCEi
+  # with tableControl(cwres=TRUE)) and switch env$ofvType to it, so keep
+  # the NONMEM objective type here (#94)
+  .ofvType <- env$ofvType
   env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData,
                                                control=env$control, table=env$table,
                                                env=env, est="nonmem")
@@ -169,7 +173,7 @@
   assign("time",
          cbind(.time, data.frame(NONMEM=.ui$nonmemRunTime)),
          .env)
-  nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .env$ofvType)
+  nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .ofvType)
   env
 }
 
@@ -272,11 +276,18 @@
     .minfo("only exported NONMEM control stream/data")
     return(invisible(.ui))
   }
+  .status <- NULL
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
-    print(file.path(.exportPath, .ui$nonmemXml))
-    .nonmemRunner(ui=.ui)
+    .status <- .nonmemRunner(ui = .ui)
   }
-  .read <- .ui$nonmemSuccessful
+  .read <- tryCatch(.ui$nonmemSuccessful, error = function(e) {
+    .nonmemCheckRun(.ui, .status, readError = e)
+  })
+  if (!.read) {
+    # tell the user why NONMEM failed when it did not finish; a
+    # finished run that did not converge continues below
+    .nonmemCheckRun(.ui, .status)
+  }
   .readRounding <- rxode2::rxGetControl(.ui, "readRounding", FALSE)
   .roundingErrors <- .ui$nonmemRoundingErrors
   if (!.read && .roundingErrors && .readRounding) {
@@ -306,7 +317,8 @@
     stop("nonmem minimization not successful",
          call.=FALSE)
   }
-  .ret <- .nonmemFinalizeEnv(.ret, .ui)
+  .ret <- .nonmemFinalizeOrExplain(.ret, .ui, .status)
+  .nonmemWarnStatus(.status)
   if (inherits(.ret, "nlmixr2FitData")) {
     .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
     .prderrPath <- file.path(.exportPath, "PRDERR")
@@ -335,12 +347,21 @@
 .nonmemRunner <- function(ui) {
   cmd <- rxode2::rxGetControl(ui, "runCommand", "")
   if (is.character(cmd)) {
+    if (cmd == "") {
+      .nonmemRunCommandUnset(ui)
+    }
     cmd <- .nonmemRunCommand
   } else if (!is.function(cmd)) {
-    stop("invalid value for nonmemControl(runCommand=)",
-         call.=FALSE)
+    stop("invalid value for nonmemControl(runCommand=)", call. = FALSE)
   }
-  cmd(ctl=ui$nonmemNmctl, directory=ui$nonmemExportPath, ui=ui)
+  # only once NONMEM will run, so output from running it manually is
+  # kept when it cannot
+  .nonmemRemoveOldOutput(ui)
+  .status <- cmd(ctl = ui$nonmemNmctl, directory = ui$nonmemExportPath, ui = ui)
+  if (identical(cmd, .nonmemRunCommand)) {
+    return(.status)
+  }
+  # the exit status is unknown for a user function
   NULL
 }
 
@@ -351,8 +372,17 @@
     .minfo(paste0("run NONMEM: ", fullCmd))
     withr::with_dir(ui$nonmemExportPath, system(fullCmd))
   } else {
-    stop("run NONMEM manually and rerun nlmixr() or setup NONMEM's run command")
+    .nonmemRunCommandUnset(ui)
   }
+}
+
+.nonmemRunCommandUnset <- function(ui) {
+  stop(
+    "NONMEM's run command is not set; set nonmemControl(runCommand=) (for example to the path of 'nmfe75'), or run NONMEM manually in '",
+    ui$nonmemExportPath,
+    "' and rerun nlmixr()",
+    call. = FALSE
+  )
 }
 
 #' @export
@@ -370,6 +400,9 @@ nlmixr2Est.nonmem <- function(env, ...) {
   # linCmt() is written as NONMEM's closed-form ADVAN or as ODEs
   .micro <- .bblLinCmtToOde(env, "NONMEM",
                             native=(.bblLinCmtControl(env$control, "advan") == "advan"))
+  # nested if/else branches are pruned (written as arithmetic), as
+  # set by the prune option of nonmemControl
+  if (.bblPruneControl(env, nested = FALSE)) .bblPruneIf(env, "NONMEM")
   .ui <- env$ui
   .nonmemFamilyControl(env, ...)
   rxode2::rxAssignControlValue(.ui, ".linCmtMicro", .micro)
