@@ -142,6 +142,16 @@ withr::with_tempdir({
     expect_equal(.nFlag(.d), 0L)
   })
 
+  test_that("missing CENS values are not censored in NONMEM (#92)", {
+    .ui <- rxode2::rxUiDecompress(rxode2::rxode2(one.cmt))
+    .d <- data.frame(ID=1, TIME=0:3, EVID=c(1, 0, 0, 0), AMT=c(1, 0, 0, 0),
+                     DV=c(NA, 1, 2, 3), CMT=1, CENS=c(NA, 1, NA, 0),
+                     nlmixrRowNums=1:4)
+    .r <- .nonmemFormatCensData(.d, .ui)
+    expect_equal(.r$CENS, c(0, 1, 0, 0))
+    expect_equal(rxode2::rxGetControl(.ui, ".nFlag", NA_integer_), 1L)
+  })
+
   test_that("censoring with a transformed endpoint is refused in NONMEM (#92)", {
     .m <- rxode2::model(one.cmt, cp ~ lnorm(add.sd))
     expect_error(

@@ -54,10 +54,10 @@
   }
   rxode2::rxAssignControlValue(ui, ".nFlag",
                                sum(.censored | (.obs & .limit)))
-  if (!.hasLimit) {
-    return(data[, .n != "LIMIT"])
-  }
   data$CENS <- .cens
+  if (!.hasLimit) {
+    return(data[, names(data) != "LIMIT"])
+  }
   .n <- setdiff(names(data), c("CENS", "LIMIT", "nlmixrRowNums"))
   data[, c(.n, "CENS", "LIMIT", "nlmixrRowNums")]
 }
