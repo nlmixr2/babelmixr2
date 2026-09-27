@@ -2,10 +2,12 @@
 
 * NONMEM control streams now explain the zero-protection code
   babelmixr2 adds: each `RXDZ###` `IF` block is preceded by a comment
-  saying which variable is protected and why, and the `IF (W1 .EQ. 0.0)`
-  line notes it protects the residual variance (#91).  The protection
-  for `lfactorial()`/`lgamma1p()` now keeps its argument above `-1`
-  (it previously clamped it just below `-1`, making `x+1` negative).
+  saying what it keeps the variable away from and why, and the
+  `IF (W1 .EQ. 0.0)` line notes it protects the residual variance (#91).
+  The protection for `lfactorial()`/`lgamma1p()` now keeps its argument
+  above `-1` (it previously clamped it just below `-1`, making `x+1`
+  negative), and `log(x)` and `1/x` no longer share one protected
+  variable, so `1/x` keeps the sign of a negative `x`.
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,

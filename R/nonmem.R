@@ -287,15 +287,24 @@ rex::register_shortcuts("babelmixr2")
 #' confusing when reading the control stream, so each one is preceded
 #' by a NONMEM comment saying which variable is protected and why.
 #'
+#' The comment describes what the block does (not the first expression
+#' that needed it) since a protected variable is reused by any later
+#' expression needing the same protection.
+#'
 #' @param newVar the NONMEM variable being protected (like `RXDZ001`)
-#' @param why what the variable is protected from and why
+#' @param type type of protection: "plus" (keep positive), "one" (keep
+#'   above -1) or "sign" (keep away from zero, preserving the sign)
 #' @param ui rxode2 ui
 #' @return NONMEM comment line
 #' @author Matthew L. Fidler
 #' @noRd
-.rxProtectZeroComment <- function(newVar, why, ui) {
-  paste0(.rxToNonmemGetIndent(ui),
-         "; The IF block below protects ", newVar, " from ", why)
+.rxProtectZeroComment <- function(newVar, type=c("plus", "one", "sign"), ui) {
+  type <- match.arg(type)
+  paste0(.rxToNonmemGetIndent(ui), "; IF block below keeps ", newVar, " ",
+         switch(type,
+                plus="positive (log, sqrt, etc. need x > 0)",
+                one="above -1 (lfactorial, log1p, etc. need x+1 > 0)",
+                sign="away from zero keeping its sign (avoids 1/0 and 0**-n)"))
 }
 
 #' Protect Zeros for dlog(x) or dsqrt(x)
@@ -303,18 +312,18 @@ rex::register_shortcuts("babelmixr2")
 #' @param x Expression to protect
 #' @param ui rxode2 to get information
 #' @param one if this is protecting a plus one expression like `lfactorial()`
-#' @param fun the rxode2 function whose argument is protected (used
-#'   in the explanatory comment)
 #' @return expression, with prefix lines calculated
 #' @author Matthew L. Fidler
 #' @noRd
-.rxProtectPlusZero <- function(x, ui, one=FALSE, fun="log") {
+.rxProtectPlusZero <- function(x, ui, one=FALSE) {
   .ret <- .rxToNonmem(x, ui=ui)
   if (.rxShouldProtectZeros(.ret, ui)) {
     .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
                                 data.frame(expr=character(0),
                                            nm=character(0)))
-    .expr <- paste0(.ret, ifelse(one, "+++1", ""))
+    # Keyed separately from the +/- protection of the same expression,
+    # which keeps negative values (and needs to for 1/x to keep its sign)
+    .expr <- paste0(.ret, ifelse(one, "+++1", "+++0"))
     .w <- which(.df$expr == .expr)
     if (length(.w) == 1) {
       # Previously protected this expression
@@ -331,10 +340,7 @@ rex::register_shortcuts("babelmixr2")
                      paste0("-0.", paste(rep("9", .sigdig + 1), collapse="")),
                      paste0("0.", paste(rep("0", .sigdig), collapse=""), "1"))
       .prefixLines <- c(.prefixLines,
-                        .rxProtectZeroComment(.newVar,
-                                              paste0(ifelse(one, "-1 or less", "zero or less"),
-                                                     " so ", fun, "() is defined"),
-                                              ui),
+                        .rxProtectZeroComment(.newVar, ifelse(one, "one", "plus"), ui),
                         paste0(.rxToNonmemGetIndent(ui),
                                .newVar, "=", .ret),
                         paste0(.rxToNonmemGetIndent(ui),
@@ -359,12 +365,10 @@ rex::register_shortcuts("babelmixr2")
 #'
 #' @param x expression to protect
 #' @param ui User interface
-#' @param why why the expression is protected (used in the explanatory
-#'   comment)
 #' @return expression, but adds prefix lines to protect the expression
 #' @author Matthew L. Fidler
 #' @noRd
-.rxProtectPlusOrMinusZero <- function(x, ui, why="to prevent division by zero") {
+.rxProtectPlusOrMinusZero <- function(x, ui) {
   .denom <- .rxToNonmem(x, ui=ui)
   if (.rxShouldProtectZeros(.denom, ui)) {
     .df <- rxode2::rxGetControl(ui, ".nmGetDivideZeroDf",
@@ -383,9 +387,7 @@ rex::register_shortcuts("babelmixr2")
       .sigdig <- rxode2::rxGetControl(ui, "iniSigDig", 5)
       .num <- paste0("0.", paste(rep("0", .sigdig), collapse=""), "1")
       .prefixLines <- c(.prefixLines,
-                        .rxProtectZeroComment(.newVar,
-                                              paste0("zero (keeping its sign) ", why),
-                                              ui),
+                        .rxProtectZeroComment(.newVar, "sign", ui),
                         paste0(.rxToNonmemGetIndent(ui),
                                .newVar, "=", .denom),
                         paste0(.rxToNonmemGetIndent(ui),
@@ -459,8 +461,7 @@ rex::register_shortcuts("babelmixr2")
     }
     .ret <- paste0(
       ifelse(.needProtect,
-             .rxProtectPlusOrMinusZero(x[[2]], ui,
-                                       why="since zero cannot be raised to a negative power"),
+             .rxProtectPlusOrMinusZero(x[[2]], ui),
              .rxToNonmem(x[[2]], ui)),
       .rxNMbin[as.character(x[[1]])],
       .rxToNonmem(x[[3]], ui=ui)
@@ -824,9 +825,9 @@ rex::register_shortcuts("babelmixr2")
       if (!is.null(.xc)) {
         if (length(x) == 2) {
           if (.x1 %in% .rxNMprotectZero) {
-            .expr <- .rxProtectPlusZero(x[[2]], ui=ui, one=FALSE, fun=.x1)
+            .expr <- .rxProtectPlusZero(x[[2]], ui=ui, one=FALSE)
           } else if (.x1 %in% .rxNmProtectZeroP1) {
-            .expr <- .rxProtectPlusZero(x[[2]], ui=ui, one=TRUE, fun=.x1)
+            .expr <- .rxProtectPlusZero(x[[2]], ui=ui, one=TRUE)
           } else {
             .expr <- .rxToNonmem(x[[2]], ui=ui)
           }

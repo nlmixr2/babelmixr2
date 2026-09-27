@@ -71,7 +71,7 @@ withr::with_tempdir({
         cl <- tcl + eta.cl
         v <- tv
         a <- log(cl) + lfactorial(v)
-        b <- (cl - 1)^e + 3/v
+        b <- (cl - 1)^e + 3/v + 2/cl
         d/dt(central) <- -cl/v*central
         cp <- central/v
         cp ~ add(add.sd)
@@ -81,18 +81,21 @@ withr::with_tempdir({
     ui$control <- nonmemControl(protectZeros=TRUE)
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
     .has <- function(x) expect_true(x %in% .mod, info=x)
-    .has("  ; The IF block below protects RXDZ001 from zero or less so log() is defined")
-    .has("  ; The IF block below protects RXDZ002 from -1 or less so lgamma1p() is defined")
+    .has("  ; IF block below keeps RXDZ001 positive (log, sqrt, etc. need x > 0)")
+    .has("  ; IF block below keeps RXDZ002 above -1 (lfactorial, log1p, etc. need x+1 > 0)")
     # x+1 must stay positive, so x is kept above -1
     .has("  IF (RXDZ002 .LE. -0.999999) THEN")
     .has("    RXDZ002=-0.999999")
-    .has("  ; The IF block below protects RXDZ003 from zero (keeping its sign) since zero cannot be raised to a negative power")
-    .has("  ; The IF block below protects RXDZ004 from zero (keeping its sign) to prevent division by zero")
+    .has("  ; IF block below keeps RXDZ003 away from zero keeping its sign (avoids 1/0 and 0**-n)")
+    .has("  ; IF block below keeps RXDZ004 away from zero keeping its sign (avoids 1/0 and 0**-n)")
+    # 2/cl keeps the sign of cl, so it cannot reuse the positive-only log(cl) protection
+    .has("  RXDZ001=CL")
+    .has("  RXDZ005=CL")
     .has("  IF (W1 .EQ. 0.0) W1 = 1 ; protect W1 from zero (zero residual variance)")
     # every protection block is preceded by its comment
     .w <- grep("^  RXDZ[0-9]+=", .mod)
-    expect_length(.w, 4L)
-    expect_true(all(grepl("; The IF block below protects", .mod[.w - 1])))
+    expect_length(.w, 5L)
+    expect_true(all(grepl("; IF block below keeps", .mod[.w - 1])))
   })
   withr::with_options(list(babelmixr2.protectZeros=FALSE), {
     test_that("NONMEM dsl, individual lines", {
