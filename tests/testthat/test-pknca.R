@@ -635,6 +635,25 @@ test_that("pkncaParamMap: covariates and linCmt() arguments", {
   }
   suppressMessages(ui <- rxode2::rxode(linModel))
   expect_true(all(c("ka", "cl", "vc") %in% pkncaParamMap(ui)$param))
+
+  vModel <- function() {
+    ini({
+      ka <- 0.45
+      cl <- 1
+      v <- 3.45
+      prop.err <- 0.5
+    })
+    model({
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / v * center
+      cp <- center / v
+      cp ~ prop(prop.err)
+    })
+  }
+  suppressMessages(
+    fit <- nlmixr(vModel, data = nlmixr2data::theo_sd, est = "pknca")
+  )
+  expect_false(isTRUE(all.equal(fit$ui$theta[["v"]], 3.45)))
 })
 
 test_that("pkncaTransformedNames", {
@@ -650,6 +669,11 @@ test_that("pkncaTransformedNames", {
   expect_equal(
     pkncaTransformedNames(quote(cl * WT / vc), covs = "WT"),
     c("cl", "WT", "vc")
+  )
+  expect_equal(pkncaTransformedNames(quote(-cl / 70 / vc * center)), c("cl"))
+  expect_equal(
+    pkncaTransformedNames(quote(-cl / vc * center)),
+    character()
   )
   expect_equal(
     pkncaTransformedNames(quote(cp <- linCmt(ka, cl, vc))),

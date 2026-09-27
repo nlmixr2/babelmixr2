@@ -572,7 +572,8 @@ pkncaNumConst <- function(x) {
 #' @param covs Names of the data covariates
 #' @return A character vector of variable names used within a function call
 #'   other than arithmetic (like `exp(cl)` or `log(WT / 70)`) or within an
-#'   arithmetic expression that includes a covariate (like `cl * WT`).
+#'   arithmetic expression that includes a constant or covariate (like
+#'   `cl / 70` or `cl * WT`).
 #'   Arguments of `linCmt()` are used directly, so they are not included.
 #' @noRd
 pkncaTransformedNames <- function(x, covs = character()) {
@@ -591,8 +592,13 @@ pkncaTransformedNames <- function(x, covs = character()) {
     return(all.vars(x))
   }
   fun <- as.character(fun)
-  if (fun %in% c("+", "-", "*", "/", "(") && any(all.vars(x) %in% covs)) {
-    return(all.vars(x))
+  if (fun %in% c("+", "-", "*", "/", "(")) {
+    args <- as.list(x)[-1]
+    isConst <- vapply(args, is.numeric, logical(1))
+    if (any(isConst) || any(all.vars(x) %in% covs)) {
+      # Scaled by a constant or covariate, like cl / 70 or cl * WT
+      return(all.vars(x))
+    }
   }
   passThrough <- c(
     "+",
