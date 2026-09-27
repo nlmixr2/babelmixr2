@@ -140,6 +140,37 @@
   rxode2::rxAssignControlValue(ui, ".adm", .adm)
 }
 
+#' Translate a compartment property (f, alag, rate, dur) to Monolix
+#'
+#' Monolix sets these in the `PK:` macros, which take a single
+#' variable.  A property that is already a single variable or number
+#' is used directly; any other expression is assigned in `EQUATION:`
+#' to a generated variable (like `rx_f_depot`) that the macro then
+#' uses (issue #115).
+#'
+#' @param x assignment expression, like `f(depot) <- exp(lfdepot)`
+#' @param prop the property name (`"f"`, `"F"`, `"alag"`, `"lag"`,
+#'   `"rate"` or `"dur"`)
+#' @param ui rxode2 ui
+#' @return Monolix `EQUATION:` line(s)
+#' @author Matthew L. Fidler
+#' @noRd
+.rxToMonolixCmtProp <- function(x, prop, ui) {
+  .type <- switch(prop, alag="lag", F="f", prop)
+  .state <- as.character(x[[2]][[2]])
+  .comment <- paste0(.rxToMonolixGetIndent(ui),
+                     ";", prop, " defined in PK section")
+  if (length(x[[3]]) == 1L) {
+    .monolixSetAdm(ui, .state, .rxToMonolix(x[[3]], ui=ui), type=.type)
+    return(.comment)
+  }
+  .var <- paste0("rx_", .type, "_", gsub("[.]", "__", .state))
+  .monolixSetAdm(ui, .state, .var, type=.type)
+  paste0(.comment, "\n",
+         paste(.rxToMonolixGetIndent(ui),
+               .var, "=", .rxToMonolix(x[[3]], ui=ui)))
+}
+
 .rxToMonolixHandleBinaryOperator <- function(x, ui) {
   if (identical(x[[1]], quote(`/`))) {
     .x2 <- x[[2]]
@@ -302,49 +333,9 @@
     } else if (identical(x[[1]], quote(`**`)) ) {
       return(paste(.rxToMonolix(x[[2]], ui=ui), "^", .rxToMonolix(x[[3]], ui=ui)))
     } else if (.rxIsAssignmentOperator(x[[1]])) {
-      if (any(as.character(x[[2]])[1] == c("alag", "lag", "F", "f", "rate", "dur"))) {
-        if (any(as.character(x[[2]])[1] == c("alag", "lag"))) {
-          .state <- as.character(x[[2]][[2]])
-          if (length(x[[3]]) == 1L) {
-            .extra <- .rxToMonolix(x[[3]], ui=ui)
-            .monolixSetAdm(ui, .state, .extra, type="lag")
-          } else {
-            stop("the complex lag time is not supported by babelmixr2",
-                 call.=FALSE)
-          }
-        }
-        if (any(as.character(x[[2]])[1] == c("F", "f"))) {
-          .state <- as.character(x[[2]][[2]])
-          if (length(x[[3]]) == 1L) {
-            .extra <- .rxToMonolix(x[[3]], ui=ui)
-            .monolixSetAdm(ui, .state, .extra, type="f")
-          } else {
-            stop("the complex F is not supported by babelmixr2",
-                 call.=FALSE)
-          }
-        }
-        if (as.character(x[[2]])[1] == "rate") {
-          .state <- as.character(x[[2]][[2]])
-          if (length(x[[3]]) == 1L) {
-            .extra <- .rxToMonolix(x[[3]], ui=ui)
-            .monolixSetAdm(ui, .state, .extra, type="rate")
-          } else {
-            stop("the complex rate is not supported by babelmixr2",
-                 call.=FALSE)
-          }
-        }
-        if (as.character(x[[2]])[1] == "dur") {
-          .state <- as.character(x[[2]][[2]])
-          if (length(x[[3]]) == 1L) {
-            .extra <- .rxToMonolix(x[[3]], ui=ui)
-            .monolixSetAdm(ui, .state, .extra, type="dur")
-          } else {
-            stop("the complex dur is not supported by babelmixr2",
-                 call.=FALSE)
-          }
-        }
-        return(paste0(.rxToMonolixGetIndent(ui),
-                      ";", as.character(x[[2]])[1], " defined in PK section"))
+      .prop <- as.character(x[[2]])[1]
+      if (any(.prop == c("alag", "lag", "F", "f", "rate", "dur"))) {
+        return(.rxToMonolixCmtProp(x, .prop, ui))
       }
       .var <- .rxToMonolix(x[[2]], ui=ui)
       return(paste(.rxToMonolixGetIndent(ui),

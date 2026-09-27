@@ -253,6 +253,8 @@ test_that("monolix dsl", {
   .ee(.rxToM("d/dt(depot)=-depot*kel"), "ddt_depot = - depot*kel")
   .ee(.rxToM("depot(0)=50"), "depot_0 = 50")
   .ee(.rxToM("f(depot)=3"), ";f defined in PK section")
+  .ee(.rxToM("f(depot)=exp(a)"), ";f defined in PK section\nrx_f_depot = exp(a)")
+  .ee(.rxToM("alag(depot)=0.1*a"), ";alag defined in PK section\nrx_lag_depot = 0.1*a")
   .ee(.rxToM("a**b"), "a^b")
   .ee(.rxToM("if (a<=b){c=1} else if (a==4) {c=2} else {c=4}"), "if a<=b\n  c = 1\nelseif a==4\n  c = 2\nelse \n  c = 4\nend\n")
   .ee(.rxToM("if (a<=b){c=1} else if (a==4) {c=2} else if (a==30) {c=4} else {c=100}"), "if a<=b\n  c = 1\nelseif a==4\n  c = 2\nelseif a==30\n  c = 4\nelse \n  c = 100\nend\n")
@@ -312,6 +314,42 @@ test_that("monolix model creation without running", {
   })
 })
 
+
+test_that("monolix complex bioavailability and lag time (issue #115)", {
+  withr::with_tempdir({
+    one.cmt <- function() {
+      ini({
+        tka <- 0.45
+        tcl <- log(c(0, 2.7, 100))
+        tv <- 3.45
+        lfdepot <- -0.44
+        lalag <- -2
+        eta.ka ~ 0.6
+        eta.cl ~ 0.3
+        eta.v ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        ka <- exp(tka + eta.ka)
+        cl <- exp(tcl + eta.cl)
+        v <- exp(tv + eta.v)
+        d/dt(depot) <- -depot*ka
+        d/dt(central) <- depot*ka - cl*central/v
+        f(depot) <- exp(lfdepot)
+        alag(depot) <- exp(lalag) * ka
+        cp <- central/v
+        cp ~ add(add.sd)
+      })
+    }
+
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "monolix",
+            monolixControl(runCommand=NA, modelName="monolixF"))
+    .txt <- readLines("monolixF-monolix.txt")
+    expect_true(any(grepl("Tlag=rx_lag_depot, p=rx_f_depot)", .txt, fixed=TRUE)))
+    expect_true(any(grepl("^ *rx_f_depot = exp\\(rx__lfdepot\\)$", .txt)))
+    expect_true(any(grepl("^ *rx_lag_depot = exp\\(rx__lalag\\)\\*ka$", .txt)))
+  })
+})
 
 test_that("monolix treatment of +var()", {
 

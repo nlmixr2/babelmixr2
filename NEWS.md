@@ -1,5 +1,11 @@
 # babelmixr2 0.1.11.9000
 
+* `est="monolix"` now translates compartment properties (`f()`,
+  `alag()`, `rate()` and `dur()`) that are expressions, like
+  `f(depot) <- exp(lfdepot)`, instead of erroring with "the complex F is
+  not supported by babelmixr2" (#115).  The expression is calculated in
+  a new variable (like `rx_f_depot`) that the `PK:` macro uses.
+
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
   `ADVAN11` or `ADVAN12` with `TRANS1` micro-constants) or Monolix's
