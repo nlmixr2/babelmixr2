@@ -260,16 +260,24 @@ calcPknca <- function(env, pkncaUnits) {
       cleanColNames[["amt"]], cleanColNames[["time"]],
       paste(groupCols, collapse="+")
     ))
-  # Determine route of administration for each dose; doses into the observation
-  # compartment are intravascular (#102)
+  # Determine route of administration for each dose; doses into a compartment
+  # the observations are calculated from are intravascular (#102)
   doseData <- cleanData$dose
-  obsCmt <- unique(cleanData$obs[[cleanColNames[["cmt"]]]])
-  doseData$pkncaRoute <-
-    ifelse(
-      doseData[[cleanColNames[["cmt"]]]] == obsCmt,
-      yes = "intravascular",
-      no = "extravascular"
-    )
+  doseCmt <- doseData[[cleanColNames[["cmt"]]]]
+  obsStates <- pkncaObsStates(env$ui)
+  if (length(obsStates) > 0) {
+    doseState <- doseCmt
+    if (is.numeric(doseCmt)) {
+      doseState <- env$ui$state[doseCmt]
+    }
+    isIvDose <- !is.na(doseState) & as.character(doseState) %in% obsStates
+  } else {
+    # Could not determine the observed compartment from the model, use the
+    # compartment of the observations in the data
+    obsCmt <- unique(cleanData$obs[[cleanColNames[["cmt"]]]])
+    isIvDose <- doseCmt == obsCmt
+  }
+  doseData$pkncaRoute <- ifelse(isIvDose, yes = "intravascular", no = "extravascular")
   # Only intravascular bolus doses have C0 back-extrapolated; infusions start
   # from the predose concentration
   doseData$pkncaBolus <- doseData$pkncaRoute == "intravascular"
@@ -282,7 +290,7 @@ calcPknca <- function(env, pkncaUnits) {
       obs = cleanData$obs, dose = doseData, groupCols = groupCols,
       timeCol = cleanColNames[["time"]], dvCol = cleanColNames[["dv"]]
     )
-  # Intravascular bolus doses keeping the prior trough at the time of dosing
+  # Intravascular bolus doses without a log-linear back-extrapolated C0
   doseData$pkncaNoC0 <-
     pkncaKey(doseData, c(groupCols, cleanColNames[["time"]])) %in% attr(obsData, "noC0")
   attr(obsData, "noC0") <- NULL
@@ -300,6 +308,61 @@ calcPknca <- function(env, pkncaUnits) {
   oNCA
 }
 
+#' Determine the model states that the observations are calculated from
+#'
+#' @param ui The rxode2 ui model
+#' @return A character vector of the state names that the (single) endpoint
+#'   depends on (`"central"` for `linCmt()`), or an empty vector if they cannot
+#'   be determined
+#' @noRd
+pkncaObsStates <- function(ui) {
+  predDf <- ui$predDf
+  if (is.null(predDf) || nrow(predDf) != 1) {
+    return(character())
+  }
+  # Right hand sides of all assignments in the model
+  assignRhs <- list()
+  addAssign <- function(x) {
+    if (is.call(x)) {
+      if ((identical(x[[1]], as.name("<-")) || identical(x[[1]], as.name("="))) &&
+            is.name(x[[2]])) {
+        nm <- as.character(x[[2]])
+        assignRhs[[nm]] <<- c(assignRhs[[nm]], list(x[[3]]))
+      } else if (identical(x[[1]], as.name("{")) || identical(x[[1]], as.name("if"))) {
+        for (i in seq_along(x)[-1]) {
+          addAssign(x[[i]])
+        }
+      }
+    }
+  }
+  for (x in ui$lstExpr) {
+    addAssign(x)
+  }
+  states <- ui$state
+  found <- character()
+  seen <- character()
+  todo <- as.character(predDf$var)
+  while (length(todo) > 0) {
+    nm <- todo[1]
+    todo <- todo[-1]
+    if (nm %in% seen) {
+      next
+    }
+    seen <- c(seen, nm)
+    if (nm %in% states) {
+      found <- c(found, nm)
+      next
+    }
+    for (rhs in assignRhs[[nm]]) {
+      if ("linCmt" %in% all.names(rhs)) {
+        found <- c(found, "central")
+      }
+      todo <- c(todo, all.vars(rhs))
+    }
+  }
+  unique(found)
+}
+
 #' Add back-extrapolated concentrations at the time of intravascular doses
 #'
 #' Intravascular doses without a concentration measured at the time of dosing
@@ -315,8 +378,8 @@ calcPknca <- function(env, pkncaUnits) {
 #'   dependent variable
 #' @return `obs` with rows added for back-extrapolated C0 and the attribute
 #'   "noC0" with the group and time keys (see `pkncaKey()`) of doses where C0
-#'   was not back-extrapolated because the prior trough is at the time of
-#'   dosing
+#'   was not back-extrapolated log-linearly (because the prior trough is at the
+#'   time of dosing or there is no log-linear decline)
 #' @noRd
 pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
   obsKey <- pkncaKey(obs, groupCols)
@@ -355,8 +418,19 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
     c0 <-
       PKNCA::pk.calc.c0(
         conc = obs[[dvCol]][maskIdx], time = obs[[timeCol]][maskIdx],
-        time.dose = doseTime, method = c("logslope", "c1")
+        time.dose = doseTime, method = "logslope"
       )
+    if (is.na(c0)) {
+      # Without a log-linear decline (e.g. a single concentration like a trough
+      # before the next dose), use the first concentration but prefer other
+      # intervals for vc and cl
+      c0 <-
+        PKNCA::pk.calc.c0(
+          conc = obs[[dvCol]][maskIdx], time = obs[[timeCol]][maskIdx],
+          time.dose = doseTime, method = "c1"
+        )
+      noC0 <- c(noC0, doseTimeKey[idx])
+    }
     if (!is.na(c0)) {
       if (any(atDose)) {
         obs[[dvCol]][atDose] <- as.numeric(c0)
@@ -440,8 +514,8 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
     }
   }
   if (!is.null(dose$pkncaNoC0)) {
-    # Intravascular intervals starting from the prior trough (without C0) are
-    # not used for vc and cl when others are available
+    # Intravascular intervals without a log-linear back-extrapolated C0 are not
+    # used for vc and cl when others are available
     doseNoC0 <- tapply(dose$pkncaNoC0, doseKey, any)
     isNoC0 <- as.vector(doseNoC0[intervalKey])
     isNoC0 <- !is.na(isNoC0) & isNoC0
@@ -599,7 +673,8 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
 #'   when a subset of the original data are informative for NCA.
 #' @param ncaResults Already computed NCA results (a PKNCAresults object) to
 #'   bypass automatic calculations.  At least the following parameters must be
-#'   calculated in the NCA: tmax, cmax.dn, cl.last
+#'   calculated in the NCA: cmax.dn, cl.last, and tmax (without tmax, ka is not
+#'   updated)
 #' @param rxControl Control options sent to `rxode2::rxControl()`
 #' @return A list of parameters
 #' @export

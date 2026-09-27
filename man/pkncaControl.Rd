@@ -47,7 +47,8 @@ when a subset of the original data are informative for NCA.}
 
 \item{ncaResults}{Already computed NCA results (a PKNCAresults object) to
 bypass automatic calculations.  At least the following parameters must be
-calculated in the NCA: tmax, cmax.dn, cl.last}
+calculated in the NCA: cmax.dn, cl.last, and tmax (without tmax, ka is not
+updated)}
 
 \item{rxControl}{Control options sent to \code{rxode2::rxControl()}}
 }

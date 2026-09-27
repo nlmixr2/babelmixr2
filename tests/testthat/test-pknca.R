@@ -415,6 +415,13 @@ test_that("pkncaAddIvC0 (#102)", {
   dose3$pkncaBolus[2] <- FALSE
   ret3 <- pkncaAddIvC0(obs = obs, dose = dose3, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
   expect_equal(ret3, obs, ignore_attr = TRUE)
+  # A single concentration uses the first concentration, flagged as not
+  # log-linearly back-extrapolated
+  obs5 <- data.frame(ID = 1, TIME = c(11.9, 18), DV = c(2, 5))
+  ret5 <- pkncaAddIvC0(obs = obs5, dose = dose, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  expect_equal(ret5$TIME, c(0, 11.9, 12, 18))
+  expect_equal(ret5$DV, c(2, 2, 5, 5))
+  expect_equal(attr(ret5, "noC0"), pkncaKey(dose, c("ID", "TIME")))
   # A predose concentration at the first dose is replaced by C0 (missing or
   # not)
   for (dv0 in c(0, NA)) {
@@ -423,4 +430,70 @@ test_that("pkncaAddIvC0 (#102)", {
     expect_equal(ret4$TIME, c(0, 6, 12, 18))
     expect_equal(ret4$DV, c(8, 4, 2, 5))
   }
+})
+
+test_that("pkncaObsStates (#102)", {
+  mOde <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(tcl)
+      v <- exp(tv)
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / v * center
+      conc <- center
+      cp <- conc / v
+      cp ~ add(add.sd)
+    })
+  }
+  mLin <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(tcl)
+      v <- exp(tv)
+      cp <- linCmt()
+      cp ~ add(add.sd)
+    })
+  }
+  suppressMessages({
+    expect_equal(pkncaObsStates(rxode2::rxode2(mOde)), "center")
+    expect_equal(pkncaObsStates(rxode2::rxode2(mLin)), "central")
+  })
+})
+
+test_that("est='pknca' oral without a CMT column is extravascular (#102)", {
+  modelGood <- function() {
+    ini({
+      tka <- 0.45
+      lcl <- 1
+      lvc <- 3.45
+      prop.err <- 0.5
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(lcl)
+      vc <- exp(lvc)
+      cp <- linCmt()
+      cp ~ prop(prop.err)
+    })
+  }
+  d <- nlmixr2data::theo_sd
+  suppressMessages(retCmt <- nlmixr2est::nlmixr(object = modelGood, data = d, est = "pknca"))
+  d$CMT <- NULL
+  suppressMessages(retNoCmt <- nlmixr2est::nlmixr(object = modelGood, data = d, est = "pknca"))
+  feCmt <- setNames(retCmt$ui$iniDf$est, retCmt$ui$iniDf$name)
+  feNoCmt <- setNames(retNoCmt$ui$iniDf$est, retNoCmt$ui$iniDf$name)
+  expect_false(feNoCmt[["tka"]] == 0.45)
+  expect_equal(feNoCmt[c("tka", "lcl", "lvc")], feCmt[c("tka", "lcl", "lvc")])
 })
