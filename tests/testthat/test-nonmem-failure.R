@@ -23,6 +23,19 @@ test_that("NONMEM failures are classified from the output (#46)", {
                                         "0PROGRAM TERMINATED BY OBJ",
                                         " MESSAGE ISSUED FROM ESTIMATION STEP"))$cause,
                "crash")
+  # NM-TRAN stopping before NONMEM starts is not an estimation crash
+  expect_equal(.nonmemClassifyFailure(c(" WARNING: THE NUMBER OF WARNINGS EXCEEDS THE MAXIMUM.",
+                                        " PROGRAM TERMINATED."))$cause,
+               "nmtran")
+  # the registration line is not a license failure
+  expect_null(.nonmemClassifyFailure(c(" License Registered to: Missing Data Solutions",
+                                       "1NONLINEAR MIXED EFFECTS MODEL PROGRAM")))
+  # a license warning does not hide a crash
+  .crash <- .nonmemClassifyFailure(c(" WARNING: LICENSE EXPIRED, GRACE PERIOD",
+                                     "1NONLINEAR MIXED EFFECTS MODEL PROGRAM",
+                                     "0PROGRAM TERMINATED BY OBJ"))
+  expect_equal(.crash$cause, "crash")
+  expect_true("0PROGRAM TERMINATED BY OBJ" %in% .crash$lines)
 })
 
 withr::with_tempdir({

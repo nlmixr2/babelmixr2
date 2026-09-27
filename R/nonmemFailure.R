@@ -66,15 +66,6 @@
 #' @noRd
 .nonmemClassifyFailure <- function(lines) {
   if (length(lines) == 0L) return(NULL)
-  # a license about to expire is only a warning, so it is not a failure
-  .lic <- grepl("licen[cs]e", lines, ignore.case=TRUE) &
-    grepl("expired|not valid|invalid|not found|cannot find|could not find|missing|no valid|unable to|failed",
-          lines, ignore.case=TRUE)
-  if (any(.lic)) {
-    return(list(cause="license",
-                lines=.nonmemFailureContext(lines[which(.lic)[1]:length(lines)],
-                                            ".", after=2L)))
-  }
   if (any(grepl("(DATA ERROR)", lines, fixed=TRUE))) {
     return(list(cause="data",
                 lines=.nonmemFailureContext(lines, "\\(DATA ERROR\\)")))
@@ -85,9 +76,26 @@
                                             "AN ERROR WAS FOUND IN THE CONTROL STATEMENTS",
                                             after=6L)))
   }
-  if (any(grepl("PROGRAM TERMINATED", lines, fixed=TRUE))) {
-    return(list(cause="crash",
-                lines=.nonmemFailureContext(lines, "PROGRAM TERMINATED", after=6L)))
+  .term <- grep("PROGRAM TERMINATED", lines, fixed=TRUE)
+  if (length(.term) > 0L) {
+    .start <- grep("NONLINEAR MIXED EFFECTS MODEL PROGRAM", lines, fixed=TRUE)
+    # before NONMEM starts, it is NM-TRAN that stopped
+    .cause <- if (length(.start) > 0L && .start[1] < .term[1]) "crash" else "nmtran"
+    return(list(cause=.cause,
+                lines=.nonmemFailureContext(lines, "PROGRAM TERMINATED",
+                                            before=2L, after=6L)))
+  }
+  # checked last, so a license warning never hides another failure;
+  # the registration line and warnings (like a license about to
+  # expire) are not failures
+  .lic <- grepl("licen[cs]e", lines, ignore.case=TRUE) &
+    grepl("expired|not valid|invalid|not found|cannot find|could not find|missing|no valid|unable to|failed",
+          lines, ignore.case=TRUE) &
+    !grepl("registered to|warning", lines, ignore.case=TRUE)
+  if (any(.lic)) {
+    return(list(cause="license",
+                lines=.nonmemFailureContext(lines[which(.lic)[1]:length(lines)],
+                                            ".", after=2L)))
   }
   NULL
 }
@@ -162,6 +170,11 @@
                       paste0("  ", .fail$lines),
                       paste0("  control stream: '", .ctlFile, "'"),
                       "this is likely a problem in how babelmixr2 translated the model; please report it at https://github.com/nlmixr2/babelmixr2/issues"),
+      nmtran=c("NM-TRAN stopped before NONMEM could run:",
+               paste0("  ", .fail$lines),
+               paste0("  control stream: '", .ctlFile, "'"),
+               paste0("  data: '", .dataFile, "'"),
+               "this is likely a problem in how babelmixr2 translated the model or data; please report it at https://github.com/nlmixr2/babelmixr2/issues"),
       crash=c("NONMEM stopped during the run:",
               paste0("  ", .fail$lines),
               if (file.exists(file.path(.exportPath, "PRDERR"))) {
