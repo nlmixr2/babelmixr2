@@ -42,6 +42,8 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
 #' @author Matthew L. Fidler
 .nonmem2rxAssertNoEps <- function(x) {
   .covs <- x$allCovs
+  # A data column with the exact name supplies the value, so the model
+  # can still be solved (nonmem2rx keeps data case, ie EPS1 != eps1)
   .covs <- setdiff(.covs, names(x$nonmemData))
   .eps <- .covs[grepl("^(eps|err)[0-9]+$", .covs)]
   if (length(.eps) == 0L) return(invisible())
