@@ -1,5 +1,18 @@
 # babelmixr2 0.1.11.9000
 
+* `est="nonmem"` supports NONMEM's `$PRIOR TNPRI` (#206): a prior that
+  is an earlier NONMEM fit of the same model, the way TNPRI is used in
+  practice.  `nonmemControl(tnpri=nonmemTnpri(prior))` takes the prior
+  study's data, an nlmixr2 fit of the same model (from any method), or
+  the model specification file of your own NONMEM run.  babelmixr2 fits
+  the model to the prior data with NONMEM (`$MSFO` and `$COVARIANCE`),
+  and writes a two problem control stream: problem 1 reads the model
+  specification file and holds the model code, and problem 2 fits the
+  new data with the prior.  The objective type ends in `tnpri`.  A TNPRI
+  prior cannot be combined with `ini({})` priors (`$PRIOR NWPRI`).
+  `nonmemControl(msfo=TRUE)` writes a model specification file for any
+  NONMEM fit.  A test kit for a machine with NONMEM is in `inst/tnpri/`.
+
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
   `ADVAN11` or `ADVAN12` with `TRANS1` micro-constants) or Monolix's
