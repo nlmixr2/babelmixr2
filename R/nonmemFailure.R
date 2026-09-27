@@ -237,9 +237,9 @@
         paste0("  - a runCommand function did not write '", .lst, "' in the run directory")))
   }
   .started <- any(grepl("NONLINEAR MIXED EFFECTS MODEL PROGRAM", .lines, fixed=TRUE))
-  # an evaluation (MAXEVALS=0) has no termination message, only the
-  # omitted estimation step
-  .finished <- any(grepl("#TERM:|MINIMIZATION SUCCESSFUL|MINIMIZATION TERMINATED|OPTIMIZATION WAS COMPLETED|OPTIMIZATION WAS NOT COMPLETED|STOCHASTIC PORTION WAS|EXPECTATION ONLY PROCESS|ESTIMATION STEP OMITTED: +YES",
+  # an evaluation (MAXEVALS=0) or a model with every parameter fixed
+  # has no termination message
+  .finished <- any(grepl("#TERM:|MINIMIZATION SUCCESSFUL|MINIMIZATION TERMINATED|OPTIMIZATION WAS COMPLETED|OPTIMIZATION WAS NOT COMPLETED|STOCHASTIC PORTION WAS|EXPECTATION ONLY PROCESS|ESTIMATION STEP OMITTED: +YES|NUMBER OF PARAMETERS TO BE ESTIMATED IS 0",
                          .nonmemDropModelName(.lines, ui$nonmemModelName)))
   if (!.started) {
     .nonmemFailureStop(

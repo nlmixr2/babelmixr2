@@ -254,6 +254,11 @@ withr::with_tempdir({
     expect_match(.msg, "minimization not successful")
     .msg <- .failure(.fakeNonmem(.eval), "eval_read", list(readBadOpt=TRUE))
     expect_match(.msg, "could not read or use NONMEM's output")
+    # nor is a model with every parameter fixed
+    .msg <- .failure(.fakeNonmem(c(.eval[1:2],
+                                   " ESTIMATION STEP IMPLEMENTED BUT THE NUMBER OF PARAMETERS TO BE ESTIMATED IS 0")),
+                     "allfix_stop")
+    expect_match(.msg, "minimization not successful")
   })
 
   test_that("NONMEM output that is not UTF-8 is still explained (#46)", {
