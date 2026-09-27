@@ -120,8 +120,11 @@ nlmixr2Est.pknca <- function(env, ...) {
     )
   # What parameters should be modified?  And then modify them.
   paramMap <- pkncaParamMap(env$ui)
-  vcDefined <- "vc" %in%
-    c(pkncaAssignedNames(env$ui$lstExpr), env$ui$iniDf$name)
+  # Other names of the central volume (like rxode2's linCmt())
+  vcDefined <- any(
+    c("vc", "Vc", "VC", "V", "v1", "V1") %in%
+      c(pkncaAssignedNames(env$ui$lstExpr), env$ui$iniDf$name)
+  )
   if (!vcDefined) {
     # Models without `vc` commonly name the central volume `v`
     paramEstimates$v <- paramEstimates$vc
@@ -500,13 +503,13 @@ pkncaParamMap <- function(ui) {
       is.call(rhs) &&
         length(rhs) %in% c(2, 4) &&
         is.name(rhs[[2]]) &&
-        identical(rhs[[1]], quote(expit))
+        (identical(rhs[[1]], quote(expit)) || identical(rhs[[1]], quote(logit)))
     ) {
-      # rxode2 normalizes expit(x) to expit(x, low, hi)
+      # rxode2 normalizes expit(x) to expit(x, low, hi) (and logit())
       bounds <- vapply(as.list(rhs)[-(1:2)], pkncaNumConst, numeric(1))
       if (!anyNA(bounds)) {
         theta <- as.character(rhs[[2]])
-        curEval <- "expit"
+        curEval <- as.character(rhs[[1]])
         if (length(bounds) == 2) {
           low <- bounds[1]
           hi <- bounds[2]
@@ -768,8 +771,7 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
   paramMap <- pkncaParamMap(x)
   inverseTrans <-
     list(
-      exp = log,
-      expit = rxode2::logit
+      exp = log
       # TODO: add all of the other transforms here
     )
 
@@ -785,10 +787,11 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
       if (is.na(currentTrans) || currentTrans == "") {
         # No transformation
         newValue <- value
-      } else if (currentTrans == "expit") {
+      } else if (currentTrans %in% c("expit", "logit")) {
         low <- paramMap$low[w]
         hi <- paramMap$hi[w]
-        newValue <- rxode2::logit(
+        inv <- if (currentTrans == "expit") rxode2::logit else rxode2::expit
+        newValue <- inv(
           value,
           ifelse(is.na(low), 0, low),
           ifelse(is.na(hi), 1, hi)

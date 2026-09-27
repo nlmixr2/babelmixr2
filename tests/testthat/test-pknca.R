@@ -404,6 +404,45 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
   expect_equal(fitVcTheta$ui$theta[["tv"]], 0.003)
   expect_equal(fitVcTheta$ui$theta[["vc"]], feNonMu[["tv"]])
 
+  # A peripheral v is not given the central volume when the central volume
+  # is named V
+  vPeriphMod <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 0.009
+      tV <- 0.004
+      tv <- 0.003
+      tq <- 0.001
+      eta.v ~ 0.1
+      prop.sd <- 0.7
+    })
+    model({
+      ka <- tka
+      cl <- tcl
+      V <- tV * exp(eta.v)
+      v <- tv
+      q <- tq
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka *
+        depot -
+        cl / V * center -
+        q / V * center +
+        q / v * periph
+      d / dt(periph) <- q / V * center - q / v * periph
+      cp <- center / V
+      cp ~ prop(prop.sd)
+    })
+  }
+  suppressMessages(
+    fitVPeriph <- nlmixr(
+      vPeriphMod,
+      data = dModNoZero,
+      est = "pknca",
+      control = ctl
+    )
+  )
+  expect_equal(fitVPeriph$ui$theta[["tv"]], 0.003)
+
   # A v that cannot be updated (and no vc) is reported
   suppressMessages(
     vComplexMod <- rxode2::model(nonmumod, v <- tv * 2 * exp(eta.v))
@@ -727,6 +766,32 @@ test_that("pkncaTransformedNames", {
   expect_equal(tn(quote(CL <- cl + dcl)), sort(c("cl", "dcl")))
   expect_true("cl" %in% tn(quote(cp <- center / vc + (cl) + bsl)))
   expect_true("cl" %in% tn(quote(cp <- center / vc + -cl)))
+})
+
+test_that("ini_transform with logit() parameters", {
+  model <- function() {
+    ini({
+      tka <- 0
+      tf <- 0.5
+      eta.ka ~ 0.1
+      eta.f ~ 0.1
+      tcl <- 1
+      tvc <- 3
+      prop.err <- 0.5
+    })
+    model({
+      ka <- logit(tka + eta.ka)
+      fx <- logit(tf, -1, 2) * exp(eta.f)
+      cl <- exp(tcl)
+      vc <- exp(tvc)
+      cp <- linCmt()
+      cp ~ prop(prop.err)
+    })
+  }
+  suppressMessages(ui <- rxode2::rxode(model))
+  suppressMessages(newmod <- ini_transform(ui, ka = 1.5, fx = 0.3))
+  expect_equal(newmod$theta[["tka"]], rxode2::expit(1.5))
+  expect_equal(newmod$theta[["tf"]], rxode2::expit(0.3, -1, 2))
 })
 
 test_that("pkncaAssignedNames", {
