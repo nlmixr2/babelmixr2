@@ -82,7 +82,7 @@ withr::with_tempdir({
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
     .has <- function(x) expect_true(x %in% .mod, info = x)
     .has(
-      "  ; IF block below keeps RXDZ001 positive (log, sqrt, etc. need x > 0)"
+      "  ; IF block below keeps RXDZ001 positive (used by log, sqrt, etc.)"
     )
     .has(
       "  ; IF block below keeps RXDZ002 above -1 (lfactorial, log1p, etc. need x+1 > 0)"

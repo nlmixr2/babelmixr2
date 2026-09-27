@@ -307,7 +307,7 @@ rex::register_shortcuts("babelmixr2")
     " ",
     switch(
       type,
-      plus = "positive (log, sqrt, etc. need x > 0)",
+      plus = "positive (used by log, sqrt, etc.)",
       one = "above -1 (lfactorial, log1p, etc. need x+1 > 0)",
       sign = "away from zero keeping its sign (avoids 1/0 and 0**-n)"
     )
