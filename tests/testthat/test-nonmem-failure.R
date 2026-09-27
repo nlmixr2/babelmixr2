@@ -1,0 +1,141 @@
+test_that("NONMEM failures are classified from the output (#46)", {
+  expect_null(.nonmemClassifyFailure(NULL))
+  expect_null(.nonmemClassifyFailure(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM",
+                                       " License Registered to: Someone",
+                                       " Expiration Date:    14 JUN 2099",
+                                       "0MINIMIZATION SUCCESSFUL")))
+  expect_equal(.nonmemClassifyFailure(c("", "NONMEM license has expired",
+                                        "contact ICON"))$cause,
+               "license")
+  .data <- .nonmemClassifyFailure(c("",
+                                    " (DATA ERROR) RECORD         3, DATA ITEM   6, CONTENTS: 1",
+                                    " ITEM IS OUT OF RANGE."))
+  expect_equal(.data$cause, "data")
+  expect_equal(.data$lines,
+               c(" (DATA ERROR) RECORD         3, DATA ITEM   6, CONTENTS: 1",
+                 " ITEM IS OUT OF RANGE."))
+  .ctl <- .nonmemClassifyFailure(c(" AN ERROR WAS FOUND IN THE CONTROL STATEMENTS.",
+                                   "",
+                                   " AT LINE 12: 208 UNDEFINED VARIABLE: RXQ"))
+  expect_equal(.ctl$cause, "controlStream")
+  expect_equal(.ctl$lines[2], " AT LINE 12: 208 UNDEFINED VARIABLE: RXQ")
+  expect_equal(.nonmemClassifyFailure(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM",
+                                        "0PROGRAM TERMINATED BY OBJ",
+                                        " MESSAGE ISSUED FROM ESTIMATION STEP"))$cause,
+               "crash")
+})
+
+withr::with_tempdir({
+
+  one.cmt <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- log(c(0, 2.7, 100))
+      tv <- 3.45
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d/dt(depot) <- -depot*ka
+      d/dt(central) <- depot*ka - cl*central/v
+      cp <- central/v
+      cp ~ add(add.sd)
+    })
+  }
+
+  # a runCommand that writes `lines` as NONMEM's output
+  .fakeNonmem <- function(lines) {
+    force(lines)
+    function(ctl, directory, ui) {
+      if (!is.null(lines)) {
+        writeLines(lines, file.path(directory, ui$nonmemNmlst))
+      }
+      invisible()
+    }
+  }
+
+  .fit <- function(runCommand, modelName) {
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
+            nonmemControl(runCommand=runCommand, modelName=modelName))
+  }
+
+  # the error message from fitting with a runCommand
+  .failure <- function(runCommand, modelName) {
+    .e <- tryCatch(suppressMessages(.fit(runCommand, modelName)),
+                   error=function(e) e)
+    expect_s3_class(.e, "error")
+    conditionMessage(.e)
+  }
+
+  test_that("a missing NONMEM command is reported (#46)", {
+    skip_on_os("windows")
+    .msg <- .failure("babelmixr2-no-such-nmfe", "fail_cmd")
+    expect_match(.msg, "did not create its output file")
+    expect_match(.msg, "exit status: 127", fixed=TRUE)
+    expect_match(.msg, "nonmemControl(runCommand=)", fixed=TRUE)
+  })
+
+  test_that("a runCommand function without output is reported (#46)", {
+    .msg <- .failure(.fakeNonmem(NULL), "fail_none")
+    expect_match(.msg, "did not create its output file")
+    expect_no_match(.msg, "exit status")
+  })
+
+  test_that("NONMEM license failures are reported (#46)", {
+    .msg <- .failure(.fakeNonmem(c("License file nonmem.lic has expired",
+                         "Please contact ICON")), "fail_lic")
+    expect_match(.msg, "license problem")
+    expect_match(.msg, "nonmem.lic has expired", fixed=TRUE)
+  })
+
+  test_that("NM-TRAN control stream errors are reported (#46)", {
+    .msg <- .failure(.fakeNonmem(c(" AN ERROR WAS FOUND IN THE CONTROL STATEMENTS.",
+                         " AT LINE 12: 208 UNDEFINED VARIABLE: RXQ")), "fail_ctl")
+    expect_match(.msg, "UNDEFINED VARIABLE: RXQ", fixed=TRUE)
+    expect_match(.msg, "fail_ctl.nmctl", fixed=TRUE)
+    expect_match(.msg, "babelmixr2/issues", fixed=TRUE)
+  })
+
+  test_that("NM-TRAN data errors are reported (#46)", {
+    .msg <- .failure(.fakeNonmem(c(" (DATA ERROR) RECORD         3, DATA ITEM   6, CONTENTS: 1",
+                         " ITEM IS OUT OF RANGE.")), "fail_data")
+    expect_match(.msg, "ITEM IS OUT OF RANGE", fixed=TRUE)
+    expect_match(.msg, "fail_data.csv", fixed=TRUE)
+  })
+
+  test_that("NONMEM that never starts estimation is reported (#46)", {
+    .msg <- .failure(.fakeNonmem(c("$PROBLEM translated from babelmixr2",
+                         "gfortran: error: cannot compile")), "fail_start")
+    expect_match(.msg, "did not start estimation")
+    expect_match(.msg, "cannot compile", fixed=TRUE)
+  })
+
+  test_that("NONMEM crashes during estimation are reported (#46)", {
+    .msg <- .failure(.fakeNonmem(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
+                         " ITERATION NO.:   15    OBJECTIVE VALUE:   120.5")), "fail_crash")
+    expect_match(.msg, "started but did not finish")
+    expect_match(.msg, "ITERATION NO.:   15", fixed=TRUE)
+
+    .msg <- .failure(.fakeNonmem(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
+                         "0PROGRAM TERMINATED BY OBJ",
+                         " ERROR IN NCONTR WHILE COMPUTING OBJECTIVE")), "fail_obj")
+    expect_match(.msg, "PROGRAM TERMINATED BY OBJ", fixed=TRUE)
+  })
+
+  test_that("unreadable NONMEM output is reported (#46)", {
+    .msg <- .failure(.fakeNonmem(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
+                         " #TERM:",
+                         " garbled")), "fail_read")
+    expect_match(.msg, "could not read NONMEM's output")
+  })
+
+  test_that("an unset run command says how to set it (#46)", {
+    expect_error(suppressMessages(.fit("", "fail_unset")),
+                 "nonmemControl(runCommand=)", fixed=TRUE)
+  })
+})

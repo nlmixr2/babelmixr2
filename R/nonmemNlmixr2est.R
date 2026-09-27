@@ -215,11 +215,20 @@
     .minfo("only exported NONMEM control stream/data")
     return(invisible(.ui))
   }
+  .status <- NULL
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
-    print(file.path(.exportPath, .ui$nonmemXml))
-    .nonmemRunner(ui=.ui)
+    .status <- .nonmemRunner(ui=.ui)
   }
-  .read <- .ui$nonmemSuccessful
+  .read <- tryCatch(.ui$nonmemSuccessful,
+                    error=function(e) {
+                      .nonmemCheckRun(.ui, .status, readError=e)
+                    })
+  if (!.read && is.null(.ui$nonmemTermMessage)) {
+    # without NONMEM's termination message there is nothing to read;
+    # tell the user why NONMEM failed
+    .nonmemCheckRun(.ui, .status,
+                    readError=simpleError("NONMEM's output has no termination message"))
+  }
   .readRounding <- rxode2::rxGetControl(.ui, "readRounding", FALSE)
   .roundingErrors <- .ui$nonmemRoundingErrors
   if (!.read && .roundingErrors && .readRounding) {
@@ -249,7 +258,10 @@
     stop("nonmem minimization not successful",
          call.=FALSE)
   }
-  .ret <- .nonmemFinalizeEnv(.ret, .ui)
+  .ret <- tryCatch(.nonmemFinalizeEnv(.ret, .ui),
+                   error=function(e) {
+                     .nonmemCheckRun(.ui, .status, readError=e)
+                   })
   if (inherits(.ret, "nlmixr2FitData")) {
     .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
     .prderrPath <- file.path(.exportPath, "PRDERR")
@@ -283,7 +295,9 @@
     stop("invalid value for nonmemControl(runCommand=)",
          call.=FALSE)
   }
-  cmd(ctl=ui$nonmemNmctl, directory=ui$nonmemExportPath, ui=ui)
+  .status <- cmd(ctl=ui$nonmemNmctl, directory=ui$nonmemExportPath, ui=ui)
+  if (identical(cmd, .nonmemRunCommand)) return(.status)
+  # the exit status is unknown for a user function
   NULL
 }
 
@@ -294,7 +308,9 @@
     .minfo(paste0("run NONMEM: ", fullCmd))
     withr::with_dir(ui$nonmemExportPath, system(fullCmd))
   } else {
-    stop("run NONMEM manually and rerun nlmixr() or setup NONMEM's run command")
+    stop("NONMEM's run command is not set; set nonmemControl(runCommand=) (for example to the path of 'nmfe75'), or run NONMEM manually in '",
+         ui$nonmemExportPath, "' and rerun nlmixr()",
+         call.=FALSE)
   }
 }
 
