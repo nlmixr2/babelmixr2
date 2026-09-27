@@ -33,6 +33,15 @@
 #'   otherwise translates the model to ODEs; \code{"ode"} always
 #'   translates the model to ODEs (with \code{rxode2::linToOde()}) and
 #'   solves it with \code{advanOde}
+#' @param prune Should `if`/`else` branches be pruned before the
+#'   model is translated to NONMEM?  When `FALSE` (default) only simple
+#'   `if` blocks (without `else`, `else if` or nesting) are allowed and
+#'   they are written as NONMEM `IF` blocks.  When `TRUE`, a model with
+#'   `if`/`else` statements is pruned with `rxode2`'s branch pruning
+#'   (the same pruning `nlmixr2` uses for its symbolic derivatives),
+#'   which writes each branch as an arithmetic expression; this allows
+#'   the nested `if`/`else if`/`else` statements NONMEM models cannot
+#'   otherwise use.  The fit then contains the pruned model.
 #' @param cov The NONMEM covariance method
 #' @param maxeval NONMEM's maxeval (for non posthoc methods)
 #' @param tol NONMEM tolerance for ODE solving advan
@@ -97,6 +106,7 @@
 nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           advanOde=c("advan13", "advan8", "advan6"),
                           linCmt=c("advan", "ode"),
+                          prune=FALSE,
                           cov=c("r,s", "r", "s", ""),
                           maxeval=100000,
                           tol=6,
@@ -161,6 +171,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertIntegerish(mapiter, len=1, any.missing=FALSE)
   checkmate::assertLogical(muRefCovAlg, any.missing=FALSE, len=1)
   checkmate::assertLogical(run, any.missing=FALSE, len=1)
+  checkmate::assertLogical(prune, any.missing=FALSE, len=1)
   if (!is.null(modelName)) {
     checkmate::assertCharacter(modelName, len=1, any.missing=FALSE)
   }
@@ -226,6 +237,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                cov=match.arg(cov),
                advanOde=match.arg(advanOde),
                linCmt=match.arg(linCmt),
+               prune=prune,
                maxeval=maxeval,
                print=print,
                noabort=noabort,

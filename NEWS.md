@@ -1,5 +1,17 @@
 # babelmixr2 0.1.11.9000
 
+* `nonmemControl(prune=TRUE)` prunes the `if`/`else` branches of a model
+  with rxode2's branch pruning before it is translated to NONMEM, so
+  models with nested `if`/`else if`/`else` statements can be fit with
+  NONMEM (#11).  The default (`prune=FALSE`) keeps writing simple `if`
+  blocks as NONMEM `IF` blocks, and the error for unsupported
+  `if`/`else` statements now suggests `prune=TRUE`.
+
+* A logical expression used as a number in a NONMEM model (like
+  `cl <- tcl * (WT > 70)`) is now written as a 0/1 indicator variable,
+  since NONMEM cannot use a logical expression as a number.  A numeric
+  `if ()` condition is written as not equal to zero.
+
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
   `ADVAN11` or `ADVAN12` with `TRANS1` micro-constants) or Monolix's

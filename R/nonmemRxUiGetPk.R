@@ -74,6 +74,9 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   .ui <- x[[1]]
   .bblLinCmtAssertOde(.ui, "nonmem")
   rxode2::rxAssignControlValue(.ui, ".nmVarResNum", 1)
+  # indicator variables for logical expressions are numbered across
+  # $PK, $DES and $ERROR
+  rxode2::rxAssignControlValue(.ui, ".nmVarLNum", 1)
   rxode2::rxAssignControlValue(.ui, ".nmGetVarReservedDf",
                                data.frame(var=character(0),
                                           nm=character(0)))
@@ -195,7 +198,7 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                    if (is.null(.ret)) return(NA_character_)
                    paste(.ret, collapse="\n")
                  }, character(1), USE.NAMES=FALSE)
-  .pk2 <- .pk2[!is.na(.pk2)]
+  .pk2 <- c(.nonmemGetCmtPropertyPrefix(.ui), .pk2[!is.na(.pk2)])
   .pk2 <- ifelse(length(.pk2) > 0, paste0("\n", paste(.pk2, collapse="\n")), "")
   if (!is.null(.advan)) {
     return(paste0(.pk, .des, .pk2,
@@ -290,8 +293,9 @@ attr(rxUiGet.nonmemPkDesErr0, "rstudio") <- "nonmemPkDesErr0"
     .ret <- paste0(.ret, "\n",
                    paste(vapply(names(advan$par), function(n) {
                      .e <- advan$par[[n]]
-                     paste0("  ", n, "=", .rxToNonmem(.e, ui=ui),
-                            .babelmixr2Deparse(.e))
+                     .v <- .rxToNonmem(.e, ui=ui)
+                     paste0(.rxToNonmemFlushPrefixLines(ui),
+                            "  ", n, "=", .v, .babelmixr2Deparse(.e))
                    }, character(1), USE.NAMES=FALSE),
                    collapse="\n"))
   }
