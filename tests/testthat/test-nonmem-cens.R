@@ -96,6 +96,13 @@ withr::with_tempdir({
     expect_true(all(abs(.l[-1]) == 1000000))
   })
 
+  test_that("finite limits that are NONMEM's infinity are refused (#92)", {
+    .d <- .cens
+    .d$LIMIT <- ifelse(.d$CENS == 1, -2000000, NA)
+    expect_error(suppressMessages(bblDatToNonmem(one.cmt, .d)),
+                 "between -1000000 and 1000000")
+  })
+
   test_that("no censored values means no censoring in NONMEM (#92)", {
     .d <- .theo
     .d$CENS <- 0

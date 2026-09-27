@@ -330,6 +330,10 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
     # This converts LIMIT to NONMEM's definition of infinity
     # (according to manual for $THETA); a missing limit is no limit,
     # which is the lower bound unless the value is right censored
+    if (any(is.finite(.ret$LIMIT) & abs(.ret$LIMIT) >= 1000000)) {
+      stop("finite LIMIT values must be between -1000000 and 1000000 for NONMEM (its infinity); rescale the data",
+           call.=FALSE)
+    }
     .cens <- if (any(names(.ret) == "CENS")) .ret$CENS else 0
     .upper <- ifelse(is.na(.ret$LIMIT), .cens %in% -1, .ret$LIMIT > 0)
     .ret$LIMIT <- ifelse(is.finite(.ret$LIMIT),

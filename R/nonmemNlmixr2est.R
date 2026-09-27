@@ -178,9 +178,11 @@
   .ret$nonmemControl <- .control
   .tmp  <- bblDatToNonmem(.ui, .data, table=env$table, rxControl=.control$rxControl, env=.ret)
   .ret$nonmemData <- .nonmemFormatData(.tmp, .ui)
-  # NONMEM's objective includes log(2*pi) for the observations with a
-  # likelihood (F_FLAG=1) but not the others; remove it so all of the
-  # observations are adjusted the same way when calculating logLik
+  # NONMEM's objective omits log(2*pi) for the normal observations
+  # (F_FLAG=0) but an observation with a likelihood (F_FLAG=1) is the
+  # full -2*log(Y).  Since the finalized objective adds log(2*pi) for
+  # every observation, remove it here for the F_FLAG=1 observations so
+  # logLik is the log-likelihood of the censored data
   .ret$nmLikAdj <- .ret$nmLikAdj -
     rxode2::rxGetControl(.ui, ".nFlag", 0L) * log(2 * pi)
   rxode2::rxAssignControlValue(.ui, ".cmtCnt", env$nmNcmt)
