@@ -5,10 +5,13 @@
          ELSE
             CUM1 = PHI(CENS*(DV-IPRED)/W)
             CUM2 = PHI(CENS*(LIMIT-IPRED)/W)
-            Y = (CUM1-CUM2)/(1.0 - CUM2)
+            Y = (CUM1-CUM2)/PHI(-CENS*(LIMIT-IPRED)/W)
          END IF
+      ELSE IF (LIMIT .GT. -1000000 .AND. LIMIT .LT. 1000000) THEN
+         F_FLAG = 1
+         Y = DEXP(-0.5*((DV-IPRED)/W)**2)/(W*DSQRT(2.0*3.14159265358979))
+         Y = Y/PHI(ABS(LIMIT-IPRED)/W)
       ELSE
          F_FLAG = 0
          Y = IPRED + W*EPS(1)
       END IF
-      

@@ -328,10 +328,13 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
   .ret <- .ret[, names(.ret) != "DVID"]
   if (any(names(.ret) == "LIMIT")) {
     # This converts LIMIT to NONMEM's definition of infinity
-    # (according to manual for $THETA)
+    # (according to manual for $THETA); a missing limit is no limit,
+    # which is the lower bound unless the value is right censored
+    .cens <- if (any(names(.ret) == "CENS")) .ret$CENS else 0
+    .upper <- ifelse(is.na(.ret$LIMIT), .cens %in% -1, .ret$LIMIT > 0)
     .ret$LIMIT <- ifelse(is.finite(.ret$LIMIT),
                          .ret$LIMIT,
-                         ifelse(.ret$LIMIT < 0, -1000000, 1000000))
+                         ifelse(.upper, 1000000, -1000000))
   }
   .ui <- model
   env$nobs <- .lastNobs

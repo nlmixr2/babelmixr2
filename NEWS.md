@@ -1,5 +1,16 @@
 # babelmixr2 0.1.11.9000
 
+* `est="nonmem"` now fits censored data the way nlmixr2 does (#92).  M3
+  (`CENS`), M4 (`CENS` with a finite `LIMIT`) and M2 (`CENS=0` with a
+  finite `LIMIT`, including data with a `LIMIT` but no `CENS` column)
+  use `F_FLAG` likelihoods in `$ERROR` with `LAPLACIAN` estimation.  A
+  missing `LIMIT` is now written as NONMEM's infinity instead of `0`,
+  `CENS`/`LIMIT` columns that do not censor anything are dropped, the
+  objective function is adjusted so the log-likelihood includes the
+  censored observations correctly, and censoring with a transformed
+  endpoint (like `lnorm()`) is refused instead of giving the wrong
+  likelihood.
+
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
   `ADVAN11` or `ADVAN12` with `TRANS1` micro-constants) or Monolix's

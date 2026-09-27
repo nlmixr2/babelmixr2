@@ -270,7 +270,7 @@ rxUiGet.nonmemObjfType <- function(x, ...) {
   }
   .est <- rxode2::rxGetControl(.ui, "est", "focei")
   if (.est %in% c("focei", "posthoc")) {
-    .ret <- "nonmem focei"
+    .ret <- ifelse(.nonmemHasCens(.ui), "nonmem laplace", "nonmem focei")
   } else if (.est %in% "imp") {
     .ret <- "nonmem imp"
   } else if (.est %in% "its") {
