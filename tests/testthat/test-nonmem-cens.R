@@ -277,6 +277,24 @@ withr::with_tempdir({
     expect_equal(rxode2::rxGetControl(.ui, ".nFlag", NA_integer_), 1L)
   })
 
+  test_that("censoring only on dosing rows is dropped (#92)", {
+    .ui <- rxode2::rxUiDecompress(rxode2::rxode2(one.cmt))
+    .d <- data.frame(
+      ID = 1,
+      TIME = 0:2,
+      EVID = c(1, 0, 0),
+      AMT = c(1, 0, 0),
+      DV = c(NA, 1, 2),
+      CMT = 1,
+      CENS = c(1, 0, 0),
+      LIMIT = c(0.5, -1000000, -1000000),
+      nlmixrRowNums = 1:3
+    )
+    .r <- .nonmemFormatCensData(.d, .ui)
+    expect_false(any(names(.r) %in% c("CENS", "LIMIT")))
+    expect_equal(rxode2::rxGetControl(.ui, ".nFlag", NA_integer_), 0L)
+  })
+
   test_that("censoring with a transformed endpoint is refused (#92)", {
     .m <- rxode2::model(one.cmt, cp ~ lnorm(add.sd))
     expect_error(
