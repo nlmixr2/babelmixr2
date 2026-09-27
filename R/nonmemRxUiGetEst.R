@@ -1,6 +1,17 @@
 #' @export
 rxUiGet.nonmemEst <- function(x, ...) {
   .ui <- x[[1]]
+  .ret <- .nonmemEst0(x, ...)
+  if (rxode2::rxGetControl(.ui, "msfo", FALSE)) {
+    # the model specification file, for example to be a TNPRI prior
+    .ret <- sub("\n$", paste0(" MSFO=", rxUiGet.nonmemModelName(x, ...), ".msf\n"), .ret)
+  }
+  .ret
+}
+attr(rxUiGet.nonmemEst, "rstudio") <- "nonmemEst"
+
+.nonmemEst0 <- function(x, ...) {
+  .ui <- x[[1]]
   .est <- rxode2::rxGetControl(.ui, "est", "focei")
   if (.est == "focei") {
     paste0("$ESTIMATION METHOD=1 INTER MAXEVALS=",
@@ -40,4 +51,3 @@ rxUiGet.nonmemEst <- function(x, ...) {
          call.=FALSE)
   }
 }
-attr(rxUiGet.nonmemEst, "rstudio") <- "nonmemEst"

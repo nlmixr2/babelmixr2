@@ -46,6 +46,8 @@ nonmemControl(
   modelName = NULL,
   muRefCovAlg = TRUE,
   run = TRUE,
+  msfo = FALSE,
+  tnpri = NULL,
   ...
 )
 }
@@ -157,6 +159,15 @@ changes the system to a linear compartment model.  Therefore, by default this is
 \item{run}{Should NONMEM be run (and the files imported to
 nlmixr2); default is TRUE, but FALSE will simply create the
 NONMEM control stream and data file.}
+
+\item{msfo}{Should NONMEM write a model specification file
+(\verb{$ESTIMATION ... MSFO=<modelName>.msf})?  It can then be the prior
+of another fit with \code{nonmemTnpri()}.}
+
+\item{tnpri}{A NONMEM \verb{$PRIOR TNPRI} prior from an earlier NONMEM run
+of the same model, see \code{nonmemTnpri()}; a dataset, an nlmixr2 fit
+or the path of a model specification file is given to
+\code{nonmemTnpri()}.  \code{NULL} (the default) uses no TNPRI prior.}
 
 \item{...}{optional \code{genRxControl} argument controlling
 automatic \code{rxControl} generation.}

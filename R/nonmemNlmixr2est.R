@@ -123,7 +123,17 @@
   env
 }
 
-.nonmemFamilyFit <- function(env, ...) {
+#' Write the NONMEM files of a model and run NONMEM
+#'
+#' @param env environment with the `ui`, the `data` and the `table`
+#'   control
+#' @return list with the `ui`, the environment the fit is built in
+#'   (`ret`), the `exportPath`, the control stream file (`nmctlFile`),
+#'   the fit cache file (`qs`), a `cachedFit` (or `NULL`) and whether
+#'   NONMEM was (or had been) run (`ran`)
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmemFamilyExport <- function(env) {
   .ui <- env$ui
   .control <- .ui$control
   .data <- env$data
@@ -154,17 +164,15 @@
   }
   assign("muRefFinal", .muRefCovariateDataFrame, .ui)
   assign("timeVaryingCovariates", .tv, .ui)
-  on.exit({
-    if (exists("muRefFinal", envir=.ui)) {
-      rm(list="muRefFinal", envir=.ui)
-    }
-    if (exists("timeVaryingCovariates", envir=.ui)) {
-      rm(list="timeVaryingCovariates", envir=.ui)
-    }
-  })
   .nmctl <- .ui$nonmemModel
   .contra <- .ui$nonmemContra
-  .hashMd5 <- digest::digest(list(.nmctl, .contra, .ret$nonmemData))
+  .hash <- list(.nmctl, .contra, .ret$nonmemData)
+  .msfSource <- rxode2::rxGetControl(.ui, ".tnpriMsf", NULL)
+  if (!is.null(.msfSource) && file.exists(.msfSource)) {
+    # a different prior is a different fit
+    .hash <- c(.hash, list(digest::digest(.msfSource, file=TRUE)))
+  }
+  .hashMd5 <- digest::digest(.hash)
   .foundModelName <- FALSE
 
   .hashFile <- file.path(.ui$nonmemExportPath, .ui$nonmemHashFile)
@@ -192,10 +200,13 @@
   .ccontraFile <- file.path(.exportPath, .ui$nonmemCcontraName)
   .qs <- file.path(.exportPath, .ui$nonmemQs)
 
+  .exp <- list(ui=.ui, ret=.ret, exportPath=.exportPath, nmctlFile=.nmctlFile,
+               qs=.qs, cachedFit=NULL, ran=FALSE)
   .cachedFit <- .babelmixr2LoadFitCache(.qs)
   if (!is.null(.cachedFit)) {
-    .minfo("load saved nlmixr2 object")
-    return(.cachedFit)
+    .exp$cachedFit <- .cachedFit
+    .exp$ran <- TRUE
+    return(.exp)
   } else if (!file.exists(.nmctlFile)) {
     .minfo("writing nonmem files")
     writeLines(text=.nmctl, con=.nmctlFile)
@@ -209,16 +220,54 @@
               quote=FALSE)
     .minfo("done")
   }
+  if (!is.null(.msfSource)) {
+    # $MSFI reads the TNPRI prior from the directory NONMEM runs in
+    .msfTo <- file.path(.exportPath, basename(.msfSource))
+    if (file.exists(.msfSource) &&
+          normalizePath(.msfSource) != normalizePath(.msfTo, mustWork=FALSE)) {
+      file.copy(.msfSource, .msfTo, overwrite=TRUE)
+    }
+  }
   .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
   if (!rxode2::rxGetControl(.ui, "run", TRUE) ||
         is.na(.cmd)) {
-    .minfo("only exported NONMEM control stream/data")
-    return(invisible(.ui))
+    return(.exp)
+  }
+  if (!is.null(.msfSource) && !file.exists(.msfSource)) {
+    stop("the TNPRI model specification file '", .msfSource, "' does not exist",
+         call.=FALSE)
   }
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
     print(file.path(.exportPath, .ui$nonmemXml))
     .nonmemRunner(ui=.ui)
   }
+  .exp$ran <- TRUE
+  .exp
+}
+
+.nonmemFamilyFit <- function(env, ...) {
+  .ui <- env$ui
+  on.exit({
+    if (exists("muRefFinal", envir=.ui)) {
+      rm(list="muRefFinal", envir=.ui)
+    }
+    if (exists("timeVaryingCovariates", envir=.ui)) {
+      rm(list="timeVaryingCovariates", envir=.ui)
+    }
+  })
+  .exp <- .nonmemFamilyExport(env)
+  if (!is.null(.exp$cachedFit)) {
+    .minfo("load saved nlmixr2 object")
+    return(.exp$cachedFit)
+  }
+  if (!.exp$ran) {
+    .minfo("only exported NONMEM control stream/data")
+    return(invisible(.ui))
+  }
+  .ret <- .exp$ret
+  .exportPath <- .exp$exportPath
+  .nmctlFile <- .exp$nmctlFile
+  .qs <- .exp$qs
   .read <- .ui$nonmemSuccessful
   .readRounding <- rxode2::rxGetControl(.ui, "readRounding", FALSE)
   .roundingErrors <- .ui$nonmemRoundingErrors
@@ -321,6 +370,8 @@ nlmixr2Est.nonmem <- function(env, ...) {
       rm("control", envir=.ui)
     }
   }, add=TRUE)
+  # a TNPRI prior is a NONMEM fit of the prior data; run it first
+  .nonmemTnpriPrepare(env)
   .nonmemFamilyFit(env, ...)
 }
 attr(nlmixr2Est.nonmem, "covPresent") <- TRUE

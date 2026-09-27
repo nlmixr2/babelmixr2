@@ -55,6 +55,9 @@ rxUiGet.nonmemModel <- function(x, ...) {
   .ui <- x[[1]]
   rxUiGetNonememModelEnv$rxS <- .ui$loadPrune
   .nonmemResetUi(.ui)
+  if (!is.null(.nonmemTnpri(.ui))) {
+    return(.nonmemTnpriModel(x, ...))
+  }
   .ret <- paste0(
     "$PROBLEM ", .ui$nonmemModelName, " translated from babelmixr2\n; comments show mu referenced model in ui$getSplitMuModel\n\n",
     "$DATA ", .ui$nonmemCsv, " IGNORE=@\n\n",
@@ -75,3 +78,43 @@ rxUiGet.nonmemModel <- function(x, ...) {
   .ret
 }
 attr(rxUiGet.nonmemModel, "rstudio") <- "nonmemModel"
+
+#' The two problem control stream of a TNPRI fit
+#'
+#' Problem 1 reads the prior from the model specification file of the
+#' earlier fit and holds the model code, which NONMEM uses for every
+#' problem of the run; problem 2 estimates the model with the prior.
+#'
+#' @inheritParams rxUiGet.nonmemMod
+#' @return control stream
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmemTnpriModel <- function(x, ...) {
+  .ui <- x[[1]]
+  .tnpri <- .nonmemTnpri(.ui)
+  .msf <- .nonmemTnpriMsfName(.ui)
+  .input <- rxUiGet.nonmemInput(x, ...)
+  .ret <- paste0(
+    "$PROBLEM ", .ui$nonmemModelName, " TNPRI prior from ", .msf, "\n",
+    "; the prior is the estimates and covariance of an earlier fit of this model;\n",
+    "; the model code in this problem is used by every problem\n\n",
+    "$DATA ", .ui$nonmemCsv, " IGNORE=@\n\n",
+    .input, "\n",
+    rxUiGet.nonmemSub(x, ...), "\n\n",
+    "$PRIOR TNPRI ", .nonmemTnpriOptions(.tnpri), "\n\n",
+    "$MSFI ", .msf, " ONLYREAD\n\n",
+    .nonmemModSection(x, ...),
+    rxUiGet.nonmemPkDesErr0(x, ...),
+    rxUiGet.nonmemErrF(x, ...), "\n",
+    "$PROBLEM ", .ui$nonmemModelName, " translated from babelmixr2\n",
+    "; comments show mu referenced model in ui$getSplitMuModel\n\n",
+    "$DATA ", .ui$nonmemCsv, " IGNORE=@ REWIND\n\n",
+    .input, "\n",
+    rxUiGet.nonmemTheta(x, ...), "\n\n",
+    rxUiGet.nonmemOmega(x, ...), "\n",
+    "$SIGMA 1 FIX\n\n",
+    rxUiGet.nonmemEst(x, ...), "\n",
+    rxUiGet.nonmemCov(x, ...), "\n\n",
+    rxUiGet.nonmemTable(x, ...))
+  gsub("^ *$", "", .ret)
+}

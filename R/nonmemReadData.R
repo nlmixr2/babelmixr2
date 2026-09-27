@@ -282,6 +282,9 @@ rxUiGet.nonmemObjfType <- function(x, ...) {
     # NONMEM's objective function includes the NWPRI prior, so it is
     # not comparable to one without it
     .ret <- paste(.ret, "nwpri")
+  } else if (!is.null(rxode2::rxGetControl(.ui, "tnpri", NULL))) {
+    # the same for the TNPRI prior
+    .ret <- paste(.ret, "tnpri")
   }
   .ret
 }

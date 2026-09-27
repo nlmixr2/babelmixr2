@@ -78,6 +78,13 @@
 #' @param run Should NONMEM be run (and the files imported to
 #'   nlmixr2); default is TRUE, but FALSE will simply create the
 #'   NONMEM control stream and data file.
+#' @param msfo Should NONMEM write a model specification file
+#'   (`$ESTIMATION ... MSFO=<modelName>.msf`)?  It can then be the prior
+#'   of another fit with `nonmemTnpri()`.
+#' @param tnpri A NONMEM `$PRIOR TNPRI` prior from an earlier NONMEM run
+#'   of the same model, see `nonmemTnpri()`; a dataset, an nlmixr2 fit
+#'   or the path of a model specification file is given to
+#'   `nonmemTnpri()`.  `NULL` (the default) uses no TNPRI prior.
 #' @param ... optional \code{genRxControl} argument controlling
 #'   automatic \code{rxControl} generation.
 #'
@@ -135,6 +142,8 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           modelName=NULL,
                           muRefCovAlg=TRUE,
                           run=TRUE,
+                          msfo=FALSE,
+                          tnpri=NULL,
                           ...) {
   # nonmem manual slides suggest tol=6, sigl=6 sigdig=2
   checkmate::assertIntegerish(maxeval, lower=100, len=1, any.missing=FALSE)
@@ -161,6 +170,8 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertIntegerish(mapiter, len=1, any.missing=FALSE)
   checkmate::assertLogical(muRefCovAlg, any.missing=FALSE, len=1)
   checkmate::assertLogical(run, any.missing=FALSE, len=1)
+  checkmate::assertLogical(msfo, any.missing=FALSE, len=1)
+  if (!is.null(tnpri)) tnpri <- nonmemTnpri(tnpri)
   if (!is.null(modelName)) {
     checkmate::assertCharacter(modelName, len=1, any.missing=FALSE)
   }
@@ -261,7 +272,9 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                mapiter=mapiter,
                modelName=modelName,
                muRefCovAlg=muRefCovAlg,
-               run=run
+               run=run,
+               msfo=msfo,
+               tnpri=tnpri
                )
   class(.ret) <- "nonmemControl"
   .ret
