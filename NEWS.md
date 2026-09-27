@@ -1,5 +1,12 @@
 # babelmixr2 0.1.11.9000
 
+* When a NONMEM run fails, `est="nonmem"` now says why and where to look
+  instead of failing with an unclear error: a run command that was not
+  found or wrote no output, a NONMEM license problem, an NM-TRAN error in
+  the control stream or the data, NONMEM not starting (for example a
+  compiler problem), NONMEM crashing or stopping during estimation, and
+  output babelmixr2 cannot read (#46).
+
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
   `ADVAN11` or `ADVAN12` with `TRANS1` micro-constants) or Monolix's
