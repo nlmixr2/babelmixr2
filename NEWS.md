@@ -1,13 +1,31 @@
 # babelmixr2 0.1.11.9000
 
 * `est="pknca"` now works with covariates in the data and with a mix of
-  intravascular and extravascular doses (#102).  With both routes, `ka`
-  is estimated from the extravascular doses and `vc` and `cl` from the
-  intravascular doses.  Intravascular bolus doses have the concentration
-  at the time of dosing back-extrapolated (replacing a predose
-  concentration at the first dose), and other doses have it imputed (as
-  the predose concentration, or zero for the first dose).  When no doses
-  are only extravascular, `ka` is not updated.  A central volume named `v` is now estimated like `vc`.
+  intravascular and extravascular doses (#102).  Doses into a
+  compartment that the observations are calculated from are
+  intravascular.  With both routes, `ka` is estimated from the
+  extravascular doses and `vc` and `cl` from the intravascular doses.
+  Intravascular bolus doses have the concentration at the time of
+  dosing back-extrapolated (replacing a predose concentration at the
+  first dose), and other doses have it imputed (as the predose
+  concentration, or zero for the first dose).  When no doses are only
+  extravascular, `ka` is not updated.  A central volume named `v` is
+  now estimated like `vc`.
+* `est="monolix"` now translates compartment properties (`f()`,
+  `alag()`, `rate()` and `dur()`) that are expressions, like
+  `f(depot) <- exp(lfdepot)`, instead of erroring with "the complex F is
+  not supported by babelmixr2" (#115).  The expression is calculated in
+  a new variable (like `rx_f_depot`) that the `PK:` macro uses.  A
+  property set only inside an `if` now keeps rxode2's default otherwise
+  (1 for `f()`, 0 for `alag()`) instead of being applied unconditionally.
+* The ACoP 2024 `babelmixr2`/`PopED` abstract
+  ([doi:10.70534/XUMG6226](https://doi.org/10.70534/XUMG6226)) is now
+  in `citation("babelmixr2")`, the package description and the `PopED`
+  article (#155).
+* `as.nlmixr2()` of a `nonmem2rx` model now stops with an informative
+  error when the model still contains untranslated NONMEM residual
+  variables (`eps#` or `err#`) instead of failing inside the estimation
+  routine (#95).
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,

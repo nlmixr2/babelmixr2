@@ -595,6 +595,14 @@ popedControl object
 \description{
 Control for a PopED design task
 }
+\references{
+Fidler ML, Denney W, Harrold J, Hooijmaijers R,
+Papathanasiou T, Schoemaker R, Taubert M, Trame M, Wilkins J
+(2024). babelmixr2 and PopED: Quick Conversion of NONMEM, Monolix
+and nlmixr2/rxode2 Models to PopED Optimal Design Analysis.
+American Conference on Pharmacometrics (ACoP) 2024.
+\doi{10.70534/XUMG6226}
+}
 \author{
 Matthew L. Fidler
 }
