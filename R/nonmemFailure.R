@@ -10,19 +10,32 @@
 
 #' Read the lines NONMEM and NM-TRAN wrote about a run
 #'
+#' NONMEM's output starts with a copy of the control stream; those
+#' lines are dropped so the model's own code is never mistaken for a
+#' NONMEM message.
+#'
 #' @param exportPath The NONMEM run directory
 #' @param lst The NONMEM output file name
+#' @param ctl The NONMEM control stream file name
 #' @return The lines of the output file followed by NM-TRAN's message
-#'   file (`FMSG`), or `NULL` when neither exists
+#'   file (`FMSG`), without the lines of the control stream, or `NULL`
+#'   when neither exists
 #' @author Matthew L. Fidler
 #' @noRd
-.nonmemFailureLines <- function(exportPath, lst) {
+.nonmemFailureLines <- function(exportPath, lst, ctl) {
   .files <- file.path(exportPath, c(lst, "FMSG"))
   .files <- .files[file.exists(.files)]
   if (length(.files) == 0L) return(NULL)
-  unlist(lapply(.files, function(f) {
+  .ret <- unlist(lapply(.files, function(f) {
     suppressWarnings(readLines(f, warn=FALSE))
   }), use.names=FALSE)
+  .ctlFile <- file.path(exportPath, ctl)
+  if (file.exists(.ctlFile)) {
+    .ctl <- trimws(suppressWarnings(readLines(.ctlFile, warn=FALSE)))
+    .ctl <- .ctl[.ctl != ""]
+    .ret <- .ret[!(trimws(.ret) %in% .ctl)]
+  }
+  .ret
 }
 
 #' Pick the lines around the first match of a pattern
@@ -121,7 +134,7 @@
     paste0("  exit status: ", status,
            if (identical(as.integer(status), 127L)) " (the command was not found)" else "")
   }
-  .lines <- .nonmemFailureLines(.exportPath, .lst)
+  .lines <- .nonmemFailureLines(.exportPath, .lst, ui$nonmemNmctl)
   if (!file.exists(.lstFile)) {
     .nonmemFailureStop(
       c(paste0("NONMEM did not create its output file '", .lstFile, "'"),
@@ -183,4 +196,20 @@
         "if NONMEM finished, please report this at https://github.com/nlmixr2/babelmixr2/issues"))
   }
   invisible(NULL)
+}
+
+#' Finalize a NONMEM fit, explaining any failure to read its output
+#'
+#' @param ret The nlmixr2 fit environment
+#' @param ui The rxode2 ui being run
+#' @param status The exit status of the NONMEM run command, or `NULL`
+#' @return The finalized fit; stops explaining why when NONMEM's
+#'   output cannot be read
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemFinalizeOrExplain <- function(ret, ui, status=NULL) {
+  tryCatch(.nonmemFinalizeEnv(ret, ui),
+           error=function(e) {
+             .nonmemCheckRun(ui, status, readError=e)
+           })
 }

@@ -134,6 +134,35 @@ withr::with_tempdir({
     expect_match(.msg, "could not read NONMEM's output")
   })
 
+  test_that("the echoed control stream is not read as a NONMEM message (#46)", {
+    .dir <- file.path(tempfile(), "echo-nonmem")
+    dir.create(.dir, recursive=TRUE)
+    writeLines(c("$PK", "  LICENSE_MISSING=1", "; PROGRAM TERMINATED"),
+               file.path(.dir, "echo.nmctl"))
+    writeLines(c("$PK", "  LICENSE_MISSING=1", "; PROGRAM TERMINATED",
+                 "gfortran: error: cannot compile"),
+               file.path(.dir, "echo.lst"))
+    .lines <- .nonmemFailureLines(.dir, "echo.lst", "echo.nmctl")
+    expect_equal(.lines, "gfortran: error: cannot compile")
+    expect_null(.nonmemClassifyFailure(.lines))
+    unlink(dirname(.dir), recursive=TRUE)
+  })
+
+  test_that("errors reading a finished NONMEM run are reported (#46)", {
+    .ui <- suppressMessages(.fit(NA, "fail_final"))
+    writeLines(c("1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1",
+                 " #TERM:",
+                 "0MINIMIZATION SUCCESSFUL"),
+               file.path(.ui$nonmemExportPath, .ui$nonmemNmlst))
+    local_mocked_bindings(.nonmemFinalizeEnv=function(env, oldUi) {
+      stop("mock post-processing error", call.=FALSE)
+    })
+    expect_error(.nonmemFinalizeOrExplain(new.env(), .ui),
+                 "could not read NONMEM's output(.|\n)*mock post-processing error")
+    local_mocked_bindings(.nonmemFinalizeEnv=function(env, oldUi) "fit")
+    expect_equal(.nonmemFinalizeOrExplain(new.env(), .ui), "fit")
+  })
+
   test_that("an unset run command says how to set it (#46)", {
     expect_error(suppressMessages(.fit("", "fail_unset")),
                  "nonmemControl(runCommand=)", fixed=TRUE)

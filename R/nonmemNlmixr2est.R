@@ -258,10 +258,7 @@
     stop("nonmem minimization not successful",
          call.=FALSE)
   }
-  .ret <- tryCatch(.nonmemFinalizeEnv(.ret, .ui),
-                   error=function(e) {
-                     .nonmemCheckRun(.ui, .status, readError=e)
-                   })
+  .ret <- .nonmemFinalizeOrExplain(.ret, .ui, .status)
   if (inherits(.ret, "nlmixr2FitData")) {
     .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
     .prderrPath <- file.path(.exportPath, "PRDERR")
