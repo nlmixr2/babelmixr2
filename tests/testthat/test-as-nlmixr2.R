@@ -157,9 +157,16 @@ test_that("nlmixr2 translation from monolix2rx", {
   expect_equal(fit$objective, fit$objDf[fit$ofvType, "OBJF"])
   expect_equal(AIC(fit), fit$objDf[fit$ofvType, "AIC"])
   expect_equal(BIC(fit), fit$objDf[fit$ofvType, "BIC"])
-  expect_equal(as.numeric(logLik(fit)),
-               fit$objDf[fit$ofvType, "Log-likelihood"])
+  expect_equal(
+    as.numeric(logLik(fit)),
+    fit$objDf[fit$ofvType, "Log-likelihood"]
+  )
 
+  # a different model right after the Monolix cwres=TRUE import must not
+  # start from the etas of the FOCEi objective's nlmixr2() fit (#94)
+  rx <- .nonmem2rx(system.file("mods/err/run006.lst", package = "nonmem2rx"))
+  fit <- .as.nlmixr2(rx)
+  expect_true(inherits(fit, "nlmixr2FitData"))
 })
 
 test_that(".importEtaMat() only uses etas that match the model (#94)", {
