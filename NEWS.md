@@ -1,5 +1,10 @@
 # babelmixr2 0.1.11.9000
 
+* The ACoP 2024 `babelmixr2`/`PopED` abstract
+  ([doi:10.70534/XUMG6226](https://doi.org/10.70534/XUMG6226)) is now
+  in `citation("babelmixr2")`, the package description and the `PopED`
+  article (#155).
+
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
   `ADVAN11` or `ADVAN12` with `TRANS1` micro-constants) or Monolix's
