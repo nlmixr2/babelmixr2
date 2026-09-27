@@ -118,7 +118,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                           runCommand=getOption("babelmixr2.nonmem", ""),
                           iniSigDig=5,
                           protectZeros=FALSE,
-                          protect=getOption("babelmixr2.nmProtect", TRUE),
+                          protect = getOption("babelmixr2.nmProtect", TRUE),
                           muRef=TRUE,
                           addProp = c("combined2", "combined1"),
                           rxControl=NULL,
@@ -156,7 +156,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertIntegerish(sigl, lower=1, upper=14, len=1, any.missing=FALSE)
   checkmate::assertIntegerish(iniSigDig, lower=1, len=1, any.missing=FALSE)
   checkmate::assertLogical(protectZeros, len=1, any.missing=FALSE)
-  checkmate::assertLogical(protect, len=1, any.missing=FALSE)
+  checkmate::assertLogical(protect, len = 1, any.missing = FALSE)
   checkmate::assertLogical(muRef, len=1, any.missing=FALSE)
   checkmate::assertLogical(readRounding, len=1, any.missing=FALSE)
   checkmate::assertLogical(readBadOpt, len=1, any.missing=FALSE)
@@ -247,7 +247,7 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
                muRef=muRef,
                sigdig=sigdig,
                protectZeros=protectZeros,
-               protect=protect,
+               protect = protect,
                runCommand=runCommand,
                outputExtension=outputExtension,
                addProp=addProp,

@@ -742,7 +742,8 @@ withr::with_tempdir({
           "  ; Write out expressions for ipred and w",
           "  RX_IP1 = RX_PF1",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT(((RX_PF1*THETA(5))*(RX_PF1*THETA(5)))) ; W1 ~ sqrt((rx_pred_f_ * prop.err)^2)",
+          paste0("  W1=DSQRT(((RX_PF1*THETA(5))*(RX_PF1*THETA(5)))) ;",
+                 " W1 ~ sqrt((rx_pred_f_ * prop.err)^2)"),
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -974,7 +975,6 @@ test_that("nonmem model creation without running", {
 
   })
 })
-
 withr::with_tempdir({
   test_that("NONMEM $ABBR PROTECT (#62)", {
     one.cmt <- function() {
@@ -990,18 +990,22 @@ withr::with_tempdir({
         cl <- exp(tcl) + log(0.5) - sqrt(4)
         plog <- log(2)
         v <- exp(tv) * plog * sqrt(pi) / sqrt(pi)
-        d/dt(pnp) <- -ka * pnp
-        d/dt(central) <- ka * pnp - cl/v * central
+        d / dt(pnp) <- -ka * pnp
+        d / dt(central) <- ka * pnp - cl / v * central
         cp <- central / v
         cp ~ add(add.sd)
       })
     }
 
     .ctl <- function(...) {
-      nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
-              nonmemControl(runCommand=NA, ...))
+      nlmixr2(
+        one.cmt,
+        nlmixr2data::theo_sd,
+        "nonmem",
+        nonmemControl(runCommand = NA, ...)
+      )
       .ret <- readLines(file.path("one.cmt-nonmem", "one.cmt.nmctl"))
-      unlink("one.cmt-nonmem", recursive=TRUE)
+      unlink("one.cmt-nonmem", recursive = TRUE)
       .ret
     }
 
@@ -1010,18 +1014,22 @@ withr::with_tempdir({
     # $ABBR comes before the abbreviated code
     expect_lt(which(.nm == "$ABBR PROTECT"), which(.nm == "$PK"))
     # NM-TRAN's protection mistranslates functions of constants like EXP(0)
-    expect_false(any(grepl("DEXP(0)", .nm, fixed=TRUE)))
-    expect_true(any(grepl("KA=DEXP(RX__TKA)*1 ;", .nm, fixed=TRUE)))
-    expect_true(any(grepl("(-0.69314718055994529)-2 ;", .nm, fixed=TRUE)))
+    expect_false(any(grepl("DEXP(0)", .nm, fixed = TRUE)))
+    expect_true(any(grepl("KA=DEXP(RX__TKA)*1 ;", .nm, fixed = TRUE)))
+    expect_true(any(grepl("(-0.69314718055994529)-2 ;", .nm, fixed = TRUE)))
     # PLOG is a NONMEM protected function, so the variable is renamed
     expect_false(any(grepl("^ *PLOG=", .nm)))
-    expect_true(any(grepl("RXR2=0.69314718055994529 ; plog = log(2)", .nm, fixed=TRUE)))
+    expect_true(any(grepl(
+      "RXR2=0.69314718055994529 ; plog = log(2)",
+      .nm,
+      fixed = TRUE
+    )))
     # the renamed compartment keeps its name throughout the control stream
     expect_true("     COMP(RXR1, DEFDOSE) ; pnp" %in% .nm)
     # pi is a number in $ERROR too
-    expect_false(any(grepl("RXE_1.77", .nm, fixed=TRUE)))
-    expect_false(any(grepl("RXE_3.14", .nm, fixed=TRUE)))
-    expect_false(any(grepl("RXR1=", .nm, fixed=TRUE)))
+    expect_false(any(grepl("RXE_1.77", .nm, fixed = TRUE)))
+    expect_false(any(grepl("RXE_3.14", .nm, fixed = TRUE)))
+    expect_false(any(grepl("RXR1=", .nm, fixed = TRUE)))
 
     .rxToN <- function(x) rxToNonmem(x, one.cmt())
     # functions of numbers, including negative or parenthesized ones
@@ -1056,7 +1064,10 @@ withr::with_tempdir({
     # PROTECT writes B**E as PEXP(E*PLOG(B)), which is wrong for B < 0,
     # so integer powers are products and powers of numbers use DEXP()
     expect_equal(.rxToN("tka^2"), "(THETA(1)*THETA(1))")
-    expect_equal(.rxToN("(tka - 3)^3"), "((THETA(1)-3)*(THETA(1)-3)*(THETA(1)-3))")
+    expect_equal(
+      .rxToN("(tka - 3)^3"),
+      "((THETA(1)-3)*(THETA(1)-3)*(THETA(1)-3))"
+    )
     expect_equal(.rxToN("exp(tka)^2"), "((DEXP(THETA(1)))*(DEXP(THETA(1))))")
     expect_equal(.rxToN("tka^-2"), "(1/(RXDZ001*RXDZ001))")
     expect_equal(.rxToN("tka^0"), "1")
@@ -1077,14 +1088,14 @@ withr::with_tempdir({
     rxode2::rxAssignControlValue(.ui, "protectZeros", TRUE)
     expect_equal(rxToNonmem("tka^-2", .ui), "(1/(RXDZ001*RXDZ001))")
 
-    .nm <- suppressMessages(.ctl(protect=FALSE))
-    expect_false(any(grepl("$ABBR", .nm, fixed=TRUE)))
+    .nm <- suppressMessages(.ctl(protect = FALSE))
+    expect_false(any(grepl("$ABBR", .nm, fixed = TRUE)))
     expect_true(any(grepl("^ *PLOG=", .nm)))
 
-    withr::with_options(list(babelmixr2.nmProtect=FALSE), {
+    withr::with_options(list(babelmixr2.nmProtect = FALSE), {
       expect_false(nonmemControl()$protect)
     })
     expect_true(nonmemControl()$protect)
-    expect_error(nonmemControl(protect=NA))
+    expect_error(nonmemControl(protect = NA))
   })
 })

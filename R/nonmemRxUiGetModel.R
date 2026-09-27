@@ -50,7 +50,9 @@ attr(rxUiGet.nonmemMod, "rstudio") <- "nonmemMod"
 #' @export
 rxUiGet.nonmemAbbr <- function(x, ...) {
   .ui <- x[[1]]
-  if (!.nonmemProtect(.ui)) return("")
+  if (!.nonmemProtect(.ui)) {
+    return("")
+  }
   "$ABBR PROTECT\n\n"
 }
 attr(rxUiGet.nonmemAbbr, "rstudio") <- "nonmemAbbr"
@@ -66,9 +68,11 @@ rxUiGet.nonmemModel <- function(x, ...) {
   # reserved names are renamed once for the whole control stream so
   # $INPUT, $MODEL and the abbreviated code agree
   rxode2::rxAssignControlValue(.ui, ".nmVarResNum", 1)
-  rxode2::rxAssignControlValue(.ui, ".nmGetVarReservedDf",
-                               data.frame(var=character(0),
-                                          nm=character(0)))
+  rxode2::rxAssignControlValue(
+    .ui,
+    ".nmGetVarReservedDf",
+    data.frame(var = character(0), nm = character(0))
+  )
   .ret <- paste0(
     "$PROBLEM ", .ui$nonmemModelName, " translated from babelmixr2\n; comments show mu referenced model in ui$getSplitMuModel\n\n",
     "$DATA ", .ui$nonmemCsv, " IGNORE=@\n\n",

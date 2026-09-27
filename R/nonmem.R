@@ -47,27 +47,51 @@ rex::register_shortcuts("babelmixr2")
 
 # NONMEM's protected functions (NONMEM 7.4+); with `$ABBR PROTECT` these
 # names cannot be used as model variables
-.rxNMprotectFun <- c("PLOG", "PLOG10", "PSQRT", "PEXP", "PDZ", "PZR", "PNP",
-                     "PNG", "PHE", "PTAN", "PATAN", "PACOS", "PASIN")
+.rxNMprotectFun <- c(
+  "PLOG",
+  "PLOG10",
+  "PSQRT",
+  "PEXP",
+  "PDZ",
+  "PZR",
+  "PNP",
+  "PNG",
+  "PHE",
+  "PTAN",
+  "PATAN",
+  "PACOS",
+  "PASIN"
+)
 
-.rxNMexpit <- function(x, low=0, high=1) {
+.rxNMexpit <- function(x, low = 0, high = 1) {
   (high - low) / (1 + exp(-x)) + low
 }
 
 # Functions evaluated in R when their arguments are numbers.  NM-TRAN's
 # `$ABBR PROTECT` mistranslates a protected function of a constant (like
 # `EXP(0)`), so these are written as numbers instead
-.rxNMfoldConstant <- list(exp=exp, log=log, sqrt=sqrt, log10=log10, log2=log2,
-                          log1p=log1p, expm1=expm1, tan=tan, atan=atan,
-                          asin=asin, acos=acos,
-                          log1pexp=function(x) log1p(exp(x)),
-                          log1pmx=function(x) log1p(x) - x,
-                          expit=.rxNMexpit, invLogit=.rxNMexpit,
-                          logitInv=.rxNMexpit,
-                          logit=function(x, low=0, high=1) {
-                            .p <- (x - low) / (high - low)
-                            -log(1 / .p - 1)
-                          })
+.rxNMfoldConstant <- list(
+  exp = exp,
+  log = log,
+  sqrt = sqrt,
+  log10 = log10,
+  log2 = log2,
+  log1p = log1p,
+  expm1 = expm1,
+  tan = tan,
+  atan = atan,
+  asin = asin,
+  acos = acos,
+  log1pexp = function(x) log1p(exp(x)),
+  log1pmx = function(x) log1p(x) - x,
+  expit = .rxNMexpit,
+  invLogit = .rxNMexpit,
+  logitInv = .rxNMexpit,
+  logit = function(x, low = 0, high = 1) {
+    .p <- (x - low) / (high - low)
+    -log(1 / .p - 1)
+  }
+)
 
 # Arithmetic evaluated in R when all its arguments are numbers
 .rxNMfoldOp <- c("+", "-", "*", "/", "^", "**")
@@ -83,8 +107,11 @@ rex::register_shortcuts("babelmixr2")
 #' @author Matthew L. Fidler
 #' @noRd
 .nonmemProtect <- function(ui) {
-  isTRUE(rxode2::rxGetControl(ui, "protect",
-                              getOption("babelmixr2.nmProtect", TRUE)))
+  isTRUE(rxode2::rxGetControl(
+    ui,
+    "protect",
+    getOption("babelmixr2.nmProtect", TRUE)
+  ))
 }
 
 #' Numeric value of a constant expression written in R
@@ -96,31 +123,47 @@ rex::register_shortcuts("babelmixr2")
 #' @noRd
 .rxToNonmemNumber <- function(x) {
   if (is.numeric(x) && length(x) == 1L) {
-    if (!is.finite(x)) return(NULL)
+    if (!is.finite(x)) {
+      return(NULL)
+    }
     return(x)
   }
   if (is.name(x)) {
     # named constants like pi or M_LN2
     .x <- as.character(x)
-    if (.x == "time") return(NULL)
+    if (.x == "time") {
+      return(NULL)
+    }
     .v <- .rxNMcnt[.x]
-    if (is.na(.v)) return(NULL)
+    if (is.na(.v)) {
+      return(NULL)
+    }
     return(as.numeric(.v))
   }
-  if (!is.call(x) || !is.name(x[[1]])) return(NULL)
+  if (!is.call(x) || !is.name(x[[1]])) {
+    return(NULL)
+  }
   .f <- as.character(x[[1]])
-  if (.f == "(" && length(x) == 2L) return(.rxToNonmemNumber(x[[2]]))
+  if (.f == "(" && length(x) == 2L) {
+    return(.rxToNonmemNumber(x[[2]]))
+  }
   .fun <- NULL
   if (.f %in% .rxNMfoldOp && length(x) %in% 2:3) {
     .fun <- match.fun(ifelse(.f == "**", "^", .f))
   } else {
     .fun <- .rxNMfoldConstant[[.f]]
   }
-  if (is.null(.fun)) return(NULL)
+  if (is.null(.fun)) {
+    return(NULL)
+  }
   .args <- lapply(as.list(x)[-1], .rxToNonmemNumber)
-  if (any(vapply(.args, is.null, logical(1)))) return(NULL)
+  if (any(vapply(.args, is.null, logical(1)))) {
+    return(NULL)
+  }
   .ret <- suppressWarnings(do.call(.fun, .args))
-  if (length(.ret) != 1L || !is.finite(.ret)) return(NULL)
+  if (length(.ret) != 1L || !is.finite(.ret)) {
+    return(NULL)
+  }
   .ret
 }
 
@@ -132,16 +175,34 @@ rex::register_shortcuts("babelmixr2")
 #' @author Matthew L. Fidler
 #' @noRd
 .rxToNonmemFormatNumber <- function(x) {
-  if (length(x) != 1L || !is.finite(x)) return(NULL)
-  if (x == 0) x <- 0 # drop the sign of -0
+  if (length(x) != 1L || !is.finite(x)) {
+    return(NULL)
+  }
+  if (x == 0) {
+    # drop the sign of -0
+    x <- 0
+  }
   .ret <- sprintf("%.17g", x)
   if (abs(x) > .Machine$integer.max && !grepl("[.e]", .ret)) {
     # a whole number this large is not a valid Fortran integer
     .ret <- sprintf("%.16e", x)
   }
-  .ret <- gsub("e", "D", .ret, fixed=TRUE)
-  if (x < 0) .ret <- paste0("(", .ret, ")")
+  .ret <- gsub("e", "D", .ret, fixed = TRUE)
+  if (x < 0) {
+    .ret <- paste0("(", .ret, ")")
+  }
   .ret
+}
+
+#' Is this name one of NONMEM's protected functions used by `$ABBR PROTECT`?
+#'
+#' @param uvar upper case NONMEM variable name
+#' @param ui rxode2 ui
+#' @return boolean
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemIsProtectFun <- function(uvar, ui) {
+  uvar %in% .rxNMprotectFun && .nonmemProtect(ui)
 }
 
 #' Fold a function of numbers into a number
@@ -152,9 +213,13 @@ rex::register_shortcuts("babelmixr2")
 #' @author Matthew L. Fidler
 #' @noRd
 .rxToNonmemFoldConstant <- function(x) {
-  if (is.null(.rxNMfoldConstant[[as.character(x[[1]])]])) return(NULL)
+  if (is.null(.rxNMfoldConstant[[as.character(x[[1]])]])) {
+    return(NULL)
+  }
   .val <- .rxToNonmemNumber(x)
-  if (is.null(.val)) return(NULL)
+  if (is.null(.val)) {
+    return(NULL)
+  }
   .rxToNonmemFormatNumber(.val)
 }
 
@@ -174,7 +239,9 @@ rex::register_shortcuts("babelmixr2")
 #' @author Matthew L. Fidler
 #' @noRd
 .rxToNonmemProtectPow <- function(base, expo, ui) {
-  if (!.nonmemProtect(ui)) return(NULL)
+  if (!.nonmemProtect(ui)) {
+    return(NULL)
+  }
   .b <- .rxToNonmemNumber(base)
   .e <- .rxToNonmemNumber(expo)
   if (!is.null(.b) && !is.null(.e)) {
@@ -182,29 +249,45 @@ rex::register_shortcuts("babelmixr2")
     if (!is.null(.ret)) return(.ret)
   }
   if (!is.null(.e) && .e == round(.e) && abs(.e) <= .rxNMmaxIntPow) {
-    if (.e == 0) return("1")
+    if (.e == 0) {
+      return("1")
+    }
     if (.e < 0) {
       # a denominator, so it gets babelmixr2's zero protection too
       .base <- .rxProtectPlusOrMinusZero(base, ui)
     } else {
-      .base <- .rxToNonmem(base, ui=ui)
+      .base <- .rxToNonmem(base, ui = ui)
     }
-    if (!(is.name(base) || is.numeric(base) ||
-            (is.call(base) && identical(base[[1]], quote(`(`))))) {
+    .simple <- is.name(base) || is.numeric(base) ||
+      (is.call(base) && identical(base[[1]], quote(`(`)))
+    if (!.simple) {
       .base <- paste0("(", .base, ")")
     }
-    .ret <- paste0("(", paste(rep(.base, abs(.e)), collapse="*"), ")")
-    if (.e < 0) .ret <- paste0("(1/", .ret, ")")
+    .ret <- paste0("(", paste(rep(.base, abs(.e)), collapse = "*"), ")")
+    if (.e < 0) {
+      .ret <- paste0("(1/", .ret, ")")
+    }
     return(.ret)
   }
   if (!is.null(.b)) {
     if (.b > 0) {
-      return(paste0("DEXP((", .rxToNonmem(expo, ui=ui), ")*",
-                    .rxToNonmemFormatNumber(log(.b)), ")"))
+      return(paste0(
+        "DEXP((",
+        .rxToNonmem(expo, ui = ui),
+        ")*",
+        .rxToNonmemFormatNumber(log(.b)),
+        ")"
+      ))
     }
-    warning("with $ABBR PROTECT, NONMEM writes '", deparse1(base), "^",
-            deparse1(expo), "' as PEXP(E*PLOG(B)) which is wrong for a base <= 0; ",
-            "consider nonmemControl(protect=FALSE)", call.=FALSE)
+    warning(
+      "with $ABBR PROTECT, NONMEM writes '",
+      deparse1(base),
+      "^",
+      deparse1(expo),
+      "' as PEXP(E*PLOG(B)) which is wrong for a base <= 0; ",
+      "consider nonmemControl(protect=FALSE)",
+      call. = FALSE
+    )
   }
   NULL
 }
@@ -333,7 +416,7 @@ rex::register_shortcuts("babelmixr2")
     var <- .reserved$nm[.w]
   } else if (regexpr(.nmRes, .uvar, perl=TRUE) != -1 ||
                .uvar %in% rxode2::rxGetControl(ui, ".nmLinCmtReserved", character(0)) ||
-               (.uvar %in% .rxNMprotectFun && .nonmemProtect(ui))) {
+               .nonmemIsProtectFun(.uvar, ui)) {
     .num <- rxode2::rxGetControl(ui, ".nmVarResNum", 1)
     .newVar <- sprintf("RXR%d", .num)
     rxode2::rxAssignControlValue(ui, ".nmVarResNum", .num + 1)
