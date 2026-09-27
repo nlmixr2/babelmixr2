@@ -266,6 +266,13 @@ calcPknca <- function(env, pkncaUnits) {
       yes = "intravascular",
       no = "extravascular"
     )
+  # Only intravascular bolus doses have C0 back-extrapolated; infusions start
+  # from the predose concentration
+  doseData$pkncaBolus <- doseData$pkncaRoute == "intravascular"
+  if (!is.na(cleanColNames[["rate"]])) {
+    doseRate <- doseData[[cleanColNames[["rate"]]]]
+    doseData$pkncaBolus <- doseData$pkncaBolus & (is.na(doseRate) | doseRate == 0)
+  }
   obsData <-
     pkncaAddIvC0(
       obs = cleanData$obs, dose = doseData, groupCols = groupCols,
@@ -293,7 +300,8 @@ calcPknca <- function(env, pkncaUnits) {
 #' concentration when that is not possible) so that AUC and Cmax can be
 #' calculated from the time of dosing (#102).
 #'
-#' @param obs,dose Observation and dose data (dose with a `pkncaRoute` column)
+#' @param obs,dose Observation and dose data (dose with `pkncaRoute` and
+#'   `pkncaBolus` columns)
 #' @param groupCols,timeCol,dvCol Column names for the grouping, time, and
 #'   dependent variable
 #' @return `obs` with rows added for back-extrapolated C0
@@ -302,7 +310,7 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
   obsKey <- do.call(paste, c(unname(as.list(obs[, groupCols, drop = FALSE])), sep = "\r"))
   doseKey <- do.call(paste, c(unname(as.list(dose[, groupCols, drop = FALSE])), sep = "\r"))
   newRows <- list()
-  for (idx in which(dose$pkncaRoute == "intravascular")) {
+  for (idx in which(dose$pkncaBolus)) {
     doseTime <- dose[[timeCol]][idx]
     nextDoseTime <- dose[[timeCol]][doseKey == doseKey[idx] & dose[[timeCol]] > doseTime]
     nextDoseTime <- min(c(Inf, nextDoseTime))
@@ -335,8 +343,8 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
 
 #' Setup the NCA intervals based on the route of administration
 #'
-#' Extravascular intervals impute the starting concentration (as the predose
-#' concentration or zero).  When both intravascular and extravascular doses
+#' Intervals that do not start with an intravascular bolus impute the starting
+#' concentration (as the predose concentration or zero).  When both intravascular and extravascular doses
 #' are present, tmax (used for ka) is only calculated for extravascular
 #' intervals and cmax.dn and cl.last (used for vc and cl) are only calculated
 #' for intravascular intervals (#102).
@@ -353,9 +361,10 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
   # intravascular if all doses are intravascular
   doseRoute <- dose[, c(groupCols, timeCol), drop = FALSE]
   doseRoute$pkncaIv <- dose$pkncaRoute == "intravascular"
+  doseRoute$pkncaBolus <- dose$pkncaBolus
   doseRoute <-
     stats::aggregate(
-      stats::as.formula(sprintf("pkncaIv~%s", paste(c(groupCols, timeCol), collapse = "+"))),
+      stats::as.formula(sprintf("cbind(pkncaIv, pkncaBolus)~%s", paste(c(groupCols, timeCol), collapse = "+"))),
       data = doseRoute,
       FUN = all
     )
@@ -365,10 +374,12 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
   intervals <- intervals[order(intervals$pkncaIntervalOrder), , drop = FALSE]
   intervals$pkncaIntervalOrder <- NULL
   isIv <- !is.na(intervals$pkncaIv) & intervals$pkncaIv
+  isBolus <- !is.na(intervals$pkncaBolus) & intervals$pkncaBolus
   intervals$pkncaIv <- NULL
+  intervals$pkncaBolus <- NULL
   intervals$impute <-
     ifelse(
-      isIv,
+      isBolus,
       NA_character_,
       "PKNCA_impute_method_start_predose,PKNCA_impute_method_start_conc0"
     )

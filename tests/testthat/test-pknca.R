@@ -283,6 +283,17 @@ test_that("est='pknca' with covariates and mixed IV/oral dosing (#102)", {
   # Covariates are kept in the NCA data
   expect_true("ROUTE" %in% names(as.data.frame(ret$nca$data$conc)))
 
+  # IV infusions are not back-extrapolated
+  datInf <- dat[dat$ROUTE == 1, ]
+  datInf$RATE <- ifelse(datInf$EVID == 1, 100, 0)
+  suppressMessages(suppressWarnings(
+    retInf <- nlmixr2est::nlmixr(object = modA, data = datInf, est = "pknca", control = ctl)
+  ))
+  ncaInf <- as.data.frame(retInf$nca)
+  cmaxInf <- ncaInf[ncaInf$PPTESTCD == "cmax", ]
+  expect_equal(cmaxInf$PPORRES[order(cmaxInf$ID)], firstConc)
+  expect_true(all(!is.na(ncaInf$PPORRES[ncaInf$PPTESTCD == "cl.last"])))
+
   # Extravascular only works without a concentration at the time of dosing
   datOral <- dat[dat$ROUTE == 2, ]
   suppressMessages(suppressWarnings(
