@@ -7,14 +7,6 @@
 #'
 #' - \code{vc} (or \code{v}) Inverse of dose-normalized Cmax
 #'
-#' When both intravascular and extravascular doses are present (doses into the
-#' observation compartment are intravascular), \code{ka} is estimated from the
-#' extravascular doses and \code{vc} and \code{cl} are estimated from the
-#' intravascular doses.  Intravascular doses without a concentration at the
-#' time of dosing have it back-extrapolated, and extravascular doses without a
-#' concentration at the time of dosing have it imputed as the predose
-#' concentration (or zero for the first dose).
-#'
 #' - \code{cl} Estimated as the median clearance
 #'
 #' - \code{vp,vp2}2- and 4-fold the \code{vc}, respectively by default,
@@ -24,6 +16,15 @@
 #' - \code{q,q2} 0.5- and 0.25-fold the \code{cl}, respectively by default,
 #'   controlled by the \code{qMult} and \code{q2Mult} arguments to
 #'   \code{pkncaControl}
+#'
+#' When both intravascular and extravascular doses are present (doses into the
+#' observation compartment are intravascular), \code{ka} is estimated from the
+#' extravascular doses and \code{vc} and \code{cl} are estimated from the
+#' intravascular doses; without extravascular-only doses, \code{ka} is not
+#' updated.  Intravascular bolus doses have the concentration at the time of
+#' dosing back-extrapolated (replacing a predose concentration at the first
+#' dose), and other doses without a concentration at the time of dosing have it
+#' imputed as the predose concentration (or zero for the first dose).
 #'
 #' The bounds for the parameter estimates are set to 10% of the first percentile
 #' and 10 times the 99th percentile.  (For ka, the lower bound is set to the
@@ -387,10 +388,10 @@ pkncaKey <- function(data, cols) {
 #' Setup the NCA intervals based on the route of administration
 #'
 #' Intervals that do not start with an intravascular bolus impute the starting
-#' concentration (as the predose concentration or zero).  When both intravascular and extravascular doses
-#' are present, tmax (used for ka) is only calculated for extravascular
-#' intervals and cmax.dn and cl.last (used for vc and cl) are only calculated
-#' for intravascular intervals (#102).  Intervals starting with both
+#' concentration (as the predose concentration or zero).  tmax (used for ka) is
+#' only calculated for intervals with only extravascular doses.  When intervals
+#' with only intravascular doses are present, cmax.dn and cl.last (used for vc
+#' and cl) are only calculated for them (#102).  Intervals starting with both
 #' intravascular and extravascular doses at the same time are used for neither
 #' when intervals with a single route are available.
 #'
@@ -425,10 +426,10 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
       NA_character_,
       "PKNCA_impute_method_start_predose,PKNCA_impute_method_start_conc0"
     )
-  if (any(!isIv) && any(!isEv)) {
-    # With both intravascular and extravascular doses, intervals with
-    # intravascular doses (alone or with extravascular doses at the same time)
-    # only calculate the parameters for vc and cl
+  if (any(!isEv)) {
+    # Intervals with intravascular doses (alone or with extravascular doses at
+    # the same time) only calculate the parameters for vc and cl (so tmax and ka
+    # are only from extravascular doses)
     ivParams <-
       setdiff(
         intersect(names(intervals), names(PKNCA::get.interval.cols())),

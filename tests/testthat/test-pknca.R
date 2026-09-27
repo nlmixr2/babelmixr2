@@ -333,9 +333,10 @@ test_that("pkncaIntervals without extravascular-only doses (#102)", {
   ret <- pkncaIntervals(intervals = intervals, dose = dose, groupCols = "ID", timeCol = "TIME")
   expect_equal(ret$tmax, c(FALSE, FALSE))
   expect_equal(ret$cl.last, c(TRUE, FALSE))
-  # Intravascular only keeps tmax
+  # No tmax with intravascular only
   ret <- pkncaIntervals(intervals = intervals, dose = dose[1:2, ], groupCols = "ID", timeCol = "TIME")
-  expect_equal(ret$tmax, c(TRUE, TRUE))
+  expect_equal(ret$tmax, c(FALSE, FALSE))
+  expect_equal(ret$cl.last, c(TRUE, TRUE))
   # No ka estimate without tmax
   est <- ncaToEst(
     tmax = NULL, cmaxdn = c(1, 2, 3), cl = c(1, 2, 3),
