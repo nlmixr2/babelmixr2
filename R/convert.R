@@ -328,10 +328,22 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
   .ret <- .ret[, names(.ret) != "DVID"]
   if (any(names(.ret) == "LIMIT")) {
     # This converts LIMIT to NONMEM's definition of infinity
-    # (according to manual for $THETA)
-    .ret$LIMIT <- ifelse(is.finite(.ret$LIMIT),
-                         .ret$LIMIT,
-                         ifelse(.ret$LIMIT < 0, -1000000, 1000000))
+    # (according to manual for $THETA); a missing limit is no limit,
+    # which is the lower bound unless the value is right censored
+    if (any(is.finite(.ret$LIMIT) & abs(.ret$LIMIT) >= 1000000)) {
+      stop(
+        "finite LIMIT values must be between -1000000 and 1000000 ",
+        "for NONMEM (its infinity); rescale the data",
+        call. = FALSE
+      )
+    }
+    .cens <- if (any(names(.ret) == "CENS")) .ret$CENS else 0
+    .upper <- ifelse(is.na(.ret$LIMIT), .cens %in% -1, .ret$LIMIT > 0)
+    .ret$LIMIT <- ifelse(
+      is.finite(.ret$LIMIT),
+      .ret$LIMIT,
+      ifelse(.upper, 1000000, -1000000)
+    )
   }
   .ui <- model
   env$nobs <- .lastNobs
@@ -421,8 +433,17 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
 
   # Prepare for merging and merge
   oldDataPrep <- oldData[, setdiff(names(oldData), dropFromOld), drop=FALSE]
+  # Other columns in both datasets (like covariates) are kept from the original
+  # data (#102)
+  dropFromNew <- c(
+    dropFromNew,
+    setdiff(intersect(names(oldDataPrep), names(newData)), "nlmixrRowNums")
+  )
   newDataPrep <- newData[, setdiff(names(newData), dropFromNew), drop=FALSE]
-  stopifnot(intersect(names(oldDataPrep), names(newDataPrep)) == "nlmixrRowNums")
+  stopifnot(identical(
+    intersect(names(oldDataPrep), names(newDataPrep)),
+    "nlmixrRowNums"
+  ))
   # Some data may be dropped by .bblDatToNonmem above, so only keep the rows
   # that are maintained for both datasets.
   mergedData <- merge(oldDataPrep, newDataPrep, by = "nlmixrRowNums", all = FALSE)
@@ -438,9 +459,11 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
     cli::cli_abort("no dosing rows (EVID = 1 or 4) detected")
   }
   obsCmt <- unique(obsData[[cleanStdNames[["cmt"]]]])
-  doseCmt <- unique(doseData[[cleanStdNames[["cmt"]]]])
-  stopifnot(length(obsCmt) == 1)
-  stopifnot(length(doseCmt) == 1)
+  if (length(obsCmt) != 1) {
+    cli::cli_abort(
+      "PKNCA estimation requires observations in a single compartment"
+    )
+  }
 
   # Drop subjects using ADDL for dosing
   idWithAddl <- unique(doseData[[cleanStdNames["id"]]][doseData[[cleanStdNames["addl"]]] > 0])

@@ -17,6 +17,55 @@
   assign("control", .control, envir=.ui)
 }
 
+#' Keep the censoring columns NONMEM needs for the data
+#'
+#' The `CENS` and `LIMIT` columns are only kept when they change the
+#' likelihood of an observation.  A finite `LIMIT` without a `CENS`
+#' column gets a `CENS` column of zeros so the same `$ERROR` handles
+#' all of the censoring methods.
+#'
+#' @param data NONMEM data from `bblDatToNonmem()`
+#' @param ui rxode2 ui
+#' @return data with the `CENS` and `LIMIT` columns that are needed;
+#'   the number of observations with a likelihood (`F_FLAG=1`) is
+#'   stored in the `".nFlag"` control value
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemFormatCensData <- function(data, ui) {
+  .n <- names(data)
+  .obs <- data$EVID == 0
+  .cens <- rep(0, length(.obs))
+  if (any(.n == "CENS")) {
+    .cens <- data$CENS
+  }
+  .cens[is.na(.cens)] <- 0
+  .limit <- rep(FALSE, length(.obs))
+  if (any(.n == "LIMIT")) {
+    # this is the NONMEM value of infinity from bblDatToNonmem()
+    .limit <- !is.na(data$LIMIT) & abs(data$LIMIT) < 1000000
+  }
+  .censored <- .obs & .cens != 0
+  .hasLimit <- any(.obs & .limit)
+  if (!any(.censored) && !.hasLimit) {
+    rxode2::rxAssignControlValue(ui, ".nFlag", 0L)
+    return(data[, !(.n %in% c("CENS", "LIMIT"))])
+  }
+  if (any(ui$predDf$transform != "untransformed")) {
+    stop(
+      "censoring (CENS/LIMIT) is not supported with transformed ",
+      "endpoints in babelmixr2 NONMEM",
+      call. = FALSE
+    )
+  }
+  rxode2::rxAssignControlValue(ui, ".nFlag", sum(.censored | (.obs & .limit)))
+  data$CENS <- .cens
+  if (!.hasLimit) {
+    return(data[, names(data) != "LIMIT"])
+  }
+  .n <- setdiff(names(data), c("CENS", "LIMIT", "nlmixrRowNums"))
+  data[, c(.n, "CENS", "LIMIT", "nlmixrRowNums")]
+}
+
 .nonmemFormatData <- function(data, ui) {
   .ret <- data
   if (any(names(.ret) == "SS")) {
@@ -25,6 +74,7 @@
       .ret <- .ret[, !(names(.ret) %in% c("SS", "II"))]
     }
   }
+  .ret <- .nonmemFormatCensData(.ret, ui)
   .n <- names(.ret)
   rxode2::rxAssignControlValue(ui, ".hasRate", any(.n == "RATE"))
   rxode2::rxAssignControlValue(ui, ".hasCens", any(.n == "CENS"))
@@ -136,6 +186,13 @@
   .ret$nonmemControl <- .control
   .tmp  <- bblDatToNonmem(.ui, .data, table=env$table, rxControl=.control$rxControl, env=.ret)
   .ret$nonmemData <- .nonmemFormatData(.tmp, .ui)
+  # NONMEM's objective omits log(2*pi) for the normal observations
+  # (F_FLAG=0) but an observation with a likelihood (F_FLAG=1) is the
+  # full -2*log(Y).  Since the finalized objective adds log(2*pi) for
+  # every observation, remove it here for the F_FLAG=1 observations so
+  # logLik is the log-likelihood of the censored data
+  .ret$nmLikAdj <- .ret$nmLikAdj -
+    rxode2::rxGetControl(.ui, ".nFlag", 0L) * log(2 * pi)
   rxode2::rxAssignControlValue(.ui, ".cmtCnt", env$nmNcmt)
 
   # Now make sure time varying covariates are not considered

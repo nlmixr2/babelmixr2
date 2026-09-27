@@ -57,6 +57,263 @@ withr::with_tempdir({
                  "$PROBLEM test_nm translated from babelmixr2")
 
   })
+
+  test_that("zero protection IF blocks are commented (#91)", {
+    f <- function() {
+      ini({
+        tcl <- 1
+        tv <- 1
+        eta.cl ~ 0.1
+        add.sd <- 0.7
+        e <- 0.5
+      })
+      model({
+        cl <- tcl + eta.cl
+        v <- tv
+        a <- log(cl) + lfactorial(v)
+        b <- (cl - 1)^e + 3 / v + 2 / cl
+        d / dt(central) <- -cl / v * central
+        cp <- central / v
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE)
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    .has <- function(x) expect_true(x %in% .mod, info = x)
+    .has(
+      "  ; IF block below keeps RXDZ001 positive (used by log, sqrt, etc.)"
+    )
+    .has(
+      "  ; IF block below keeps RXDZ002 above -1 (lfactorial, log1p, etc. need x+1 > 0)"
+    )
+    # x+1 must stay positive, so x is kept above -1
+    .has("  IF (RXDZ002 .LE. -0.999999) THEN")
+    .has("    RXDZ002=-0.999999")
+    .has(
+      "  ; IF block below keeps RXDZ003 away from zero keeping its sign (avoids 1/0 and 0**-n)"
+    )
+    .has(
+      "  ; IF block below keeps RXDZ004 away from zero keeping its sign (avoids 1/0 and 0**-n)"
+    )
+    # 2/cl keeps the sign of cl, so it cannot reuse the positive-only log(cl) protection
+    .has("  RXDZ001=CL")
+    .has("  RXDZ005=CL")
+    .has("  IF (RXDZ005 .GE. -0.000001 .AND. RXDZ005 .LT. 0.) THEN")
+    .has("    RXDZ005= -0.000001")
+    .has("  ; keep W1 away from zero (a zero residual variance is undefined)")
+    .has("  IF (W1 .EQ. 0.0) W1 = 1")
+    # every protection block is preceded by its comment
+    .w <- grep("^  RXDZ[0-9]+=", .mod)
+    expect_length(.w, 5L)
+    expect_true(all(grepl("; IF block below keeps", .mod[.w - 1])))
+  })
+
+  test_that("zero protection is recalculated after reassignment (#91)", {
+    f <- function() {
+      ini({
+        tcl <- 1
+        eta.cl ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        cl <- tcl + eta.cl
+        a <- log(cl)
+        cl <- cl * 2
+        b <- log(cl)
+        d / dt(central) <- -cl * central
+        cp <- central + a + b
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE)
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    .has <- function(x) expect_true(x %in% .mod, info = x)
+    .has("  RXR1=DLOG(RXDZ001) ; a = log(cl)")
+    # the new cl is protected again rather than reusing the old value
+    .has("  RXDZ002=CL")
+    .has("  RXR2=DLOG(RXDZ002) ; b = log(cl)")
+  })
+
+  test_that("if bodies and initial conditions do not share zero protection (#91)", {
+    f <- function() {
+      ini({
+        tcl <- 1
+        eta.cl ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        k <- exp(tcl + eta.cl)
+        cl <- 2 + k
+        a <- log(cl)
+        if (WT > 70) {
+          cl <- 4 + k
+          a <- log(cl)
+        }
+        b <- log(cl)
+        central(0) <- log(-70 + WT)
+        d / dt(central) <- -a * b * central
+        cp <- central
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE, prune = FALSE)
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    .has <- function(x) expect_true(x %in% .mod, info = x)
+    # nothing is protected (or cached) inside the if body ...
+    .has("    RXR1=DLOG(CL) ; a = log(cl)")
+    # ... so the cl assigned there is protected again after the IF
+    .if <- which(.mod == "  IF (WT.GT.70) THEN")
+    .endIf <- which(.mod == "  END IF" & seq_along(.mod) > .if)[1]
+    .b <- which(.mod == "  RXR2=DLOG(RXDZ002) ; b = log(cl)")
+    expect_length(.b, 1L)
+    expect_true(which(.mod == "  RXDZ002=CL") > .endIf)
+    # initial conditions ($PK) do not use protection from $DES
+    expect_false(any(grepl("^  A_0\\(1\\)=.*RXDZ", .mod)))
+  })
+
+  test_that("zero protection: if conditions, reassignment, high sigdig (#91)", {
+    f <- function() {
+      ini({
+        tcl <- 1
+        tv <- 1
+        eta.cl ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        cl <- tcl + eta.cl
+        v <- tv
+        q <- 1
+        if (1 / cl > 0) {
+          q <- 2
+        }
+        a <- log(cl + v) + lfactorial(v)
+        cl <- cl * 2
+        b <- log(cl + v)
+        d / dt(central) <- -q * central
+        cp <- central + a + b
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE, iniSigDig = 16)
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    .has <- function(x) expect_true(x %in% .mod, info = x)
+    # the condition's protection is calculated before the IF uses it
+    .wIf <- which(.mod == "  IF (1/RXDZ001.GT.0) THEN")
+    expect_length(.wIf, 1L)
+    expect_true(which(.mod == "  RXDZ001=CL") < .wIf)
+    # x+1 protection does not round to -1 with many significant digits
+    .has("  IF (RXDZ003 .LE. -0.9999999999999) THEN")
+    # compound expressions using a reassigned variable are protected again
+    .has("  RXDZ002=CL+V")
+    .has("  RXDZ004=CL+V")
+    .has("  RXR3=DLOG(RXDZ004) ; b = log(cl + v)")
+  })
+
+  test_that("zero protection for compartment properties is in $PK (#91)", {
+    f <- function() {
+      ini({
+        tcl <- 1
+        tv <- 1
+        eta.cl ~ 0.1
+        add.sd <- 0.7
+      })
+      model({
+        cl <- tcl + eta.cl
+        v <- tv
+        alag(central) <- log(cl)
+        d / dt(central) <- -central
+        cp <- central / v
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE)
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    .des <- which(.mod == "$DES")
+    .alag <- which(.mod == "  ALAG1=DLOG(RXDZ001) ; alag(central) = log(cl)")
+    .dz <- which(.mod == "  RXDZ001=ETA(1)+MU_1")
+    expect_length(.alag, 1L)
+    expect_length(.dz, 1L)
+    # the protection is calculated in $PK before ALAG1 uses it
+    expect_true(.dz < .alag)
+    expect_true(.alag < .des)
+  })
+
+  test_that("compartment property zero protection is kept in $PK (#91)", {
+    # Every RXDZ variable a $PK line uses must be assigned earlier in $PK
+    .expectPkDefined <- function(mod) {
+      .pk <- mod[seq(
+        which(mod == "$PK"),
+        which(mod %in% c("$DES", "$ERROR"))[1] - 1L
+      )]
+      .defined <- character(0)
+      for (.l in .pk) {
+        .code <- sub(";.*$", "", .l)
+        .lhs <- regmatches(
+          .code,
+          regexpr("^ *RXDZ[0-9]+(?= *=)", .code, perl = TRUE)
+        )
+        .rhs <- sub("^[^=]*=", "", .code)
+        .used <- regmatches(.rhs, gregexpr("RXDZ[0-9]+", .rhs))[[1]]
+        expect_true(all(.used %in% .defined), info = .l)
+        .defined <- c(.defined, trimws(.lhs))
+      }
+    }
+    # ODE: $DES protects the same expression before alag() is translated
+    f <- function() {
+      ini({
+        tcl <- 1
+        eta.cl ~ 0.3
+        add.sd <- 0.7
+      })
+      model({
+        cl <- exp(tcl + eta.cl)
+        lw <- log(-70 + WT)
+        alag(central) <- log(WT - 70)
+        d / dt(central) <- -cl * lw * central
+        cp <- central
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE)
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    expect_true(any(grepl("^  ALAG1=DLOG\\(RXDZ", .mod)))
+    .expectPkDefined(.mod)
+    # closed-form ADVAN: the $PK lines come before the properties
+    f <- function() {
+      ini({
+        tcl <- 1
+        tv <- 1
+        eta.cl ~ 0.3
+        add.sd <- 0.7
+      })
+      model({
+        cl <- exp(tcl + eta.cl)
+        v <- exp(tv)
+        alag(central) <- log(WT - 70)
+        lw <- log(-70 + WT)
+        d / dt(central) <- -cl / v * central
+        cp <- central / v * lw
+        cp ~ add(add.sd)
+      })
+    }
+    ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE)
+    rxode2::rxAssignControlValue(
+      ui,
+      ".linCmtMicro",
+      list(ncmt = 1L, oral0 = 0L, k = quote(cl / v))
+    )
+    .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
+    expect_true("$SUBROUTINES ADVAN1 TRANS1" %in% .mod)
+    expect_true(any(grepl("^  LW=DLOG\\(RXDZ", .mod)))
+    .expectPkDefined(.mod)
+  })
   withr::with_options(list(babelmixr2.protectZeros=FALSE), {
     test_that("NONMEM dsl, individual lines", {
 
@@ -259,6 +516,7 @@ withr::with_tempdir({
             "  RX_IP1 = RX_PF1",
             "  RX_P1 = RX_IP1",
             "  W1=DSQRT(((THETA(4))*(THETA(4)))) ; W1 ~ sqrt((add.sd)^2)",
+            "  ; keep W1 away from zero (a zero residual variance is undefined)",
             "  IF (W1 .EQ. 0.0) W1 = 1",
             "  IPRED = RX_IP1",
             "  W     = W1",
@@ -462,6 +720,7 @@ withr::with_tempdir({
           "  END IF",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((add.err)^2)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -525,6 +784,7 @@ withr::with_tempdir({
           "  END IF",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((add.err)^2)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -571,6 +831,7 @@ withr::with_tempdir({
           "  END IF",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -614,6 +875,7 @@ withr::with_tempdir({
           "  RX_IP1 = -DLOG(1.0/XL - 1.0)",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -674,6 +936,7 @@ withr::with_tempdir({
           "  END IF",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -744,6 +1007,7 @@ withr::with_tempdir({
           "  RX_P1 = RX_IP1",
           paste0("  W1=DSQRT(((RX_PF1*THETA(5))*(RX_PF1*THETA(5)))) ;",
                  " W1 ~ sqrt((rx_pred_f_ * prop.err)^2)"),
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",
@@ -826,6 +1090,7 @@ withr::with_tempdir({
           "  END IF",
           "  RX_P1 = RX_IP1",
           "  W1=DSQRT(((THETA(5))*(THETA(5)))) ; W1 ~ sqrt((cpadd.sd)^2)",
+          "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  RX_IP2 = RX_PF2",
           "  IF (RX_IP2 .GE. 0.0) THEN",
@@ -847,6 +1112,7 @@ withr::with_tempdir({
           "  END IF",
           "  RX_P2 = RX_IP2",
           "  W2=DSQRT(((THETA(12))*(THETA(12)))) ; W2 ~ sqrt((pdadd.err)^2)",
+          "  ; keep W2 away from zero (a zero residual variance is undefined)",
           "  IF (W2 .EQ. 0.0) W2 = 1",
           "  IPRED = RX_IP1",
           "  W     = W1",

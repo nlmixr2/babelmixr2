@@ -6,12 +6,40 @@
   `nonmemControl(protect=FALSE)` or `options(babelmixr2.nmProtect=FALSE)`.
   Since NM-TRAN writes `B**E` as `PEXP(E*PLOG(B))`, integer powers are
   written as products (or powers of `x*x`, which is never negative) and
-  powers of a positive number with `DEXP()`.  Functions of numbers (like `exp(0)`, `log(2*pi)` or
-  `expit(0)`) and divisions of numbers are written as numbers, and model
+  powers of a positive number with `DEXP()`.  Functions of numbers
+  (like `exp(0)`, `log(2*pi)` or `expit(0)`) and divisions of numbers
+  are written as numbers, and model
   variables named like a protected function (like `plog`) are renamed.
   babelmixr2's own zero protection (`protectZeros`) is now only used
   with `protect=FALSE`, like for NONMEM before 7.4 (#62).
 
+* NONMEM control streams now explain the zero-protection code
+  babelmixr2 adds: each `RXDZ###` `IF` block is preceded by a comment
+  saying what it keeps the variable away from and why, as is the
+  `IF (W1 .EQ. 0.0)` residual variance protection (#91).
+  The protection for `lfactorial()`/`lgamma1p()` now keeps its argument
+  above `-1` (it previously clamped it just below `-1`, making `x+1`
+  negative), `log(x)` and `1/x` no longer share one protected
+  variable, so `1/x` keeps the sign of a negative `x`, and a variable
+  reassigned in the model is protected again instead of reusing the
+  protection of its old value.  Zero protection needed by `f()`,
+  `alag()`, `rate()` or `dur()` (written in `$PK`) is no longer shared
+  with other lines, which could use it before (or without) it being
+  calculated.
+* `est="pknca"` now works with covariates in the data and with a mix of
+  intravascular and extravascular doses (#102).  Doses into a
+  compartment that the observations are calculated from are
+  intravascular.  With both routes, `ka` is estimated from the
+  extravascular doses and `vc` and `cl` from the intravascular doses.
+  Intravascular bolus doses have the concentration at the time of
+  dosing back-extrapolated (replacing a predose concentration at the
+  first dose), and other doses have it imputed (as the predose
+  concentration, or zero for the first dose).  When no doses are only
+  extravascular, `ka` is not updated.  Multiple-dose data no longer need
+  a concentration at each dose time; each dose until the next (with at
+  least 2 concentrations) is used, with `vc` from the first dose of each
+  route and `cl` from dosing intervals mostly covered by concentrations.
+  Doses at the same time are combined.
 * When a NONMEM run fails, `est="nonmem"` now says why and where to look
   instead of failing with an unclear error: a run command that was not
   found or wrote no output, a NONMEM license problem, an NM-TRAN error in
@@ -75,6 +103,17 @@
   tolerances that `rxControl(sigdig=)` gives, which made the
   finite-difference FIM, and so the design OFV and RSEs, less accurate
   (#223).
+* `est="nonmem"` now fits censored data the way nlmixr2 does (#92).  M3
+  (`CENS`), M4 (`CENS` with a finite `LIMIT`) and M2 (`CENS=0` with a
+  finite `LIMIT`, including data with a `LIMIT` but no `CENS` column)
+  use `F_FLAG` likelihoods in `$ERROR` with `LAPLACIAN` estimation.  A
+  missing `LIMIT` is now written as NONMEM's infinity instead of `0`,
+  `CENS`/`LIMIT` columns that do not censor anything are dropped, the
+  objective function is adjusted so the log-likelihood includes the
+  censored observations correctly, and censoring with a transformed
+  endpoint (like `lnorm()`) is refused instead of giving the wrong
+  likelihood.  The censored observations are left out of the NONMEM
+  `PRED` comparison since NONMEM's `PRED` is their likelihood.
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,

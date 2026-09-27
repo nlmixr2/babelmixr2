@@ -76,9 +76,12 @@ rxUiGet.nonmemErrF <- function(x, ...) {
                      .var <- .repEndpoint(.var, .pred1$dvid)
                      # depending on the method the prop can be with regards to the F or the transformed F
                      # So, here we add RX_PRED_ to be the transformed to support both
-                     .ret <- paste0(.ret,
-                                    .var,
-                                    paste0("\n  IF (", .w, " .EQ. 0.0) ", .w, " = 1"))
+                     .zero <- paste0(
+                       "\n  ; keep ", .w, " away from zero ",
+                       "(a zero residual variance is undefined)",
+                       "\n  IF (", .w, " .EQ. 0.0) ", .w, " = 1"
+                     )
+                     .ret <- paste0(.ret, .var, .zero)
                      .ret
                    }, character(1), USE.NAMES=FALSE)
   .err <- paste(.ipred, collapse="\n")
@@ -100,13 +103,13 @@ rxUiGet.nonmemErrF <- function(x, ...) {
 
     }, character(1), USE.NAMES=FALSE)
   }
-  if (.cens && .limit) {
+  if (.limit) {
+    # M2 (CENS=0 with a LIMIT), M3 and M4 censoring; the data always
+    # has a CENS column with the LIMIT column (see .nonmemFormatCensData())
     .y <- .getErr("err-cens-limit.txt", FALSE)
   } else if (.cens) {
+    # M3 censoring
     .y <- .getErr("err-cens.txt", FALSE)
-  } else if (.limit) {
-    stop("ylo/yup not implemented (would require laplacian); drop LIMIT or add CENS column",
-         call.=FALSE)
   } else {
     .y <- "  Y     = IPRED + W*EPS(1)"
   }
