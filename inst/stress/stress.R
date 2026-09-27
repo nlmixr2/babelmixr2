@@ -537,6 +537,24 @@
       cp ~ add(add.sd)
     })
   },
+  fExpr=function() {
+    ini({
+      tka <- 0.45; tcl <- 1; tv <- 3.45; lfdepot <- log(0.8); llag <- log(0.2)
+      eta.ka ~ 0.6; eta.cl ~ 0.3; eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      f(depot) <- exp(lfdepot)
+      alag(depot) <- exp(llag)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  },
   iov=function() {
     ini({
       tka <- 0.45; tcl <- 1; tv <- 3.45
@@ -806,6 +824,10 @@ stressCases <- function() {
     .stressCase("time-varying covariate", .stressCode$timeVaryingCov, .theoCrcl,
                 checkMonolix="CRCL"),
     .stressCase("probitInv", .stressCode$probitInv, .theo),
+    .stressCase("f()/alag() expressions", .stressCode$fExpr, .theo,
+                checkNonmem=c("F1=", "ALAG1="),
+                checkMonolix=c("Tlag=rx_lag_depot, p=rx_f_depot", "rx_f_depot = exp"),
+                description="issue #115"),
     .stressCase("between-occasion variability", .stressCode$iov, .theoOcc,
                 nonmem="id|occasion|level|random", monolix="id|occasion|level|random",
                 run=FALSE),
