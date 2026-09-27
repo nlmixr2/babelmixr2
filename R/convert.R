@@ -421,8 +421,11 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
 
   # Prepare for merging and merge
   oldDataPrep <- oldData[, setdiff(names(oldData), dropFromOld), drop=FALSE]
+  # Other columns in both datasets (like covariates) are kept from the original
+  # data (#102)
+  dropFromNew <- c(dropFromNew, setdiff(intersect(names(oldDataPrep), names(newData)), "nlmixrRowNums"))
   newDataPrep <- newData[, setdiff(names(newData), dropFromNew), drop=FALSE]
-  stopifnot(intersect(names(oldDataPrep), names(newDataPrep)) == "nlmixrRowNums")
+  stopifnot(identical(intersect(names(oldDataPrep), names(newDataPrep)), "nlmixrRowNums"))
   # Some data may be dropped by .bblDatToNonmem above, so only keep the rows
   # that are maintained for both datasets.
   mergedData <- merge(oldDataPrep, newDataPrep, by = "nlmixrRowNums", all = FALSE)
@@ -438,9 +441,9 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
     cli::cli_abort("no dosing rows (EVID = 1 or 4) detected")
   }
   obsCmt <- unique(obsData[[cleanStdNames[["cmt"]]]])
-  doseCmt <- unique(doseData[[cleanStdNames[["cmt"]]]])
-  stopifnot(length(obsCmt) == 1)
-  stopifnot(length(doseCmt) == 1)
+  if (length(obsCmt) != 1) {
+    cli::cli_abort("PKNCA estimation requires observations in a single compartment")
+  }
 
   # Drop subjects using ADDL for dosing
   idWithAddl <- unique(doseData[[cleanStdNames["id"]]][doseData[[cleanStdNames["addl"]]] > 0])

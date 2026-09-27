@@ -5,7 +5,15 @@
 #'
 #' - \code{ka} 4 half-lives to Tmax but not higher than 3:  \code{log(2)/(tmax/4)}
 #'
-#' - \code{vc} Inverse of dose-normalized Cmax
+#' - \code{vc} (or \code{v}) Inverse of dose-normalized Cmax
+#'
+#' When both intravascular and extravascular doses are present (doses into the
+#' observation compartment are intravascular), \code{ka} is estimated from the
+#' extravascular doses and \code{vc} and \code{cl} are estimated from the
+#' intravascular doses.  Intravascular doses without a concentration at the
+#' time of dosing have it back-extrapolated, and extravascular doses without a
+#' concentration at the time of dosing have it imputed as the predose
+#' concentration (or zero for the first dose).
 #'
 #' - \code{cl} Estimated as the median clearance
 #'
@@ -235,34 +243,151 @@ calcPknca <- function(env, pkncaUnits) {
   }
   cleanData <- bblDatToPknca(model = env$ui, data = rawData, rxControl=rxControl)
   cleanColNames <- getStandardColNames(cleanData$obs)
+  groupCols <- c(control$groups, cleanColNames[["id"]])
   oConcFormula <-
     stats::as.formula(sprintf(
       "%s~%s|%s",
       cleanColNames[["dv"]], cleanColNames[["time"]],
-      paste(c(control$groups, cleanColNames[["id"]]), collapse="+")
+      paste(groupCols, collapse="+")
     ))
   oDoseFormula <-
     stats::as.formula(sprintf(
       "%s~%s|%s",
       cleanColNames[["amt"]], cleanColNames[["time"]],
-      paste(c(control$groups, cleanColNames[["id"]]), collapse="+")
+      paste(groupCols, collapse="+")
     ))
-  # Determine route of administration
+  # Determine route of administration for each dose; doses into the observation
+  # compartment are intravascular (#102)
+  doseData <- cleanData$dose
   obsCmt <- unique(cleanData$obs[[cleanColNames[["cmt"]]]])
-  doseCmt <- unique(cleanData$dose[[cleanColNames[["cmt"]]]])
-  doseRoute <- ifelse(obsCmt == doseCmt, yes = "intravascular", no = "extravascular")
+  doseData$pkncaRoute <-
+    ifelse(
+      doseData[[cleanColNames[["cmt"]]]] == obsCmt,
+      yes = "intravascular",
+      no = "extravascular"
+    )
+  obsData <-
+    pkncaAddIvC0(
+      obs = cleanData$obs, dose = doseData, groupCols = groupCols,
+      timeCol = cleanColNames[["time"]], dvCol = cleanColNames[["dv"]]
+    )
 
-  oConc <- PKNCA::PKNCAconc(data = cleanData$obs, oConcFormula, sparse = control$sparse)
-  oDose <- PKNCA::PKNCAdose(data = cleanData$dose, oDoseFormula, route = doseRoute)
+  oConc <- PKNCA::PKNCAconc(data = obsData, oConcFormula, sparse = control$sparse)
+  oDose <- PKNCA::PKNCAdose(data = doseData, oDoseFormula, route = "pkncaRoute")
 
-  oData <- PKNCA::PKNCAdata(oConc, oDose, units = pkncaUnits)
-  intervals <- oData$intervals
+  oData <- PKNCA::PKNCAdata(oConc, oDose, units = pkncaUnits, impute = "impute")
+  oData$intervals <-
+    pkncaIntervals(
+      intervals = oData$intervals, dose = doseData, groupCols = groupCols,
+      timeCol = cleanColNames[["time"]]
+    )
+  oNCA <- PKNCA::pk.nca(oData)
+  oNCA
+}
+
+#' Add back-extrapolated concentrations at the time of intravascular doses
+#'
+#' Intravascular doses without a concentration measured at the time of dosing
+#' have the concentration at the time of dosing (C0) back-extrapolated from the
+#' following concentrations (log-linear from the first two, or the first
+#' concentration when that is not possible) so that AUC and Cmax can be
+#' calculated from the time of dosing (#102).
+#'
+#' @param obs,dose Observation and dose data (dose with a `pkncaRoute` column)
+#' @param groupCols,timeCol,dvCol Column names for the grouping, time, and
+#'   dependent variable
+#' @return `obs` with rows added for back-extrapolated C0
+#' @noRd
+pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
+  obsKey <- do.call(paste, c(unname(as.list(obs[, groupCols, drop = FALSE])), sep = "\r"))
+  doseKey <- do.call(paste, c(unname(as.list(dose[, groupCols, drop = FALSE])), sep = "\r"))
+  newRows <- list()
+  for (idx in which(dose$pkncaRoute == "intravascular")) {
+    doseTime <- dose[[timeCol]][idx]
+    nextDoseTime <- dose[[timeCol]][doseKey == doseKey[idx] & dose[[timeCol]] > doseTime]
+    nextDoseTime <- min(c(Inf, nextDoseTime))
+    mask <-
+      obsKey == doseKey[idx] &
+      !is.na(obs[[dvCol]]) &
+      obs[[timeCol]] >= doseTime &
+      obs[[timeCol]] < nextDoseTime
+    if (!any(mask) || any(obs[[timeCol]][mask] == doseTime)) {
+      next
+    }
+    c0 <-
+      PKNCA::pk.calc.c0(
+        conc = obs[[dvCol]][mask], time = obs[[timeCol]][mask],
+        time.dose = doseTime, method = c("logslope", "c1")
+      )
+    if (!is.na(c0)) {
+      newRow <- obs[which(mask)[1], , drop = FALSE]
+      newRow[[timeCol]] <- doseTime
+      newRow[[dvCol]] <- as.numeric(c0)
+      newRows[[length(newRows) + 1]] <- newRow
+    }
+  }
+  if (length(newRows) > 0) {
+    obs <- rbind(obs, do.call(rbind, newRows))
+    obs <- obs[do.call(order, c(unname(as.list(obs[, c(groupCols, timeCol), drop = FALSE])))), , drop = FALSE]
+  }
+  obs
+}
+
+#' Setup the NCA intervals based on the route of administration
+#'
+#' Extravascular intervals impute the starting concentration (as the predose
+#' concentration or zero).  When both intravascular and extravascular doses
+#' are present, tmax (used for ka) is only calculated for extravascular
+#' intervals and cmax.dn and cl.last (used for vc and cl) are only calculated
+#' for intravascular intervals (#102).
+#'
+#' @param intervals The automatically-generated intervals from `PKNCAdata()`
+#' @inheritParams pkncaAddIvC0
+#' @return The modified intervals
+#' @noRd
+pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
   intervals$cl.last <- intervals$auclast
   intervals$cmax.dn <- intervals$cmax
   intervals$vss.last <- intervals$auclast
-  oData$intervals <- intervals
-  oNCA <- PKNCA::pk.nca(oData)
-  oNCA
+  # When more than one dose is at the same time, the interval is only
+  # intravascular if all doses are intravascular
+  doseRoute <- dose[, c(groupCols, timeCol), drop = FALSE]
+  doseRoute$pkncaIv <- dose$pkncaRoute == "intravascular"
+  doseRoute <-
+    stats::aggregate(
+      stats::as.formula(sprintf("pkncaIv~%s", paste(c(groupCols, timeCol), collapse = "+"))),
+      data = doseRoute,
+      FUN = all
+    )
+  names(doseRoute)[names(doseRoute) == timeCol] <- "start"
+  intervals$pkncaIntervalOrder <- seq_len(nrow(intervals))
+  intervals <- merge(intervals, doseRoute, all.x = TRUE)
+  intervals <- intervals[order(intervals$pkncaIntervalOrder), , drop = FALSE]
+  intervals$pkncaIntervalOrder <- NULL
+  isIv <- !is.na(intervals$pkncaIv) & intervals$pkncaIv
+  intervals$pkncaIv <- NULL
+  intervals$impute <-
+    ifelse(
+      isIv,
+      NA_character_,
+      "PKNCA_impute_method_start_predose,PKNCA_impute_method_start_conc0"
+    )
+  if (any(isIv) && any(!isIv)) {
+    # Intravascular intervals only calculate the parameters for vc and cl
+    ivParams <-
+      setdiff(
+        intersect(names(intervals), names(PKNCA::get.interval.cols())),
+        c("start", "end", "cmax", "cmax.dn", "auclast", "cl.last", "vss.last")
+      )
+    for (nm in ivParams) {
+      intervals[[nm]][isIv] <- FALSE
+    }
+    intervals$cmax.dn[!isIv] <- FALSE
+    intervals$cl.last[!isIv] <- FALSE
+    intervals$vss.last[!isIv] <- FALSE
+  }
+  rownames(intervals) <- NULL
+  intervals
 }
 
 #' Extract desired PKNCAresults to a list and set bounds
@@ -320,6 +445,8 @@ ncaToEst <- function(tmax, cmaxdn, cl, control, unitConversions) {
       cl=
         unitConversions[["cl.last"]] * cl
     )
+  # Common alternate name for the central volume
+  ncaEstimates$v <- ncaEstimates$vc
   ncaEstimates$ka <-
     pmin(
       c(0.03, 3, Inf),
