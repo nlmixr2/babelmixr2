@@ -111,7 +111,8 @@ as.nlmixr2.monolix2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxCo
     # Start from the imported etas; otherwise nlmixr2est may start from
     # the etas of the last nlmixr2() fit (like the one run for the FOCEi
     # objective of an earlier import with tableControl(cwres=TRUE))
-    env$etaMat <- .importEtaMat(.ui, env$etaObf)
+    env$etaMat <- .importEtaMat(.ui, env$etaObf,
+                                length(unique(env$dataSav$ID)))
     # When running the focei problem to create the nlmixr object, you also need a
     #  foceiControl object
     .monolix2rxToFoceiControl(env, x, TRUE)

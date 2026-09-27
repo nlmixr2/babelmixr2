@@ -62,6 +62,8 @@ test_that("nlmixr2 translation from nonmem2x", {
   expect_equal(fit$objective, fit$objDf["nonmem2rx", "OBJF"])
   expect_equal(AIC(fit), fit$objDf["nonmem2rx", "AIC"])
 
+  # a different model right after the cwres=TRUE import must not start
+  # from the etas of the FOCEi objective's nlmixr2() fit (#94)
   rx <- .nonmem2rx(system.file("mods/err/run006.lst", package="nonmem2rx"))
   fit <- .as.nlmixr(rx)
   expect_true(inherits(fit, "nlmixr2FitData"))
@@ -78,8 +80,6 @@ test_that("nlmixr2 translation from monolix2rx", {
 
   mod <- .monolix2rx(pkgTheo)
 
-  # this also checks the import does not start from the etas of the last
-  # nlmixr2() fit, like the FOCEi objective of the cwres=TRUE import above
   fit <- .as.nlmixr2(mod)
 
   expect_true(inherits(fit, "nlmixr2FitData"))
@@ -91,5 +91,39 @@ test_that("nlmixr2 translation from monolix2rx", {
   expect_equal(nrow(fit$objDf), 2L)
   expect_false(fit$ofvType == "FOCEi")
   expect_equal(fit$objective, fit$objDf[fit$ofvType, "OBJF"])
+  expect_equal(AIC(fit), fit$objDf[fit$ofvType, "AIC"])
+  expect_equal(BIC(fit), fit$objDf[fit$ofvType, "BIC"])
+  expect_equal(as.numeric(logLik(fit)),
+               fit$objDf[fit$ofvType, "Log-likelihood"])
 
+})
+
+test_that(".importEtaMat() only uses etas that match the model (#94)", {
+  .b <- loadNamespace("babelmixr2")
+  .ui <- rxode2::rxode2(function() {
+    ini({
+      tcl <- 1
+      tv <- 2
+      eta.v ~ 0.1
+      eta.cl ~ 0.1
+      add.sd <- 0.1
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      cp <- linCmt()
+      cp ~ add(add.sd)
+    })
+  })
+  .obf <- data.frame(ID=1:2, eta.cl=c(0.1, 0.2), eta.v=c(0.3, 0.4), OBJI=NA_real_)
+  # columns follow the model's eta order, not the etaObf order
+  expect_equal(.b$.importEtaMat(.ui, .obf, 2L),
+               matrix(c(0.3, 0.4, 0.1, 0.2), 2, 2))
+  # a subject dropped from the processed data (for example one without
+  # observations) leaves nlmixr2est to start from zero etas
+  expect_null(.b$.importEtaMat(.ui, .obf, 1L))
+  expect_null(.b$.importEtaMat(.ui, .obf[, c("ID", "eta.cl", "OBJI")], 2L))
+  .na <- .obf
+  .na$eta.v[1] <- NA_real_
+  expect_null(.b$.importEtaMat(.ui, .na, 2L))
 })

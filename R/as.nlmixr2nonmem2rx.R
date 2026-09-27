@@ -34,21 +34,27 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
 #'
 #' @param ui rxode2 ui of the imported model
 #' @param etaObf data frame with ID, the etas and OBJI
+#' @param nsub number of subjects in the processed data (`dataSav`)
 #' @return matrix of the etas in the order of the model's etas, or
-#'   `NULL` when the model has no etas or they are not exactly the eta
-#'   columns of `etaObf`
+#'   `NULL` when the model has no etas, they are not exactly the eta
+#'   columns of `etaObf`, or `etaObf` does not have one row per subject
+#'   (for example when subjects without observations were dropped)
 #' @author Matthew L. Fidler
 #' @noRd
-.importEtaMat <- function(ui, etaObf) {
+.importEtaMat <- function(ui, etaObf, nsub) {
   .iniDf <- ui$iniDf
   .iniDf <- .iniDf[is.na(.iniDf$ntheta) & .iniDf$neta1 == .iniDf$neta2, ]
   .etaNames <- .iniDf$name[order(.iniDf$neta1)]
-  if (length(.etaNames) == 0L ||
+  if (length(.etaNames) == 0L || nrow(etaObf) != nsub ||
         !setequal(.etaNames, setdiff(names(etaObf), c("ID", "OBJI")))) {
     return(NULL)
   }
   .ret <- as.matrix(etaObf[, .etaNames, drop = FALSE])
+  if (anyNA(.ret)) {
+    return(NULL)
+  }
   dimnames(.ret) <- NULL
+  storage.mode(.ret) <- "double"
   .ret
 }
 
@@ -129,7 +135,8 @@ as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxCon
     # Start from the imported etas; otherwise nlmixr2est may start from
     # the etas of the last nlmixr2() fit (like the one run for the FOCEi
     # objective of an earlier import with tableControl(cwres=TRUE))
-    env$etaMat <- .importEtaMat(.ui, env$etaObf)
+    env$etaMat <- .importEtaMat(.ui, env$etaObf,
+                                length(unique(env$dataSav$ID)))
     # When running the focei problem to create the nlmixr object, you also need a
     #  foceiControl object
     .nonmem2rxToFoceiControl(env, x, TRUE)
