@@ -530,6 +530,18 @@ test_that("pkncaAddIvC0 (#102)", {
     dvCol = "DV"
   )
   expect_equal(ret3, obs, ignore_attr = TRUE)
+  # C0 for a loading bolus with an infusion at the same time
+  dose4 <- dose3
+  dose4$pkncaRoute[2] <- "intravascular"
+  ret4 <- pkncaAddIvC0(
+    obs = obs,
+    dose = dose4,
+    groupCols = "ID",
+    timeCol = "TIME",
+    dvCol = "DV"
+  )
+  expect_equal(ret4$TIME, c(0, 6, 12, 18))
+  expect_equal(ret4$DV[1], 8)
   # A single concentration uses the first concentration, flagged as not
   # log-linearly back-extrapolated
   obs5 <- data.frame(ID = 1, TIME = c(11.9, 18), DV = c(2, 5))
@@ -835,6 +847,17 @@ test_that("est='pknca' with simultaneous IV and oral doses (#102)", {
     ret <- nlmixr2est::nlmixr(object = mod, data = d, est = "pknca")
   ))
   expect_s3_class(ret, "pkncaEst")
+  ncaRes <- as.data.frame(ret$nca)
+  # The combined doses for ID 1 are one PKNCA dose
+  doseNca <- as.data.frame(ret$nca$data$dose$data)
+  expect_equal(sum(doseNca$ID == 1), 1)
+  # ID 1 (IV and oral at the same time) is not used for ka since other
+  # subjects only have oral doses
+  expect_false(1 %in% ncaRes$ID[ncaRes$PPTESTCD == "tmax"])
+  expect_setequal(
+    ncaRes$ID[ncaRes$PPTESTCD == "tmax"],
+    setdiff(unique(d$ID), 1)
+  )
 })
 
 test_that("est='pknca' multiple-dose oral without dose-time conc (#102)", {

@@ -461,10 +461,11 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
   obsKey <- pkncaKey(obs, groupCols)
   doseKey <- pkncaKey(dose, groupCols)
   # Only one C0 for multiple doses at the same time, and only when all doses at
-  # that time are intravascular boluses
+  # that time are intravascular with at least one bolus (like a loading bolus
+  # with an infusion)
   doseTimeKey <- pkncaKey(dose, c(groupCols, timeCol))
-  allBolus <- as.vector(tapply(dose$pkncaBolus, doseTimeKey, all)[doseTimeKey])
-  bolusIdx <- which(allBolus & !duplicated(doseTimeKey))
+  ivBolus <- pkncaIvBolus(dose, doseTimeKey)[doseTimeKey]
+  bolusIdx <- which(ivBolus & !duplicated(doseTimeKey))
   newRows <- list()
   noC0 <- character()
   for (idx in bolusIdx) {
@@ -537,6 +538,19 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
   }
   attr(obs, "noC0") <- noC0
   obs
+}
+
+#' Determine dose times with an intravascular bolus
+#'
+#' @param dose Dose data with `pkncaRoute` and `pkncaBolus` columns
+#' @param doseTimeKey The group and time key for each row of `dose`
+#' @return A named logical vector (named by the key) that is `TRUE` when all
+#'   doses at the time are intravascular and at least one is a bolus
+#' @noRd
+pkncaIvBolus <- function(dose, doseTimeKey) {
+  allIv <- tapply(dose$pkncaRoute == "intravascular", doseTimeKey, all)
+  anyBolus <- tapply(dose$pkncaBolus, doseTimeKey, any)
+  stats::setNames(as.vector(allIv & anyBolus), names(allIv))
 }
 
 #' Make a character key from the values of several columns
@@ -736,11 +750,12 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
   intervals$cmax.dn <- intervals$cmax
   intervals$vss.last <- intervals$auclast
   # When more than one dose is at the same time, the interval is only
-  # intravascular (or bolus) if all doses are intravascular (or bolus)
+  # intravascular if all doses are intravascular (and bolus if one of those is
+  # a bolus)
   doseKey <- pkncaKey(dose, c(groupCols, timeCol))
   doseIv <- tapply(dose$pkncaRoute == "intravascular", doseKey, all)
   doseEv <- tapply(dose$pkncaRoute == "extravascular", doseKey, all)
-  doseBolus <- tapply(dose$pkncaBolus, doseKey, all)
+  doseBolus <- pkncaIvBolus(dose, doseKey)
   intervalStart <- intervals[, c(groupCols, "start"), drop = FALSE]
   names(intervalStart)[names(intervalStart) == "start"] <- timeCol
   intervalKey <- pkncaKey(intervalStart, c(groupCols, timeCol))
