@@ -1,5 +1,19 @@
 # babelmixr2 0.1.11.9000
 
+* `est="pknca"` now works with covariates in the data and with a mix of
+  intravascular and extravascular doses (#102).  Doses into a
+  compartment that the observations are calculated from are
+  intravascular.  With both routes, `ka` is estimated from the
+  extravascular doses and `vc` and `cl` from the intravascular doses.
+  Intravascular bolus doses have the concentration at the time of
+  dosing back-extrapolated (replacing a predose concentration at the
+  first dose), and other doses have it imputed (as the predose
+  concentration, or zero for the first dose).  When no doses are only
+  extravascular, `ka` is not updated.  Multiple-dose data no longer need
+  a concentration at each dose time; each dose until the next (with at
+  least 2 concentrations) is used, with `vc` from the first dose of each
+  route and `cl` from dosing intervals mostly covered by concentrations.
+  Doses at the same time are combined.
 * When a NONMEM run fails, `est="nonmem"` now says why and where to look
   instead of failing with an unclear error: a run command that was not
   found or wrote no output, a NONMEM license problem, an NM-TRAN error in

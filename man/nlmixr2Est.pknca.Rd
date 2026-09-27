@@ -42,6 +42,15 @@ controlled by the \code{qMult} and \code{q2Mult} arguments to
 \code{pkncaControl}
 }
 
+When both intravascular and extravascular doses are present (doses into the
+observation compartment are intravascular), \code{ka} is estimated from the
+extravascular doses and \code{vc} and \code{cl} are estimated from the
+intravascular doses; without extravascular-only doses, \code{ka} is not
+updated.  Intravascular bolus doses have the concentration at the time of
+dosing back-extrapolated (replacing a predose concentration at the first
+dose), and other doses without a concentration at the time of dosing have it
+imputed as the predose concentration (or zero for the first dose).
+
 The bounds for the parameter estimates are set to 10\% of the first percentile
 and 10 times the 99th percentile.  (For ka, the lower bound is set to the
 lower of 10\% of the first percentile or 0.03 and the upper bound is not
