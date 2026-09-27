@@ -1,5 +1,20 @@
 # babelmixr2 0.1.11.9000
 
+* `est="monolix"` now translates compartment properties (`f()`,
+  `alag()`, `rate()` and `dur()`) that are expressions, like
+  `f(depot) <- exp(lfdepot)`, instead of erroring with "the complex F is
+  not supported by babelmixr2" (#115).  The expression is calculated in
+  a new variable (like `rx_f_depot`) that the `PK:` macro uses.  A
+  property set only inside an `if` now keeps rxode2's default otherwise
+  (1 for `f()`, 0 for `alag()`) instead of being applied unconditionally.
+* The ACoP 2024 `babelmixr2`/`PopED` abstract
+  ([doi:10.70534/XUMG6226](https://doi.org/10.70534/XUMG6226)) is now
+  in `citation("babelmixr2")`, the package description and the `PopED`
+  article (#155).
+* `as.nlmixr2()` of a `nonmem2rx` model now stops with an informative
+  error when the model still contains untranslated NONMEM residual
+  variables (`eps#` or `err#`) instead of failing inside the estimation
+  routine (#95).
 * `est="nonmem"` now fits censored data the way nlmixr2 does (#92).  M3
   (`CENS`), M4 (`CENS` with a finite `LIMIT`) and M2 (`CENS=0` with a
   finite `LIMIT`, including data with a `LIMIT` but no `CENS` column)
@@ -9,7 +24,8 @@
   objective function is adjusted so the log-likelihood includes the
   censored observations correctly, and censoring with a transformed
   endpoint (like `lnorm()`) is refused instead of giving the wrong
-  likelihood.
+  likelihood.  The censored observations are left out of the NONMEM
+  `PRED` comparison since NONMEM's `PRED` is their likelihood.
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,
