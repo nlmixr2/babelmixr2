@@ -2465,6 +2465,35 @@ rxUiGet.popedParameters <- function(x, ...) {
 attr(rxUiGet.popedParameters, "desc") <- "PopED input $parameters"
 attr(rxUiGet.popedParameters, "rstudio") <- ""
 
+#' ODE solving options derived from `popedControl(sigdig=)`
+#'
+#' rxode2 5.1.5 loosened `rxControl(sigdig=)` (`rtol` went from
+#' `0.5*10^(-sigdig-2)` to `10^(-sigdig)`), which is too coarse for
+#' the finite-difference FIM PopED computes.  The previous tolerances
+#' are spelled out here so designs do not depend on the rxode2
+#' version (#223).
+#'
+#' @param sigdig significant digits
+#' @return rxode2 control object
+#' @noRd
+#' @author Matthew L. Fidler
+.popedRxControlFromSigdig <- function(sigdig) {
+  .tol <- 0.5 * 10^(-sigdig - 2)
+  .tolSens <- 0.5 * 10^(-sigdig - 1.5)
+  .ssTol <- 0.5 * 10^(-sigdig)
+  .ssTolSens <- 0.5 * 10^(-sigdig + 0.625)
+  rxode2::rxControl(
+    atol = .tol,
+    rtol = .tol,
+    atolSens = .tolSens,
+    rtolSens = .tolSens,
+    ssAtol = .ssTol,
+    ssRtol = .ssTol,
+    ssAtolSens = .ssTolSens,
+    ssRtolSens = .ssTolSens
+  )
+}
+
 #' Control for a PopED design task
 #'
 #' @param important character vector of important parameters or NULL
@@ -2663,6 +2692,16 @@ attr(rxUiGet.popedParameters, "rstudio") <- ""
 #' @inheritParams PopED::create_design_space
 #' @inheritParams PopED::create_design
 #' @inheritParams checkmate::assertPathForOutput
+#' @param sigdig Significant digits used to derive the ODE solver
+#'   tolerances when `rxControl` is not supplied.  The tolerances are
+#'   fixed here rather than taken from `rxode2::rxControl(sigdig=)` so
+#'   they do not change with the rxode2 version: `atol`/`rtol` are
+#'   `0.5*10^(-sigdig-2)`, the sensitivity tolerances are
+#'   `0.5*10^(-sigdig-1.5)`, the steady-state tolerances are
+#'   `0.5*10^(-sigdig)` and the steady-state sensitivity tolerances
+#'   are `0.5*10^(-sigdig+0.625)`.  PopED computes the FIM by finite
+#'   differences (see `hm1` and `hm2`), so the ODE solve must be much
+#'   more accurate than those step sizes.
 #' @param ... other parameters for PopED control
 #' @return popedControl object
 #' @references Fidler ML, Denney W, Harrold J, Hooijmaijers R,
@@ -2925,13 +2964,22 @@ popedControl <- function(stickyRecalcN=4,
     checkmate::assertFileExists(strRunFile, access="r")
   }
 
+  if (!is.null(sigdig)) {
+    checkmate::assertNumeric(
+      sigdig,
+      lower = 1,
+      finite = TRUE,
+      any.missing = FALSE,
+      len = 1
+    )
+  }
   .genRxControl <- FALSE
   if (!is.null(.xtra$genRxControl)) {
     .genRxControl <- .xtra$genRxControl
   }
   if (is.null(rxControl)) {
     if (!is.null(sigdig)) {
-      rxControl <- rxode2::rxControl(sigdig=sigdig)
+      rxControl <- .popedRxControlFromSigdig(sigdig)
     } else {
       rxControl <- rxode2::rxControl(atol=1e-4, rtol=1e-4)
     }
@@ -2944,9 +2992,6 @@ popedControl <- function(stickyRecalcN=4,
   }
   # Always single threaded
   rxControl$cores <- 1L
-  if (!is.null(sigdig)) {
-    checkmate::assertNumeric(sigdig, lower=1, finite=TRUE, any.missing=TRUE, len=1)
-  }
   checkmate::assertFunction(ofv_fun, null.ok=TRUE)
   if (is.null(user_data)) user_data <- PopED::cell(0, 0)
   checkmate::assertIntegerish(dSeed, any.missing=FALSE, null.ok = TRUE, len=1)
