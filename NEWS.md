@@ -1,5 +1,9 @@
 # babelmixr2 0.1.11.9000
 
+* The ACoP 2024 `babelmixr2`/`PopED` abstract
+  ([doi:10.70534/XUMG6226](https://doi.org/10.70534/XUMG6226)) is now
+  in `citation("babelmixr2")`, the package description and the `PopED`
+  article (#155).
 * `as.nlmixr2()` of a `nonmem2rx` model now stops with an informative
   error when the model still contains untranslated NONMEM residual
   variables (`eps#` or `err#`) instead of failing inside the estimation
