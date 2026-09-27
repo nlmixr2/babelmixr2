@@ -283,6 +283,25 @@ test_that("est='pknca' with covariates and mixed IV/oral dosing (#102)", {
   # Covariates are kept in the NCA data
   expect_true("ROUTE" %in% names(as.data.frame(ret$nca$data$conc)))
 
+  # The same C0 when the data are not sorted by time
+  datShuffle <- dat[rev(seq_len(nrow(dat))), ]
+  suppressMessages(suppressWarnings(
+    retShuffle <- nlmixr2est::nlmixr(object = modA, data = datShuffle, est = "pknca", control = ctl)
+  ))
+  ncaShuffle <- as.data.frame(retShuffle$nca)
+  cmaxShuffle <- ncaShuffle[ncaShuffle$PPTESTCD == "cmax" & ncaShuffle$ID %in% ivId, ]
+  expect_equal(
+    cmaxShuffle$PPORRES[order(cmaxShuffle$ID)],
+    cmaxIv$PPORRES[order(cmaxIv$ID)]
+  )
+
+  # Extravascular AUClast starts from zero concentration at the time of dosing
+  obs21 <- dat[dat$ID == 21 & dat$EVID == 0, ]
+  expect_equal(
+    ncaRes$PPORRES[ncaRes$PPTESTCD == "auclast" & ncaRes$ID == 21],
+    PKNCA::pk.calc.auc.last(conc = c(0, obs21$DV), time = c(0, obs21$TIME))
+  )
+
   # IV infusions are not back-extrapolated
   datInf <- dat[dat$ROUTE == 1, ]
   datInf$RATE <- ifelse(datInf$EVID == 1, 100, 0)

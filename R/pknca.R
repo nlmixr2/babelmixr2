@@ -307,10 +307,13 @@ calcPknca <- function(env, pkncaUnits) {
 #' @return `obs` with rows added for back-extrapolated C0
 #' @noRd
 pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
-  obsKey <- do.call(paste, c(unname(as.list(obs[, groupCols, drop = FALSE])), sep = "\r"))
-  doseKey <- do.call(paste, c(unname(as.list(dose[, groupCols, drop = FALSE])), sep = "\r"))
+  obsKey <- pkncaKey(obs, groupCols)
+  doseKey <- pkncaKey(dose, groupCols)
+  # Only one C0 for multiple doses at the same time
+  bolusIdx <- which(dose$pkncaBolus)
+  bolusIdx <- bolusIdx[!duplicated(pkncaKey(dose[bolusIdx, , drop = FALSE], c(groupCols, timeCol)))]
   newRows <- list()
-  for (idx in which(dose$pkncaBolus)) {
+  for (idx in bolusIdx) {
     doseTime <- dose[[timeCol]][idx]
     nextDoseTime <- dose[[timeCol]][doseKey == doseKey[idx] & dose[[timeCol]] > doseTime]
     nextDoseTime <- min(c(Inf, nextDoseTime))
@@ -322,13 +325,16 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
     if (!any(mask) || any(obs[[timeCol]][mask] == doseTime)) {
       next
     }
+    # The data are in the original data order, which may not be sorted by time
+    maskIdx <- which(mask)
+    maskIdx <- maskIdx[order(obs[[timeCol]][maskIdx])]
     c0 <-
       PKNCA::pk.calc.c0(
-        conc = obs[[dvCol]][mask], time = obs[[timeCol]][mask],
+        conc = obs[[dvCol]][maskIdx], time = obs[[timeCol]][maskIdx],
         time.dose = doseTime, method = c("logslope", "c1")
       )
     if (!is.na(c0)) {
-      newRow <- obs[which(mask)[1], , drop = FALSE]
+      newRow <- obs[maskIdx[1], , drop = FALSE]
       newRow[[timeCol]] <- doseTime
       newRow[[dvCol]] <- as.numeric(c0)
       newRows[[length(newRows) + 1]] <- newRow
@@ -336,9 +342,18 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
   }
   if (length(newRows) > 0) {
     obs <- rbind(obs, do.call(rbind, newRows))
-    obs <- obs[do.call(order, c(unname(as.list(obs[, c(groupCols, timeCol), drop = FALSE])))), , drop = FALSE]
+    obs <- obs[do.call(order, unname(as.list(obs[, c(groupCols, timeCol), drop = FALSE]))), , drop = FALSE]
   }
   obs
+}
+
+#' Make a character key from the values of several columns
+#' @param data A data.frame
+#' @param cols The columns to use for the key
+#' @return A character vector with one key per row of `data`
+#' @noRd
+pkncaKey <- function(data, cols) {
+  do.call(paste, c(unname(as.list(data[, cols, drop = FALSE])), sep = "\r"))
 }
 
 #' Setup the NCA intervals based on the route of administration
@@ -358,25 +373,17 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
   intervals$cmax.dn <- intervals$cmax
   intervals$vss.last <- intervals$auclast
   # When more than one dose is at the same time, the interval is only
-  # intravascular if all doses are intravascular
-  doseRoute <- dose[, c(groupCols, timeCol), drop = FALSE]
-  doseRoute$pkncaIv <- dose$pkncaRoute == "intravascular"
-  doseRoute$pkncaBolus <- dose$pkncaBolus
-  doseRoute <-
-    stats::aggregate(
-      stats::as.formula(sprintf("cbind(pkncaIv, pkncaBolus)~%s", paste(c(groupCols, timeCol), collapse = "+"))),
-      data = doseRoute,
-      FUN = all
-    )
-  names(doseRoute)[names(doseRoute) == timeCol] <- "start"
-  intervals$pkncaIntervalOrder <- seq_len(nrow(intervals))
-  intervals <- merge(intervals, doseRoute, all.x = TRUE)
-  intervals <- intervals[order(intervals$pkncaIntervalOrder), , drop = FALSE]
-  intervals$pkncaIntervalOrder <- NULL
-  isIv <- !is.na(intervals$pkncaIv) & intervals$pkncaIv
-  isBolus <- !is.na(intervals$pkncaBolus) & intervals$pkncaBolus
-  intervals$pkncaIv <- NULL
-  intervals$pkncaBolus <- NULL
+  # intravascular (or bolus) if all doses are intravascular (or bolus)
+  doseKey <- pkncaKey(dose, c(groupCols, timeCol))
+  doseIv <- tapply(dose$pkncaRoute == "intravascular", doseKey, all)
+  doseBolus <- tapply(dose$pkncaBolus, doseKey, all)
+  intervalStart <- intervals[, c(groupCols, "start"), drop = FALSE]
+  names(intervalStart)[names(intervalStart) == "start"] <- timeCol
+  intervalKey <- pkncaKey(intervalStart, c(groupCols, timeCol))
+  isIv <- unname(doseIv[intervalKey])
+  isIv <- !is.na(isIv) & isIv
+  isBolus <- unname(doseBolus[intervalKey])
+  isBolus <- !is.na(isBolus) & isBolus
   intervals$impute <-
     ifelse(
       isBolus,
@@ -397,7 +404,6 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
     intervals$cl.last[!isIv] <- FALSE
     intervals$vss.last[!isIv] <- FALSE
   }
-  rownames(intervals) <- NULL
   intervals
 }
 
