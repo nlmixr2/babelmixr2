@@ -73,12 +73,18 @@ rxUiGet.nonmemModel <- function(x, ...) {
     ".nmGetVarReservedDf",
     data.frame(var = character(0), nm = character(0))
   )
+  # closed-form ADVAN parameters (like K12) are reserved before $INPUT
+  rxode2::rxAssignControlValue(
+    .ui,
+    ".nmLinCmtReserved",
+    .nonmemLinCmtAdvan(.ui)$reserved
+  )
   .ret <- paste0(
     "$PROBLEM ", .ui$nonmemModelName, " translated from babelmixr2\n; comments show mu referenced model in ui$getSplitMuModel\n\n",
     "$DATA ", .ui$nonmemCsv, " IGNORE=@\n\n",
-    rxUiGet.nonmemAbbr(x, ...),
     rxUiGet.nonmemInput(x, ...), "\n",
     rxUiGet.nonmemSub(x, ...), "\n\n",
+    rxUiGet.nonmemAbbr(x, ...),
     rxUiGet.nonmemPrior(x, ...),
     .nonmemModSection(x, ...),
     rxUiGet.nonmemPkDesErr0(x, ...),

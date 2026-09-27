@@ -275,3 +275,37 @@ test_that("Monolix properties only apply to dosed compartments", {
   .monolixSetAdm(.ui, "central", "0.5", "f")
   expect_equal(.monolixGetAdm(.ui)$f, "0.5")
 })
+
+test_that("a covariate named like an ADVAN parameter is renamed everywhere (#62)", {
+  skip_on_cran()
+  skip_if_not(.hasLinCmtMicro())
+  .m <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl) * k
+      v <- exp(tv + eta.v)
+      cp <- linCmt()
+      cp ~ add(add.sd)
+    })
+  }
+  .d <- .theoLin()
+  .d$k <- 1
+  .nm <- .linCmtExport(.m, .d, "nonmem", nonmemControl(runCommand=NA, modelName="x"))
+  expect_true("$SUBROUTINES ADVAN2 TRANS1" %in% .nm)
+  .input <- .nm[startsWith(.nm, "$INPUT")]
+  expect_false(grepl(" K( |$)", .input))
+  .k <- regmatches(.input, regexpr("RXR[0-9]+", .input))
+  expect_length(.k, 1)
+  expect_true(any(grepl(paste0("^  CL=.*\\*", .k, " ;"), .nm)))
+  # $ABBR PROTECT comes after $SUBROUTINES
+  expect_lt(which(.nm == "$SUBROUTINES ADVAN2 TRANS1"), which(.nm == "$ABBR PROTECT"))
+})
