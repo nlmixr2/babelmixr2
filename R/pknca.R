@@ -321,7 +321,7 @@ pkncaAddIvC0 <- function(obs, dose, groupCols, timeCol, dvCol) {
       obsKey == doseKey[idx] &
       !is.na(obs[[dvCol]]) &
       obs[[timeCol]] >= doseTime &
-      obs[[timeCol]] < nextDoseTime
+      obs[[timeCol]] <= nextDoseTime
     if (!any(mask) || any(obs[[timeCol]][mask] == doseTime)) {
       next
     }
@@ -362,7 +362,9 @@ pkncaKey <- function(data, cols) {
 #' concentration (as the predose concentration or zero).  When both intravascular and extravascular doses
 #' are present, tmax (used for ka) is only calculated for extravascular
 #' intervals and cmax.dn and cl.last (used for vc and cl) are only calculated
-#' for intravascular intervals (#102).
+#' for intravascular intervals (#102).  Intervals starting with both
+#' intravascular and extravascular doses at the same time are used for neither
+#' when intervals with a single route are available.
 #'
 #' @param intervals The automatically-generated intervals from `PKNCAdata()`
 #' @inheritParams pkncaAddIvC0
@@ -376,13 +378,16 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
   # intravascular (or bolus) if all doses are intravascular (or bolus)
   doseKey <- pkncaKey(dose, c(groupCols, timeCol))
   doseIv <- tapply(dose$pkncaRoute == "intravascular", doseKey, all)
+  doseEv <- tapply(dose$pkncaRoute == "extravascular", doseKey, all)
   doseBolus <- tapply(dose$pkncaBolus, doseKey, all)
   intervalStart <- intervals[, c(groupCols, "start"), drop = FALSE]
   names(intervalStart)[names(intervalStart) == "start"] <- timeCol
   intervalKey <- pkncaKey(intervalStart, c(groupCols, timeCol))
-  isIv <- unname(doseIv[intervalKey])
+  isIv <- as.vector(doseIv[intervalKey])
   isIv <- !is.na(isIv) & isIv
-  isBolus <- unname(doseBolus[intervalKey])
+  isEv <- as.vector(doseEv[intervalKey])
+  isEv <- !is.na(isEv) & isEv
+  isBolus <- as.vector(doseBolus[intervalKey])
   isBolus <- !is.na(isBolus) & isBolus
   intervals$impute <-
     ifelse(
@@ -390,16 +395,20 @@ pkncaIntervals <- function(intervals, dose, groupCols, timeCol) {
       NA_character_,
       "PKNCA_impute_method_start_predose,PKNCA_impute_method_start_conc0"
     )
-  if (any(isIv) && any(!isIv)) {
-    # Intravascular intervals only calculate the parameters for vc and cl
+  if (any(isEv) && any(!isEv)) {
+    # Intervals with intravascular doses (alone or with extravascular doses at
+    # the same time) only calculate the parameters for vc and cl
     ivParams <-
       setdiff(
         intersect(names(intervals), names(PKNCA::get.interval.cols())),
         c("start", "end", "cmax", "cmax.dn", "auclast", "cl.last", "vss.last")
       )
     for (nm in ivParams) {
-      intervals[[nm]][isIv] <- FALSE
+      intervals[[nm]][!isEv] <- FALSE
     }
+  }
+  if (any(isIv) && any(!isIv)) {
+    # Only intervals with only intravascular doses calculate vc and cl
     intervals$cmax.dn[!isIv] <- FALSE
     intervals$cl.last[!isIv] <- FALSE
     intervals$vss.last[!isIv] <- FALSE

@@ -321,3 +321,49 @@ test_that("est='pknca' with covariates and mixed IV/oral dosing (#102)", {
   ncaOral <- as.data.frame(retOral$nca)
   expect_true(all(!is.na(ncaOral$PPORRES[ncaOral$PPTESTCD %in% c("tmax", "cmax.dn", "cl.last")])))
 })
+
+test_that("pkncaIntervals route handling (#102)", {
+  dose <- data.frame(
+    ID = c(1, 2, 3, 3),
+    TIME = 0,
+    pkncaRoute = c("intravascular", "extravascular", "intravascular", "extravascular"),
+    pkncaBolus = c(TRUE, FALSE, TRUE, FALSE)
+  )
+  intervals <- data.frame(
+    ID = c(1, 2, 3),
+    start = 0,
+    end = Inf,
+    cmax = TRUE,
+    tmax = TRUE,
+    auclast = TRUE,
+    half.life = TRUE
+  )
+  ret <- pkncaIntervals(intervals = intervals, dose = dose, groupCols = "ID", timeCol = "TIME")
+  # tmax only from the extravascular dose
+  expect_equal(ret$tmax, c(FALSE, TRUE, FALSE))
+  expect_equal(ret$half.life, c(FALSE, TRUE, FALSE))
+  # vc and cl only from the intravascular dose
+  expect_equal(ret$cmax.dn, c(TRUE, FALSE, FALSE))
+  expect_equal(ret$cl.last, c(TRUE, FALSE, FALSE))
+  # Imputation of the start for all but the bolus-only interval
+  expect_equal(is.na(ret$impute), c(TRUE, FALSE, FALSE))
+})
+
+test_that("pkncaAddIvC0 (#102)", {
+  dose <- data.frame(
+    ID = 1,
+    TIME = c(0, 12),
+    pkncaRoute = "intravascular",
+    pkncaBolus = TRUE
+  )
+  obs <- data.frame(ID = 1, TIME = c(6, 12, 18), DV = c(4, 2, 5))
+  ret <- pkncaAddIvC0(obs = obs, dose = dose, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  # The trough at the next dose is used for back-extrapolation; the second
+  # dose has a concentration at the time of dosing
+  expect_equal(ret$TIME, c(0, 6, 12, 18))
+  expect_equal(ret$DV, c(8, 4, 2, 5))
+  # Only one C0 for simultaneous doses
+  dose2 <- rbind(dose[1, ], dose[1, ])
+  ret2 <- pkncaAddIvC0(obs = obs, dose = dose2, groupCols = "ID", timeCol = "TIME", dvCol = "DV")
+  expect_equal(sum(ret2$TIME == 0), 1)
+})
