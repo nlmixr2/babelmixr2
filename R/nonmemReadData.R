@@ -270,7 +270,7 @@ rxUiGet.nonmemObjfType <- function(x, ...) {
   }
   .est <- rxode2::rxGetControl(.ui, "est", "focei")
   if (.est %in% c("focei", "posthoc")) {
-    .ret <- "nonmem focei"
+    .ret <- ifelse(.nonmemHasCens(.ui), "nonmem laplace", "nonmem focei")
   } else if (.est %in% "imp") {
     .ret <- "nonmem imp"
   } else if (.est %in% "its") {
@@ -373,6 +373,31 @@ rxUiGet.nonmemRoundingErrors <- function(x, ...) {
 }
 attr(rxUiGet.nonmemRoundingErrors, "rstudio") <- "nonmemRoundingErrors"
 
+#' Rows NONMEM treats as a likelihood (`F_FLAG=1`)
+#'
+#' NONMEM's `PRED` is the likelihood for these rows (not the
+#' population prediction), so they cannot be compared to nlmixr2's
+#' `PRED`
+#'
+#' @param fit nlmixr2 fit
+#' @return `RXROW` values of the censored or limited observations
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemFlagRows <- function(fit) {
+  if (!exists("nonmemData", envir = fit$env)) {
+    return(integer(0))
+  }
+  .d <- get("nonmemData", envir = fit$env)
+  if (!any(names(.d) == "CENS")) {
+    return(integer(0))
+  }
+  .flag <- .d$CENS != 0
+  if (any(names(.d) == "LIMIT")) {
+    .flag <- .flag | abs(.d$LIMIT) < 1000000
+  }
+  .d$nlmixrRowNums[.d$EVID == 0 & .flag]
+}
+
 .nonmemMergePredsAndCalcRelativeErr <- function(fit) {
   .np <- fit$ui$nonmemPreds
   if (is.null(.np)) {
@@ -385,6 +410,7 @@ attr(rxUiGet.nonmemRoundingErrors, "rstudio") <- "nonmemRoundingErrors"
   .tmp$RXROW <- fit$env$.rownum
   .by <- c("ID", "TIME", "RXROW")
   .ret <- merge(.np, .tmp, by=.by)
+  .ret$nonmemPRED[.ret$RXROW %in% .nonmemFlagRows(fit)] <- NA_real_
   .ci0 <- fit$nonmemControl$ci
   .ci <- (1 - .ci0) / 2
   .q <- c(0, .ci, 0.5, 1 - .ci, 1)

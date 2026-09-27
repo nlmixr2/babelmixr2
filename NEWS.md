@@ -13,6 +13,20 @@
   `alag()`, `rate()` or `dur()` (written in `$PK`) is no longer shared
   with other lines, which could use it before (or without) it being
   calculated.
+* `est="pknca"` now works with covariates in the data and with a mix of
+  intravascular and extravascular doses (#102).  Doses into a
+  compartment that the observations are calculated from are
+  intravascular.  With both routes, `ka` is estimated from the
+  extravascular doses and `vc` and `cl` from the intravascular doses.
+  Intravascular bolus doses have the concentration at the time of
+  dosing back-extrapolated (replacing a predose concentration at the
+  first dose), and other doses have it imputed (as the predose
+  concentration, or zero for the first dose).  When no doses are only
+  extravascular, `ka` is not updated.  Multiple-dose data no longer need
+  a concentration at each dose time; each dose until the next (with at
+  least 2 concentrations) is used, with `vc` from the first dose of each
+  route and `cl` from dosing intervals mostly covered by concentrations.
+  Doses at the same time are combined.
 * When a NONMEM run fails, `est="nonmem"` now says why and where to look
   instead of failing with an unclear error: a run command that was not
   found or wrote no output, a NONMEM license problem, an NM-TRAN error in
@@ -76,6 +90,17 @@
   tolerances that `rxControl(sigdig=)` gives, which made the
   finite-difference FIM, and so the design OFV and RSEs, less accurate
   (#223).
+* `est="nonmem"` now fits censored data the way nlmixr2 does (#92).  M3
+  (`CENS`), M4 (`CENS` with a finite `LIMIT`) and M2 (`CENS=0` with a
+  finite `LIMIT`, including data with a `LIMIT` but no `CENS` column)
+  use `F_FLAG` likelihoods in `$ERROR` with `LAPLACIAN` estimation.  A
+  missing `LIMIT` is now written as NONMEM's infinity instead of `0`,
+  `CENS`/`LIMIT` columns that do not censor anything are dropped, the
+  objective function is adjusted so the log-likelihood includes the
+  censored observations correctly, and censoring with a transformed
+  endpoint (like `lnorm()`) is refused instead of giving the wrong
+  likelihood.  The censored observations are left out of the NONMEM
+  `PRED` comparison since NONMEM's `PRED` is their likelihood.
 
 * `est="nonmem"` and `est="monolix"` now fit `linCmt()` models.  A pure
   `linCmt()` model uses NONMEM's closed-form solutions (`ADVAN1`-`ADVAN4`,

@@ -103,13 +103,13 @@ rxUiGet.nonmemErrF <- function(x, ...) {
 
     }, character(1), USE.NAMES=FALSE)
   }
-  if (.cens && .limit) {
+  if (.limit) {
+    # M2 (CENS=0 with a LIMIT), M3 and M4 censoring; the data always
+    # has a CENS column with the LIMIT column (see .nonmemFormatCensData())
     .y <- .getErr("err-cens-limit.txt", FALSE)
   } else if (.cens) {
+    # M3 censoring
     .y <- .getErr("err-cens.txt", FALSE)
-  } else if (.limit) {
-    stop("ylo/yup not implemented (would require laplacian); drop LIMIT or add CENS column",
-         call.=FALSE)
   } else {
     .y <- "  Y     = IPRED + W*EPS(1)"
   }
