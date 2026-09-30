@@ -2,6 +2,20 @@
 
 ## babelmixr2 0.1.11.9000
 
+- NONMEM control streams now use `$ABBR PROTECT` so NM-TRAN replaces
+  `LOG`, `EXP`, `SQRT`, division and powers with NONMEM’s protected
+  functions (NONMEM 7.4 or later). Turn it off with
+  `nonmemControl(protect=FALSE)` or
+  `options(babelmixr2.nmProtect=FALSE)`. Since NM-TRAN writes `B**E` as
+  `PEXP(E*PLOG(B))`, integer powers are written as products (or powers
+  of `x*x`, which is never negative) and powers of a positive number
+  with `DEXP()`. Functions of numbers (like `exp(0)`, `log(2*pi)` or
+  `expit(0)`) and divisions of numbers are written as numbers, and model
+  variables named like a protected function (like `plog`) are renamed.
+  babelmixr2’s own zero protection (`protectZeros`) is now only used
+  with `protect=FALSE`, like for NONMEM before 7.4
+  ([\#62](https://github.com/nlmixr2/babelmixr2/issues/62)).
+
 - NONMEM control streams now explain the zero-protection code babelmixr2
   adds: each `RXDZ###` `IF` block is preceded by a comment saying what
   it keeps the variable away from and why, as is the `IF (W1 .EQ. 0.0)`

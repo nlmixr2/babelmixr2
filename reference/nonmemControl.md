@@ -24,6 +24,7 @@ nonmemControl(
   runCommand = getOption("babelmixr2.nonmem", ""),
   iniSigDig = 5,
   protectZeros = FALSE,
+  protect = getOption("babelmixr2.nmProtect", TRUE),
   muRef = TRUE,
   addProp = c("combined2", "combined1"),
   rxControl = NULL,
@@ -145,7 +146,20 @@ nonmemControl(
 
 - protectZeros:
 
-  Add methods to protect divide by zero
+  Add babelmixr2's own code to protect divide by zero (and the domains
+  of [`log()`](https://rdrr.io/r/base/Log.html),
+  [`sqrt()`](https://rdrr.io/r/base/MathFun.html) and similar functions)
+  in the control stream. This is only used when `protect=FALSE` (for
+  example with NONMEM before 7.4); with `protect=TRUE`, NONMEM's
+  `$ABBR PROTECT` protects these instead
+
+- protect:
+
+  Add `$ABBR PROTECT` to the control stream so NM-TRAN replaces `LOG`,
+  `EXP`, `SQRT`, division and powers with NONMEM's protected functions
+  (`PLOG`, `PEXP`, `PSQRT`, `PDZ`); this requires NONMEM 7.4 or later.
+  The default comes from the `babelmixr2.nmProtect` option, which is
+  `TRUE` when unset
 
 - muRef:
 
@@ -337,6 +351,9 @@ nonmemControl()
 #> 
 #> $protectZeros
 #> [1] FALSE
+#> 
+#> $protect
+#> [1] TRUE
 #> 
 #> $runCommand
 #> [1] ""
