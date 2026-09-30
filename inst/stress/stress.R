@@ -2,12 +2,15 @@
 #
 # This file is shared by the testthat stress tests (translation only)
 # and by `run-stress.R` (which can also run NONMEM/Monolix end to end).
-# See README.md in this directory for how to run it.
+# See README.md in this directory for how to run it.  Finding
+# NONMEM/Monolix and writing the report are in stress-report.R (sourced
+# from the directory of this file).
 #
 # Every case is a model, a data set and, for each engine, what should
 # happen:
 #
 #  - "ok": the model and data are translated (and fit in "run" mode)
+#  - "any": translated, or refused with a known error
 #  - a regular expression: the model is refused with an error matching it
 #
 # Cases can also list regular expressions that must be found in the
@@ -15,7 +18,22 @@
 # (`monolix`), which check that the edge case was translated the way
 # it should be.
 
-.stressEnv <- new.env(parent=emptyenv())
+.stressEnv <- new.env(parent = emptyenv())
+
+.stressDir <- local({
+  # source() keeps the file name in `ofile`
+  .ofile <- NULL
+  for (.i in rev(seq_len(sys.nframe()))) {
+    .ofile <- sys.frame(.i)$ofile
+    if (is.character(.ofile)) break
+  }
+  if (is.character(.ofile)) {
+    dirname(.ofile)
+  } else {
+    system.file("stress", package = "babelmixr2")
+  }
+})
+source(file.path(.stressDir, "stress-report.R"), local = environment())
 
 # ---------------------------------------------------------------------
 # data sets
@@ -1611,21 +1629,37 @@ stressLintMonolix <- function(lines) {
 #'   (in %) allowed between the rxode2 and NONMEM/Monolix IPRED
 #' @return one row data frame with the result
 #' @noRd
-stressRunCase <- function(case, engine, mode="translate", dir=tempfile("stress"),
-                          runCommand = NULL, reference = FALSE, predTol = 5) {
+stressRunCase <- function(
+  case,
+  engine,
+  mode = "translate",
+  dir = tempfile("stress"),
+  runCommand = NULL,
+  reference = FALSE,
+  predTol = 5
+) {
   .expect <- case$expect[[engine]]
   .modelName <- .stressModelName(case$name)
-  .ret <- data.frame(case=case$name, engine=engine, mode=mode,
-                     expect=.expect, status=NA_character_, message="",
-                     problems="", seconds=NA_real_, objf=NA_real_,
-                     ipredRelDiff = NA_real_, predRelDiff = NA_real_,
-                     rerunSeconds = NA_real_,
-                     maxRelDiffTheta=NA_real_, stringsAsFactors=FALSE)
-  if (inherits(case$model, "try-error") || inherits(case$data, "try-error")) {
+  .ret <- data.frame(
+    case = case$name,
+    engine = engine,
+    mode = mode,
+    expect = .expect,
+    status = NA_character_,
+    message = "",
+    problems = "",
+    seconds = NA_real_,
+    objf = NA_real_,
+    ipredRelDiff = NA_real_,
+    predRelDiff = NA_real_,
+    rerunSeconds = NA_real_,
+    maxRelDiffTheta = NA_real_,
+    stringsAsFactors = FALSE
+  )
+  .setup <- Filter(function(x) inherits(x, "try-error"), list(case$model, case$data))
+  if (length(.setup) > 0L) {
     .ret$status <- "setup"
-    .ret$message <- paste(c(if (inherits(case$model, "try-error")) paste(case$model),
-                            if (inherits(case$data, "try-error")) paste(case$data)),
-                          collapse=" ")
+    .ret$message <- paste(vapply(.setup, paste, character(1)), collapse = " ")
     return(.ret)
   }
   if (mode == "run" && !isTRUE(case$run)) {
@@ -1633,22 +1667,13 @@ stressRunCase <- function(case, engine, mode="translate", dir=tempfile("stress")
     .ret$message <- "case is translation only"
     return(.ret)
   }
-  dir.create(dir, showWarnings=FALSE, recursive=TRUE)
+  dir.create(dir, showWarnings = FALSE, recursive = TRUE)
   .time <- proc.time()
   .fit <- .stressFit(case, engine, mode, dir, .modelName, runCommand)
   .ret$seconds <- (proc.time() - .time)[["elapsed"]]
   if (inherits(.fit, "error")) {
-    .msg <- conditionMessage(.fit)
-    .ret$message <- gsub("\n", " ", .msg)
-    if (identical(.expect, "ok")) {
-      .ret$status <- "error"
-    } else if (identical(.expect, "any")) {
-      .known <- any(vapply(.stressKnownRefusals, function(r) grepl(r, .msg), logical(1)))
-      .upstream <- any(vapply(.stressKnownUpstream, function(r) grepl(r, .msg, fixed=TRUE), logical(1)))
-      .ret$status <- if (.known) "refused" else if (.upstream) "upstream" else "error"
-    } else {
-      .ret$status <- if (grepl(.expect, .msg)) "refused" else "error"
-    }
+    .ret$message <- gsub("\n", " ", conditionMessage(.fit))
+    .ret$status <- .stressErrorStatus(.expect, conditionMessage(.fit))
     return(.ret)
   }
   if (!(.expect %in% c("ok", "any"))) {
@@ -1656,88 +1681,143 @@ stressRunCase <- function(case, engine, mode="translate", dir=tempfile("stress")
     .ret$message <- paste0("expected an error matching '", .expect, "'")
     return(.ret)
   }
-  .files <- .stressFiles(engine, .modelName)
-  .problems <- character(0)
-  .modelFile <- file.path(dir, .files$model)
-  if (!file.exists(.modelFile)) {
-    .problems <- c(.problems, paste0("missing ", .files$model))
-  } else {
-    .lines <- readLines(.modelFile)
-    .problems <- c(.problems,
-                   if (engine == "nonmem") stressLintNonmem(.lines) else stressLintMonolix(.lines))
-    if (engine == "monolix") {
-      .mlxtran <- file.path(dir, .files$mlxtran)
-      if (file.exists(.mlxtran)) {
-        .lines <- c(.lines, readLines(.mlxtran))
-        .problems <- c(.problems, .stressLintMlxtran(readLines(.mlxtran)))
-      }
-    }
-    for (.re in case$check[[engine]]) {
-      if (!any(grepl(.re, .lines))) {
-        .problems <- c(.problems, paste0("missing '", .re, "'"))
-      }
-    }
-  }
-  .dataFile <- file.path(dir, .files$data)
-  if (!file.exists(.dataFile)) {
-    .problems <- c(.problems, paste0("missing ", .files$data))
-  } else {
-    .problems <- c(.problems, .stressLintData(utils::read.csv(.dataFile, na.strings=".")))
-  }
+  .problems <- .stressCheckFiles(case, engine, dir, .modelName)
   if (mode == "run") {
-    if (!inherits(.fit, "nlmixr2FitData")) {
-      .problems <- c(.problems, "the fit did not return an nlmixr2 fit")
-    } else {
-      .ret$objf <- .fit$objf
-      if (!is.finite(.fit$objf)) {
-        .problems <- c(.problems, "objective function is not finite")
-      }
-      if (any(!is.finite(.fit$theta))) {
-        .problems <- c(
-          .problems,
-          paste0(
-            "non-finite estimates: ",
-            paste(names(.fit$theta)[!is.finite(.fit$theta)], collapse = ", ")
-          )
-        )
-      }
-      .pd <- .stressPredDiff(.fit, engine)
-      .ret$ipredRelDiff <- .pd[1]
-      .ret$predRelDiff <- .pd[2]
-      if (is.na(.pd[1])) {
-        .problems <- c(.problems, "cannot compare the predictions with rxode2")
-      } else if (.pd[1] > predTol) {
-        .problems <- c(
-          .problems,
-          sprintf(
-            "rxode2 IPRED differs from %s by %.2f%% (median; limit %g%%)",
-            engine,
-            .pd[1],
-            predTol
-          )
-        )
-      }
-      if (isTRUE(case$rerun)) {
-        .time <- proc.time()
-        .fit2 <- .stressFit(case, engine, mode, dir, .modelName, runCommand)
-        .ret$rerunSeconds <- (proc.time() - .time)[["elapsed"]]
-        if (inherits(.fit2, "error")) {
-          .problems <- c(
-            .problems,
-            paste0("rerun failed: ", conditionMessage(.fit2))
-          )
-        } else if (!isTRUE(all.equal(.fit$objf, .fit2$objf))) {
-          .problems <- c(.problems, "rerun gave a different objective function")
-        }
-      }
-      if (reference) {
-        .ret$maxRelDiffTheta <- .stressCompare(.fit, case, engine)
-      }
-    }
+    .run <- .stressCheckFit(
+      .fit, case, engine, dir, .modelName, runCommand, reference, predTol
+    )
+    .ret[names(.run$values)] <- .run$values
+    .problems <- c(.problems, .run$problems)
   }
   .ret$problems <- paste(.problems, collapse = " | ")
   .ret$status <- if (length(.problems) > 0L) "problem" else "ok"
   .ret
+}
+
+#' Status of a case that gave an error
+#'
+#' @param expect what the case expects ("ok", "any" or a regular
+#'   expression the refusal must match)
+#' @param msg error message
+#' @return "refused", "upstream" or "error"
+#' @noRd
+.stressErrorStatus <- function(expect, msg) {
+  if (identical(expect, "ok")) {
+    return("error")
+  }
+  if (!identical(expect, "any")) {
+    return(if (grepl(expect, msg)) "refused" else "error")
+  }
+  if (any(vapply(.stressKnownRefusals, grepl, logical(1), x = msg))) {
+    return("refused")
+  }
+  .upstream <- vapply(.stressKnownUpstream, grepl, logical(1), x = msg, fixed = TRUE)
+  if (any(.upstream)) "upstream" else "error"
+}
+
+#' Check the files written for NONMEM/Monolix
+#'
+#' @inheritParams stressRunCase
+#' @param modelName model name (file names)
+#' @return character vector of problems
+#' @noRd
+.stressCheckFiles <- function(case, engine, dir, modelName) {
+  .files <- .stressFiles(engine, modelName)
+  .problems <- character(0)
+  .modelFile <- file.path(dir, .files$model)
+  if (!file.exists(.modelFile)) {
+    .problems <- paste0("missing ", .files$model)
+  } else {
+    .lines <- readLines(.modelFile)
+    .problems <- if (engine == "nonmem") {
+      stressLintNonmem(.lines)
+    } else {
+      stressLintMonolix(.lines)
+    }
+    .mlxtran <- file.path(dir, .files$mlxtran)
+    if (engine == "monolix" && file.exists(.mlxtran)) {
+      .lines <- c(.lines, readLines(.mlxtran))
+      .problems <- c(.problems, .stressLintMlxtran(readLines(.mlxtran)))
+    }
+    .found <- vapply(case$check[[engine]], function(re) any(grepl(re, .lines)), logical(1))
+    .problems <- c(.problems, sprintf("missing '%s'", case$check[[engine]][!.found]))
+  }
+  .dataFile <- file.path(dir, .files$data)
+  if (!file.exists(.dataFile)) {
+    return(c(.problems, paste0("missing ", .files$data)))
+  }
+  c(.problems, .stressLintData(utils::read.csv(.dataFile, na.strings = ".")))
+}
+
+#' Check a NONMEM/Monolix fit (run mode)
+#'
+#' @param fit the fit
+#' @inheritParams stressRunCase
+#' @param modelName model name (file names)
+#' @return list with `values` (result columns) and `problems`
+#' @noRd
+.stressCheckFit <- function(
+  fit,
+  case,
+  engine,
+  dir,
+  modelName,
+  runCommand,
+  reference,
+  predTol
+) {
+  if (!inherits(fit, "nlmixr2FitData")) {
+    return(list(values = list(), problems = "the fit did not return an nlmixr2 fit"))
+  }
+  .problems <- character(0)
+  if (!is.finite(fit$objf)) {
+    .problems <- "objective function is not finite"
+  }
+  .bad <- names(fit$theta)[!is.finite(fit$theta)]
+  if (length(.bad) > 0L) {
+    .problems <- c(.problems, paste0("non-finite estimates: ", paste(.bad, collapse = ", ")))
+  }
+  .pd <- .stressPredDiff(fit, engine)
+  if (is.na(.pd[1])) {
+    .problems <- c(.problems, "cannot compare the predictions with rxode2")
+  } else if (.pd[1] > predTol) {
+    .problems <- c(
+      .problems,
+      sprintf(
+        "rxode2 IPRED differs from %s by %.2f%% (median; limit %g%%)",
+        engine,
+        .pd[1],
+        predTol
+      )
+    )
+  }
+  .values <- list(objf = fit$objf, ipredRelDiff = .pd[1], predRelDiff = .pd[2])
+  if (isTRUE(case$rerun)) {
+    .rerun <- .stressCheckRerun(fit, case, engine, dir, modelName, runCommand)
+    .values$rerunSeconds <- .rerun$seconds
+    .problems <- c(.problems, .rerun$problems)
+  }
+  if (reference) {
+    .values$maxRelDiffTheta <- .stressCompare(fit, case, engine)
+  }
+  list(values = .values, problems = .problems)
+}
+
+#' Fit a case again: the saved output should be read again
+#'
+#' @inheritParams .stressCheckFit
+#' @return list with `seconds` and `problems`
+#' @noRd
+.stressCheckRerun <- function(fit, case, engine, dir, modelName, runCommand) {
+  .time <- proc.time()
+  .fit2 <- .stressFit(case, engine, "run", dir, modelName, runCommand)
+  .seconds <- (proc.time() - .time)[["elapsed"]]
+  .problems <- if (inherits(.fit2, "error")) {
+    paste0("rerun failed: ", conditionMessage(.fit2))
+  } else if (!isTRUE(all.equal(fit$objf, .fit2$objf))) {
+    "rerun gave a different objective function"
+  }
+  list(seconds = .seconds, problems = .problems)
 }
 
 #' Compare an external fit to the same model fit in nlmixr2

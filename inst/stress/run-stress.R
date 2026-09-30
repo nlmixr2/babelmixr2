@@ -54,11 +54,9 @@
   sub(paste0("^--", name, "="), "", .w[1])
 }
 
-suppressPackageStartupMessages({
-  library(babelmixr2)
-  library(nlmixr2est)
-  library(rxode2)
-})
+# loading babelmixr2 registers the "nonmem" and "monolix" estimation
+# methods with nlmixr2est
+suppressPackageStartupMessages(loadNamespace("babelmixr2"))
 
 .file <- system.file("stress", "stress.R", package = "babelmixr2")
 if (.file == "") {
@@ -74,114 +72,19 @@ if (.file == "") {
 }
 source(.file)
 
-# ---------------------------------------------------------------------
-# finding NONMEM and Monolix
-# ---------------------------------------------------------------------
-
-.findNonmem <- function() {
-  .o <- getOption("babelmixr2.nonmem", "")
-  if (is.character(.o) && nzchar(.o)) {
-    return(.o)
-  }
-  .w <- Sys.which(paste0("nmfe7", 9:0))
-  .w <- .w[.w != ""]
-  if (length(.w) > 0L) {
-    return(unname(.w[1]))
-  }
-  .globs <- c(
-    "/opt/NONMEM/*/run/nmfe7*",
-    "/opt/nm*/run/nmfe7*",
-    "/usr/local/NONMEM/*/run/nmfe7*",
-    "/usr/local/nm*/run/nmfe7*",
-    "~/nm*/run/nmfe7*",
-    "~/NONMEM/*/run/nmfe7*",
-    "C:/nm*/run/nmfe7*.bat",
-    "C:/NONMEM/*/run/nmfe7*.bat"
-  )
-  .f <- Sys.glob(path.expand(.globs))
-  .f <- .f[!grepl("\\.(f90|o|obj)$", .f) & file.exists(.f)]
-  if (length(.f) == 0L) {
-    return("")
-  }
-  # newest NONMEM first
-  sort(.f, decreasing = TRUE)[1]
-}
-
-.monolixStatus <- function() {
-  .o <- getOption("babelmixr2.monolix", "")
-  if (is.character(.o) && nzchar(.o)) {
-    return(paste0("command ", .o))
-  }
-  if (!requireNamespace("lixoftConnectors", quietly = TRUE)) {
-    return("")
-  }
-  .x <- try(
-    suppressMessages(
-      lixoftConnectors::initializeLixoftConnectors(
-        software = "monolix",
-        force = TRUE
-      )
-    ),
-    silent = TRUE
-  )
-  if (inherits(.x, "try-error") || isFALSE(.x)) {
-    return("")
-  }
-  paste0("lixoftConnectors ", utils::packageVersion("lixoftConnectors"))
-}
-
-.versions <- function() {
-  .p <- c(
-    "babelmixr2",
-    "rxode2",
-    "nlmixr2est",
-    "lotri",
-    "nonmem2rx",
-    "monolix2rx",
-    "nlmixr2lib",
-    "lixoftConnectors"
-  )
-  .v <- vapply(
-    .p,
-    function(p) {
-      if (requireNamespace(p, quietly = TRUE)) {
-        as.character(utils::packageVersion(p))
-      } else {
-        "-"
-      }
-    },
-    character(1)
-  )
-  .sha <- utils::packageDescription("babelmixr2")$RemoteSha
-  c(
-    paste0(
-      "- ",
-      .p,
-      " ",
-      .v,
-      ifelse(
-        .p == "babelmixr2" & !is.null(.sha),
-        paste0(" (", substr(.sha, 1, 7), ")"),
-        ""
-      )
-    ),
-    paste0("- R ", getRversion(), " on ", R.version$platform)
-  )
-}
-
 .nonmemCmd <- .opt("nonmem")
 if (is.null(.nonmemCmd)) {
-  .nonmemCmd <- .findNonmem()
+  .nonmemCmd <- stressFindNonmem()
 }
 .monolixCmd <- .opt("monolix")
 .monolix <- if (is.null(.monolixCmd)) {
-  .monolixStatus()
+  stressMonolixStatus()
 } else {
   paste0("command ", .monolixCmd)
 }
 
 if (isTRUE(.opt("check", FALSE))) {
-  message(paste(.versions(), collapse = "\n"))
+  message(paste(stressVersions(), collapse = "\n"))
   message(
     "- NONMEM: ",
     ifelse(
@@ -313,7 +216,7 @@ writeLines(
   utils::capture.output(utils::sessionInfo()),
   file.path(.out, "sessionInfo.txt")
 )
-message(paste(.versions(), collapse = "\n"))
+message(paste(stressVersions(), collapse = "\n"))
 if ("run" %in% .modes) {
   if ("nonmem" %in% .engines) {
     message("- NONMEM: ", .nonmemCmd)
@@ -351,98 +254,12 @@ rownames(.res) <- NULL
 .res$failed <- stressFailed(.res)
 utils::write.csv(.res, file.path(.out, "results.csv"), row.names = FALSE)
 
-# markdown summary
-.md <- c(
-  "# babelmixr2 NONMEM/Monolix stress test",
-  "",
-  paste0("- date: ", format(Sys.time())),
-  paste0("- mode: ", paste(.modes, collapse = ", ")),
-  .versions(),
-  if ("run" %in% .modes && "nonmem" %in% .engines) {
-    paste0("- NONMEM: ", .nonmemCmd)
-  },
-  if ("run" %in% .modes && "monolix" %in% .engines) {
-    paste0("- Monolix: ", .monolix)
-  },
-  "",
-  "## Summary",
-  ""
-)
-.col <- paste(.res$mode, .res$engine)
-.tab <- table(.res$status, .col)
-.md <- c(
-  .md,
-  paste0("| status | ", paste(colnames(.tab), collapse = " | "), " |"),
-  paste0("|---|", paste(rep("---", ncol(.tab)), collapse = "|"), "|"),
-  vapply(
-    rownames(.tab),
-    function(r) {
-      paste0("| ", r, " | ", paste(.tab[r, ], collapse = " | "), " |")
-    },
-    character(1)
-  ),
-  "",
-  "## Failures",
-  ""
-)
-.fail <- .res[.res$failed, ]
-if (nrow(.fail) == 0L) {
-  .md <- c(.md, "None.")
-} else {
-  .md <- c(
-    .md,
-    "| case | engine | mode | status | message |",
-    "|---|---|---|---|---|",
-    sprintf(
-      "| %s | %s | %s | %s | %s |",
-      .fail$case,
-      .fail$engine,
-      .fail$mode,
-      .fail$status,
-      gsub("\\|", "/", substr(paste(.fail$message, .fail$problems), 1, 300))
-    )
-  )
-}
-if ("run" %in% .modes) {
-  .ok <- .res[.res$mode == "run" & .res$status %in% c("ok", "problem"), ]
-  .num <- function(x, fmt) ifelse(is.na(x), "", sprintf(fmt, x))
-  .md <- c(
-    .md,
-    "",
-    "## Fits",
-    "",
-    paste(
-      "| case | engine | status | seconds | objective | IPRED diff % |",
-      "PRED diff % | rerun seconds | max rel. diff vs nlmixr2 |"
-    ),
-    "|---|---|---|---|---|---|---|---|---|",
-    sprintf(
-      "| %s | %s | %s | %.1f | %s | %s | %s | %s | %s |",
-      .ok$case,
-      .ok$engine,
-      .ok$status,
-      .ok$seconds,
-      .num(.ok$objf, "%.3f"),
-      .num(.ok$ipredRelDiff, "%.3f"),
-      .num(.ok$predRelDiff, "%.3f"),
-      .num(.ok$rerunSeconds, "%.1f"),
-      .num(.ok$maxRelDiffTheta, "%.3f")
-    )
-  )
-}
+.md <- stressSummary(.res, .modes, .engines, .nonmemCmd, .monolix)
 writeLines(.md, file.path(.out, "summary.md"))
 message("\n", paste(.md, collapse = "\n"))
 message("\nresults: ", file.path(.out, "results.csv"))
 
 if (.bundle) {
-  .zip <- paste0(.out, ".zip")
-  .ok <- withr::with_dir(dirname(.out), {
-    try(utils::zip(.zip, basename(.out), flags = "-r9Xq"), silent = TRUE)
-  })
-  if (inherits(.ok, "try-error") || !file.exists(.zip)) {
-    message("could not zip the output; send the directory ", .out, " instead")
-  } else {
-    message("send this file back: ", .zip)
-  }
+  stressBundle(.out)
 }
 quit(save = "no", status = ifelse(any(.res$failed), 1L, 0L))

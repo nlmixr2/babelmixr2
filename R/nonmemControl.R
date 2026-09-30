@@ -251,7 +251,8 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertLogical(calcTables, len=1, any.missing=FALSE)
 
   # match.arg() cannot match the empty string (no $COVARIANCE)
-  cov <- if (identical(cov, "")) "" else match.arg(cov)
+  checkmate::assertChoice(cov[1], c("r,s", "r", "s", ""), .var.name = "cov")
+  cov <- cov[1]
   .ret <- list(est=match.arg(est),
                cov = cov,
                advanOde=match.arg(advanOde),

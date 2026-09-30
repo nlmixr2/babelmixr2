@@ -79,7 +79,8 @@ its symbolic derivatives), which writes each branch as an
 arithmetic expression; this allows the nested \code{if}/\verb{else if}/\verb{else} statements NONMEM models cannot otherwise use.  A pruned
 fit contains the pruned model.}
 
-\item{cov}{The NONMEM covariance method}
+\item{cov}{The NONMEM covariance method; \code{""} skips the covariance
+step}
 
 \item{maxeval}{NONMEM's maxeval (for non posthoc methods)}
 
