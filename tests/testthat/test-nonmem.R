@@ -78,7 +78,7 @@ withr::with_tempdir({
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros = TRUE)
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE)
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
     .has <- function(x) expect_true(x %in% .mod, info = x)
     .has(
@@ -127,7 +127,7 @@ withr::with_tempdir({
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros = TRUE)
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE)
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
     .has <- function(x) expect_true(x %in% .mod, info = x)
     .has("  RXR1=DLOG(RXDZ001) ; a = log(cl)")
@@ -159,7 +159,7 @@ withr::with_tempdir({
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros = TRUE, prune = FALSE)
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE, prune = FALSE)
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
     .has <- function(x) expect_true(x %in% .mod, info = x)
     # nothing is protected (or cached) inside the if body ...
@@ -198,7 +198,7 @@ withr::with_tempdir({
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros = TRUE, iniSigDig = 16)
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE, iniSigDig = 16)
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
     .has <- function(x) expect_true(x %in% .mod, info = x)
     # the condition's protection is calculated before the IF uses it
@@ -231,7 +231,7 @@ withr::with_tempdir({
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros = TRUE)
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE)
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
     .des <- which(.mod == "$DES")
     .alag <- which(.mod == "  ALAG1=DLOG(RXDZ001) ; alag(central) = log(cl)")
@@ -280,7 +280,7 @@ withr::with_tempdir({
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros = TRUE)
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE)
     .mod <- strsplit(ui$nonmemModel, "\n")[[1]]
     expect_true(any(grepl("^  ALAG1=DLOG\\(RXDZ", .mod)))
     .expectPkDefined(.mod)
@@ -303,7 +303,7 @@ withr::with_tempdir({
       })
     }
     ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
-    ui$control <- nonmemControl(protectZeros = TRUE)
+    ui$control <- nonmemControl(protect = FALSE, protectZeros = TRUE)
     rxode2::rxAssignControlValue(
       ui,
       ".linCmtMicro",
@@ -489,6 +489,8 @@ withr::with_tempdir({
             "",
             "$SUBROUTINES ADVAN13 TOL=6 ATOL=12 SSTOL=6 SSATOL=12",
             "",
+            "$ABBR PROTECT",
+            "",
             "$MODEL NCOMPARTMENTS=2",
             "     COMP(DEPOT, DEFDOSE) ; depot",
             "     COMP(CENTRAL) ; central",
@@ -513,7 +515,7 @@ withr::with_tempdir({
             "  ; Write out expressions for ipred and w",
             "  RX_IP1 = RX_PF1",
             "  RX_P1 = RX_IP1",
-            "  W1=DSQRT((THETA(4))**2) ; W1 ~ sqrt((add.sd)^2)",
+            "  W1=DSQRT(((THETA(4))*(THETA(4)))) ; W1 ~ sqrt((add.sd)^2)",
             "  ; keep W1 away from zero (a zero residual variance is undefined)",
             "  IF (W1 .EQ. 0.0) W1 = 1",
             "  IPRED = RX_IP1",
@@ -717,7 +719,7 @@ withr::with_tempdir({
           "     RX_IP1 = -1000000000",
           "  END IF",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((add.err)^2)",
+          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((add.err)^2)",
           "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
@@ -781,7 +783,7 @@ withr::with_tempdir({
           "     END IF",
           "  END IF",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((add.err)^2)",
+          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((add.err)^2)",
           "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
@@ -828,7 +830,7 @@ withr::with_tempdir({
           "     RX_IP1 = DLOG(RX_IP1)",
           "  END IF",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((lnorm.err)^2)",
+          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
           "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
@@ -872,7 +874,7 @@ withr::with_tempdir({
           "  XL  = (RX_IP1 - (-0.1))/((70.0) - (-0.1))",
           "  RX_IP1 = -DLOG(1.0/XL - 1.0)",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((lnorm.err)^2)",
+          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
           "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
@@ -933,7 +935,7 @@ withr::with_tempdir({
           "     END IF",
           "  END IF",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(3))**2) ; W1 ~ sqrt((lnorm.err)^2)",
+          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
           "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
@@ -1003,7 +1005,8 @@ withr::with_tempdir({
           "  ; Write out expressions for ipred and w",
           "  RX_IP1 = RX_PF1",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((RX_PF1*THETA(5))**2) ; W1 ~ sqrt((rx_pred_f_ * prop.err)^2)",
+          paste0("  W1=DSQRT(((RX_PF1*THETA(5))*(RX_PF1*THETA(5)))) ;",
+                 " W1 ~ sqrt((rx_pred_f_ * prop.err)^2)"),
           "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  IPRED = RX_IP1",
@@ -1086,7 +1089,7 @@ withr::with_tempdir({
           "     RX_IP1 = -1000000000",
           "  END IF",
           "  RX_P1 = RX_IP1",
-          "  W1=DSQRT((THETA(5))**2) ; W1 ~ sqrt((cpadd.sd)^2)",
+          "  W1=DSQRT(((THETA(5))*(THETA(5)))) ; W1 ~ sqrt((cpadd.sd)^2)",
           "  ; keep W1 away from zero (a zero residual variance is undefined)",
           "  IF (W1 .EQ. 0.0) W1 = 1",
           "  RX_IP2 = RX_PF2",
@@ -1108,7 +1111,7 @@ withr::with_tempdir({
           "     END IF",
           "  END IF",
           "  RX_P2 = RX_IP2",
-          "  W2=DSQRT((THETA(12))**2) ; W2 ~ sqrt((pdadd.err)^2)",
+          "  W2=DSQRT(((THETA(12))*(THETA(12)))) ; W2 ~ sqrt((pdadd.err)^2)",
           "  ; keep W2 away from zero (a zero residual variance is undefined)",
           "  IF (W2 .EQ. 0.0) W2 = 1",
           "  IPRED = RX_IP1",
@@ -1236,5 +1239,171 @@ test_that("nonmem model creation without running", {
     unlink(c("staleTest-nonmem", "staleTest-001-nonmem", "staleTest-002-nonmem"),
            recursive=TRUE)
 
+  })
+})
+withr::with_tempdir({
+  test_that("NONMEM $ABBR PROTECT (#62)", {
+    one.cmt <- function() {
+      ini({
+        tka <- 0.45
+        tcl <- 1
+        tv <- 3.45
+        eta.ka ~ 0.6
+        add.sd <- 0.7
+      })
+      model({
+        ka <- exp(tka + eta.ka) * exp(0)
+        cl <- exp(tcl) + log(0.5) - sqrt(4)
+        plog <- log(2)
+        v <- exp(tv) * plog * sqrt(pi) / sqrt(pi)
+        d / dt(pnp) <- -ka * pnp
+        d / dt(central) <- ka * pnp - cl / v * central
+        cp <- central / v
+        cp ~ add(add.sd)
+      })
+    }
+
+    .ctl <- function(...) {
+      nlmixr2(
+        one.cmt,
+        nlmixr2data::theo_sd,
+        "nonmem",
+        nonmemControl(runCommand = NA, ...)
+      )
+      .ret <- readLines(file.path("one.cmt-nonmem", "one.cmt.nmctl"))
+      unlink("one.cmt-nonmem", recursive = TRUE)
+      .ret
+    }
+
+    .nm <- suppressMessages(.ctl())
+    expect_true("$ABBR PROTECT" %in% .nm)
+    # $ABBR comes before the abbreviated code
+    expect_lt(which(.nm == "$ABBR PROTECT"), which(.nm == "$PK"))
+    # NM-TRAN's protection mistranslates functions of constants like EXP(0)
+    expect_false(any(grepl("DEXP(0)", .nm, fixed = TRUE)))
+    expect_true(any(grepl("KA=DEXP(RX__TKA)*1 ;", .nm, fixed = TRUE)))
+    expect_true(any(grepl("(-0.69314718055994529)-2 ;", .nm, fixed = TRUE)))
+    # PLOG is a NONMEM protected function, so the variable is renamed
+    expect_false(any(grepl("^ *PLOG=", .nm)))
+    expect_true(any(grepl(
+      "RXR2=0.69314718055994529 ; plog = log(2)",
+      .nm,
+      fixed = TRUE
+    )))
+    # the renamed compartment keeps its name throughout the control stream
+    expect_true("     COMP(RXR1, DEFDOSE) ; pnp" %in% .nm)
+    # pi is a number in $ERROR too
+    expect_false(any(grepl("RXE_1.77", .nm, fixed = TRUE)))
+    expect_false(any(grepl("RXE_3.14", .nm, fixed = TRUE)))
+    expect_false(any(grepl("RXR1=", .nm, fixed = TRUE)))
+
+    .rxToN <- function(x) rxToNonmem(x, one.cmt())
+    # functions of numbers, including negative or parenthesized ones
+    expect_equal(.rxToN("exp((0))"), "1")
+    expect_equal(.rxToN("exp(-(1))"), "0.36787944117144233")
+    # log(-1) is NaN, so it is not folded
+    expect_true(startsWith(.rxToN("log(-1)"), "DLOG("))
+    expect_equal(.rxToN("sqrt(+(4))"), "2")
+    expect_equal(.rxToN("log(0.5)"), "(-0.69314718055994529)")
+    expect_equal(.rxToN("exp(log(2))"), "2")
+    expect_equal(.rxToN("log(1+1)"), "0.69314718055994529")
+    expect_equal(.rxToN("log(2*3^2)"), .rxToN("log(18)"))
+    expect_equal(.rxToN("tan(0)"), "0")
+    expect_equal(.rxToN("acos(1)"), "0")
+    expect_equal(.rxToN("log1pexp(0)"), "0.69314718055994529")
+    expect_equal(.rxToN("factorial(3)"), "6")
+    expect_equal(.rxToN("exp(sum(0, 0))"), "1")
+    expect_equal(.rxToN("exp(tka)*prod(2, 3)"), "DEXP(THETA(1))*6")
+    expect_equal(.rxToN("log(max(1, 2))"), "0.69314718055994529")
+    # partly constant calls and rxode2's normalized powers
+    expect_equal(
+      .rxToN("expit(0, tka, tcl)"),
+      "((THETA(2))-(THETA(1)))*(0.5)+(THETA(1))"
+    )
+    expect_equal(.rxToN("expit(0, tka)"), "(1.0-(THETA(1)))*(0.5)+(THETA(1))")
+    expect_equal(.rxToN("exp(Rx_pow_di(2, 2))"), "54.598150033144236")
+    expect_equal(.rxToN("exp(tka)*Rx_pow(2, 3)"), "DEXP(THETA(1))*8")
+    expect_equal(.rxToN("gammafn(5)"), "24")
+    expect_equal(.rxToN("lfactorial(1)"), "0")
+    expect_equal(
+      .rxToN("tka^(2e15+1)"),
+      "(THETA(1)*((THETA(1)*THETA(1))**1000000000000000))"
+    )
+    expect_equal(.rxToN("exp(tka)*exp(1-1)"), "DEXP(THETA(1))*1")
+    # named constants and hand-written translations fold too
+    expect_equal(.rxToN("sqrt(pi)"), "1.7724538509055159")
+    expect_equal(.rxToN("log(2*M_PI)"), "1.8378770664093453")
+    expect_equal(.rxToN("exp(M_LN2)"), "2")
+    expect_equal(.rxToN("expit(0)"), "0.5")
+    expect_equal(.rxToN("expit(0, 1, 3)"), "2")
+    expect_equal(.rxToN("logit(0.5)"), "0")
+    expect_equal(.rxToN("log1pmx(1)"), "(-0.30685281944005471)")
+    expect_equal(.rxToN("expit(tka)"), "1/(1+DEXP(-(THETA(1))))")
+    # powers above .rxNMmaxIntPow are powers of x*x, which is never negative
+    # PROTECT writes a/b with PDZ(), so divisions of numbers are folded
+    expect_equal(.rxToN("2/4"), "0.5")
+    expect_equal(.rxToN("tka*(1/pi)"), "THETA(1)*(0.31830988618379069)")
+    expect_equal(.rxToN("tka/70"), "THETA(1)/70")
+    expect_equal(.rxToN("tka^13"), "(THETA(1)*((THETA(1)*THETA(1))**6))")
+    expect_equal(.rxToN("tka^14"), "((THETA(1)*THETA(1))**7)")
+    expect_equal(.rxToN("(tka-3)^-14"), "(1/(((THETA(1)-3)*(THETA(1)-3))**7))")
+    # large whole numbers are not written as Fortran integers
+    expect_equal(.rxToN("2^31"), "2.1474836480000000D+09")
+    expect_equal(.rxToN("2^30"), "1073741824")
+    expect_warning(.rxToN("(-2)^tka"), "PLOG")
+    # PROTECT writes B**E as PEXP(E*PLOG(B)), which is wrong for B < 0,
+    # so integer powers are products and powers of numbers use DEXP()
+    expect_equal(.rxToN("tka^2"), "(THETA(1)*THETA(1))")
+    expect_equal(
+      .rxToN("(tka - 3)^3"),
+      "((THETA(1)-3)*(THETA(1)-3)*(THETA(1)-3))"
+    )
+    expect_equal(.rxToN("exp(tka)^2"), "((DEXP(THETA(1)))*(DEXP(THETA(1))))")
+    expect_equal(.rxToN("tka^-2"), "(1/(THETA(1)*THETA(1)))")
+    expect_equal(.rxToN("tka^0"), "1")
+    expect_equal(.rxToN("2^tka"), "DEXP((THETA(1))*0.69314718055994529)")
+    expect_equal(.rxToN("2^3"), "8")
+    expect_equal(.rxToN("tka^(1+1)"), "(THETA(1)*THETA(1))")
+    expect_equal(.rxToN("tka^0.5"), "THETA(1)**0.5")
+
+    .ui <- rxode2::rxUiDecompress(one.cmt())
+    rxode2::rxAssignControlValue(.ui, "protect", FALSE)
+    rxode2::rxAssignControlValue(.ui, "protectZeros", FALSE)
+    expect_equal(rxToNonmem("tka^2", .ui), "THETA(1)**2")
+    expect_equal(rxToNonmem("2^tka", .ui), "2**THETA(1)")
+    expect_warning(rxToNonmem("(-2)^tka", .ui), NA)
+
+    # a renamed protected name does not merge with a variable already
+    # named like the new name
+    .ui2 <- rxode2::rxUiDecompress(one.cmt())
+    expect_equal(
+      suppressMessages(rxToNonmem(
+        "plog <- tka\nRXR1 <- 2 * tka\ncp <- plog + RXR1",
+        .ui2
+      )),
+      paste0(
+        "  RXR1=THETA(1) ; plog <- tka\n",
+        "  RX001=2*THETA(1) ; RXR1 <- 2 * tka\n",
+        "  CP=RXR1+RX001 ; cp <- plog + RXR1"
+      )
+    )
+
+    # babelmixr2's own zero protection is only used without $ABBR PROTECT
+    .ui <- rxode2::rxUiDecompress(one.cmt())
+    rxode2::rxAssignControlValue(.ui, "protectZeros", TRUE)
+    expect_equal(rxToNonmem("log(tka)", .ui), "DLOG(THETA(1))")
+    expect_equal(rxToNonmem("1/tka", .ui), "1/THETA(1)")
+    rxode2::rxAssignControlValue(.ui, "protect", FALSE)
+    expect_equal(rxToNonmem("1/tka", .ui), "1/RXDZ001")
+
+    .nm <- suppressMessages(.ctl(protect = FALSE))
+    expect_false(any(grepl("$ABBR", .nm, fixed = TRUE)))
+    expect_true(any(grepl("^ *PLOG=", .nm)))
+
+    withr::with_options(list(babelmixr2.nmProtect = FALSE), {
+      expect_false(nonmemControl()$protect)
+    })
+    expect_true(nonmemControl()$protect)
+    expect_error(nonmemControl(protect = NA))
   })
 })

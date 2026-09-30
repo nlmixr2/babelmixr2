@@ -47,6 +47,16 @@ attr(rxUiGet.nonmemMod, "rstudio") <- "nonmemMod"
   rxode2::rxAssignControlValue(ui, ".nmVarExtra", extra)
 }
 
+#' @export
+rxUiGet.nonmemAbbr <- function(x, ...) {
+  .ui <- x[[1]]
+  if (!.nonmemProtect(.ui)) {
+    return("")
+  }
+  "$ABBR PROTECT\n\n"
+}
+attr(rxUiGet.nonmemAbbr, "rstudio") <- "nonmemAbbr"
+
 rxUiGetNonememModelEnv <- new.env(parent=emptyenv())
 rxUiGetNonememModelEnv$rxS <- NULL
 
@@ -55,11 +65,26 @@ rxUiGet.nonmemModel <- function(x, ...) {
   .ui <- x[[1]]
   rxUiGetNonememModelEnv$rxS <- .ui$loadPrune
   .nonmemResetUi(.ui)
+  # reserved names are renamed once for the whole control stream so
+  # $INPUT, $MODEL and the abbreviated code agree
+  rxode2::rxAssignControlValue(.ui, ".nmVarResNum", 1)
+  rxode2::rxAssignControlValue(
+    .ui,
+    ".nmGetVarReservedDf",
+    data.frame(var = character(0), nm = character(0))
+  )
+  # closed-form ADVAN parameters (like K12) are reserved before $INPUT
+  rxode2::rxAssignControlValue(
+    .ui,
+    ".nmLinCmtReserved",
+    .nonmemLinCmtAdvan(.ui)$reserved
+  )
   .ret <- paste0(
     "$PROBLEM ", .ui$nonmemModelName, " translated from babelmixr2\n; comments show mu referenced model in ui$getSplitMuModel\n\n",
     "$DATA ", .ui$nonmemCsv, " IGNORE=@\n\n",
     rxUiGet.nonmemInput(x, ...), "\n",
     rxUiGet.nonmemSub(x, ...), "\n\n",
+    rxUiGet.nonmemAbbr(x, ...),
     rxUiGet.nonmemPrior(x, ...),
     .nonmemModSection(x, ...),
     rxUiGet.nonmemPkDesErr0(x, ...),

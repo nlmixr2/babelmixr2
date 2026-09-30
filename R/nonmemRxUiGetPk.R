@@ -73,15 +73,11 @@ attr(rxUiGet.nonmemThetaRep, "rstudio") <- "nonmemThetaRep"
 rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   .ui <- x[[1]]
   .bblLinCmtAssertOde(.ui, "nonmem")
-  rxode2::rxAssignControlValue(.ui, ".nmVarResNum", 1)
   # indicator variables for logical expressions are numbered across
   # $PK, $DES and $ERROR
   rxode2::rxAssignControlValue(.ui, ".nmVarLNum", 1)
   rxode2::rxAssignControlValue(.ui, ".nmPrefixLines", NULL)
   rxode2::rxAssignControlValue(.ui, ".nmLogicalDf", NULL)
-  rxode2::rxAssignControlValue(.ui, ".nmGetVarReservedDf",
-                               data.frame(var=character(0),
-                                          nm=character(0)))
   .advan <- .nonmemLinCmtAdvan(.ui)
   rxode2::rxAssignControlValue(.ui, ".nmLinCmtReserved", .advan$reserved)
   .split <- .ui$getSplitMuModel
@@ -155,7 +151,10 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
                  function(v) {
                    paste0("RXE_", .rxToNonmemHandleNamesOrAtomic(str2lang(v), .ui))
                  }, character(1), USE.NAMES=TRUE)
-  .ini <- vapply(names(.mv$ini[!is.na(.mv$ini)]),
+  .ini <- names(.mv$ini[!is.na(.mv$ini)])
+  # constants like pi are written as numbers, not variables
+  .ini <- .ini[!(.ini %in% names(.rxNMcnt))]
+  .ini <- vapply(.ini,
                  function(v) {
                    paste0("RXE_", .rxToNonmemHandleNamesOrAtomic(str2lang(v), .ui))
                  }, character(1), USE.NAMES=TRUE)

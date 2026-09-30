@@ -23,6 +23,7 @@ nonmemControl(
   runCommand = getOption("babelmixr2.nonmem", ""),
   iniSigDig = 5,
   protectZeros = FALSE,
+  protect = getOption("babelmixr2.nmProtect", TRUE),
   muRef = TRUE,
   addProp = c("combined2", "combined1"),
   rxControl = NULL,
@@ -109,7 +110,17 @@ listing}
 and $OMEGA when the estimate is zero.  Also controls the zero
 protection numbers}
 
-\item{protectZeros}{Add methods to protect divide by zero}
+\item{protectZeros}{Add babelmixr2's own code to protect divide
+by zero (and the domains of \code{log()}, \code{sqrt()} and similar
+functions) in the control stream.  This is only used when
+\code{protect=FALSE} (for example with NONMEM before 7.4); with
+\code{protect=TRUE}, NONMEM's \verb{$ABBR PROTECT} protects these instead}
+
+\item{protect}{Add \verb{$ABBR PROTECT} to the control stream so NM-TRAN
+replaces \code{LOG}, \code{EXP}, \code{SQRT}, division and powers with NONMEM's
+protected functions (\code{PLOG}, \code{PEXP}, \code{PSQRT}, \code{PDZ}); this requires
+NONMEM 7.4 or later.  The default comes from the
+\code{babelmixr2.nmProtect} option, which is \code{TRUE} when unset}
 
 \item{muRef}{Automatically mu-reference the control stream}
 
