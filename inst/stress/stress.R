@@ -667,6 +667,130 @@
       cp <- central / v
       cp ~ add(add.sd)
     })
+  },
+  odeIv = function() {
+    ini({
+      tcl <- log(4)
+      tv <- log(40)
+      eta.cl ~ 0.1
+      eta.v ~ 0.1
+      prop.sd <- 0.1
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d / dt(central) <- -cl / v * central
+      cp <- central / v
+      cp ~ prop(prop.sd)
+    })
+  },
+  odeIvDur = function() {
+    ini({
+      tcl <- log(4)
+      tv <- log(40)
+      tdur <- log(2)
+      eta.cl ~ 0.1
+      eta.v ~ 0.1
+      eta.dur ~ 0.1
+      prop.sd <- 0.1
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      dur(central) <- exp(tdur + eta.dur)
+      d / dt(central) <- -cl / v * central
+      cp <- central / v
+      cp ~ prop(prop.sd)
+    })
+  },
+  odePkpd = function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      te0 <- log(100)
+      timax <- fix(0.8)
+      tic50 <- log(2)
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      eta.e0 ~ 0.05
+      prop.sd <- 0.1
+      add.eff <- 2
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      e0 <- exp(te0 + eta.e0)
+      ic50 <- exp(tic50)
+      d / dt(depot) <- -ka * depot
+      d / dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      eff <- e0 * (1 - timax * cp / (ic50 + cp))
+      cp ~ prop(prop.sd)
+      eff ~ add(add.eff)
+    })
+  },
+  bounded = function() {
+    ini({
+      tka <- c(-2, 0.45, 2)
+      tcl <- c(0, 1, 3)
+      tv <- c(1, 3.45, 6)
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- c(0, 0.7, 5)
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d / dt(depot) <- -ka * depot
+      d / dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  },
+  multiCov = function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      cl.wt <- 0.75
+      cl.sex <- 0.2
+      v.wt <- 1
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl + cl.wt * log(WT / 70) + cl.sex * SEX2)
+      v <- exp(tv + eta.v + v.wt * log(WT / 70))
+      d / dt(depot) <- -ka * depot
+      d / dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  },
+  noEtaAtAll = function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(tcl)
+      v <- exp(tv)
+      d / dt(depot) <- -ka * depot
+      d / dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
   }
 )
 
@@ -674,13 +798,51 @@
 # cases
 # ---------------------------------------------------------------------
 
-.stressCase <- function(name, model, data, nonmem="ok", monolix="ok",
-                        checkNonmem=NULL, checkMonolix=NULL, run=TRUE,
-                        description="") {
-  list(name=name, model=model, data=data,
-       expect=list(nonmem=nonmem, monolix=monolix),
-       check=list(nonmem=checkNonmem, monolix=checkMonolix),
-       run=run, description=description)
+#' A stress case
+#'
+#' @param name case name
+#' @param model model function
+#' @param data data set
+#' @param nonmem,monolix "ok", "any" (translate or be refused with a
+#'   known error) or a regular expression the refusal must match
+#' @param checkNonmem,checkMonolix regular expressions that must be in
+#'   the control stream/model files
+#' @param run fit the case in run mode (otherwise translation only)
+#' @param description description
+#' @param controlNonmem,controlMonolix extra `nonmemControl()` or
+#'   `monolixControl()` arguments (like `list(est="imp")`)
+#' @param engines engines the case applies to
+#' @param rerun in run mode, fit a second time and check that the saved
+#'   output is read again (same objective function)
+#' @return case list
+#' @noRd
+.stressCase <- function(
+  name,
+  model,
+  data,
+  nonmem = "ok",
+  monolix = "ok",
+  checkNonmem = NULL,
+  checkMonolix = NULL,
+  run = TRUE,
+  description = "",
+  controlNonmem = list(),
+  controlMonolix = list(),
+  engines = c("nonmem", "monolix"),
+  rerun = FALSE
+) {
+  list(
+    name = name,
+    model = model,
+    data = data,
+    expect = list(nonmem = nonmem, monolix = monolix),
+    check = list(nonmem = checkNonmem, monolix = checkMonolix),
+    control = list(nonmem = controlNonmem, monolix = controlMonolix),
+    engines = engines,
+    rerun = rerun,
+    run = run,
+    description = description
+  )
 }
 
 #' All the stress test cases
@@ -743,6 +905,52 @@ stressCases <- function() {
   .reset <- rbind(.reset, .r)
   .reset <- .reset[order(.reset$ID, .reset$TIME, -.reset$EVID), ]
 
+  # data edge cases (all on theo_sd, fit with the ODE model)
+  .theoNa <- .theo
+  .w <- which(.theoNa$EVID == 0)
+  .theoNa$DV[.w[seq(3, length(.w), by = 7)]] <- NA_real_
+  .theoEvid2 <- .theo[.theo$EVID == 1, ]
+  .theoEvid2$EVID <- 2L
+  .theoEvid2$AMT <- 0
+  .theoEvid2$DV <- NA_real_
+  .theoEvid2$TIME <- 30
+  .theoEvid2 <- rbind(.theo, .theoEvid2)
+  .theoEvid2 <- .theoEvid2[
+    order(.theoEvid2$ID, .theoEvid2$TIME, -.theoEvid2$EVID),
+  ]
+  .theoChrId <- .theo
+  .theoChrId$ID <- paste0("S-", 100 + 7 * .theoChrId$ID)
+  .theoShift <- .theo
+  .theoShift$TIME <- .theoShift$TIME + 100
+  .theoExtra <- .theo
+  .theoExtra$NOTE <- ifelse(.theoExtra$EVID == 1, "dose", "sample")
+  .theoExtra$STUDY <- 101
+  .theoExtra$SITE <- .theoExtra$ID %% 4
+  .theoMulti <- .theo
+  .theoMulti$WT <- 70 + 5 * (.theoMulti$ID %% 5 - 2)
+  .theoMulti$SEX2 <- .theoMulti$ID %% 2
+  .theoOne <- .theo[.theo$ID == 1, ]
+  # doses into the depot and into the central compartment
+  .mixedRoutes <- .stressSim(
+    .m$ode1,
+    rxode2::et(amt = 320, cmt = "depot") |>
+      rxode2::et(time = 24, amt = 100, cmt = "central") |>
+      rxode2::et(c(.stressTimes, 24.25, 24.5, 25, 26, 28, 32, 36, 48)) |>
+      rxode2::et(id = seq_len(24))
+  )
+  .odeInf <- .stressSim(.stressCode$odeIv, .stressEvIv(rate = 250))
+  .odeInfSs <- .stressSim(
+    .stressCode$odeIv,
+    rxode2::et(amt = 500, cmt = "central", rate = 250, ii = 24, ss = 1) |>
+      rxode2::et(.stressTimes) |>
+      rxode2::et(id = seq_len(24))
+  )
+  .odeModelDur <- .stressSim(.stressCode$odeIv, .stressEvIv())
+  .odeModelDur$RATE <- ifelse(.odeModelDur$EVID == 1, -2, 0)
+  .pkpd <- .stressSim(
+    .stressCode$odePkpd,
+    .stressEvOral(cmtObs = c("cp", "eff"))
+  )
   .res <- function(err, ini) .stressResidual(err, ini)
 
   .cases <- list(
@@ -857,7 +1065,8 @@ stressCases <- function() {
     .stressCase("censoring (CENS and LIMIT)", .m$lin1oral, .censLimit,
                 checkNonmem="LIMIT"),
     .stressCase("censoring LIMIT only", .m$lin1oral, .limitOnly,
-                nonmem="ylo|yup|limit|laplacian"),
+                checkNonmem = "LIMIT .GT.",
+                description = "M2: a finite LIMIT without CENS"),
     # model code ---------------------------------------------------------
     .stressCase("if/else", .stressCode$ifElse, .theoSex, checkNonmem="IF \\("),
     # NONMEM (and Monolix for ifelse()) prune the if/else branches (#11)
@@ -889,7 +1098,160 @@ stressCases <- function() {
     .stressCase("not mu-referenced", .stressCode$notMuRef, .theo,
                 monolix="mu"),
     # data -------------------------------------------------------------
-    .stressCase("reset and dose (evid=4)", .m$ode1, .reset)
+    .stressCase("reset and dose (evid=4)", .m$ode1, .reset),
+    .stressCase("missing observations (DV=NA)", .m$ode1, .theoNa),
+    .stressCase("other events (evid=2)", .m$ode1, .theoEvid2),
+    .stressCase(
+      "character IDs",
+      .m$ode1,
+      .theoChrId,
+      description = "IDs like S-107 are renumbered for NONMEM/Monolix"
+    ),
+    .stressCase("time not starting at zero", .m$ode1, .theoShift),
+    .stressCase(
+      "extra unused data columns",
+      .m$ode1,
+      .theoExtra,
+      description = "character, constant and unused numeric columns"
+    ),
+    .stressCase(
+      "single subject",
+      .stressCode$noEta,
+      .theoOne,
+      nonmem = "any",
+      monolix = "any",
+      description = "one subject with one random effect"
+    ),
+    .stressCase(
+      "oral and iv doses",
+      .m$ode1,
+      .mixedRoutes,
+      description = "doses into the depot and into the central compartment"
+    ),
+    .stressCase(
+      "ODE infusion (rate)",
+      .stressCode$odeIv,
+      .odeInf,
+      checkNonmem = "\\$INPUT.* RATE"
+    ),
+    .stressCase(
+      "ODE steady state infusion",
+      .stressCode$odeIv,
+      .odeInfSs,
+      checkNonmem = "\\$INPUT.* SS"
+    ),
+    .stressCase(
+      "ODE modeled duration",
+      .stressCode$odeIvDur,
+      .odeModelDur,
+      checkNonmem = c("D1=", "\\$INPUT.* RATE"),
+      checkMonolix = "Tk0="
+    ),
+    .stressCase(
+      "ODE PK/PD two endpoints",
+      .stressCode$odePkpd,
+      .pkpd,
+      description = "prop error on cp, add error on eff (CMT is the endpoint)"
+    ),
+    .stressCase(
+      "bounded thetas",
+      .stressCode$bounded,
+      .theo,
+      checkNonmem = "\\(-2,"
+    ),
+    .stressCase("several covariates", .stressCode$multiCov, .theoMulti),
+    # NONMEM gets a control stream without $OMEGA; run mode shows
+    # whether NONMEM fits it
+    .stressCase(
+      "no random effects",
+      .stressCode$noEtaAtAll,
+      .theo,
+      nonmem = "any",
+      monolix = "mixed effect",
+      description = "fixed effects only; Monolix needs random effects"
+    ),
+    # estimation options -----------------------------------------------
+    .stressCase(
+      "NONMEM est=imp",
+      .m$ode1,
+      .theo,
+      engines = "nonmem",
+      controlNonmem = list(est = "imp"),
+      checkNonmem = "METHOD=IMP"
+    ),
+    .stressCase(
+      "NONMEM est=its",
+      .m$ode1,
+      .theo,
+      engines = "nonmem",
+      controlNonmem = list(est = "its"),
+      checkNonmem = "METHOD=ITS"
+    ),
+    .stressCase(
+      "NONMEM est=posthoc",
+      .m$ode1,
+      .theo,
+      engines = "nonmem",
+      controlNonmem = list(est = "posthoc"),
+      checkNonmem = "MAXEVALS=0"
+    ),
+    .stressCase(
+      "NONMEM no covariance step",
+      .m$ode1,
+      .theo,
+      engines = "nonmem",
+      controlNonmem = list(cov = "")
+    ),
+    .stressCase(
+      "NONMEM ADVAN6",
+      .m$ode1,
+      .theo,
+      engines = "nonmem",
+      controlNonmem = list(advanOde = "advan6"),
+      checkNonmem = "ADVAN6"
+    ),
+    .stressCase(
+      "NONMEM linCmt as ODEs",
+      .m$lin2oral,
+      .oral2,
+      engines = "nonmem",
+      controlNonmem = list(linCmt = "ode"),
+      checkNonmem = "ADVAN13"
+    ),
+    .stressCase(
+      "Monolix linearization",
+      .m$ode1,
+      .theo,
+      engines = "monolix",
+      controlMonolix = list(useLinearization = TRUE),
+      checkMonolix = "method = Linearization"
+    ),
+    .stressCase(
+      "Monolix linCmt as ODEs",
+      .m$lin2oral,
+      .oral2,
+      engines = "monolix",
+      controlMonolix = list(linCmt = "ode"),
+      checkMonolix = "ddt_central"
+    ),
+    .stressCase(
+      "Monolix stiff ODEs",
+      .m$ode1,
+      .theo,
+      engines = "monolix",
+      controlMonolix = list(stiff = TRUE),
+      checkMonolix = "odeType = stiff"
+    ),
+    .stressCase(
+      "Monolix decreasing variability",
+      .m$ode1,
+      .theo,
+      engines = "monolix",
+      controlMonolix = list(variability = "decreasing"),
+      checkMonolix = "variability = decreasing"
+    ),
+    # a second fit reads the saved output instead of running again
+    .stressCase("rerun reads saved output", .m$lin1oral, .theo, rerun = TRUE)
   )
   names(.cases) <- vapply(.cases, function(x) x$name, character(1))
   .stressEnv$cases <- .cases
@@ -1074,7 +1436,7 @@ stressLintNonmem <- function(lines) {
   if (length(.bad) > 0L) .ret <- c(.ret, paste0("assignment without value: ", lines[.bad]))
   # NONMEM cannot use a logical expression as a number (only in IF ())
   .if <- paste0("^\\s*(ELSE )?IF\\s*\\(.*\\)( THEN)?",
-                "(\\s+[A-Z_0-9]+\\s*=\\s*[0-9.]+)?\\s*$")
+                "(\\s+[A-Z_0-9]+\\s*=\\s*[0-9.]+([ED][-+]?[0-9]+)?)?\\s*$")
   .bad <- grep("\\.(EQ|NE|GT|GE|LT|LE|AND|OR|NOT)\\.", sub(.if, "", .code))
   if (length(.bad) > 0L) {
     .ret <- c(.ret, paste0("logical expression used as a number: ", lines[.bad]))
@@ -1143,15 +1505,78 @@ stressLintMonolix <- function(lines) {
 # running a case
 # ---------------------------------------------------------------------
 
-.stressControl <- function(engine, mode, modelName, runCommand) {
+.stressControl <- function(
+  engine,
+  mode,
+  modelName,
+  runCommand,
+  extra = list()
+) {
   .cmd <- if (mode == "translate") NA else runCommand
   if (engine == "nonmem") {
-    if (is.null(.cmd)) .cmd <- getOption("babelmixr2.nonmem", "")
-    babelmixr2::nonmemControl(runCommand=.cmd, modelName=modelName)
+    if (is.null(.cmd)) {
+      .cmd <- getOption("babelmixr2.nonmem", "")
+    }
+    do.call(
+      babelmixr2::nonmemControl,
+      c(list(runCommand = .cmd, modelName = modelName), extra)
+    )
   } else {
-    if (is.null(.cmd)) .cmd <- getOption("babelmixr2.monolix", "")
-    babelmixr2::monolixControl(runCommand=.cmd, modelName=modelName)
+    if (is.null(.cmd)) {
+      .cmd <- getOption("babelmixr2.monolix", "")
+    }
+    do.call(
+      babelmixr2::monolixControl,
+      c(list(runCommand = .cmd, modelName = modelName), extra)
+    )
   }
+}
+
+.stressFit <- function(case, engine, mode, dir, modelName, runCommand) {
+  withr::with_dir(dir, {
+    tryCatch(
+      suppressWarnings(suppressMessages(
+        nlmixr2est::nlmixr2(
+          case$model,
+          case$data,
+          est = engine,
+          control = .stressControl(
+            engine,
+            mode,
+            modelName,
+            runCommand,
+            case$control[[engine]]
+          )
+        )
+      )),
+      error = function(e) e
+    )
+  })
+}
+
+#' How well rxode2 reproduces the NONMEM/Monolix predictions
+#'
+#' @param fit babelmixr2 fit
+#' @param engine "nonmem" or "monolix"
+#' @return median relative differences (%) of IPRED and PRED
+#' @noRd
+.stressPredDiff <- function(fit, engine) {
+  .f <- if (engine == "nonmem") {
+    ".nonmemMergePredsAndCalcRelativeErr"
+  } else {
+    ".monolixMergePredsAndCalcRelativeErr"
+  }
+  .d <- try(
+    suppressWarnings(
+      utils::getFromNamespace(.f, "babelmixr2")(fit)
+    ),
+    silent = TRUE
+  )
+  if (inherits(.d, "try-error") || is.null(.d)) {
+    return(c(NA_real_, NA_real_))
+  }
+  # the quantiles are 0, lower ci, median, upper ci, 1
+  c(unname(.d$individualRel[3]), unname(.d$popRel[3]))
 }
 
 .stressFiles <- function(engine, modelName) {
@@ -1182,15 +1607,19 @@ stressLintMonolix <- function(lines) {
 #'   babelmixr2 options)
 #' @param reference fit the model with nlmixr2 as well and compare
 #'   the population estimates (run mode only)
+#' @param predTol in run mode, the largest median relative difference
+#'   (in %) allowed between the rxode2 and NONMEM/Monolix IPRED
 #' @return one row data frame with the result
 #' @noRd
 stressRunCase <- function(case, engine, mode="translate", dir=tempfile("stress"),
-                          runCommand=NULL, reference=FALSE) {
+                          runCommand = NULL, reference = FALSE, predTol = 5) {
   .expect <- case$expect[[engine]]
   .modelName <- .stressModelName(case$name)
   .ret <- data.frame(case=case$name, engine=engine, mode=mode,
                      expect=.expect, status=NA_character_, message="",
                      problems="", seconds=NA_real_, objf=NA_real_,
+                     ipredRelDiff = NA_real_, predRelDiff = NA_real_,
+                     rerunSeconds = NA_real_,
                      maxRelDiffTheta=NA_real_, stringsAsFactors=FALSE)
   if (inherits(case$model, "try-error") || inherits(case$data, "try-error")) {
     .ret$status <- "setup"
@@ -1206,12 +1635,7 @@ stressRunCase <- function(case, engine, mode="translate", dir=tempfile("stress")
   }
   dir.create(dir, showWarnings=FALSE, recursive=TRUE)
   .time <- proc.time()
-  .fit <- withr::with_dir(dir, {
-    tryCatch(suppressWarnings(suppressMessages(
-      nlmixr2est::nlmixr2(case$model, case$data, est=engine,
-                          control=.stressControl(engine, mode, .modelName, runCommand)))),
-      error=function(e) e)
-  })
+  .fit <- .stressFit(case, engine, mode, dir, .modelName, runCommand)
   .ret$seconds <- (proc.time() - .time)[["elapsed"]]
   if (inherits(.fit, "error")) {
     .msg <- conditionMessage(.fit)
@@ -1260,14 +1684,59 @@ stressRunCase <- function(case, engine, mode="translate", dir=tempfile("stress")
   } else {
     .problems <- c(.problems, .stressLintData(utils::read.csv(.dataFile, na.strings=".")))
   }
-  .ret$problems <- paste(.problems, collapse=" | ")
-  .ret$status <- if (length(.problems) > 0L) "problem" else "ok"
-  if (mode == "run" && inherits(.fit, "nlmixr2FitData")) {
-    .ret$objf <- .fit$objf
-    if (reference) {
-      .ret$maxRelDiffTheta <- .stressCompare(.fit, case, engine)
+  if (mode == "run") {
+    if (!inherits(.fit, "nlmixr2FitData")) {
+      .problems <- c(.problems, "the fit did not return an nlmixr2 fit")
+    } else {
+      .ret$objf <- .fit$objf
+      if (!is.finite(.fit$objf)) {
+        .problems <- c(.problems, "objective function is not finite")
+      }
+      if (any(!is.finite(.fit$theta))) {
+        .problems <- c(
+          .problems,
+          paste0(
+            "non-finite estimates: ",
+            paste(names(.fit$theta)[!is.finite(.fit$theta)], collapse = ", ")
+          )
+        )
+      }
+      .pd <- .stressPredDiff(.fit, engine)
+      .ret$ipredRelDiff <- .pd[1]
+      .ret$predRelDiff <- .pd[2]
+      if (is.na(.pd[1])) {
+        .problems <- c(.problems, "cannot compare the predictions with rxode2")
+      } else if (.pd[1] > predTol) {
+        .problems <- c(
+          .problems,
+          sprintf(
+            "rxode2 IPRED differs from %s by %.2f%% (median; limit %g%%)",
+            engine,
+            .pd[1],
+            predTol
+          )
+        )
+      }
+      if (isTRUE(case$rerun)) {
+        .time <- proc.time()
+        .fit2 <- .stressFit(case, engine, mode, dir, .modelName, runCommand)
+        .ret$rerunSeconds <- (proc.time() - .time)[["elapsed"]]
+        if (inherits(.fit2, "error")) {
+          .problems <- c(
+            .problems,
+            paste0("rerun failed: ", conditionMessage(.fit2))
+          )
+        } else if (!isTRUE(all.equal(.fit$objf, .fit2$objf))) {
+          .problems <- c(.problems, "rerun gave a different objective function")
+        }
+      }
+      if (reference) {
+        .ret$maxRelDiffTheta <- .stressCompare(.fit, case, engine)
+      }
     }
   }
+  .ret$problems <- paste(.problems, collapse = " | ")
+  .ret$status <- if (length(.problems) > 0L) "problem" else "ok"
   .ret
 }
 
@@ -1300,13 +1769,15 @@ stressRunCase <- function(case, engine, mode="translate", dir=tempfile("stress")
 stressRun <- function(cases=stressCases(), engines=c("nonmem", "monolix"),
                       mode="translate", dir=tempfile("stress"),
                       runCommand=list(nonmem=NULL, monolix=NULL),
-                      reference=FALSE, progress=interactive()) {
+                      reference = FALSE, predTol = 5,
+                      progress = interactive()) {
   .ret <- list()
   for (.case in cases) {
-    for (.engine in engines) {
+    for (.engine in intersect(engines, .case$engines)) {
       .dir <- file.path(dir, .engine, .stressModelName(.case$name))
       .r <- stressRunCase(.case, .engine, mode=mode, dir=.dir,
-                          runCommand=runCommand[[.engine]], reference=reference)
+                          runCommand = runCommand[[.engine]],
+                          reference = reference, predTol = predTol)
       if (progress) {
         message(sprintf("%-8s %-12s %s %s", .engine, .r$status, .case$name,
                         ifelse(.r$status %in% c("ok", "skipped"), "",

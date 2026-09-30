@@ -1407,3 +1407,12 @@ withr::with_tempdir({
     expect_error(nonmemControl(protect = NA))
   })
 })
+
+test_that("nonmemControl(cov=) accepts every documented choice", {
+  expect_equal(nonmemControl()$cov, "r,s")
+  expect_equal(nonmemControl(cov = "r")$cov, "r")
+  expect_equal(nonmemControl(cov = "s")$cov, "s")
+  # "" skips $COVARIANCE; match.arg() alone cannot match it
+  expect_equal(nonmemControl(cov = "")$cov, "")
+  expect_error(nonmemControl(cov = "x"))
+})
