@@ -12,50 +12,62 @@ nlmixr2 -> Monolix translations. It has two modes:
 
 ## Quick start: the kit for a NONMEM/Monolix machine
 
-On the machine that has NONMEM and/or Monolix:
+Everything runs from the R session that is set up for NONMEM/Monolix
+(for example RStudio); no `Rscript` is needed.
 
-1. Install the babelmixr2 version to test (and the development
-   versions of the nlmixr2 packages it goes with). Get
-   [`install-kit.R`](https://github.com/nlmixr2/babelmixr2/blob/main/inst/stress/install-kit.R)
-   and run:
+1. In a fresh session (Session > Restart R), install the babelmixr2
+   version to test and the development versions of the nlmixr2
+   packages it goes with (into the session's `.libPaths()[1]`):
 
-   ```sh
-   Rscript install-kit.R                # babelmixr2 main
-   Rscript install-kit.R --ref=my-branch  # or a branch, tag or commit
+   ```r
+   source("https://raw.githubusercontent.com/nlmixr2/babelmixr2/main/inst/stress/install-kit.R")
+   installKit()                     # babelmixr2 main
+   installKit(ref = "my-branch")    # or a branch, tag or commit
    ```
 
-2. Check that NONMEM and Monolix are found:
+   Then restart R.
 
-   ```sh
-   STRESS=$(Rscript -e 'cat(system.file("stress", "run-stress.R", package="babelmixr2"))')
-   Rscript "$STRESS" --check
+2. Load the kit and check that NONMEM and Monolix are found:
+
+   ```r
+   library(babelmixr2)
+   source(system.file("stress", "stress.R", package = "babelmixr2"))
+   stressCheck()
+   stressCheck(nonmem = "/opt/nm75/run/nmfe75")   # if NONMEM is not found
    ```
 
    NONMEM is found from `options(babelmixr2.nonmem=)`, an `nmfe7*` on
    the `PATH`, or the usual install directories (like
    `/opt/NONMEM/nm75/run/nmfe75` or `C:/nm75/run/nmfe75.bat`); otherwise
-   give it with `--nonmem=`. Monolix is found through
-   `lixoftConnectors` (or give its run command with `--monolix=`).
+   give it with `nonmem=`. Monolix is found through `lixoftConnectors`
+   (or give its run command with `monolix=`).
 
 3. Run the kit:
 
-   ```sh
-   Rscript "$STRESS" --kit
-   Rscript "$STRESS" --kit --nonmem=/opt/nm75/run/nmfe75   # NONMEM not found
-   Rscript "$STRESS" --kit --engine=monolix                # only one engine
+   ```r
+   res <- stressKit()                                   # everything that is found
+   res <- stressKit(nonmem = "/opt/nm75/run/nmfe75")    # NONMEM not found
+   res <- stressKit(engines = "monolix")                # only one engine
+   res <- stressKit(cases = "linCmt 1-cmt oral$|rerun") # a few cases first
+   res[res$failed, ]                                    # what failed
    ```
 
-   `--kit` translates every case (and a sample of nlmixr2lib models),
-   fits every case with each engine that was found, compares the fits
-   with nlmixr2 (`--reference`), and zips the output
-   (`babelmixr2-stress-<date>-<time>.zip`).
+   `stressKit()` translates every case (and a sample of nlmixr2lib
+   models), fits every case with each engine that was found, compares
+   the fits with nlmixr2, and zips the output
+   (`babelmixr2-stress-<date>-<time>.zip` in the working directory;
+   `attr(res, "zip")` has its path).
 
 4. Send the zip file back (or attach it to an issue at
    <https://github.com/nlmixr2/babelmixr2/issues>).
 
 The full kit is one NONMEM or Monolix fit per case (about 70 fits per
-engine), so it takes a while. Try it on a few cases first with, for
-example, `--cases='linCmt 1-cmt oral$|rerun'`.
+engine), so it takes a while. `stressList()` lists the cases.
+
+`stressKit()` arguments: `nonmem=`, `monolix=`, `engines=`,
+`modes=` (`"translate"` and/or `"run"`), `cases=` (a regular
+expression), `nlmixr2lib=` (`"none"`, `"sample"`, `"all"`), `out=`
+(output directory), `reference=`, `predTol=` (%), `bundle=`.
 
 ## Cases
 
@@ -115,17 +127,12 @@ documented error.
 On the machine that runs the stress test:
 
 - R with babelmixr2, nlmixr2est, rxode2 and nlmixr2data installed (plus
-  nlmixr2lib for `--nlmixr2lib=`). Install the babelmixr2 version you
-  want to test, for example from GitHub:
-
-  ```r
-  remotes::install_github("nlmixr2/babelmixr2")
-  ```
-
-- For `--mode=run` with NONMEM: a NONMEM installation and its run
+  nlmixr2lib for the nlmixr2lib models); `installKit()` installs them
+  (see the quick start).
+- For run mode with NONMEM: a NONMEM installation and its run
   command (like `nmfe75`), either on the `PATH` or given with its full
   path.
-- For `--mode=run` with Monolix: Monolix plus the `lixoftConnectors` R
+- For run mode with Monolix: Monolix plus the `lixoftConnectors` R
   package that comes with it (see Lixoft's documentation), or a Monolix
   command-line run command.
 
@@ -134,7 +141,11 @@ The closed-form `linCmt()` translations need an rxode2 that has
 translated to ODEs, so the closed-form checks (`ADVAN2 TRANS1`,
 `pkmodel(`) fail.
 
-## Running it
+## Running it with Rscript
+
+Where `Rscript` works with the right library paths, `run-stress.R`
+does the same from a shell (`--kit`, `--check`, `--list` and the
+options below match the `stressKit()` arguments).
 
 Find the runner script:
 
@@ -182,15 +193,8 @@ Rscript "$STRESS" --nlmixr2lib=all                # every nlmixr2lib model (slow
 Rscript "$STRESS" --out=my-stress-results         # output directory
 ```
 
-From R, the same can be done with:
-
-```r
-source(system.file("stress", "stress.R", package="babelmixr2"))
-res <- stressRun(stressCases(), engines="nonmem", mode="run",
-                 dir="stress-out", runCommand=list(nonmem="nmfe75"),
-                 progress=TRUE)
-res[stressFailed(res), ]
-```
+From an R session the same is `stressKit()` (see the quick start), for
+example `stressKit(engines = "nonmem", modes = "run", nonmem = "nmfe75")`.
 
 The run can take a while: each case is a full NONMEM or Monolix fit.
 Use `--cases=` to start with a few cases.

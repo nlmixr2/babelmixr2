@@ -2,9 +2,9 @@
 #
 # This file is shared by the testthat stress tests (translation only)
 # and by `run-stress.R` (which can also run NONMEM/Monolix end to end).
-# See README.md in this directory for how to run it.  Finding
-# NONMEM/Monolix and writing the report are in stress-report.R (sourced
-# from the directory of this file).
+# See README.md in this directory for how to run it; from an R session
+# (like RStudio) source this file and call stressCheck() and
+# stressKit().
 #
 # Every case is a model, a data set and, for each engine, what should
 # happen:
@@ -19,21 +19,6 @@
 # it should be.
 
 .stressEnv <- new.env(parent = emptyenv())
-
-.stressDir <- local({
-  # source() keeps the file name in `ofile`
-  .ofile <- NULL
-  for (.i in rev(seq_len(sys.nframe()))) {
-    .ofile <- sys.frame(.i)$ofile
-    if (is.character(.ofile)) break
-  }
-  if (is.character(.ofile)) {
-    dirname(.ofile)
-  } else {
-    system.file("stress", package = "babelmixr2")
-  }
-})
-source(file.path(.stressDir, "stress-report.R"), local = environment())
 
 # ---------------------------------------------------------------------
 # data sets
@@ -1877,4 +1862,464 @@ stressRun <- function(cases=stressCases(), engines=c("nonmem", "monolix"),
 stressFailed <- function(res) {
   res$status %in% c("error", "problem", "not refused", "setup") &
     !(res$status == "setup" & res$expect == "any")
+}
+
+# ---------------------------------------------------------------------
+# finding NONMEM/Monolix and the report
+# ---------------------------------------------------------------------
+
+#' The command that runs NONMEM
+#'
+#' @return the babelmixr2.nonmem option, an nmfe7* on the PATH or in
+#'   the usual install directories, or "" when none is found
+#' @noRd
+stressFindNonmem <- function() {
+  .o <- getOption("babelmixr2.nonmem", "")
+  if (is.character(.o) && nzchar(.o)) {
+    return(.o)
+  }
+  .w <- Sys.which(paste0("nmfe7", 9:0))
+  .w <- .w[.w != ""]
+  if (length(.w) > 0L) {
+    return(unname(.w[1]))
+  }
+  .globs <- c(
+    "/opt/NONMEM/*/run/nmfe7*",
+    "/opt/nm*/run/nmfe7*",
+    "/usr/local/NONMEM/*/run/nmfe7*",
+    "/usr/local/nm*/run/nmfe7*",
+    "~/nm*/run/nmfe7*",
+    "~/NONMEM/*/run/nmfe7*",
+    "C:/nm*/run/nmfe7*.bat",
+    "C:/NONMEM/*/run/nmfe7*.bat"
+  )
+  .f <- Sys.glob(path.expand(.globs))
+  .f <- .f[!grepl("\\.(f90|o|obj)$", .f) & file.exists(.f)]
+  if (length(.f) == 0L) {
+    return("")
+  }
+  # newest NONMEM first
+  sort(.f, decreasing = TRUE)[1]
+}
+
+#' How Monolix is run
+#'
+#' @return description of the Monolix run command or lixoftConnectors,
+#'   or "" when Monolix is not found
+#' @noRd
+stressMonolixStatus <- function() {
+  .o <- getOption("babelmixr2.monolix", "")
+  if (is.character(.o) && nzchar(.o)) {
+    return(paste0("command ", .o))
+  }
+  if (!requireNamespace("lixoftConnectors", quietly = TRUE)) {
+    return("")
+  }
+  .x <- try(
+    suppressMessages(
+      lixoftConnectors::initializeLixoftConnectors(
+        software = "monolix",
+        force = TRUE
+      )
+    ),
+    silent = TRUE
+  )
+  if (inherits(.x, "try-error") || isFALSE(.x)) {
+    return("")
+  }
+  paste0("lixoftConnectors ", utils::packageVersion("lixoftConnectors"))
+}
+
+#' Package versions for the report
+#'
+#' @return markdown list lines
+#' @noRd
+stressVersions <- function() {
+  .p <- c(
+    "babelmixr2",
+    "rxode2",
+    "nlmixr2est",
+    "lotri",
+    "nonmem2rx",
+    "monolix2rx",
+    "nlmixr2lib",
+    "lixoftConnectors"
+  )
+  .v <- vapply(
+    .p,
+    function(p) {
+      if (requireNamespace(p, quietly = TRUE)) {
+        as.character(utils::packageVersion(p))
+      } else {
+        "-"
+      }
+    },
+    character(1)
+  )
+  .sha <- utils::packageDescription("babelmixr2")$RemoteSha
+  c(
+    paste0(
+      "- ",
+      .p,
+      " ",
+      .v,
+      ifelse(
+        .p == "babelmixr2" & !is.null(.sha),
+        paste0(" (", substr(.sha, 1, 7), ")"),
+        ""
+      )
+    ),
+    paste0("- R ", getRversion(), " on ", R.version$platform)
+  )
+}
+
+
+#' Markdown summary of a stress test
+#'
+#' @param res results (from `stressRun()`, with a `failed` column)
+#' @param modes modes that were run
+#' @param engines engines that were used
+#' @param nonmem,monolix how NONMEM/Monolix were run
+#' @return markdown lines
+#' @noRd
+stressSummary <- function(res, modes, engines, nonmem, monolix) {
+  .md <- c(
+    "# babelmixr2 NONMEM/Monolix stress test",
+    "",
+    paste0("- date: ", format(Sys.time())),
+    paste0("- mode: ", paste(modes, collapse = ", ")),
+    stressVersions(),
+    if ("run" %in% modes && "nonmem" %in% engines) {
+      paste0("- NONMEM: ", nonmem)
+    },
+    if ("run" %in% modes && "monolix" %in% engines) {
+      paste0("- Monolix: ", monolix)
+    },
+    "",
+    "## Summary",
+    ""
+  )
+  .col <- paste(res$mode, res$engine)
+  .tab <- table(res$status, .col)
+  .md <- c(
+    .md,
+    paste0("| status | ", paste(colnames(.tab), collapse = " | "), " |"),
+    paste0("|---|", paste(rep("---", ncol(.tab)), collapse = "|"), "|"),
+    vapply(
+      rownames(.tab),
+      function(r) {
+        paste0("| ", r, " | ", paste(.tab[r, ], collapse = " | "), " |")
+      },
+      character(1)
+    ),
+    "",
+    "## Failures",
+    ""
+  )
+  .fail <- res[res$failed, ]
+  if (nrow(.fail) == 0L) {
+    .md <- c(.md, "None.")
+  } else {
+    .md <- c(
+      .md,
+      "| case | engine | mode | status | message |",
+      "|---|---|---|---|---|",
+      sprintf(
+        "| %s | %s | %s | %s | %s |",
+        .fail$case,
+        .fail$engine,
+        .fail$mode,
+        .fail$status,
+        gsub("\\|", "/", substr(paste(.fail$message, .fail$problems), 1, 300))
+      )
+    )
+  }
+  if ("run" %in% modes) {
+    .ok <- res[res$mode == "run" & res$status %in% c("ok", "problem"), ]
+    .num <- function(x, fmt) ifelse(is.na(x), "", sprintf(fmt, x))
+    .md <- c(
+      .md,
+      "",
+      "## Fits",
+      "",
+      paste(
+        "| case | engine | status | seconds | objective | IPRED diff % |",
+        "PRED diff % | rerun seconds | max rel. diff vs nlmixr2 |"
+      ),
+      "|---|---|---|---|---|---|---|---|---|",
+      sprintf(
+        "| %s | %s | %s | %.1f | %s | %s | %s | %s | %s |",
+        .ok$case,
+        .ok$engine,
+        .ok$status,
+        .ok$seconds,
+        .num(.ok$objf, "%.3f"),
+        .num(.ok$ipredRelDiff, "%.3f"),
+        .num(.ok$predRelDiff, "%.3f"),
+        .num(.ok$rerunSeconds, "%.1f"),
+        .num(.ok$maxRelDiffTheta, "%.3f")
+      )
+    )
+  }
+  .md
+}
+
+#' Zip the output directory to send back
+#'
+#' @param out output directory
+#' @return the zip file (invisibly), or NULL when it cannot be made
+#' @noRd
+stressBundle <- function(out) {
+  .zip <- paste0(out, ".zip")
+  .ok <- withr::with_dir(dirname(out), {
+    try(utils::zip(.zip, basename(out), flags = "-r9Xq"), silent = TRUE)
+  })
+  if (inherits(.ok, "try-error") || !file.exists(.zip)) {
+    message("could not zip the output; send the directory ", out, " instead")
+    return(invisible(NULL))
+  }
+  message("send this file back: ", .zip)
+  invisible(.zip)
+}
+
+# ---------------------------------------------------------------------
+# the kit (run from an R session or from run-stress.R)
+# ---------------------------------------------------------------------
+
+#' Report the versions and whether NONMEM and Monolix are found
+#'
+#' @param nonmem command that runs NONMEM (like "nmfe75" or its full
+#'   path); `NULL` looks for it (see `stressFindNonmem()`)
+#' @param monolix command that runs Monolix; `NULL` uses
+#'   lixoftConnectors (or `options(babelmixr2.monolix=)`)
+#' @return list with `nonmem` and `monolix` (`""` when not found),
+#'   invisibly
+#' @noRd
+stressCheck <- function(nonmem = NULL, monolix = NULL) {
+  .found <- .stressEngines(nonmem, monolix)
+  message(paste(stressVersions(), collapse = "\n"))
+  message(
+    "- NONMEM: ",
+    if (nzchar(.found$nonmem)) {
+      .found$nonmem
+    } else {
+      "not found (give it with nonmem=)"
+    }
+  )
+  message(
+    "- Monolix: ",
+    if (nzchar(.found$monolix)) {
+      .found$monolix
+    } else {
+      "not found (load lixoftConnectors or give it with monolix=)"
+    }
+  )
+  if (!("linCmtMicro" %in% getNamespaceExports("rxode2"))) {
+    message(
+      "- rxode2 has no linCmtMicro(): the closed-form linCmt() checks will fail"
+    )
+  }
+  invisible(.found)
+}
+
+.stressEngines <- function(nonmem = NULL, monolix = NULL) {
+  list(
+    nonmem = if (is.null(nonmem)) stressFindNonmem() else nonmem,
+    monolix = if (is.null(monolix)) {
+      stressMonolixStatus()
+    } else {
+      paste0("command ", monolix)
+    },
+    monolixCommand = monolix
+  )
+}
+
+#' The cases to use
+#'
+#' @param cases regular expression of the case names (`NULL` is all)
+#' @param nlmixr2lib "none", "sample" or "all" nlmixr2lib models
+#' @return list of cases
+#' @noRd
+.stressSelect <- function(cases, nlmixr2lib) {
+  .ret <- stressCases()
+  if (nlmixr2lib != "none") {
+    if (!requireNamespace("nlmixr2lib", quietly = TRUE)) {
+      stop("nlmixr2lib= needs the nlmixr2lib package", call. = FALSE)
+    }
+    .ret <- c(.ret, stressLibCases(all = (nlmixr2lib == "all")))
+  }
+  if (!is.null(cases)) {
+    .ret <- .ret[grepl(cases, names(.ret))]
+  }
+  .ret
+}
+
+#' List the stress cases
+#'
+#' @inheritParams .stressSelect
+#' @return data frame with what each engine should do, invisibly
+#' @noRd
+stressList <- function(cases = NULL, nlmixr2lib = "none") {
+  .c <- .stressSelect(cases, match.arg(nlmixr2lib, c("none", "sample", "all")))
+  .e <- function(case, engine) {
+    if (!(engine %in% case$engines)) {
+      return("-")
+    }
+    .x <- case$expect[[engine]]
+    if (.x %in% c("ok", "any")) .x else "refuse"
+  }
+  .ret <- data.frame(
+    case = names(.c),
+    nonmem = vapply(.c, .e, character(1), engine = "nonmem"),
+    monolix = vapply(.c, .e, character(1), engine = "monolix"),
+    description = vapply(.c, function(x) x$description, character(1)),
+    row.names = NULL,
+    stringsAsFactors = FALSE
+  )
+  print(.ret, right = FALSE)
+  invisible(.ret)
+}
+
+#' Run the stress test
+#'
+#' The kit: translate every case (and nlmixr2lib models), fit every case
+#' with the engines that are found, compare with nlmixr2 and zip the
+#' output to send back.  Works the same from an R session (like
+#' RStudio) and from `run-stress.R`.
+#'
+#' @param engines engines to use; `NULL` uses the ones that are found
+#'   (in run mode)
+#' @param modes "translate" and/or "run"
+#' @param cases regular expression of the case names (`NULL` is all)
+#' @param nlmixr2lib "none", "sample" or "all" nlmixr2lib models
+#'   (translation only); `NULL` is "sample" when nlmixr2lib is installed
+#' @param out output directory
+#' @param reference compare the fits with nlmixr2 (focei for NONMEM, saem
+#'   for Monolix)
+#' @param predTol largest median relative difference (%) between the
+#'   rxode2 and NONMEM/Monolix IPRED
+#' @param bundle zip the output directory
+#' @inheritParams stressCheck
+#' @return data frame of the results (invisibly), with the attributes
+#'   `out` (output directory) and `zip` (the zip file)
+#' @noRd
+stressKit <- function(
+  nonmem = NULL,
+  monolix = NULL,
+  engines = NULL,
+  modes = c("translate", "run"),
+  cases = NULL,
+  nlmixr2lib = NULL,
+  out = paste0("babelmixr2-stress-", format(Sys.time(), "%Y%m%d-%H%M%S")),
+  reference = TRUE,
+  predTol = 5,
+  bundle = TRUE
+) {
+  modes <- match.arg(modes, c("translate", "run"), several.ok = TRUE)
+  if (is.null(nlmixr2lib)) {
+    nlmixr2lib <- if (requireNamespace("nlmixr2lib", quietly = TRUE)) {
+      "sample"
+    } else {
+      "none"
+    }
+  }
+  nlmixr2lib <- match.arg(nlmixr2lib, c("none", "sample", "all"))
+  .found <- .stressEngines(nonmem, monolix)
+  engines <- .stressKitEngines(engines, modes, .found)
+  .cases <- .stressSelect(cases, "none")
+  .libCases <- if (nlmixr2lib == "none") {
+    list()
+  } else {
+    .stressSelect(cases, nlmixr2lib)
+  }
+  .libCases <- .libCases[setdiff(names(.libCases), names(.cases))]
+
+  dir.create(out, showWarnings = FALSE, recursive = TRUE)
+  out <- normalizePath(out)
+  writeLines(
+    utils::capture.output(utils::sessionInfo()),
+    file.path(out, "sessionInfo.txt")
+  )
+  message(paste(stressVersions(), collapse = "\n"))
+  message(
+    length(.cases) + length(.libCases),
+    " cases; engines: ",
+    paste(engines, collapse = ", "),
+    "; mode: ",
+    paste(modes, collapse = ", "),
+    "; output: ",
+    out
+  )
+  .runCommand <- list(
+    nonmem = if (nzchar(.found$nonmem)) .found$nonmem,
+    monolix = .found$monolixCommand
+  )
+  .res <- lapply(modes, function(mode) {
+    # the nlmixr2lib models are translation only
+    stressRun(
+      if (mode == "translate") c(.cases, .libCases) else .cases,
+      engines = engines,
+      mode = mode,
+      dir = if (length(modes) > 1L) file.path(out, mode) else out,
+      runCommand = .runCommand,
+      reference = reference,
+      predTol = predTol,
+      progress = TRUE
+    )
+  })
+  .res <- do.call(rbind, .res)
+  rownames(.res) <- NULL
+  .res$failed <- stressFailed(.res)
+  utils::write.csv(.res, file.path(out, "results.csv"), row.names = FALSE)
+  .md <- stressSummary(.res, modes, engines, .found$nonmem, .found$monolix)
+  writeLines(.md, file.path(out, "summary.md"))
+  message("\n", paste(.md, collapse = "\n"))
+  message("\nresults: ", file.path(out, "results.csv"))
+  attr(.res, "out") <- out
+  attr(.res, "zip") <- if (bundle) stressBundle(out)
+  invisible(.res)
+}
+
+#' Which engines the kit uses
+#'
+#' @param engines engines asked for (`NULL`: the ones found in run mode,
+#'   both in translate mode)
+#' @param modes modes
+#' @param found from `.stressEngines()`
+#' @return engines
+#' @noRd
+.stressKitEngines <- function(engines, modes, found) {
+  if (!("run" %in% modes)) {
+    return(
+      if (is.null(engines)) {
+        c("nonmem", "monolix")
+      } else {
+        match.arg(engines, c("nonmem", "monolix"), several.ok = TRUE)
+      }
+    )
+  }
+  .found <- c(nonmem = nzchar(found$nonmem), monolix = nzchar(found$monolix))
+  if (is.null(engines)) {
+    engines <- names(.found)[.found]
+    if (length(engines) == 0L) {
+      stop("found neither NONMEM nor Monolix; see stressCheck()", call. = FALSE)
+    }
+  }
+  engines <- match.arg(engines, c("nonmem", "monolix"), several.ok = TRUE)
+  .how <- c(
+    nonmem = "give it with nonmem= (like nonmem = \"nmfe75\")",
+    monolix = "load lixoftConnectors or give it with monolix="
+  )
+  .missing <- engines[!.found[engines]]
+  if (length(.missing) > 0L) {
+    stop(
+      paste0(
+        c(nonmem = "NONMEM", monolix = "Monolix")[.missing[1]],
+        " is not found; ",
+        .how[.missing[1]]
+      ),
+      call. = FALSE
+    )
+  }
+  engines
 }

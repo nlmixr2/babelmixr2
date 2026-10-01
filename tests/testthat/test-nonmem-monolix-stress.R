@@ -97,3 +97,38 @@ test_that("engine specific stress cases only run for their engine", {
     info = paste(.res$message, .res$problems)
   )
 })
+
+test_that("stressKit() runs from an R session and writes the report", {
+  skip_on_cran()
+  .e <- new.env()
+  source(system.file("stress", "stress.R", package = "babelmixr2"), local = .e)
+  withr::with_tempdir({
+    .res <- suppressMessages(.e$stressKit(
+      modes = "translate",
+      cases = "^linCmt 1-cmt oral$|^NONMEM est=imp$",
+      nlmixr2lib = "none",
+      out = "kit",
+      bundle = FALSE
+    ))
+    expect_equal(nrow(.res), 3L)
+    expect_false(any(.res$failed))
+    expect_true(all(file.exists(file.path(
+      "kit",
+      c("results.csv", "summary.md", "sessionInfo.txt")
+    ))))
+    expect_null(attr(.res, "zip"))
+    .l <- utils::capture.output(
+      .lst <- .e$stressList(cases = "^NONMEM est=imp$")
+    )
+    expect_equal(.lst$monolix, "-")
+  })
+  expect_error(
+    .e$stressKit(
+      modes = "run",
+      engines = "nonmem",
+      nonmem = "",
+      bundle = FALSE
+    ),
+    "NONMEM is not found"
+  )
+})
