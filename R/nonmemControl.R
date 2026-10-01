@@ -44,7 +44,8 @@
 #'   arithmetic expression; this allows the nested `if`/`else
 #'   if`/`else` statements NONMEM models cannot otherwise use.  A pruned
 #'   fit contains the pruned model.
-#' @param cov The NONMEM covariance method
+#' @param cov The NONMEM covariance method; `""` skips the covariance
+#'   step
 #' @param maxeval NONMEM's maxeval (for non posthoc methods)
 #' @param tol NONMEM tolerance for ODE solving advan
 #' @param atol NONMEM absolute tolerance for ODE solving
@@ -249,8 +250,11 @@ nonmemControl <- function(est=c("focei", "imp", "its", "posthoc"),
   checkmate::assertNumeric(ci, any.missing=FALSE, len=1, lower=0, upper=1)
   checkmate::assertLogical(calcTables, len=1, any.missing=FALSE)
 
+  # match.arg() cannot match the empty string (no $COVARIANCE)
+  checkmate::assertChoice(cov[1], c("r,s", "r", "s", ""), .var.name = "cov")
+  cov <- cov[1]
   .ret <- list(est=match.arg(est),
-               cov=match.arg(cov),
+               cov = cov,
                advanOde=match.arg(advanOde),
                linCmt=match.arg(linCmt),
                prune = prune,

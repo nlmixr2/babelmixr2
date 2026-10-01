@@ -1,5 +1,20 @@
 # babelmixr2 0.1.11.9000
 
+* `nonmemControl(cov="")` now skips the covariance step as documented;
+  before it gave an error because `match.arg()` cannot match `""`.
+
+* The NONMEM/Monolix stress test (`inst/stress`) is now a kit to run on
+  a machine with NONMEM and/or Monolix: `install-kit.R` installs the
+  versions to test, `run-stress.R --check` finds NONMEM/Monolix, and
+  `run-stress.R --kit` runs every case end to end, checks that rxode2
+  reproduces the NONMEM/Monolix predictions and that a second fit reads
+  the saved output, and zips the results to send back.  New cases cover
+  missing observations, `evid=2`, character IDs, time not starting at
+  zero, extra data columns, a single subject, oral plus iv doses, ODE
+  infusions (rate, steady state, modeled duration), two endpoints,
+  bounded thetas, several covariates, models without random effects
+  and the NONMEM/Monolix estimation options.
+
 * NONMEM control streams now use `$ABBR PROTECT` so NM-TRAN replaces
   `LOG`, `EXP`, `SQRT`, division and powers with NONMEM's protected
   functions (NONMEM 7.4 or later).  Turn it off with

@@ -10,6 +10,67 @@ nlmixr2 -> Monolix translations. It has two modes:
   can see how the translations behave in the real programs. Use this
   mode on a machine that has NONMEM and/or Monolix.
 
+## Quick start: the kit for a NONMEM/Monolix machine
+
+Everything runs from the R session that is set up for NONMEM/Monolix
+(for example RStudio); no `Rscript` is needed.
+
+1. In a fresh session (Session > Restart R), install the babelmixr2
+   version to test and the development versions of the nlmixr2
+   packages it goes with (into the session's `.libPaths()[1]`):
+
+   ```r
+   source("https://raw.githubusercontent.com/nlmixr2/babelmixr2/main/inst/stress/install-kit.R")
+   installKit()                     # babelmixr2 main
+   installKit(ref = "my-branch")    # or a branch, tag or commit
+   ```
+
+   Then restart R.
+
+2. Load the kit and check that NONMEM and Monolix are found:
+
+   ```r
+   library(babelmixr2)
+   source(system.file("stress", "stress.R", package = "babelmixr2"))
+   stressCheck()
+   stressCheck(nonmem = "/opt/nm75/run/nmfe75")   # if NONMEM is not found
+   ```
+
+   NONMEM is found from `options(babelmixr2.nonmem=)`, an `nmfe7*` on
+   the `PATH`, or the usual install directories (like
+   `/opt/NONMEM/nm75/run/nmfe75` or `C:/nm75/run/nmfe75.bat`); otherwise
+   give it with `nonmem=`. Monolix is found through `lixoftConnectors`
+   (or give its run command with `monolix=`).
+
+3. Run the kit:
+
+   ```r
+   res <- stressKit()                                   # everything that is found
+   res <- stressKit(nonmem = "/opt/nm75/run/nmfe75")    # NONMEM not found
+   res <- stressKit(engines = "monolix")                # only one engine
+   res <- stressKit(cases = "linCmt 1-cmt oral$|rerun") # a few cases first
+   res[res$failed, ]                                    # what failed
+   ```
+
+   `stressKit()` translates every case (and a sample of nlmixr2lib
+   models), fits every case with each engine that was found, compares
+   the fits with nlmixr2, and zips the output
+   (`babelmixr2-stress-<date>-<time>.zip` in the working directory;
+   `attr(res, "zip")` has its path).
+
+4. Send the zip file back (or attach it to an issue at
+   <https://github.com/nlmixr2/babelmixr2/issues>).
+
+The full kit is one NONMEM or Monolix fit per case (about 70 fits per
+engine), so it takes a while. `stressList()` lists the cases.
+
+`stressKit()` arguments: `nonmem=`, `monolix=`, `engines=`,
+`modes=` (`"translate"` and/or `"run"`), `cases=` (a regular
+expression), `nlmixr2lib=` (`"none"`, `"sample"`, `"all"`), `out=`
+(output directory), `reference=`, `predTol=` (%), `bundle=`.
+
+## Cases
+
 The cases are in `stress.R` (in this directory). They cover:
 
 - `linCmt()` models (1, 2 and 3 compartments; oral, bolus and infusion
@@ -29,7 +90,27 @@ The cases are in `stress.R` (in this directory). They cover:
   `probitInv()`, between-occasion variability, models that are not
   mu-referenced)
 - data (steady state, additional doses, infusions given by rate or by
-  duration, modeled rate/duration, reset-and-dose events)
+  duration, modeled rate/duration, reset-and-dose events, missing
+  observations, `evid=2` records, character IDs, time not starting at
+  zero, extra unused columns, a single subject, oral and iv doses in
+  one subject, ODE infusions and steady state infusions)
+- models (two endpoints with different residual errors, bounded
+  thetas, several covariates, no random effects)
+- estimation options (NONMEM `est="imp"`, `"its"`, `"posthoc"`,
+  `cov=""`, `advanOde="advan6"`, `linCmt="ode"`; Monolix
+  `useLinearization=TRUE`, `linCmt="ode"`, `stiff=TRUE`,
+  `variability="decreasing"`)
+- a second fit of the same model, which should read the saved
+  NONMEM/Monolix output instead of running again
+
+In run mode every fit is also checked:
+
+- the objective function and the estimates are finite
+- rxode2 reproduces the NONMEM/Monolix individual predictions: the
+  median relative difference of `IPRED` must be at most `--pred-tol`
+  percent (default 5)
+- with `--reference`, the largest relative difference from the
+  nlmixr2 estimates is reported (not a failure: the methods differ)
 
 Each case says, for each engine, whether it should translate or be
 refused with a documented error. A case can also list text that must
@@ -46,17 +127,12 @@ documented error.
 On the machine that runs the stress test:
 
 - R with babelmixr2, nlmixr2est, rxode2 and nlmixr2data installed (plus
-  nlmixr2lib for `--nlmixr2lib=`). Install the babelmixr2 version you
-  want to test, for example from GitHub:
-
-  ```r
-  remotes::install_github("nlmixr2/babelmixr2")
-  ```
-
-- For `--mode=run` with NONMEM: a NONMEM installation and its run
+  nlmixr2lib for the nlmixr2lib models); `installKit()` installs them
+  (see the quick start).
+- For run mode with NONMEM: a NONMEM installation and its run
   command (like `nmfe75`), either on the `PATH` or given with its full
   path.
-- For `--mode=run` with Monolix: Monolix plus the `lixoftConnectors` R
+- For run mode with Monolix: Monolix plus the `lixoftConnectors` R
   package that comes with it (see Lixoft's documentation), or a Monolix
   command-line run command.
 
@@ -65,7 +141,11 @@ The closed-form `linCmt()` translations need an rxode2 that has
 translated to ODEs, so the closed-form checks (`ADVAN2 TRANS1`,
 `pkmodel(`) fail.
 
-## Running it
+## Running it with Rscript
+
+Where `Rscript` works with the right library paths, `run-stress.R`
+does the same from a shell (`--kit`, `--check`, `--list` and the
+options below match the `stressKit()` arguments).
 
 Find the runner script:
 
@@ -103,22 +183,18 @@ Rscript "$STRESS" --mode=run --nonmem=nmfe75 --reference
 Other options:
 
 ```sh
+Rscript "$STRESS" --check                         # versions; is NONMEM/Monolix found?
 Rscript "$STRESS" --list                          # list the cases
+Rscript "$STRESS" --pred-tol=1                    # stricter IPRED check (%)
+Rscript "$STRESS" --bundle                        # zip the output directory
 Rscript "$STRESS" --cases='linCmt'                # only some cases (regex)
 Rscript "$STRESS" --nlmixr2lib=sample             # add nlmixr2lib models
 Rscript "$STRESS" --nlmixr2lib=all                # every nlmixr2lib model (slow)
 Rscript "$STRESS" --out=my-stress-results         # output directory
 ```
 
-From R, the same can be done with:
-
-```r
-source(system.file("stress", "stress.R", package="babelmixr2"))
-res <- stressRun(stressCases(), engines="nonmem", mode="run",
-                 dir="stress-out", runCommand=list(nonmem="nmfe75"),
-                 progress=TRUE)
-res[stressFailed(res), ]
-```
+From an R session the same is `stressKit()` (see the quick start), for
+example `stressKit(engines = "nonmem", modes = "run", nonmem = "nmfe75")`.
 
 The run can take a while: each case is a full NONMEM or Monolix fit.
 Use `--cases=` to start with a few cases.
@@ -140,12 +216,16 @@ The output directory (by default `babelmixr2-stress-<date>-<time>`) has:
   - `message`/`problems`: what went wrong
   - `seconds`: how long it took
   - `objf`: the objective function (run mode)
+  - `ipredRelDiff`/`predRelDiff`: median relative difference (%)
+    between the rxode2 and the NONMEM/Monolix `IPRED`/`PRED`
+  - `rerunSeconds`: how long the second fit took (the rerun case)
   - `maxRelDiffTheta`: the largest relative difference from the nlmixr2
     estimates (with `--reference`)
 - `summary.md`: a summary table and the failures.
+- `sessionInfo.txt`: the R session (package versions).
 - `nonmem/<case>/` and `monolix/<case>/`: the control streams, data,
   and NONMEM/Monolix output for each case, to look at a failure in
-  detail.
+  detail (under `translate/` and `run/` with `--kit`).
 
 The script exits with status 1 when any case fails, so it can also be
 used in a CI job on a machine with NONMEM or Monolix.

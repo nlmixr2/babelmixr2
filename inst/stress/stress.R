@@ -2,12 +2,15 @@
 #
 # This file is shared by the testthat stress tests (translation only)
 # and by `run-stress.R` (which can also run NONMEM/Monolix end to end).
-# See README.md in this directory for how to run it.
+# See README.md in this directory for how to run it; from an R session
+# (like RStudio) source this file and call stressCheck() and
+# stressKit().
 #
 # Every case is a model, a data set and, for each engine, what should
 # happen:
 #
 #  - "ok": the model and data are translated (and fit in "run" mode)
+#  - "any": translated, or refused with a known error
 #  - a regular expression: the model is refused with an error matching it
 #
 # Cases can also list regular expressions that must be found in the
@@ -15,7 +18,7 @@
 # (`monolix`), which check that the edge case was translated the way
 # it should be.
 
-.stressEnv <- new.env(parent=emptyenv())
+.stressEnv <- new.env(parent = emptyenv())
 
 # ---------------------------------------------------------------------
 # data sets
@@ -667,6 +670,130 @@
       cp <- central / v
       cp ~ add(add.sd)
     })
+  },
+  odeIv = function() {
+    ini({
+      tcl <- log(4)
+      tv <- log(40)
+      eta.cl ~ 0.1
+      eta.v ~ 0.1
+      prop.sd <- 0.1
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d / dt(central) <- -cl / v * central
+      cp <- central / v
+      cp ~ prop(prop.sd)
+    })
+  },
+  odeIvDur = function() {
+    ini({
+      tcl <- log(4)
+      tv <- log(40)
+      tdur <- log(2)
+      eta.cl ~ 0.1
+      eta.v ~ 0.1
+      eta.dur ~ 0.1
+      prop.sd <- 0.1
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      dur(central) <- exp(tdur + eta.dur)
+      d / dt(central) <- -cl / v * central
+      cp <- central / v
+      cp ~ prop(prop.sd)
+    })
+  },
+  odePkpd = function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      te0 <- log(100)
+      timax <- fix(0.8)
+      tic50 <- log(2)
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      eta.e0 ~ 0.05
+      prop.sd <- 0.1
+      add.eff <- 2
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      e0 <- exp(te0 + eta.e0)
+      ic50 <- exp(tic50)
+      d / dt(depot) <- -ka * depot
+      d / dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      eff <- e0 * (1 - timax * cp / (ic50 + cp))
+      cp ~ prop(prop.sd)
+      eff ~ add(add.eff)
+    })
+  },
+  bounded = function() {
+    ini({
+      tka <- c(-2, 0.45, 2)
+      tcl <- c(0, 1, 3)
+      tv <- c(1, 3.45, 6)
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- c(0, 0.7, 5)
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d / dt(depot) <- -ka * depot
+      d / dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  },
+  multiCov = function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      cl.wt <- 0.75
+      cl.sex <- 0.2
+      v.wt <- 1
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl + cl.wt * log(WT / 70) + cl.sex * SEX2)
+      v <- exp(tv + eta.v + v.wt * log(WT / 70))
+      d / dt(depot) <- -ka * depot
+      d / dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  },
+  noEtaAtAll = function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(tcl)
+      v <- exp(tv)
+      d / dt(depot) <- -ka * depot
+      d / dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
   }
 )
 
@@ -674,13 +801,51 @@
 # cases
 # ---------------------------------------------------------------------
 
-.stressCase <- function(name, model, data, nonmem="ok", monolix="ok",
-                        checkNonmem=NULL, checkMonolix=NULL, run=TRUE,
-                        description="") {
-  list(name=name, model=model, data=data,
-       expect=list(nonmem=nonmem, monolix=monolix),
-       check=list(nonmem=checkNonmem, monolix=checkMonolix),
-       run=run, description=description)
+#' A stress case
+#'
+#' @param name case name
+#' @param model model function
+#' @param data data set
+#' @param nonmem,monolix "ok", "any" (translate or be refused with a
+#'   known error) or a regular expression the refusal must match
+#' @param checkNonmem,checkMonolix regular expressions that must be in
+#'   the control stream/model files
+#' @param run fit the case in run mode (otherwise translation only)
+#' @param description description
+#' @param controlNonmem,controlMonolix extra `nonmemControl()` or
+#'   `monolixControl()` arguments (like `list(est="imp")`)
+#' @param engines engines the case applies to
+#' @param rerun in run mode, fit a second time and check that the saved
+#'   output is read again (same objective function)
+#' @return case list
+#' @noRd
+.stressCase <- function(
+  name,
+  model,
+  data,
+  nonmem = "ok",
+  monolix = "ok",
+  checkNonmem = NULL,
+  checkMonolix = NULL,
+  run = TRUE,
+  description = "",
+  controlNonmem = list(),
+  controlMonolix = list(),
+  engines = c("nonmem", "monolix"),
+  rerun = FALSE
+) {
+  list(
+    name = name,
+    model = model,
+    data = data,
+    expect = list(nonmem = nonmem, monolix = monolix),
+    check = list(nonmem = checkNonmem, monolix = checkMonolix),
+    control = list(nonmem = controlNonmem, monolix = controlMonolix),
+    engines = engines,
+    rerun = rerun,
+    run = run,
+    description = description
+  )
 }
 
 #' All the stress test cases
@@ -743,6 +908,52 @@ stressCases <- function() {
   .reset <- rbind(.reset, .r)
   .reset <- .reset[order(.reset$ID, .reset$TIME, -.reset$EVID), ]
 
+  # data edge cases (all on theo_sd, fit with the ODE model)
+  .theoNa <- .theo
+  .w <- which(.theoNa$EVID == 0)
+  .theoNa$DV[.w[seq(3, length(.w), by = 7)]] <- NA_real_
+  .theoEvid2 <- .theo[.theo$EVID == 1, ]
+  .theoEvid2$EVID <- 2L
+  .theoEvid2$AMT <- 0
+  .theoEvid2$DV <- NA_real_
+  .theoEvid2$TIME <- 30
+  .theoEvid2 <- rbind(.theo, .theoEvid2)
+  .theoEvid2 <- .theoEvid2[
+    order(.theoEvid2$ID, .theoEvid2$TIME, -.theoEvid2$EVID),
+  ]
+  .theoChrId <- .theo
+  .theoChrId$ID <- paste0("S-", 100 + 7 * .theoChrId$ID)
+  .theoShift <- .theo
+  .theoShift$TIME <- .theoShift$TIME + 100
+  .theoExtra <- .theo
+  .theoExtra$NOTE <- ifelse(.theoExtra$EVID == 1, "dose", "sample")
+  .theoExtra$STUDY <- 101
+  .theoExtra$SITE <- .theoExtra$ID %% 4
+  .theoMulti <- .theo
+  .theoMulti$WT <- 70 + 5 * (.theoMulti$ID %% 5 - 2)
+  .theoMulti$SEX2 <- .theoMulti$ID %% 2
+  .theoOne <- .theo[.theo$ID == 1, ]
+  # doses into the depot and into the central compartment
+  .mixedRoutes <- .stressSim(
+    .m$ode1,
+    rxode2::et(amt = 320, cmt = "depot") |>
+      rxode2::et(time = 24, amt = 100, cmt = "central") |>
+      rxode2::et(c(.stressTimes, 24.25, 24.5, 25, 26, 28, 32, 36, 48)) |>
+      rxode2::et(id = seq_len(24))
+  )
+  .odeInf <- .stressSim(.stressCode$odeIv, .stressEvIv(rate = 250))
+  .odeInfSs <- .stressSim(
+    .stressCode$odeIv,
+    rxode2::et(amt = 500, cmt = "central", rate = 250, ii = 24, ss = 1) |>
+      rxode2::et(.stressTimes) |>
+      rxode2::et(id = seq_len(24))
+  )
+  .odeModelDur <- .stressSim(.stressCode$odeIv, .stressEvIv())
+  .odeModelDur$RATE <- ifelse(.odeModelDur$EVID == 1, -2, 0)
+  .pkpd <- .stressSim(
+    .stressCode$odePkpd,
+    .stressEvOral(cmtObs = c("cp", "eff"))
+  )
   .res <- function(err, ini) .stressResidual(err, ini)
 
   .cases <- list(
@@ -857,7 +1068,8 @@ stressCases <- function() {
     .stressCase("censoring (CENS and LIMIT)", .m$lin1oral, .censLimit,
                 checkNonmem="LIMIT"),
     .stressCase("censoring LIMIT only", .m$lin1oral, .limitOnly,
-                nonmem="ylo|yup|limit|laplacian"),
+                checkNonmem = "LIMIT .GT.",
+                description = "M2: a finite LIMIT without CENS"),
     # model code ---------------------------------------------------------
     .stressCase("if/else", .stressCode$ifElse, .theoSex, checkNonmem="IF \\("),
     # NONMEM (and Monolix for ifelse()) prune the if/else branches (#11)
@@ -889,7 +1101,160 @@ stressCases <- function() {
     .stressCase("not mu-referenced", .stressCode$notMuRef, .theo,
                 monolix="mu"),
     # data -------------------------------------------------------------
-    .stressCase("reset and dose (evid=4)", .m$ode1, .reset)
+    .stressCase("reset and dose (evid=4)", .m$ode1, .reset),
+    .stressCase("missing observations (DV=NA)", .m$ode1, .theoNa),
+    .stressCase("other events (evid=2)", .m$ode1, .theoEvid2),
+    .stressCase(
+      "character IDs",
+      .m$ode1,
+      .theoChrId,
+      description = "IDs like S-107 are renumbered for NONMEM/Monolix"
+    ),
+    .stressCase("time not starting at zero", .m$ode1, .theoShift),
+    .stressCase(
+      "extra unused data columns",
+      .m$ode1,
+      .theoExtra,
+      description = "character, constant and unused numeric columns"
+    ),
+    .stressCase(
+      "single subject",
+      .stressCode$noEta,
+      .theoOne,
+      nonmem = "any",
+      monolix = "any",
+      description = "one subject with one random effect"
+    ),
+    .stressCase(
+      "oral and iv doses",
+      .m$ode1,
+      .mixedRoutes,
+      description = "doses into the depot and into the central compartment"
+    ),
+    .stressCase(
+      "ODE infusion (rate)",
+      .stressCode$odeIv,
+      .odeInf,
+      checkNonmem = "\\$INPUT.* RATE"
+    ),
+    .stressCase(
+      "ODE steady state infusion",
+      .stressCode$odeIv,
+      .odeInfSs,
+      checkNonmem = "\\$INPUT.* SS"
+    ),
+    .stressCase(
+      "ODE modeled duration",
+      .stressCode$odeIvDur,
+      .odeModelDur,
+      checkNonmem = c("D1=", "\\$INPUT.* RATE"),
+      checkMonolix = "Tk0="
+    ),
+    .stressCase(
+      "ODE PK/PD two endpoints",
+      .stressCode$odePkpd,
+      .pkpd,
+      description = "prop error on cp, add error on eff (CMT is the endpoint)"
+    ),
+    .stressCase(
+      "bounded thetas",
+      .stressCode$bounded,
+      .theo,
+      checkNonmem = "\\(-2,"
+    ),
+    .stressCase("several covariates", .stressCode$multiCov, .theoMulti),
+    # NONMEM gets a control stream without $OMEGA; run mode shows
+    # whether NONMEM fits it
+    .stressCase(
+      "no random effects",
+      .stressCode$noEtaAtAll,
+      .theo,
+      nonmem = "any",
+      monolix = "mixed effect",
+      description = "fixed effects only; Monolix needs random effects"
+    ),
+    # estimation options -----------------------------------------------
+    .stressCase(
+      "NONMEM est=imp",
+      .m$ode1,
+      .theo,
+      engines = "nonmem",
+      controlNonmem = list(est = "imp"),
+      checkNonmem = "METHOD=IMP"
+    ),
+    .stressCase(
+      "NONMEM est=its",
+      .m$ode1,
+      .theo,
+      engines = "nonmem",
+      controlNonmem = list(est = "its"),
+      checkNonmem = "METHOD=ITS"
+    ),
+    .stressCase(
+      "NONMEM est=posthoc",
+      .m$ode1,
+      .theo,
+      engines = "nonmem",
+      controlNonmem = list(est = "posthoc"),
+      checkNonmem = "MAXEVALS=0"
+    ),
+    .stressCase(
+      "NONMEM no covariance step",
+      .m$ode1,
+      .theo,
+      engines = "nonmem",
+      controlNonmem = list(cov = "")
+    ),
+    .stressCase(
+      "NONMEM ADVAN6",
+      .m$ode1,
+      .theo,
+      engines = "nonmem",
+      controlNonmem = list(advanOde = "advan6"),
+      checkNonmem = "ADVAN6"
+    ),
+    .stressCase(
+      "NONMEM linCmt as ODEs",
+      .m$lin2oral,
+      .oral2,
+      engines = "nonmem",
+      controlNonmem = list(linCmt = "ode"),
+      checkNonmem = "ADVAN13"
+    ),
+    .stressCase(
+      "Monolix linearization",
+      .m$ode1,
+      .theo,
+      engines = "monolix",
+      controlMonolix = list(useLinearization = TRUE),
+      checkMonolix = "method = Linearization"
+    ),
+    .stressCase(
+      "Monolix linCmt as ODEs",
+      .m$lin2oral,
+      .oral2,
+      engines = "monolix",
+      controlMonolix = list(linCmt = "ode"),
+      checkMonolix = "ddt_central"
+    ),
+    .stressCase(
+      "Monolix stiff ODEs",
+      .m$ode1,
+      .theo,
+      engines = "monolix",
+      controlMonolix = list(stiff = TRUE),
+      checkMonolix = "odeType = stiff"
+    ),
+    .stressCase(
+      "Monolix decreasing variability",
+      .m$ode1,
+      .theo,
+      engines = "monolix",
+      controlMonolix = list(variability = "decreasing"),
+      checkMonolix = "variability = decreasing"
+    ),
+    # a second fit reads the saved output instead of running again
+    .stressCase("rerun reads saved output", .m$lin1oral, .theo, rerun = TRUE)
   )
   names(.cases) <- vapply(.cases, function(x) x$name, character(1))
   .stressEnv$cases <- .cases
@@ -1074,7 +1439,7 @@ stressLintNonmem <- function(lines) {
   if (length(.bad) > 0L) .ret <- c(.ret, paste0("assignment without value: ", lines[.bad]))
   # NONMEM cannot use a logical expression as a number (only in IF ())
   .if <- paste0("^\\s*(ELSE )?IF\\s*\\(.*\\)( THEN)?",
-                "(\\s+[A-Z_0-9]+\\s*=\\s*[0-9.]+)?\\s*$")
+                "(\\s+[A-Z_0-9]+\\s*=\\s*[0-9.]+([ED][-+]?[0-9]+)?)?\\s*$")
   .bad <- grep("\\.(EQ|NE|GT|GE|LT|LE|AND|OR|NOT)\\.", sub(.if, "", .code))
   if (length(.bad) > 0L) {
     .ret <- c(.ret, paste0("logical expression used as a number: ", lines[.bad]))
@@ -1143,15 +1508,78 @@ stressLintMonolix <- function(lines) {
 # running a case
 # ---------------------------------------------------------------------
 
-.stressControl <- function(engine, mode, modelName, runCommand) {
+.stressControl <- function(
+  engine,
+  mode,
+  modelName,
+  runCommand,
+  extra = list()
+) {
   .cmd <- if (mode == "translate") NA else runCommand
   if (engine == "nonmem") {
-    if (is.null(.cmd)) .cmd <- getOption("babelmixr2.nonmem", "")
-    babelmixr2::nonmemControl(runCommand=.cmd, modelName=modelName)
+    if (is.null(.cmd)) {
+      .cmd <- getOption("babelmixr2.nonmem", "")
+    }
+    do.call(
+      babelmixr2::nonmemControl,
+      c(list(runCommand = .cmd, modelName = modelName), extra)
+    )
   } else {
-    if (is.null(.cmd)) .cmd <- getOption("babelmixr2.monolix", "")
-    babelmixr2::monolixControl(runCommand=.cmd, modelName=modelName)
+    if (is.null(.cmd)) {
+      .cmd <- getOption("babelmixr2.monolix", "")
+    }
+    do.call(
+      babelmixr2::monolixControl,
+      c(list(runCommand = .cmd, modelName = modelName), extra)
+    )
   }
+}
+
+.stressFit <- function(case, engine, mode, dir, modelName, runCommand) {
+  withr::with_dir(dir, {
+    tryCatch(
+      suppressWarnings(suppressMessages(
+        nlmixr2est::nlmixr2(
+          case$model,
+          case$data,
+          est = engine,
+          control = .stressControl(
+            engine,
+            mode,
+            modelName,
+            runCommand,
+            case$control[[engine]]
+          )
+        )
+      )),
+      error = function(e) e
+    )
+  })
+}
+
+#' How well rxode2 reproduces the NONMEM/Monolix predictions
+#'
+#' @param fit babelmixr2 fit
+#' @param engine "nonmem" or "monolix"
+#' @return median relative differences (%) of IPRED and PRED
+#' @noRd
+.stressPredDiff <- function(fit, engine) {
+  .f <- if (engine == "nonmem") {
+    ".nonmemMergePredsAndCalcRelativeErr"
+  } else {
+    ".monolixMergePredsAndCalcRelativeErr"
+  }
+  .d <- try(
+    suppressWarnings(
+      utils::getFromNamespace(.f, "babelmixr2")(fit)
+    ),
+    silent = TRUE
+  )
+  if (inherits(.d, "try-error") || is.null(.d)) {
+    return(c(NA_real_, NA_real_))
+  }
+  # the quantiles are 0, lower ci, median, upper ci, 1
+  c(unname(.d$individualRel[3]), unname(.d$popRel[3]))
 }
 
 .stressFiles <- function(engine, modelName) {
@@ -1182,21 +1610,41 @@ stressLintMonolix <- function(lines) {
 #'   babelmixr2 options)
 #' @param reference fit the model with nlmixr2 as well and compare
 #'   the population estimates (run mode only)
+#' @param predTol in run mode, the largest median relative difference
+#'   (in %) allowed between the rxode2 and NONMEM/Monolix IPRED
 #' @return one row data frame with the result
 #' @noRd
-stressRunCase <- function(case, engine, mode="translate", dir=tempfile("stress"),
-                          runCommand=NULL, reference=FALSE) {
+stressRunCase <- function(
+  case,
+  engine,
+  mode = "translate",
+  dir = tempfile("stress"),
+  runCommand = NULL,
+  reference = FALSE,
+  predTol = 5
+) {
   .expect <- case$expect[[engine]]
   .modelName <- .stressModelName(case$name)
-  .ret <- data.frame(case=case$name, engine=engine, mode=mode,
-                     expect=.expect, status=NA_character_, message="",
-                     problems="", seconds=NA_real_, objf=NA_real_,
-                     maxRelDiffTheta=NA_real_, stringsAsFactors=FALSE)
-  if (inherits(case$model, "try-error") || inherits(case$data, "try-error")) {
+  .ret <- data.frame(
+    case = case$name,
+    engine = engine,
+    mode = mode,
+    expect = .expect,
+    status = NA_character_,
+    message = "",
+    problems = "",
+    seconds = NA_real_,
+    objf = NA_real_,
+    ipredRelDiff = NA_real_,
+    predRelDiff = NA_real_,
+    rerunSeconds = NA_real_,
+    maxRelDiffTheta = NA_real_,
+    stringsAsFactors = FALSE
+  )
+  .setup <- Filter(function(x) inherits(x, "try-error"), list(case$model, case$data))
+  if (length(.setup) > 0L) {
     .ret$status <- "setup"
-    .ret$message <- paste(c(if (inherits(case$model, "try-error")) paste(case$model),
-                            if (inherits(case$data, "try-error")) paste(case$data)),
-                          collapse=" ")
+    .ret$message <- paste(vapply(.setup, paste, character(1)), collapse = " ")
     return(.ret)
   }
   if (mode == "run" && !isTRUE(case$run)) {
@@ -1204,27 +1652,13 @@ stressRunCase <- function(case, engine, mode="translate", dir=tempfile("stress")
     .ret$message <- "case is translation only"
     return(.ret)
   }
-  dir.create(dir, showWarnings=FALSE, recursive=TRUE)
+  dir.create(dir, showWarnings = FALSE, recursive = TRUE)
   .time <- proc.time()
-  .fit <- withr::with_dir(dir, {
-    tryCatch(suppressWarnings(suppressMessages(
-      nlmixr2est::nlmixr2(case$model, case$data, est=engine,
-                          control=.stressControl(engine, mode, .modelName, runCommand)))),
-      error=function(e) e)
-  })
+  .fit <- .stressFit(case, engine, mode, dir, .modelName, runCommand)
   .ret$seconds <- (proc.time() - .time)[["elapsed"]]
   if (inherits(.fit, "error")) {
-    .msg <- conditionMessage(.fit)
-    .ret$message <- gsub("\n", " ", .msg)
-    if (identical(.expect, "ok")) {
-      .ret$status <- "error"
-    } else if (identical(.expect, "any")) {
-      .known <- any(vapply(.stressKnownRefusals, function(r) grepl(r, .msg), logical(1)))
-      .upstream <- any(vapply(.stressKnownUpstream, function(r) grepl(r, .msg, fixed=TRUE), logical(1)))
-      .ret$status <- if (.known) "refused" else if (.upstream) "upstream" else "error"
-    } else {
-      .ret$status <- if (grepl(.expect, .msg)) "refused" else "error"
-    }
+    .ret$message <- gsub("\n", " ", conditionMessage(.fit))
+    .ret$status <- .stressErrorStatus(.expect, conditionMessage(.fit))
     return(.ret)
   }
   if (!(.expect %in% c("ok", "any"))) {
@@ -1232,43 +1666,143 @@ stressRunCase <- function(case, engine, mode="translate", dir=tempfile("stress")
     .ret$message <- paste0("expected an error matching '", .expect, "'")
     return(.ret)
   }
-  .files <- .stressFiles(engine, .modelName)
+  .problems <- .stressCheckFiles(case, engine, dir, .modelName)
+  if (mode == "run") {
+    .run <- .stressCheckFit(
+      .fit, case, engine, dir, .modelName, runCommand, reference, predTol
+    )
+    .ret[names(.run$values)] <- .run$values
+    .problems <- c(.problems, .run$problems)
+  }
+  .ret$problems <- paste(.problems, collapse = " | ")
+  .ret$status <- if (length(.problems) > 0L) "problem" else "ok"
+  .ret
+}
+
+#' Status of a case that gave an error
+#'
+#' @param expect what the case expects ("ok", "any" or a regular
+#'   expression the refusal must match)
+#' @param msg error message
+#' @return "refused", "upstream" or "error"
+#' @noRd
+.stressErrorStatus <- function(expect, msg) {
+  if (identical(expect, "ok")) {
+    return("error")
+  }
+  if (!identical(expect, "any")) {
+    return(if (grepl(expect, msg)) "refused" else "error")
+  }
+  if (any(vapply(.stressKnownRefusals, grepl, logical(1), x = msg))) {
+    return("refused")
+  }
+  .upstream <- vapply(.stressKnownUpstream, grepl, logical(1), x = msg, fixed = TRUE)
+  if (any(.upstream)) "upstream" else "error"
+}
+
+#' Check the files written for NONMEM/Monolix
+#'
+#' @inheritParams stressRunCase
+#' @param modelName model name (file names)
+#' @return character vector of problems
+#' @noRd
+.stressCheckFiles <- function(case, engine, dir, modelName) {
+  .files <- .stressFiles(engine, modelName)
   .problems <- character(0)
   .modelFile <- file.path(dir, .files$model)
   if (!file.exists(.modelFile)) {
-    .problems <- c(.problems, paste0("missing ", .files$model))
+    .problems <- paste0("missing ", .files$model)
   } else {
     .lines <- readLines(.modelFile)
-    .problems <- c(.problems,
-                   if (engine == "nonmem") stressLintNonmem(.lines) else stressLintMonolix(.lines))
-    if (engine == "monolix") {
-      .mlxtran <- file.path(dir, .files$mlxtran)
-      if (file.exists(.mlxtran)) {
-        .lines <- c(.lines, readLines(.mlxtran))
-        .problems <- c(.problems, .stressLintMlxtran(readLines(.mlxtran)))
-      }
+    .problems <- if (engine == "nonmem") {
+      stressLintNonmem(.lines)
+    } else {
+      stressLintMonolix(.lines)
     }
-    for (.re in case$check[[engine]]) {
-      if (!any(grepl(.re, .lines))) {
-        .problems <- c(.problems, paste0("missing '", .re, "'"))
-      }
+    .mlxtran <- file.path(dir, .files$mlxtran)
+    if (engine == "monolix" && file.exists(.mlxtran)) {
+      .lines <- c(.lines, readLines(.mlxtran))
+      .problems <- c(.problems, .stressLintMlxtran(readLines(.mlxtran)))
     }
+    .found <- vapply(case$check[[engine]], function(re) any(grepl(re, .lines)), logical(1))
+    .problems <- c(.problems, sprintf("missing '%s'", case$check[[engine]][!.found]))
   }
   .dataFile <- file.path(dir, .files$data)
   if (!file.exists(.dataFile)) {
-    .problems <- c(.problems, paste0("missing ", .files$data))
-  } else {
-    .problems <- c(.problems, .stressLintData(utils::read.csv(.dataFile, na.strings=".")))
+    return(c(.problems, paste0("missing ", .files$data)))
   }
-  .ret$problems <- paste(.problems, collapse=" | ")
-  .ret$status <- if (length(.problems) > 0L) "problem" else "ok"
-  if (mode == "run" && inherits(.fit, "nlmixr2FitData")) {
-    .ret$objf <- .fit$objf
-    if (reference) {
-      .ret$maxRelDiffTheta <- .stressCompare(.fit, case, engine)
-    }
+  c(.problems, .stressLintData(utils::read.csv(.dataFile, na.strings = ".")))
+}
+
+#' Check a NONMEM/Monolix fit (run mode)
+#'
+#' @param fit the fit
+#' @inheritParams stressRunCase
+#' @param modelName model name (file names)
+#' @return list with `values` (result columns) and `problems`
+#' @noRd
+.stressCheckFit <- function(
+  fit,
+  case,
+  engine,
+  dir,
+  modelName,
+  runCommand,
+  reference,
+  predTol
+) {
+  if (!inherits(fit, "nlmixr2FitData")) {
+    return(list(values = list(), problems = "the fit did not return an nlmixr2 fit"))
   }
-  .ret
+  .problems <- character(0)
+  if (!is.finite(fit$objf)) {
+    .problems <- "objective function is not finite"
+  }
+  .bad <- names(fit$theta)[!is.finite(fit$theta)]
+  if (length(.bad) > 0L) {
+    .problems <- c(.problems, paste0("non-finite estimates: ", paste(.bad, collapse = ", ")))
+  }
+  .pd <- .stressPredDiff(fit, engine)
+  if (is.na(.pd[1])) {
+    .problems <- c(.problems, "cannot compare the predictions with rxode2")
+  } else if (.pd[1] > predTol) {
+    .problems <- c(
+      .problems,
+      sprintf(
+        "rxode2 IPRED differs from %s by %.2f%% (median; limit %g%%)",
+        engine,
+        .pd[1],
+        predTol
+      )
+    )
+  }
+  .values <- list(objf = fit$objf, ipredRelDiff = .pd[1], predRelDiff = .pd[2])
+  if (isTRUE(case$rerun)) {
+    .rerun <- .stressCheckRerun(fit, case, engine, dir, modelName, runCommand)
+    .values$rerunSeconds <- .rerun$seconds
+    .problems <- c(.problems, .rerun$problems)
+  }
+  if (reference) {
+    .values$maxRelDiffTheta <- .stressCompare(fit, case, engine)
+  }
+  list(values = .values, problems = .problems)
+}
+
+#' Fit a case again: the saved output should be read again
+#'
+#' @inheritParams .stressCheckFit
+#' @return list with `seconds` and `problems`
+#' @noRd
+.stressCheckRerun <- function(fit, case, engine, dir, modelName, runCommand) {
+  .time <- proc.time()
+  .fit2 <- .stressFit(case, engine, "run", dir, modelName, runCommand)
+  .seconds <- (proc.time() - .time)[["elapsed"]]
+  .problems <- if (inherits(.fit2, "error")) {
+    paste0("rerun failed: ", conditionMessage(.fit2))
+  } else if (!isTRUE(all.equal(fit$objf, .fit2$objf))) {
+    "rerun gave a different objective function"
+  }
+  list(seconds = .seconds, problems = .problems)
 }
 
 #' Compare an external fit to the same model fit in nlmixr2
@@ -1300,13 +1834,15 @@ stressRunCase <- function(case, engine, mode="translate", dir=tempfile("stress")
 stressRun <- function(cases=stressCases(), engines=c("nonmem", "monolix"),
                       mode="translate", dir=tempfile("stress"),
                       runCommand=list(nonmem=NULL, monolix=NULL),
-                      reference=FALSE, progress=interactive()) {
+                      reference = FALSE, predTol = 5,
+                      progress = interactive()) {
   .ret <- list()
   for (.case in cases) {
-    for (.engine in engines) {
+    for (.engine in intersect(engines, .case$engines)) {
       .dir <- file.path(dir, .engine, .stressModelName(.case$name))
       .r <- stressRunCase(.case, .engine, mode=mode, dir=.dir,
-                          runCommand=runCommand[[.engine]], reference=reference)
+                          runCommand = runCommand[[.engine]],
+                          reference = reference, predTol = predTol)
       if (progress) {
         message(sprintf("%-8s %-12s %s %s", .engine, .r$status, .case$name,
                         ifelse(.r$status %in% c("ok", "skipped"), "",
@@ -1326,4 +1862,464 @@ stressRun <- function(cases=stressCases(), engines=c("nonmem", "monolix"),
 stressFailed <- function(res) {
   res$status %in% c("error", "problem", "not refused", "setup") &
     !(res$status == "setup" & res$expect == "any")
+}
+
+# ---------------------------------------------------------------------
+# finding NONMEM/Monolix and the report
+# ---------------------------------------------------------------------
+
+#' The command that runs NONMEM
+#'
+#' @return the babelmixr2.nonmem option, an nmfe7* on the PATH or in
+#'   the usual install directories, or "" when none is found
+#' @noRd
+stressFindNonmem <- function() {
+  .o <- getOption("babelmixr2.nonmem", "")
+  if (is.character(.o) && nzchar(.o)) {
+    return(.o)
+  }
+  .w <- Sys.which(paste0("nmfe7", 9:0))
+  .w <- .w[.w != ""]
+  if (length(.w) > 0L) {
+    return(unname(.w[1]))
+  }
+  .globs <- c(
+    "/opt/NONMEM/*/run/nmfe7*",
+    "/opt/nm*/run/nmfe7*",
+    "/usr/local/NONMEM/*/run/nmfe7*",
+    "/usr/local/nm*/run/nmfe7*",
+    "~/nm*/run/nmfe7*",
+    "~/NONMEM/*/run/nmfe7*",
+    "C:/nm*/run/nmfe7*.bat",
+    "C:/NONMEM/*/run/nmfe7*.bat"
+  )
+  .f <- Sys.glob(path.expand(.globs))
+  .f <- .f[!grepl("\\.(f90|o|obj)$", .f) & file.exists(.f)]
+  if (length(.f) == 0L) {
+    return("")
+  }
+  # newest NONMEM first
+  sort(.f, decreasing = TRUE)[1]
+}
+
+#' How Monolix is run
+#'
+#' @return description of the Monolix run command or lixoftConnectors,
+#'   or "" when Monolix is not found
+#' @noRd
+stressMonolixStatus <- function() {
+  .o <- getOption("babelmixr2.monolix", "")
+  if (is.character(.o) && nzchar(.o)) {
+    return(paste0("command ", .o))
+  }
+  if (!requireNamespace("lixoftConnectors", quietly = TRUE)) {
+    return("")
+  }
+  .x <- try(
+    suppressMessages(
+      lixoftConnectors::initializeLixoftConnectors(
+        software = "monolix",
+        force = TRUE
+      )
+    ),
+    silent = TRUE
+  )
+  if (inherits(.x, "try-error") || isFALSE(.x)) {
+    return("")
+  }
+  paste0("lixoftConnectors ", utils::packageVersion("lixoftConnectors"))
+}
+
+#' Package versions for the report
+#'
+#' @return markdown list lines
+#' @noRd
+stressVersions <- function() {
+  .p <- c(
+    "babelmixr2",
+    "rxode2",
+    "nlmixr2est",
+    "lotri",
+    "nonmem2rx",
+    "monolix2rx",
+    "nlmixr2lib",
+    "lixoftConnectors"
+  )
+  .v <- vapply(
+    .p,
+    function(p) {
+      if (requireNamespace(p, quietly = TRUE)) {
+        as.character(utils::packageVersion(p))
+      } else {
+        "-"
+      }
+    },
+    character(1)
+  )
+  .sha <- utils::packageDescription("babelmixr2")$RemoteSha
+  c(
+    paste0(
+      "- ",
+      .p,
+      " ",
+      .v,
+      ifelse(
+        .p == "babelmixr2" & !is.null(.sha),
+        paste0(" (", substr(.sha, 1, 7), ")"),
+        ""
+      )
+    ),
+    paste0("- R ", getRversion(), " on ", R.version$platform)
+  )
+}
+
+
+#' Markdown summary of a stress test
+#'
+#' @param res results (from `stressRun()`, with a `failed` column)
+#' @param modes modes that were run
+#' @param engines engines that were used
+#' @param nonmem,monolix how NONMEM/Monolix were run
+#' @return markdown lines
+#' @noRd
+stressSummary <- function(res, modes, engines, nonmem, monolix) {
+  .md <- c(
+    "# babelmixr2 NONMEM/Monolix stress test",
+    "",
+    paste0("- date: ", format(Sys.time())),
+    paste0("- mode: ", paste(modes, collapse = ", ")),
+    stressVersions(),
+    if ("run" %in% modes && "nonmem" %in% engines) {
+      paste0("- NONMEM: ", nonmem)
+    },
+    if ("run" %in% modes && "monolix" %in% engines) {
+      paste0("- Monolix: ", monolix)
+    },
+    "",
+    "## Summary",
+    ""
+  )
+  .col <- paste(res$mode, res$engine)
+  .tab <- table(res$status, .col)
+  .md <- c(
+    .md,
+    paste0("| status | ", paste(colnames(.tab), collapse = " | "), " |"),
+    paste0("|---|", paste(rep("---", ncol(.tab)), collapse = "|"), "|"),
+    vapply(
+      rownames(.tab),
+      function(r) {
+        paste0("| ", r, " | ", paste(.tab[r, ], collapse = " | "), " |")
+      },
+      character(1)
+    ),
+    "",
+    "## Failures",
+    ""
+  )
+  .fail <- res[res$failed, ]
+  if (nrow(.fail) == 0L) {
+    .md <- c(.md, "None.")
+  } else {
+    .md <- c(
+      .md,
+      "| case | engine | mode | status | message |",
+      "|---|---|---|---|---|",
+      sprintf(
+        "| %s | %s | %s | %s | %s |",
+        .fail$case,
+        .fail$engine,
+        .fail$mode,
+        .fail$status,
+        gsub("\\|", "/", substr(paste(.fail$message, .fail$problems), 1, 300))
+      )
+    )
+  }
+  if ("run" %in% modes) {
+    .ok <- res[res$mode == "run" & res$status %in% c("ok", "problem"), ]
+    .num <- function(x, fmt) ifelse(is.na(x), "", sprintf(fmt, x))
+    .md <- c(
+      .md,
+      "",
+      "## Fits",
+      "",
+      paste(
+        "| case | engine | status | seconds | objective | IPRED diff % |",
+        "PRED diff % | rerun seconds | max rel. diff vs nlmixr2 |"
+      ),
+      "|---|---|---|---|---|---|---|---|---|",
+      sprintf(
+        "| %s | %s | %s | %.1f | %s | %s | %s | %s | %s |",
+        .ok$case,
+        .ok$engine,
+        .ok$status,
+        .ok$seconds,
+        .num(.ok$objf, "%.3f"),
+        .num(.ok$ipredRelDiff, "%.3f"),
+        .num(.ok$predRelDiff, "%.3f"),
+        .num(.ok$rerunSeconds, "%.1f"),
+        .num(.ok$maxRelDiffTheta, "%.3f")
+      )
+    )
+  }
+  .md
+}
+
+#' Zip the output directory to send back
+#'
+#' @param out output directory
+#' @return the zip file (invisibly), or NULL when it cannot be made
+#' @noRd
+stressBundle <- function(out) {
+  .zip <- paste0(out, ".zip")
+  .ok <- withr::with_dir(dirname(out), {
+    try(utils::zip(.zip, basename(out), flags = "-r9Xq"), silent = TRUE)
+  })
+  if (inherits(.ok, "try-error") || !file.exists(.zip)) {
+    message("could not zip the output; send the directory ", out, " instead")
+    return(invisible(NULL))
+  }
+  message("send this file back: ", .zip)
+  invisible(.zip)
+}
+
+# ---------------------------------------------------------------------
+# the kit (run from an R session or from run-stress.R)
+# ---------------------------------------------------------------------
+
+#' Report the versions and whether NONMEM and Monolix are found
+#'
+#' @param nonmem command that runs NONMEM (like "nmfe75" or its full
+#'   path); `NULL` looks for it (see `stressFindNonmem()`)
+#' @param monolix command that runs Monolix; `NULL` uses
+#'   lixoftConnectors (or `options(babelmixr2.monolix=)`)
+#' @return list with `nonmem` and `monolix` (`""` when not found),
+#'   invisibly
+#' @noRd
+stressCheck <- function(nonmem = NULL, monolix = NULL) {
+  .found <- .stressEngines(nonmem, monolix)
+  message(paste(stressVersions(), collapse = "\n"))
+  message(
+    "- NONMEM: ",
+    if (nzchar(.found$nonmem)) {
+      .found$nonmem
+    } else {
+      "not found (give it with nonmem=)"
+    }
+  )
+  message(
+    "- Monolix: ",
+    if (nzchar(.found$monolix)) {
+      .found$monolix
+    } else {
+      "not found (load lixoftConnectors or give it with monolix=)"
+    }
+  )
+  if (!("linCmtMicro" %in% getNamespaceExports("rxode2"))) {
+    message(
+      "- rxode2 has no linCmtMicro(): the closed-form linCmt() checks will fail"
+    )
+  }
+  invisible(.found)
+}
+
+.stressEngines <- function(nonmem = NULL, monolix = NULL) {
+  list(
+    nonmem = if (is.null(nonmem)) stressFindNonmem() else nonmem,
+    monolix = if (is.null(monolix)) {
+      stressMonolixStatus()
+    } else {
+      paste0("command ", monolix)
+    },
+    monolixCommand = monolix
+  )
+}
+
+#' The cases to use
+#'
+#' @param cases regular expression of the case names (`NULL` is all)
+#' @param nlmixr2lib "none", "sample" or "all" nlmixr2lib models
+#' @return list of cases
+#' @noRd
+.stressSelect <- function(cases, nlmixr2lib) {
+  .ret <- stressCases()
+  if (nlmixr2lib != "none") {
+    if (!requireNamespace("nlmixr2lib", quietly = TRUE)) {
+      stop("nlmixr2lib= needs the nlmixr2lib package", call. = FALSE)
+    }
+    .ret <- c(.ret, stressLibCases(all = (nlmixr2lib == "all")))
+  }
+  if (!is.null(cases)) {
+    .ret <- .ret[grepl(cases, names(.ret))]
+  }
+  .ret
+}
+
+#' List the stress cases
+#'
+#' @inheritParams .stressSelect
+#' @return data frame with what each engine should do, invisibly
+#' @noRd
+stressList <- function(cases = NULL, nlmixr2lib = "none") {
+  .c <- .stressSelect(cases, match.arg(nlmixr2lib, c("none", "sample", "all")))
+  .e <- function(case, engine) {
+    if (!(engine %in% case$engines)) {
+      return("-")
+    }
+    .x <- case$expect[[engine]]
+    if (.x %in% c("ok", "any")) .x else "refuse"
+  }
+  .ret <- data.frame(
+    case = names(.c),
+    nonmem = vapply(.c, .e, character(1), engine = "nonmem"),
+    monolix = vapply(.c, .e, character(1), engine = "monolix"),
+    description = vapply(.c, function(x) x$description, character(1)),
+    row.names = NULL,
+    stringsAsFactors = FALSE
+  )
+  print(.ret, right = FALSE)
+  invisible(.ret)
+}
+
+#' Run the stress test
+#'
+#' The kit: translate every case (and nlmixr2lib models), fit every case
+#' with the engines that are found, compare with nlmixr2 and zip the
+#' output to send back.  Works the same from an R session (like
+#' RStudio) and from `run-stress.R`.
+#'
+#' @param engines engines to use; `NULL` uses the ones that are found
+#'   (in run mode)
+#' @param modes "translate" and/or "run"
+#' @param cases regular expression of the case names (`NULL` is all)
+#' @param nlmixr2lib "none", "sample" or "all" nlmixr2lib models
+#'   (translation only); `NULL` is "sample" when nlmixr2lib is installed
+#' @param out output directory
+#' @param reference compare the fits with nlmixr2 (focei for NONMEM, saem
+#'   for Monolix)
+#' @param predTol largest median relative difference (%) between the
+#'   rxode2 and NONMEM/Monolix IPRED
+#' @param bundle zip the output directory
+#' @inheritParams stressCheck
+#' @return data frame of the results (invisibly), with the attributes
+#'   `out` (output directory) and `zip` (the zip file)
+#' @noRd
+stressKit <- function(
+  nonmem = NULL,
+  monolix = NULL,
+  engines = NULL,
+  modes = c("translate", "run"),
+  cases = NULL,
+  nlmixr2lib = NULL,
+  out = paste0("babelmixr2-stress-", format(Sys.time(), "%Y%m%d-%H%M%S")),
+  reference = TRUE,
+  predTol = 5,
+  bundle = TRUE
+) {
+  modes <- match.arg(modes, c("translate", "run"), several.ok = TRUE)
+  if (is.null(nlmixr2lib)) {
+    nlmixr2lib <- if (requireNamespace("nlmixr2lib", quietly = TRUE)) {
+      "sample"
+    } else {
+      "none"
+    }
+  }
+  nlmixr2lib <- match.arg(nlmixr2lib, c("none", "sample", "all"))
+  .found <- .stressEngines(nonmem, monolix)
+  engines <- .stressKitEngines(engines, modes, .found)
+  .cases <- .stressSelect(cases, "none")
+  .libCases <- if (nlmixr2lib == "none") {
+    list()
+  } else {
+    .stressSelect(cases, nlmixr2lib)
+  }
+  .libCases <- .libCases[setdiff(names(.libCases), names(.cases))]
+
+  dir.create(out, showWarnings = FALSE, recursive = TRUE)
+  out <- normalizePath(out)
+  writeLines(
+    utils::capture.output(utils::sessionInfo()),
+    file.path(out, "sessionInfo.txt")
+  )
+  message(paste(stressVersions(), collapse = "\n"))
+  message(
+    length(.cases) + length(.libCases),
+    " cases; engines: ",
+    paste(engines, collapse = ", "),
+    "; mode: ",
+    paste(modes, collapse = ", "),
+    "; output: ",
+    out
+  )
+  .runCommand <- list(
+    nonmem = if (nzchar(.found$nonmem)) .found$nonmem,
+    monolix = .found$monolixCommand
+  )
+  .res <- lapply(modes, function(mode) {
+    # the nlmixr2lib models are translation only
+    stressRun(
+      if (mode == "translate") c(.cases, .libCases) else .cases,
+      engines = engines,
+      mode = mode,
+      dir = if (length(modes) > 1L) file.path(out, mode) else out,
+      runCommand = .runCommand,
+      reference = reference,
+      predTol = predTol,
+      progress = TRUE
+    )
+  })
+  .res <- do.call(rbind, .res)
+  rownames(.res) <- NULL
+  .res$failed <- stressFailed(.res)
+  utils::write.csv(.res, file.path(out, "results.csv"), row.names = FALSE)
+  .md <- stressSummary(.res, modes, engines, .found$nonmem, .found$monolix)
+  writeLines(.md, file.path(out, "summary.md"))
+  message("\n", paste(.md, collapse = "\n"))
+  message("\nresults: ", file.path(out, "results.csv"))
+  attr(.res, "out") <- out
+  attr(.res, "zip") <- if (bundle) stressBundle(out)
+  invisible(.res)
+}
+
+#' Which engines the kit uses
+#'
+#' @param engines engines asked for (`NULL`: the ones found in run mode,
+#'   both in translate mode)
+#' @param modes modes
+#' @param found from `.stressEngines()`
+#' @return engines
+#' @noRd
+.stressKitEngines <- function(engines, modes, found) {
+  if (!("run" %in% modes)) {
+    return(
+      if (is.null(engines)) {
+        c("nonmem", "monolix")
+      } else {
+        match.arg(engines, c("nonmem", "monolix"), several.ok = TRUE)
+      }
+    )
+  }
+  .found <- c(nonmem = nzchar(found$nonmem), monolix = nzchar(found$monolix))
+  if (is.null(engines)) {
+    engines <- names(.found)[.found]
+    if (length(engines) == 0L) {
+      stop("found neither NONMEM nor Monolix; see stressCheck()", call. = FALSE)
+    }
+  }
+  engines <- match.arg(engines, c("nonmem", "monolix"), several.ok = TRUE)
+  .how <- c(
+    nonmem = "give it with nonmem= (like nonmem = \"nmfe75\")",
+    monolix = "load lixoftConnectors or give it with monolix="
+  )
+  .missing <- engines[!.found[engines]]
+  if (length(.missing) > 0L) {
+    stop(
+      paste0(
+        c(nonmem = "NONMEM", monolix = "Monolix")[.missing[1]],
+        " is not found; ",
+        .how[.missing[1]]
+      ),
+      call. = FALSE
+    )
+  }
+  engines
 }
