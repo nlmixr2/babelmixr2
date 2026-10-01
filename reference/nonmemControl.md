@@ -92,7 +92,7 @@ nonmemControl(
 
 - cov:
 
-  The NONMEM covariance method
+  The NONMEM covariance method; `""` skips the covariance step
 
 - maxeval:
 

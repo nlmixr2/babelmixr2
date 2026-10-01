@@ -149,7 +149,7 @@ f <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
 #> → finding duplicate expressions in EBE model...
 #> → compiling EBE model...
 #> ✔ done
-#> rxode2 5.1.8 using 2 threads (see ?getRxThreads)
+#> rxode2 5.1.9 using 2 threads (see ?getRxThreads)
 #>   no cache: create with `rxCreateCache()`
 #> → Calculating residuals/tables
 #> ✔ done
@@ -194,8 +194,8 @@ print(f)
 #> 
 #> ── Time (sec $time): ──
 #> 
-#>            setup preprocess postprocess table compress NONMEM
-#> elapsed 1.121223      0.045       0.029 0.057    0.017 320.27
+#>             setup preprocess postprocess table compress NONMEM
+#> elapsed 0.8823089      0.033       0.025 0.049    0.016 320.27
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 
