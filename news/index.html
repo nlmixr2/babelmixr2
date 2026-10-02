@@ -41,7 +41,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.11.9000" id="babelmixr2-01119000">babelmixr2 0.1.11.9000<a class="anchor" aria-label="anchor" href="#babelmixr2-01119000"></a></h2>
-<ul><li>
+<ul><li><p>When lixoftConnectors cannot load or run a Monolix project, the error now includes Monolix’s reason (its <code>[ERROR]</code> lines) instead of “see Monolix’s [ERROR] above”.</p></li>
+<li>
 <p>Fixes found by running the NONMEM/Monolix stress kit with NONMEM 7.4:</p>
 <ul><li>
 <code>nonmemControl(est="imp")</code> and <code>est="its"</code> fits were always reported as unsuccessful; NONMEM ends them with “OPTIMIZATION WAS NOT TESTED FOR CONVERGENCE”, which is now read as finished.</li>

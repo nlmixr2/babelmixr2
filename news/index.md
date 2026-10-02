@@ -2,6 +2,10 @@
 
 ## babelmixr2 0.1.11.9000
 
+- When lixoftConnectors cannot load or run a Monolix project, the error
+  now includes Monolix’s reason (its `[ERROR]` lines) instead of “see
+  Monolix’s \[ERROR\] above”.
+
 - Fixes found by running the NONMEM/Monolix stress kit with NONMEM 7.4:
 
   - `nonmemControl(est="imp")` and `est="its"` fits were always reported
