@@ -7,6 +7,13 @@
   paste(.ret[regexpr("^ *$", .ret) == -1], collapse="\n")
 }
 
+# Transformed residual errors are written as transform-both-sides
+# (PAGE 2017, abstract 8182:
+# https://www.page-meeting.org/wp-content/uploads/pdf_assets/
+# 8182-567-Presentation_final.pdf):
+# DV is transformed in CCONTR (inst/ccontra-*.txt) and IPRED by these
+# $ERROR templates (inst/err-*.txt); keep both in sync with rxode2's
+# transformations
 .nonmemErr0 <- function(ui, pred1, indent=TRUE) {
   if (length(pred1$cond) == 1L) {
     .iniDf <- ui$iniDf

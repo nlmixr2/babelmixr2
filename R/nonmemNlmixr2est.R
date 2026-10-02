@@ -139,7 +139,11 @@
   #env$ofvType
   env$ofvType <- .ui$nonmemObjfType
   # Add parameter history
-  env$parHistData <- .ui$nonmemParHistory
+  # a posthoc run (MAXEVALS=0) has no parameter history
+  .parHist <- .ui$nonmemParHistory
+  if (!is.null(.parHist)) {
+    env$parHistData <- .parHist
+  }
   env$nobs <- .lastNobs
   env$nobs2<- .lastNobs
   # Run before converting to nonmemControl
@@ -390,6 +394,10 @@ nlmixr2Est.nonmem <- function(env, ...) {
   .ui <- env$ui
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
+  # without random effects NONMEM treats the data as single-subject
+  # data, where METHOD=COND is invalid
+  rxode2::assertRxUiMixedOnly(.ui, " for the estimation routine 'nonmem'",
+                              .var.name = .ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   # the residual transformations babelmixr2 can write for NONMEM
   rxode2::assertRxUiTransform(.ui, c("untransformed", "boxCox", "yeoJohnson", "lnorm",

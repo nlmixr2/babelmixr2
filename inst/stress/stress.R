@@ -1068,7 +1068,7 @@ stressCases <- function() {
     .stressCase("censoring (CENS and LIMIT)", .m$lin1oral, .censLimit,
                 checkNonmem="LIMIT"),
     .stressCase("censoring LIMIT only", .m$lin1oral, .limitOnly,
-                checkNonmem = "LIMIT .GT.",
+                checkNonmem = "RXCM2",
                 description = "M2: a finite LIMIT without CENS"),
     # model code ---------------------------------------------------------
     .stressCase("if/else", .stressCode$ifElse, .theoSex, checkNonmem="IF \\("),
@@ -1169,7 +1169,7 @@ stressCases <- function() {
       "no random effects",
       .stressCode$noEtaAtAll,
       .theo,
-      nonmem = "any",
+      nonmem = "mixed effect",
       monolix = "mixed effect",
       description = "fixed effects only; Monolix needs random effects"
     ),
