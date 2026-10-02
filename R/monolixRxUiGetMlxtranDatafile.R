@@ -19,6 +19,8 @@
                  "YTYPE"="observationtype",
                  "ADM"="administration",
                  "SS"="steadystate",
+                 "RATE" = "rate",
+                 "TINF" = "infusiontime",
                  NA_character_)
   if (is.na(.use)) {
     # Determine if this is a regressor or a mu-referenced covariate
@@ -33,7 +35,8 @@
     .predDf <- ui$predDf
     if (length(.predDf$cond) == 1L) {
       # single endpoint
-      .use <- paste0(.use, ", name=rx_prd_", .predDf$var, ", type=continuous")
+      .use <- paste0(.use, ", name=rx_prd_", .monolixVar(.predDf$var),
+                     ", type=continuous")
     } else {
       # multiple endpoint
       .name <- paste0("name={", paste(paste0("y", seq_along(.predDf$var)), collapse=", "), "}")
