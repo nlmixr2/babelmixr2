@@ -859,7 +859,10 @@ stressCases <- function() {
   if (!is.null(.stressEnv$cases)) return(.stressEnv$cases)
   .m <- .stressModels
   .theo <- .stressTheo()
-  .theoPos <- .theo[.theo$EVID != 0 | .theo$DV > 0, ]
+  # positive observations after the dose: an oral model predicts 0 at
+  # the dose time, which proportional/log-normal/logit errors cannot fit
+  # (Monolix gives an infinite likelihood)
+  .theoPos <- .theo[.theo$EVID != 0 | (.theo$DV > 0 & .theo$TIME > 0), ]
   .theoWt <- .theo
   .theoWt$WT <- 70 + 5 * (.theoWt$ID %% 5 - 2)
   .theoSex <- .theo
@@ -965,7 +968,7 @@ stressCases <- function() {
                 checkNonmem=c("ADVAN2 TRANS1", "K=CL/V"),
                 checkMonolix="pkmodel\\(V=rx_v, k=rx_k, ka=rx_ka\\)",
                 description="linCmt() ~ endpoint; NONMEM ADVAN2, Monolix pkmodel()"),
-    .stressCase("linCmt 1-cmt oral lag and bioavailability", .m$lin1oralLagF, .theo,
+    .stressCase("linCmt 1-cmt oral lag and bioavailability", .m$lin1oralLagF, .theoPos,
                 checkNonmem=c("ADVAN2 TRANS1", "ALAG1=", "F1="),
                 checkMonolix=c("Tlag=rx_tlag", "p=rx_p")),
     .stressCase("linCmt 1-cmt iv bolus", .m$lin1iv, .ivBolus,
