@@ -67,13 +67,15 @@ rxUiGet.mlxtranModelLongitudinal <- function(x, ...) {
   .inputErr <- unlist(lapply(seq_along(.predDf$var),
                              .getMonolixResidual,  ui=.ui, input=TRUE))
   .iniDf <- .ui$iniDf
+  .var <- .monolixVar(.predDf$var)
   # monolix supports distribution = logNormal
   # monolix supports distribution = logitNormal, min=0, max=, errorModel=.err
   paste0("[LONGITUDINAL]\n",
        "input={", paste(.inputErr, collapse=", "), "}\n",
        "file='", rxUiGet.monolixModelFileName(x, ...), "'\n\n",
        "DEFINITION:\n",
-       paste(paste0("rx_prd_", .predDf$var, "={distribution = ", .dist, ", prediction = rx_pred_", .predDf$var, ", errorModel=", .err, "}"),
+       paste(paste0("rx_prd_", .var, "={distribution = ", .dist,
+                    ", prediction = rx_pred_", .var, ", errorModel=", .err, "}"),
              collapse='\n'))
 }
 attr(rxUiGet.mlxtranModelLongitudinal,"rstudio") <- "character"

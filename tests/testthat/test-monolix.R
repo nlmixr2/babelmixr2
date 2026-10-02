@@ -690,3 +690,143 @@ test_that("dotted mu-referenced parameters use one Monolix name (#220)", {
     0.02
   )
 })
+
+test_that("Monolix files from the stress kit run", {
+  skip_on_cran()
+  .files <- function(model, data, name = "m") {
+    withr::with_tempdir({
+      suppressMessages(nlmixr2(
+        model,
+        data,
+        "monolix",
+        monolixControl(runCommand = NA, modelName = name)
+      ))
+      list(
+        mlxtran = readLines(paste0(name, "-monolix.mlxtran")),
+        model = readLines(paste0(name, "-monolix.txt"))
+      )
+    })
+  }
+  .iv <- function() {
+    ini({
+      tcl <- log(4)
+      tv <- log(40)
+      eta.cl ~ 0.1
+      eta.v ~ 0.1
+      prop.sd <- 0.1
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d / dt(central) <- -cl / v * central
+      concentration.in.plasma <- central / v
+      concentration.in.plasma ~ prop(prop.sd)
+    })
+  }
+  .ev <- rxode2::et(amt = 500, cmt = "central", rate = 250) |>
+    rxode2::et(c(0.5, 1, 2, 4, 8, 12, 24)) |>
+    rxode2::et(id = 1:4)
+  .d <- as.data.frame(.ev)
+  .d$dv <- ifelse(.d$evid == 0, 5, NA)
+  .f <- .files(.iv, .d)
+  # infusions given by rate are declared to Monolix
+  expect_true("RATE = {use=rate}" %in% .f$mlxtran)
+  # Monolix names have no dots, in every file
+  expect_false(any(grepl(
+    "concentration.in.plasma",
+    c(.f$mlxtran, .f$model),
+    fixed = TRUE
+  )))
+  expect_true("output={rx_pred_concentration__in__plasma}" %in% .f$model)
+  expect_true(any(grepl(
+    "name=rx_prd_concentration__in__plasma",
+    .f$mlxtran,
+    fixed = TRUE
+  )))
+  expect_true(any(grepl(
+    "prediction = rx_pred_concentration__in__plasma",
+    .f$mlxtran,
+    fixed = TRUE
+  )))
+})
+
+test_that("Monolix covariance without the fixed parameters", {
+  .f <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      tfdepot <- fix(0.8)
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      prop.sd <- 0.1
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      f(depot) <- tfdepot
+      d / dt(depot) <- -ka * depot
+      d / dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ prop(prop.sd)
+    })
+  }
+  .ui <- rxode2::rxUiDecompress(rxode2::rxode2(.f))
+  # Monolix's covariance has no row for the fixed tfdepot
+  .n <- c(
+    "ka_pop",
+    "cl_pop",
+    "v_pop",
+    "omega_ka",
+    "omega_cl",
+    "omega_v",
+    "prop__sd"
+  )
+  .cov <- diag(seq_along(.n) / 10)
+  dimnames(.cov) <- list(.n, .n)
+  local_mocked_bindings(
+    rxUiGet.monolixCovarianceEstimatesSA = function(x, ...) .cov,
+    rxUiGet.monolixOutputVersion = function(x, ...) "2024R1",
+    .package = "babelmixr2"
+  )
+  .c <- .b$rxUiGet.monolixCovariance(list(.ui))
+  expect_equal(dimnames(.c)[[1]], c("tka", "tcl", "tv"))
+})
+
+test_that("a Monolix run command that writes nothing is an error, not a wait", {
+  skip_on_cran()
+  skip_on_os("windows")
+  one <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d / dt(depot) <- -ka * depot
+      d / dt(center) <- ka * depot - cl / v * center
+      cp <- center / v
+      cp ~ add(add.sd)
+    })
+  }
+  withr::with_tempdir({
+    expect_error(
+      suppressMessages(nlmixr2(
+        one,
+        nlmixr2data::theo_sd,
+        "monolix",
+        monolixControl(runCommand = "false", modelName = "nowait")
+      )),
+      "Monolix did not create its output directory"
+    )
+  })
+})
