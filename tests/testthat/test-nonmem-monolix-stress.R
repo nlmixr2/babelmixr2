@@ -118,7 +118,10 @@ test_that("stressKit() runs from an R session and writes the report", {
     ))))
     expect_null(attr(.res, "zip"))
     # what NONMEM/Monolix print is kept for each case
-    expect_true(file.exists(file.path("kit", "nonmem", "NONMEM_est_imp", "fit.log")))
+    .log <- readLines(file.path("kit", "nonmem", "NONMEM_est_imp", "fit.log"))
+    # babelmixr2's messages are kept (the fit resets R's message sink)
+    .msg <- "only exported NONMEM control stream/data"
+    expect_true(any(grepl(.msg, .log, fixed = TRUE)))
     .l <- utils::capture.output(
       .lst <- .e$stressList(cases = "^NONMEM est=imp$")
     )

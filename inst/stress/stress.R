@@ -1553,10 +1553,14 @@ stressLintMonolix <- function(lines) {
 .stressFit <- function(case, engine, mode, dir, modelName, runCommand) {
   withr::with_dir(dir, {
     .con <- file("fit.log", open = "a")
+    # messages are written with a handler: the fit can reset R's
+    # message sink, which turned the log off
+    .log <- function(...) {
+      cat(..., "\n", sep = "", file = .con)
+      flush(.con)
+    }
     sink(.con)
-    sink(.con, type = "message")
     on.exit({
-      sink(type = "message")
       sink()
       close(.con)
     })
@@ -1574,13 +1578,17 @@ stressLintMonolix <- function(lines) {
             case$control[[engine]]
           )
         ),
+        message = function(m) {
+          .log(sub("\n$", "", conditionMessage(m)))
+          invokeRestart("muffleMessage")
+        },
         warning = function(w) {
-          message("Warning: ", conditionMessage(w))
+          .log("Warning: ", conditionMessage(w))
           invokeRestart("muffleWarning")
         }
       ),
       error = function(e) {
-        message("Error: ", conditionMessage(e))
+        .log("Error: ", conditionMessage(e))
         e
       }
     )
