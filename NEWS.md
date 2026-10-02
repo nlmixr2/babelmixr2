@@ -1,5 +1,12 @@
 # babelmixr2 0.1.11.9000
 
+* Monolix: a mu-referenced parameter that stays inside `exp()` in the
+  model (like `cl <- exp(tcl + eta.cl) * (CRCL/100)^cl.crcl`, or
+  `f(depot) <- exp(lfdepot)`) was given a log-normal distribution while
+  the model still took `exp()` of it, so `exp()` was applied twice.
+  It is now a normal parameter on nlmixr2's scale (its initial value,
+  estimate and covariance too).
+
 * Fixes found by running the NONMEM/Monolix stress kit with NONMEM 7.4:
 
   - `nonmemControl(est="imp")` and `est="its"` fits were always

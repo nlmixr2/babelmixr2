@@ -400,6 +400,31 @@
   setNames(gsub("[.]", "__", .muRef), names(.muRef))
 }
 
+#' Transformations of the Monolix individual parameters
+#'
+#' Like `ui$muRefCurEval`, but a "tainted" mu-referenced parameter (like
+#' `tcl` in `cl <- exp(tcl + eta.cl) * (CRCL/100)^cl.crcl`) is linear:
+#' Monolix only gets `rx__tcl <- tcl` and the model keeps the `exp()`,
+#' so a log-normal distribution would apply the `exp()` twice.
+#'
+#' @param ui rxode2 ui
+#' @return `muRefCurEval` data frame
+#' @noRd
+.monolixMuRefCurEval <- function(ui) {
+  .ret <- ui$muRefCurEval
+  .taint <- names(ui$getSplitMuModel$taintMuRef)
+  if (length(.taint) == 0L) {
+    return(.ret)
+  }
+  .mrt <- ui$muRefTable
+  .eta <- .mrt$eta[.mrt$theta %in% .taint]
+  .w <- .ret$parameter %in% c(.taint, .eta)
+  .ret$curEval[.w] <- ""
+  .ret$low[.w] <- NA_real_
+  .ret$hi[.w] <- NA_real_
+  .ret
+}
+
 .rxToMonolix <- function(x, ui) {
   ui <- rxode2::rxUiDecompress(ui)
   if (is.name(x) || is.atomic(x)) {
