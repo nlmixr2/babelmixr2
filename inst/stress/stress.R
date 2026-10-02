@@ -45,7 +45,10 @@
   stopifnot(length(.obs) == length(.sobs),
             isTRUE(all.equal(.d$time[.obs], .s$time[.sobs])))
   .d$dv <- NA_real_
-  .d$dv[.obs] <- .s$sim[.sobs]
+  # rounded so every machine writes the same data (the last digits
+  # differ between platforms), so saved NONMEM/Monolix output can be
+  # read again elsewhere
+  .d$dv[.obs] <- signif(.s$sim[.sobs], 8)
   names(.d) <- toupper(names(.d))
   .keep <- vapply(names(.d), function(n) !all(is.na(.d[[n]])), logical(1))
   .keep[c("ID", "TIME", "EVID", "AMT", "CMT", "DV")] <- TRUE
@@ -1535,10 +1538,27 @@ stressLintMonolix <- function(lines) {
   }
 }
 
+#' Fit (or translate) a case, keeping what it prints in `fit.log`
+#'
+#' NONMEM/Monolix errors (like Monolix's `[ERROR]` lines) are printed,
+#' not returned, so the log is where to look when a fit fails.
+#'
+#' @inheritParams stressRunCase
+#' @param modelName model name (file names)
+#' @return the fit, or the error
+#' @noRd
 .stressFit <- function(case, engine, mode, dir, modelName, runCommand) {
   withr::with_dir(dir, {
+    .con <- file("fit.log", open = "a")
+    sink(.con)
+    sink(.con, type = "message")
+    on.exit({
+      sink(type = "message")
+      sink()
+      close(.con)
+    })
     tryCatch(
-      suppressWarnings(suppressMessages(
+      withCallingHandlers(
         nlmixr2est::nlmixr2(
           case$model,
           case$data,
@@ -1550,9 +1570,16 @@ stressLintMonolix <- function(lines) {
             runCommand,
             case$control[[engine]]
           )
-        )
-      )),
-      error = function(e) e
+        ),
+        warning = function(w) {
+          message("Warning: ", conditionMessage(w))
+          invokeRestart("muffleWarning")
+        }
+      ),
+      error = function(e) {
+        message("Error: ", conditionMessage(e))
+        e
+      }
     )
   })
 }
@@ -1762,7 +1789,8 @@ stressRunCase <- function(
   if (length(.bad) > 0L) {
     .problems <- c(.problems, paste0("non-finite estimates: ", paste(.bad, collapse = ", ")))
   }
-  .pd <- .stressPredDiff(fit, engine)
+  # the NONMEM/Monolix tables are read relative to the fit's directory
+  .pd <- withr::with_dir(dir, .stressPredDiff(fit, engine))
   if (is.na(.pd[1])) {
     .problems <- c(.problems, "cannot compare the predictions with rxode2")
   } else if (.pd[1] > predTol) {
