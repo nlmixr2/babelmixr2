@@ -1,5 +1,33 @@
 # babelmixr2 0.1.11.9000
 
+* Fixes found by running the NONMEM/Monolix stress kit with NONMEM 7.4:
+
+  - `nonmemControl(est="imp")` and `est="its"` fits were always
+    reported as unsuccessful; NONMEM ends them with "OPTIMIZATION WAS
+    NOT TESTED FOR CONVERGENCE", which is now read as finished.
+  - `nonmemControl(est="posthoc")` fits could not be read (no `#TERM:`
+    block and no parameter history).
+  - Box-Cox, Yeo-Johnson and logit + Yeo-Johnson residual errors were
+    rejected by NM-TRAN (IPRED redefined in nested/`ELSE IF`
+    structures); the transformations are now written without nested
+    IFs.  They are still transform-both-sides (DV in `CCONTR`, IPRED in
+    `$ERROR`).  Predictions at or below `sqrt(DBL_EPSILON)` are floored
+    like rxode2 instead of being set to `-1000000000` (which gave
+    `lnorm()` fits a huge objective function), and Box-Cox no longer
+    divides by zero when lambda is 0.
+  - The `IPRED`/`PRED` comparison with NONMEM now undoes the residual
+    transformation first (NONMEM's predictions are on the transformed
+    scale).
+  - Censored (`CENS`, `CENS` + `LIMIT`, `LIMIT` only) models were
+    rejected by NM-TRAN ("random variable is defined in a nested IF
+    structure").
+  - A `$PK` parameter changed later in the model (like
+    `if (SEX == 1) cl <- cl * 1.2`) was changed in `$DES`, which NONMEM
+    does not allow, and used undefined in `$ERROR`; it is now defined
+    as `RXPK_<name>` in `$PK`.
+  - Models without random effects are refused (NONMEM treats them as
+    single-subject data, where `METHOD=COND` is invalid).
+
 * `nonmemControl(cov="")` now skips the covariance step as documented;
   before it gave an error because `match.arg()` cannot match `""`.
 

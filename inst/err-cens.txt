@@ -1,7 +1,10 @@
+      ; M3: the likelihood of the censored value, floored outside the
+      ; IF because NM-TRAN cannot define it in a nested IF structure
+      RXCY = PHI(CENS*(DV-IPRED)/W)
+      IF (RXCY .LT. 1.0E-30) RXCY = 1.0E-30
       IF (CENS .EQ. 1 .OR. CENS .EQ. -1) THEN
          F_FLAG = 1
-         Y = PHI(CENS*(DV-IPRED)/W)
-         IF (Y .LT. 1.0E-30) Y = 1.0E-30
+         Y = RXCY
       ELSE
          F_FLAG = 0
          Y = IPRED + W*EPS(1)

@@ -1,3 +1,6 @@
+      ; logit, with the fraction kept in [sqrt(DBL_EPSILON), 1 - sqrt(DBL_EPSILON)]
       IPRED = RX_PRED_F_
       XL  = (IPRED - (LOW))/((HIGH) - (LOW))
+      IF (XL .LT. 1.4901161E-8) XL = 1.4901161E-8
+      IF (XL .GT. 0.999999985098839) XL = 0.999999985098839
       IPRED = -DLOG(1.0/XL - 1.0)

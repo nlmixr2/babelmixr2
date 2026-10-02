@@ -1,3 +1,11 @@
+# Extracted from test-nonmem.R:1461
+
+# setup ------------------------------------------------------------------------
+library(testthat)
+test_env <- simulate_test_env(package = "babelmixr2", path = "..")
+attach(test_env, warn.conflicts = FALSE)
+
+# prequel ----------------------------------------------------------------------
 withr::with_tempdir({
   test_that("alag vs lag in NONMEM translation",{
 
@@ -1162,91 +1170,6 @@ withr::with_tempdir({
     })
   })
 })
-
-
-test_that("nonmem model creation without running", {
-  withr::with_tempdir({
-
-    one.cmt <- function() {
-      ini({
-        tka <- 0.45 ; label("Ka")
-        tcl <- log(c(0, 2.7, 100)) ; label("Log Cl")
-        tv <- 3.45; label("log V")
-        cl.wt <- 0
-        v.wt <- 0
-        eta.ka ~ 0.6
-        eta.cl ~ 0.3
-        eta.v ~ 0.1
-        add.sd <- 0.7
-      })
-      model({
-        ka <- exp(tka + eta.ka)
-        cl <- exp(tcl + eta.cl + WT * cl.wt)
-        v <- exp(tv + eta.v)+ WT ^ 2 * v.wt
-        d/dt(depot) <- -depot*ka
-        d/dt(central) <- depot*ka - cl*central/v
-        cp <-central/v
-        cp ~ add(add.sd)
-      })
-    }
-
-    files <- c("nonmemTest.csv", "nonmemTest.md5", "nonmemTest.nmctl")
-
-    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
-            nonmemControl(runCommand=NA, modelName="nonmemTest"))
-
-    lapply(files, function(f) { expect_true(file.exists(file.path("nonmemTest-nonmem", f))) })
-
-    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
-            nonmemControl(runCommand=NA, modelName="nonmemTest"))
-
-    lapply(files, function(f) {
-      expect_true(file.exists(file.path("nonmemTest-nonmem", f)))
-      unlink(file.path("nonmemTest-nonmem", f))
-    })
-    unlink("nonmemTest-nonmem", recursive = TRUE)
-
-  })
-
-  test_that("a changed model moves past every stale numbered export (#209)", {
-
-    one.cmt <- function() {
-      ini({
-        tka <- 0.45
-        tcl <- log(c(0, 2.7, 100))
-        tv <- 3.45
-        eta.ka ~ 0.6
-        eta.cl ~ 0.3
-        eta.v ~ 0.1
-        add.sd <- 0.7
-      })
-      model({
-        ka <- exp(tka + eta.ka)
-        cl <- exp(tcl + eta.cl)
-        v <- exp(tv + eta.v)
-        d/dt(depot) <- -ka * depot
-        d/dt(central) <- ka * depot - cl/v * central
-        cp <- central / v
-        cp ~ add(add.sd)
-      })
-    }
-
-    # two stale exports used to loop forever on the second (#209)
-    for (d in c("staleTest-nonmem", "staleTest-001-nonmem")) {
-      dir.create(d)
-      writeLines("stale", file.path(d, "staleTest.md5"))
-    }
-
-    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
-            nonmemControl(runCommand=NA, modelName="staleTest"))
-
-    expect_true(file.exists(file.path("staleTest-002-nonmem", "staleTest.nmctl")))
-    expect_true(file.exists(file.path("staleTest-002-nonmem", "staleTest.md5")))
-    unlink(c("staleTest-nonmem", "staleTest-001-nonmem", "staleTest-002-nonmem"),
-           recursive=TRUE)
-
-  })
-})
 withr::with_tempdir({
   test_that("NONMEM $ABBR PROTECT (#62)", {
     one.cmt <- function() {
@@ -1414,171 +1337,41 @@ withr::with_tempdir({
   })
 })
 
-test_that("nonmemControl(cov=) accepts every documented choice", {
-  expect_equal(nonmemControl()$cov, "r,s")
-  expect_equal(nonmemControl(cov = "r")$cov, "r")
-  expect_equal(nonmemControl(cov = "s")$cov, "s")
-  # "" skips $COVARIANCE; match.arg() alone cannot match it
-  expect_equal(nonmemControl(cov = "")$cov, "")
-  expect_error(nonmemControl(cov = "x"))
-})
-
-test_that("NONMEM control streams NM-TRAN accepts (stress kit)", {
-  skip_on_cran()
-  .nmctl <- function(model, data, ...) {
+# test -------------------------------------------------------------------------
+skip_on_cran()
+.nmctl <- function(model, data, ...) {
     withr::with_tempdir({
-      suppressMessages(nlmixr2(
-        model,
-        data,
-        "nonmem",
-        nonmemControl(runCommand = NA, modelName = "m", ...)
-      ))
+      suppressMessages(nlmixr2(model, data, "nonmem",
+                               nonmemControl(runCommand = NA, modelName = "m", ...)))
       readLines(file.path("m-nonmem", "m.nmctl"))
     })
   }
-  .block <- function(x, rec) {
+.block <- function(x, rec) {
     .i <- grep(paste0("^\\$", rec), x)
     .j <- grep("^\\$", x)
     .j <- min(c(.j[.j > .i], length(x) + 1L))
     x[.i:(.j - 1L)]
   }
-  .theo <- nlmixr2data::theo_sd
-  .theo$EVID <- ifelse(.theo$EVID == 0, 0L, 1L)
-  .theo <- .theo[.theo$EVID != 0 | .theo$DV > 0, ]
-  .ode <- function(err, ini) {
+.theo <- nlmixr2data::theo_sd
+.theo$EVID <- ifelse(.theo$EVID == 0, 0L, 1L)
+.theo <- .theo[.theo$EVID != 0 | .theo$DV > 0, ]
+.ode <- function(err, ini) {
     eval(str2lang(paste0(
       "function() {\n ini({\n tka <- 0.45; tcl <- 1; tv <- 3.45\n",
-      " eta.ka ~ 0.6; eta.cl ~ 0.3; eta.v ~ 0.1\n ",
-      ini,
-      "\n })\n",
+      " eta.ka ~ 0.6; eta.cl ~ 0.3; eta.v ~ 0.1\n ", ini, "\n })\n",
       " model({\n ka <- exp(tka + eta.ka)\n cl <- exp(tcl + eta.cl)\n",
       " v <- exp(tv + eta.v)\n d/dt(depot) <- -ka * depot\n",
       " d/dt(central) <- ka * depot - cl / v * central\n cp <- central / v\n",
-      " cp ~ ",
-      err,
-      "\n })\n}"
-    )))
+      " cp ~ ", err, "\n })\n}")))
   }
-  # transformed residual errors: no ELSE IF/nested IF redefining IPRED,
-  # no -1000000000 sentinel, still transform-both-sides (CCONTR)
-  for (.e in list(
-    c("lnorm(lnorm.sd)", "lnorm.sd <- 0.1"),
-    c("add(add.sd) + boxCox(lambda)", "add.sd <- 0.7; lambda <- 0.5"),
-    c("add(add.sd) + yeoJohnson(lambda)", "add.sd <- 0.7; lambda <- 0.5"),
-    c("logitNorm(logit.sd, 0, 20)", "logit.sd <- 0.1")
-  )) {
+for (.e in list(c("lnorm(lnorm.sd)", "lnorm.sd <- 0.1"),
+                  c("add(add.sd) + boxCox(lambda)", "add.sd <- 0.7; lambda <- 0.5"),
+                  c("add(add.sd) + yeoJohnson(lambda)", "add.sd <- 0.7; lambda <- 0.5"),
+                  c("logitNorm(logit.sd, 0, 20)", "logit.sd <- 0.1"))) {
     .x <- .nmctl(.ode(.e[1], .e[2]), .theo)
-    # the code, not the comments
-    .err <- sub(";.*$", "", .block(.x, "ERROR"))
+    .err <- .block(.x, "ERROR")
     expect_false(any(grepl("ELSE IF", .err)), info = .e[1])
     expect_false(any(grepl("^ +IF .*THEN", .err)), info = .e[1])
     expect_false(any(grepl("-1000000000", .err)), info = .e[1])
     expect_true(any(grepl("CCONTR=m.ccontra", .x)), info = .e[1])
   }
-  # censoring: the likelihood is floored outside the IF
-  .cens <- .theo
-  .cens$CENS <- ifelse(.cens$EVID == 0 & .cens$DV < 1, 1, 0)
-  .cens$DV <- ifelse(.cens$CENS == 1, 1, .cens$DV)
-  .add <- .ode("add(add.sd)", "add.sd <- 0.7")
-  for (.d in list(.cens, transform(.cens, LIMIT = 0))) {
-    .err <- .block(.nmctl(.add, .d), "ERROR")
-    .if <- grep("^ +IF .*THEN", .err)
-    .end <- grep("^ +END IF", .err)
-    expect_length(.if, 1L)
-    # nothing is floored inside the IF/ELSE
-    expect_false(any(grepl("1.0E-30", .err[.if:.end[1]])))
-  }
-  # a $PK parameter changed later
-  .sex <- .theo
-  .sex$SEX <- .sex$ID %% 2
-  .ifElse <- function() {
-    ini({
-      tka <- 0.45
-      tcl <- 1
-      tv <- 3.45
-      cl.sex <- 0.2
-      eta.ka ~ 0.6
-      eta.cl ~ 0.3
-      eta.v ~ 0.1
-      add.sd <- 0.7
-    })
-    model({
-      ka <- exp(tka + eta.ka)
-      cl <- exp(tcl + eta.cl)
-      if (SEX == 1) {
-        cl <- cl * (1 + cl.sex)
-      }
-      v <- exp(tv + eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
-      cp <- central / v
-      cp ~ add(add.sd)
-    })
-  }
-  .x <- .nmctl(.ifElse, .sex)
-  expect_true(any(grepl("^  RXPK_CL=DEXP", .block(.x, "PK"))))
-  expect_false(any(grepl("^  CL=", .block(.x, "PK"))))
-  expect_equal(.block(.x, "DES")[2], "  CL=RXPK_CL")
-  expect_true(any(grepl("^  RXE_CL=RXPK_CL$", .block(.x, "ERROR"))))
-  # without random effects NONMEM has single-subject data
-  .noEta <- function() {
-    ini({
-      tka <- 0.45
-      tcl <- 1
-      tv <- 3.45
-      add.sd <- 0.7
-    })
-    model({
-      ka <- exp(tka)
-      cl <- exp(tcl)
-      v <- exp(tv)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
-      cp <- central / v
-      cp ~ add(add.sd)
-    })
-  }
-  expect_error(.nmctl(.noEta, .theo), "mixed effect")
-})
-
-test_that("NONMEM predictions are back-transformed before comparing", {
-  .ui <- function(err, ini) {
-    rxode2::rxode2(eval(str2lang(paste0(
-      "function() {\n ini({\n tcl <- 1\n eta.cl ~ 0.1\n ",
-      ini,
-      "\n })\n",
-      " model({\n cl <- exp(tcl + eta.cl)\n cp <- cl * t\n cp ~ ",
-      err,
-      "\n })\n}"
-    ))))
-  }
-  .x <- c(0.5, 1, 2)
-  .lnorm <- .ui("lnorm(sd)", "sd <- 0.1")
-  expect_equal(.nonmemUntransformPred(log(.x), NULL, .lnorm), .x)
-  expect_equal(
-    .nonmemUntransformPred(
-      rxode2::boxCox(.x, 0.5),
-      NULL,
-      .ui("add(sd) + boxCox(l)", "sd <- 0.1; l <- 0.5")
-    ),
-    .x
-  )
-  expect_equal(
-    .nonmemUntransformPred(
-      rxode2::yeoJohnson(.x, 0.5),
-      NULL,
-      .ui("add(sd) + yeoJohnson(l)", "sd <- 0.1; l <- 0.5")
-    ),
-    .x
-  )
-  expect_equal(
-    .nonmemUntransformPred(
-      rxode2::logit(.x, 0, 20),
-      NULL,
-      .ui("logitNorm(sd, 0, 20)", "sd <- 0.1")
-    ),
-    .x
-  )
-  .add <- .ui("add(sd)", "sd <- 0.1")
-  expect_equal(.nonmemUntransformPred(.x, NULL, .add), .x)
-})

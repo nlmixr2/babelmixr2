@@ -1,19 +1,21 @@
+      ; logit followed by Yeo-Johnson; the branches are picked with
+      ; indicators because NM-TRAN cannot redefine IPRED in nested IF
+      ; structures
       IPRED = RX_PRED_F_
       XL  = (IPRED - (LOW))/((HIGH) - (LOW))
+      IF (XL .LT. 1.4901161E-8) XL = 1.4901161E-8
+      IF (XL .GT. 0.999999985098839) XL = 0.999999985098839
       XL  = -DLOG(1.0/XL - 1.0)
-      IF (LAMBDA .EQ. 1.0) THEN
-         IPRED = XL
-      ELSE IF (XL .GE. 0.0) THEN
-         IF (LAMBDA .EQ. 0.0) THEN
-            IPRED = DLOG(1.0 + XL)
-         ELSE
-            IPRED = ((XL + 1.0)**LAMBDA - 1.0)/LAMBDA
-         END IF
-      ELSE
-         IF (LAMBDA .EQ. 2.0) THEN
-            IPRED = -DLOG(1.0 - XL)
-         ELSE
-            HL = 2.0 - LAMBDA
-            IPRED = (1.0 - (1.0 - XL)**HL)/HL
-         END IF
-      END IF
+      IPREDP = 0.0
+      IF (XL .GE. 0.0) IPREDP = 1.0
+      IPREDA = IPREDP*XL
+      IPREDB = (1.0 - IPREDP)*XL
+      IPREDL0 = 0.0
+      IF (LAMBDA .EQ. 0.0) IPREDL0 = 1.0
+      IPREDL2 = 0.0
+      IF (LAMBDA .EQ. 2.0) IPREDL2 = 1.0
+      IPREDY1 = ((IPREDA + 1.0)**LAMBDA - 1.0)/(LAMBDA + IPREDL0)
+      IPREDY1 = IPREDL0*DLOG(IPREDA + 1.0) + (1.0 - IPREDL0)*IPREDY1
+      IPREDY2 = (1.0 - (1.0 - IPREDB)**(2.0 - LAMBDA))/(2.0 - LAMBDA + IPREDL2)
+      IPREDY2 = -IPREDL2*DLOG(1.0 - IPREDB) + (1.0 - IPREDL2)*IPREDY2
+      IPRED = IPREDP*IPREDY1 + (1.0 - IPREDP)*IPREDY2

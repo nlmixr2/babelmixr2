@@ -558,12 +558,21 @@ withr::with_tempdir({
         "could not read or use NONMEM's output",
         info = .c$name
       )
-      # without the flag the run stops as not successful
+      # without the flag the run stops as not successful, except an
+      # IMP/ITS run that converged, which is read like any finished run
       .msg <- .failure(
         .fakeNonmem(c(.head, .c$lines, " #TERE:")),
         paste0(.c$name, "_stop")
       )
-      expect_match(.msg, "minimization not successful", info = .c$name)
+      expect_match(
+        .msg,
+        if (.c$name == "read_its") {
+          "could not read or use NONMEM's output"
+        } else {
+          "minimization not successful"
+        },
+        info = .c$name
+      )
     }
   })
 

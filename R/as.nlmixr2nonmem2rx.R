@@ -168,7 +168,11 @@ as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxCon
     #env$ofvType
     env$ofvType <- .ui$nonmemObjfType
     # Add parameter history
-    env$parHistData <- .ui$nonmemParHistory
+    # a posthoc run (MAXEVALS=0) has no parameter history
+    .parHist <- .ui$nonmemParHistory
+    if (!is.null(.parHist)) {
+      env$parHistData <- .parHist
+    }
     env$nobs <- x$dfObs
     env$nobs2<- x$dfObs
     # Run before converting to nonmemControl

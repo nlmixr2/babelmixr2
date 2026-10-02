@@ -1,20 +1,23 @@
-      IF (CENS .EQ. 1 .OR. CENS .EQ. -1) THEN
+      ; M3/M4 (CENS) and M2 (a finite LIMIT without CENS) likelihoods,
+      ; computed outside the IF because NM-TRAN cannot define them in a
+      ; nested IF structure
+      RXCINF = 0
+      IF (LIMIT .LE. -1000000 .OR. LIMIT .GE. 1000000) RXCINF = 1
+      RXCM3 = PHI(CENS*(DV-IPRED)/W)
+      RXCLIM = PHI(CENS*(LIMIT-IPRED)/W)
+      RXCDEN = PHI(-CENS*(LIMIT-IPRED)/W)
+      IF (RXCDEN .LT. 1.0E-30) RXCDEN = 1.0E-30
+      RXCY = RXCINF*RXCM3 + (1 - RXCINF)*(RXCM3 - RXCLIM)/RXCDEN
+      IF (RXCY .LT. 1.0E-30) RXCY = 1.0E-30
+      RXCM2 = DEXP(-0.5*((DV-IPRED)/W)**2)/(W*DSQRT(2.0*3.14159265358979))
+      RXCM2 = RXCM2/PHI(ABS(LIMIT-IPRED)/W)
+      IF (RXCM2 .LT. 1.0E-30) RXCM2 = 1.0E-30
+      RXCCEN = 0
+      IF (CENS .EQ. 1 .OR. CENS .EQ. -1) RXCCEN = 1
+      RXCLIK = RXCCEN*RXCY + (1 - RXCCEN)*RXCM2
+      IF (RXCCEN .EQ. 1 .OR. RXCINF .EQ. 0) THEN
          F_FLAG = 1
-         IF (LIMIT .LE. -1000000 .OR. LIMIT .GE. 1000000) THEN
-            Y = PHI(CENS*(DV-IPRED)/W)
-         ELSE
-            CUM1 = PHI(CENS*(DV-IPRED)/W)
-            CUM2 = PHI(CENS*(LIMIT-IPRED)/W)
-            CUM3 = PHI(-CENS*(LIMIT-IPRED)/W)
-            IF (CUM3 .LT. 1.0E-30) CUM3 = 1.0E-30
-            Y = (CUM1-CUM2)/CUM3
-         END IF
-         IF (Y .LT. 1.0E-30) Y = 1.0E-30
-      ELSE IF (LIMIT .GT. -1000000 .AND. LIMIT .LT. 1000000) THEN
-         F_FLAG = 1
-         Y = DEXP(-0.5*((DV-IPRED)/W)**2)/(W*DSQRT(2.0*3.14159265358979))
-         Y = Y/PHI(ABS(LIMIT-IPRED)/W)
-         IF (Y .LT. 1.0E-30) Y = 1.0E-30
+         Y = RXCLIK
       ELSE
          F_FLAG = 0
          Y = IPRED + W*EPS(1)

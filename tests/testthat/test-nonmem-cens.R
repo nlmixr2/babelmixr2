@@ -65,7 +65,7 @@ withr::with_tempdir({
     .r <- .export(.d, "m4")
     expect_true("$INPUT ID TIME EVID AMT DV CMT CENS LIMIT RXROW" %in% .r$ctl)
     expect_true(any(grepl(
-      "Y = (CUM1-CUM2)/CUM3",
+      "RXCY = RXCINF*RXCM3 + (1 - RXCINF)*(RXCM3 - RXCLIM)/RXCDEN",
       .r$ctl,
       fixed = TRUE
     )))
@@ -91,7 +91,7 @@ withr::with_tempdir({
     .r <- .export(.d, "m2")
     expect_true("$INPUT ID TIME EVID AMT DV CMT CENS LIMIT RXROW" %in% .r$ctl)
     expect_true(any(grepl(
-      "Y = Y/PHI(ABS(LIMIT-IPRED)/W)",
+      "RXCM2 = RXCM2/PHI(ABS(LIMIT-IPRED)/W)",
       .r$ctl,
       fixed = TRUE
     )))
@@ -105,7 +105,7 @@ withr::with_tempdir({
     .r <- .export(.d, "m2m3")
     expect_true("$INPUT ID TIME EVID AMT DV CMT CENS LIMIT RXROW" %in% .r$ctl)
     expect_true(any(grepl(
-      "Y = Y/PHI(ABS(LIMIT-IPRED)/W)",
+      "RXCM2 = RXCM2/PHI(ABS(LIMIT-IPRED)/W)",
       .r$ctl,
       fixed = TRUE
     )))
@@ -178,15 +178,15 @@ withr::with_tempdir({
     .d <- .cens
     .d$LIMIT <- ifelse(.d$CENS == 1, 0, NA)
     .r <- .export(.d, "floor")
-    expect_equal(
-      sum(grepl("IF (Y .LT. 1.0E-30) Y = 1.0E-30", .r$ctl, fixed = TRUE)),
-      2L
-    )
-    expect_true(any(grepl(
-      "IF (CUM3 .LT. 1.0E-30) CUM3 = 1.0E-30",
-      .r$ctl,
-      fixed = TRUE
-    )))
+    # floored outside the IF (NM-TRAN cannot define them in a nested
+    # IF structure)
+    for (.v in c("RXCY", "RXCM2", "RXCDEN")) {
+      expect_true(any(grepl(
+        paste0("^  IF \\(", .v, " .LT. 1.0E-30\\) ", .v, " = 1.0E-30$"),
+        .r$ctl
+      )), info = .v)
+    }
+    expect_false(any(grepl("IF \\(Y .LT.", .r$ctl)))
   })
 
   test_that("censoring works with multiple endpoints (#92)", {

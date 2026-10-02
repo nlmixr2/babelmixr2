@@ -101,22 +101,30 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
   })
   .isPred <- (length(rxode2::rxState(.ui)) == 0)
   .muRefDef <- .split$muRefDef
-  .pk <- paste0(ifelse(.isPred,"$PRED\n","$PK\n"),
-                 .ret,"\n",
-                 paste(vapply(seq_along(.muRefDef),
-                              function(i) {
-                                x <-.rxToNonmem(.muRefDef[[i]], ui=.ui)
-                                x
-                              }, character(1), USE.NAMES=FALSE),
-                       collapse="\n"))
-  rm(".thetaMu", envir=.ui)
-
   .desModel <- .split$modelWithDrop[-.ui$predDf$line]
   .rmModel <- which(vapply(seq_along(.desModel),
                            function(i) {
                              identical(.desModel[[i]], quote(`_drop`))
                            }, logical(1), USE.NAMES=FALSE))
   if (length(.rmModel) > 0L) .desModel <- .desModel[-.rmModel]
+  # a $PK parameter changed later (like `if (SEX == 1) cl <- cl*1.2`)
+  # cannot be changed in $DES, so $PK defines it as RXPK_<name> and
+  # $DES/$ERROR start from that value
+  .reassign <- .nonmemPkReassigned(.muRefDef, .desModel, .isPred)
+  .pk <- paste0(ifelse(.isPred,"$PRED\n","$PK\n"),
+                 .ret,"\n",
+                 paste(vapply(seq_along(.muRefDef),
+                              function(i) {
+                                .e <- .muRefDef[[i]]
+                                .v <- deparse1(.e[[2]])
+                                if (.v %in% .reassign) {
+                                  .e[[2]] <- as.name(paste0("rxpk_", .v))
+                                }
+                                .rxToNonmem(.e, ui = .ui)
+                              }, character(1), USE.NAMES=FALSE),
+                       collapse="\n"))
+  rm(".thetaMu", envir=.ui)
+  .reassignNm <- .nonmemPkReassignedNames(.reassign, .ui)
   if (!is.null(.advan)) {
     # closed-form ADVAN: the state independent lines are calculated in
     # $PK before the micro-constants; the rest are in $ERROR
@@ -170,6 +178,16 @@ rxUiGet.nonmemPkDesErr0 <- function(x, ...) {
     .des <- rxToNonmem(.norm, ui=.ui)
   } else {
     .des <- .nonmemLinCmtPk(.pkModel, .advan, .ui)
+  }
+  if (length(.reassign) > 0L) {
+    .des <- paste0(
+      paste0("  ", .reassignNm$nm, "=", .reassignNm$pk, collapse = "\n"),
+      "\n", .des
+    )
+    .err <- paste0(
+      paste0("  RXE_", .reassignNm$nm, "=", .reassignNm$pk, collapse = "\n"),
+      "\n", .err
+    )
   }
   .prop <- .nonmemGetCmtProperties(.ui)
   .pk2 <- vapply(seq_along(.prop$cmt),
@@ -301,4 +319,58 @@ attr(rxUiGet.nonmemPkDesErr0, "rstudio") <- "nonmemPkDesErr0"
                    collapse="\n"))
   }
   .ret
+}
+
+#' Variables assigned (with `<-` or `=`) anywhere in model lines
+#'
+#' @param x model line(s) (a list or a call)
+#' @return character vector of the assigned variable names
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmemAssignedVars <- function(x) {
+  if (is.list(x)) {
+    return(unique(unlist(lapply(x, .nonmemAssignedVars))))
+  }
+  if (!is.call(x)) {
+    return(character(0))
+  }
+  .ret <- unlist(lapply(as.list(x)[-1], .nonmemAssignedVars))
+  if (
+    (identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) &&
+      is.name(x[[2]])
+  ) {
+    .ret <- c(as.character(x[[2]]), .ret)
+  }
+  unique(.ret)
+}
+
+#' $PK parameters that the rest of the model changes
+#'
+#' @param muRefDef the $PK (mu-referenced) definitions
+#' @param desModel the rest of the model ($DES/$ERROR)
+#' @param isPred is the model written as $PRED (no states)
+#' @return names of the $PK parameters assigned again later
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmemPkReassigned <- function(muRefDef, desModel, isPred) {
+  if (isPred || length(muRefDef) == 0L) {
+    return(character(0))
+  }
+  .pk <- vapply(muRefDef, function(e) deparse1(e[[2]]), character(1))
+  intersect(.pk, .nonmemAssignedVars(desModel))
+}
+
+#' NONMEM names of the reassigned $PK parameters
+#'
+#' @param reassign names from `.nonmemPkReassigned()`
+#' @param ui rxode2 ui
+#' @return list with the NONMEM name (`nm`) and the $PK name (`pk`)
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmemPkReassignedNames <- function(reassign, ui) {
+  .nm <- function(v) .rxToNonmemHandleNamesOrAtomic(as.name(v), ui)
+  list(
+    nm = vapply(reassign, .nm, character(1), USE.NAMES = FALSE),
+    pk = vapply(paste0("rxpk_", reassign), .nm, character(1), USE.NAMES = FALSE)
+  )
 }

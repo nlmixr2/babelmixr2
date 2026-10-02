@@ -255,6 +255,10 @@ rxUiGet.nonmemParHistory <- function(x, ...) {
   .d <- c("iter", .getNonmemOrderNames(.ui, names(.ret)), "objf")
   names(.ret) <- .d
   .ret <- .ret[.ret$iter > 0, names(.ret) != "_sigma"]
+  if (nrow(.ret) == 0L) {
+    # no iterations (posthoc, MAXEVALS=0)
+    return(NULL)
+  }
   .n <- c("iter", .ui$iniDf$name, "objf")
   .ret <- .ret[, .n]
   .ret$type <- "Unscaled"
@@ -359,7 +363,19 @@ rxUiGet.nonmemSuccessful <- function(x, ...) {
   if (is.null(.term)) {
     return(FALSE)
   }
-  any(regexpr("0MINIMIZATION SUCCESSFUL", .term) != -1)
+  if (all(is.na(.term))) {
+    # MAXEVALS=0 (posthoc) has no #TERM: block; NONMEM finished if it
+    # wrote its output
+    return(identical(rxode2::rxGetControl(x[[1]], "est", "focei"), "posthoc"))
+  }
+  .term <- .term[!is.na(.term)]
+  # IMP/ITS finish with "OPTIMIZATION WAS NOT TESTED FOR CONVERGENCE"
+  # (no convergence test requested) or "OPTIMIZATION WAS COMPLETED"
+  .ok <- paste0(
+    "0MINIMIZATION SUCCESSFUL|",
+    "OPTIMIZATION WAS (NOT TESTED FOR CONVERGENCE|COMPLETED)"
+  )
+  any(regexpr(.ok, .term) != -1)
 }
 attr(rxUiGet.nonmemSuccessful, "rstudio") <- "nonmemSuccessful"
 
@@ -398,6 +414,46 @@ attr(rxUiGet.nonmemRoundingErrors, "rstudio") <- "nonmemRoundingErrors"
   .d$nlmixrRowNums[.d$EVID == 0 & .flag]
 }
 
+#' Undo the residual transformation of NONMEM's predictions
+#'
+#' With a transformed residual error (like `lnorm()` or `boxCox()`)
+#' NONMEM's `IPRED`/`PRED` are on the transformed scale; nlmixr2's are
+#' not.
+#'
+#' @param x NONMEM `IPRED` or `PRED`
+#' @param endpoint endpoint (`predDf$cond`) of each value; `NULL` when
+#'   there is one endpoint
+#' @param ui final model (with the estimated transformation parameters)
+#' @return `x` on the untransformed scale
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemUntransformPred <- function(x, endpoint, ui) {
+  .predDf <- ui$predDf
+  .lambda <- .bblGetLambda(ui)$lambda
+  for (.i in seq_along(.predDf$cond)) {
+    .w <- if (is.null(endpoint)) {
+      seq_along(x)
+    } else {
+      which(endpoint == .predDf$cond[.i])
+    }
+    .x <- x[.w]
+    x[.w] <- switch(
+      paste(.predDf$transform[.i]),
+      "lnorm" = exp(.x),
+      "boxCox" = rxode2::boxCoxInv(.x, .lambda[.i]),
+      "yeoJohnson" = rxode2::yeoJohnsonInv(.x, .lambda[.i]),
+      "logit" = rxode2::expit(.x, .predDf$trLow[.i], .predDf$trHi[.i]),
+      "logit + yeoJohnson" = rxode2::expit(
+        rxode2::yeoJohnsonInv(.x, .lambda[.i]),
+        .predDf$trLow[.i],
+        .predDf$trHi[.i]
+      ),
+      .x
+    )
+  }
+  x
+}
+
 .nonmemMergePredsAndCalcRelativeErr <- function(fit) {
   .np <- fit$ui$nonmemPreds
   if (is.null(.np)) {
@@ -411,6 +467,13 @@ attr(rxUiGet.nonmemRoundingErrors, "rstudio") <- "nonmemRoundingErrors"
   .by <- c("ID", "TIME", "RXROW")
   .ret <- merge(.np, .tmp, by=.by)
   .ret$nonmemPRED[.ret$RXROW %in% .nonmemFlagRows(fit)] <- NA_real_
+  if (any(fit$ui$predDf$transform != "untransformed")) {
+    .endpoint <- if (length(fit$ui$predDf$cond) == 1L) NULL else paste(.ret$CMT)
+    .ret$nonmemIPRED <- .nonmemUntransformPred(.ret$nonmemIPRED, .endpoint,
+                                               fit$ui)
+    .ret$nonmemPRED <- .nonmemUntransformPred(.ret$nonmemPRED, .endpoint,
+                                              fit$ui)
+  }
   .ci0 <- fit$nonmemControl$ci
   .ci <- (1 - .ci0) / 2
   .q <- c(0, .ci, 0.5, 1 - .ci, 1)

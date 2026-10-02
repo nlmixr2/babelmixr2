@@ -1,10 +1,14 @@
+      ; Box-Cox like rxode2: x - 1 for lambda=1, otherwise with x
+      ; floored at sqrt(DBL_EPSILON); the formula is picked with
+      ; indicators because NM-TRAN cannot redefine IPRED in an ELSE IF
+      ; chain
       IPRED = RX_PRED_F_
-      IF (LAMBDA .EQ. 0.0 .AND. IPRED .NE. 0.0) THEN
-         IPRED = DLOG(IPRED)
-      ELSE IF (LAMBDA .EQ. 0.0 .AND. IPRED .EQ. 0.0) THEN
-         IPRED = -1/LAMBDA
-      ELSE IF (LAMBDA .NE. 0.0 .AND. IPRED .NE. 0.0) THEN
-         IPRED = (IPRED**LAMBDA - 1.0)/LAMBDA
-      ELSE IF (LAMBDA .NE. 0.0 .AND. IPRED .EQ. 0.0) THEN
-         IPRED = -1000000000
-      END IF
+      IPREDX = IPRED
+      IF (IPREDX .LE. 1.4901161E-8) IPREDX = 1.4901161E-8
+      IPREDL0 = 0.0
+      IF (LAMBDA .EQ. 0.0) IPREDL0 = 1.0
+      IPREDL1 = 0.0
+      IF (LAMBDA .EQ. 1.0) IPREDL1 = 1.0
+      IPREDBC = (IPREDX**LAMBDA - 1.0)/(LAMBDA + IPREDL0)
+      IPREDBC = IPREDL0*DLOG(IPREDX) + (1.0 - IPREDL0)*IPREDBC
+      IPRED = IPREDL1*(IPRED - 1.0) + (1.0 - IPREDL1)*IPREDBC
