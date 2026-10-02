@@ -27,6 +27,20 @@
     as `RXPK_<name>` in `$PK`.
   - Models without random effects are refused (NONMEM treats them as
     single-subject data, where `METHOD=COND` is invalid).
+* Monolix fixes found by running the NONMEM/Monolix stress kit:
+
+  - Infusions given by rate (`RATE`) or duration (`TINF`) were written
+    to the data but not declared in `[CONTENT]`, so Monolix gave them
+    as bolus doses.
+  - Endpoints with dotted names (like `concentration.in.plasma`) kept
+    the dots in the Monolix project (`OUTPUT`, observation names,
+    predictions), which Monolix cannot load.
+  - Reading a fit with a fixed parameter (like `tfdepot <- fix(0.8)`)
+    failed with "subscript out of bounds"; Monolix's covariance has
+    only the estimated parameters.
+  - A `monolixControl(runCommand=)` command that finished without
+    writing Monolix's output now stops with an error instead of
+    waiting for it forever.
 
 * `nonmemControl(cov="")` now skips the covariance step as documented;
   before it gave an error because `match.arg()` cannot match `""`.

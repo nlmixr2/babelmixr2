@@ -191,7 +191,6 @@
          call.=FALSE)
   }
   cmd(mlxtran=ui$monolixMlxtranFile, directory=ui$monolixExportPath, ui=ui)
-  NULL
 }
 
 .monolixFamilyFit <- function(env, ...) {
@@ -372,7 +371,17 @@
   if (cmd != "") {
     fullCmd <- paste(cmd, mlxtran)
     .minfo(paste0("run Monolix: ", fullCmd))
-    system(fullCmd)
+    .status <- system(fullCmd)
+    # a command (unlike a runCommand function) has finished here, so
+    # Monolix will not write its output later
+    if (!dir.exists(directory)) {
+      stop("Monolix did not create its output directory '", directory, "'\n",
+           "  run command: '", fullCmd, "'\n",
+           "  exit status: ", .status, "\n",
+           "is monolixControl(runCommand=) the command that runs Monolix?",
+           call. = FALSE)
+    }
+    invisible(.status)
   } else {
     stop("run Monolix manually and rerun nlmixr() or setup Monolix's run command")
   }
