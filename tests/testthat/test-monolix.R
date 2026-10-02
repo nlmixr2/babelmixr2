@@ -880,3 +880,41 @@ test_that("a Monolix run command that writes nothing is an error, not a wait", {
     )
   })
 })
+
+test_that("a mu-referenced parameter kept inside exp() is normal in Monolix", {
+  # the model keeps exp(rx__tcl); a log-normal rx__tcl would apply exp()
+  # twice
+  f <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      cl.crcl <- 0.5
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl) * (CRCL / 100)^cl.crcl
+      v <- exp(tv + eta.v)
+      d / dt(depot) <- -ka * depot
+      d / dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+  .ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
+  .lines <- function(x) strsplit(x, "\n")[[1]]
+  .ind <- .lines(.ui$mlxtranModelIndividual)
+  expect_true(paste0("rx__tcl = {distribution=normal, typical=rx__tcl_pop, ",
+                     "sd=omega_rx__tcl}") %in% .ind)
+  # pure mu-referenced parameters stay log-normal
+  expect_true(paste0("ka = {distribution=logNormal, typical=ka_pop, ",
+                     "sd=omega_ka}") %in% .ind)
+  expect_true(any(grepl("^   cl = exp\\(rx__tcl\\)", .lines(.ui$monolixModel))))
+  # the initial value is tcl itself, not exp(tcl)
+  .par <- .lines(.ui$mlxtranParameter)
+  expect_true(any(grepl("^rx__tcl_pop=\\{value=1, ", .par)))
+})

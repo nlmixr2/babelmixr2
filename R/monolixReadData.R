@@ -61,7 +61,7 @@ rxUiGet.monolixParHistory <- function(x, ...) {
     .ui <- x[[1]]
     .iniDf <- .ui$iniDf
     .muRef <- .monolixMuRef(.ui)
-    .muRefCurEval <- .ui$muRefCurEval
+    .muRefCurEval <- .monolixMuRefCurEval(.ui)
     .eta <- .iniDf[is.na(.iniDf$ntheta), ]
     .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
     .r <- .getOmegaR(.ui)
@@ -132,7 +132,7 @@ rxUiGet.monolixOmega <- function(x, ...) {
   if (is.null(.pop)) return(NULL)
   .iniDf <- .ui$iniDf
   .muRef <- .monolixMuRef(.ui)
-  .muRefCurEval <- .ui$muRefCurEval
+  .muRefCurEval <- .monolixMuRefCurEval(.ui)
   .eta <- .iniDf[is.na(.iniDf$ntheta), ]
   .r <- .getOmegaR(.ui)
   for (.i in seq_along(.eta$name)) {
@@ -242,7 +242,7 @@ rxUiGet.monolixFullTheta <- function(x, ...) {
   if (is.null(.pop)) return(NULL)
   .iniDf <- .ui$iniDf
   .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
-  .muRefCurEval <- .ui$muRefCurEval
+  .muRefCurEval <- .monolixMuRefCurEval(.ui)
   .muRef <- .monolixMuRef(.ui)
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
   .fullTheta <- setNames(vapply(seq_along(.theta$name),

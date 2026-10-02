@@ -77,7 +77,7 @@ rxUiGet.mlxtranParameter <- function(x, ...) {
   .muRef <- .monolixMuRef(.ui)
   .iniDf <- .ui$iniDf
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
-  .curEval <- .ui$muRefCurEval
+  .curEval <- .monolixMuRefCurEval(.ui)
   .prior <- .mlxtranPriorInfo(.ui)$name
   .method <- function(cur) {
     if (cur$fix) return("FIXED")

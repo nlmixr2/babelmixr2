@@ -1,5 +1,11 @@
 # babelmixr2 0.1.11.9000
 
+* Monolix: a mu-referenced parameter that stays inside `exp()` in the
+  model (like `cl <- exp(tcl + eta.cl) * (CRCL/100)^cl.crcl`, or
+  `f(depot) <- exp(lfdepot)`) was given a log-normal distribution while
+  the model still took `exp()` of it, so `exp()` was applied twice.
+  It is now a normal parameter on nlmixr2's scale (its initial value,
+  estimate and covariance too).
 * When lixoftConnectors cannot load or run a Monolix project, the error
   now includes Monolix's reason (its `[ERROR]` lines) instead of
   "see Monolix's [ERROR] above".

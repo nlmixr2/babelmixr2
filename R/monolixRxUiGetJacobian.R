@@ -16,7 +16,7 @@ rxUiGet.monolixJacobian <- function(x, ...) {
   # nlmixr's style of covariance matrix
   #
   .ui <- x[[1]]
-  .muRef <- .ui$muRefCurEval
+  .muRef <- .monolixMuRefCurEval(.ui)
   .iniDf <- .ui$iniDf
   .vars <- .iniDf[!is.na(.iniDf$ntheta) & is.na(.iniDf$err), c("est", "name")]
   .name <- .vars$name

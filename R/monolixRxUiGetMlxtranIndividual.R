@@ -182,7 +182,7 @@ rxUiGet.mlxtranModelIndividual <- function(x, ...) {
   .def <- vapply(seq_along(.muRef), function(.i){
     .est <- names(.muRef)[.i]
     .var <- setNames(.muRef[.i], NULL)
-    .mlxtranIndividualDef(.var, .est, .ui$muRefCurEval, .ui$muRefTable, .muRefCov)
+    .mlxtranIndividualDef(.var, .est, .monolixMuRefCurEval(.ui), .ui$muRefTable, .muRefCov)
   }, character(1), USE.NAMES=FALSE)
   .def <- paste(.def, collapse="\n")
   .cor <- .mlxtranIndividualCor(.ui, .muRef)
