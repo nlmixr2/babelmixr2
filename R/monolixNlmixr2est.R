@@ -147,6 +147,53 @@
   lixoftConnectors::runScenario()
 }
 
+#' Run a lixoftConnectors call, keeping what it prints
+#'
+#' lixoftConnectors reports problems by printing them (like Monolix's
+#' `[ERROR]` lines), so they are collected here to be part of
+#' babelmixr2's error.  They are still printed.
+#'
+#' @param expr lixoftConnectors call
+#' @return list with `value` (the result, or the `try-error`) and `text`
+#'   (what was printed)
+#' @noRd
+.lixoftCapture <- function(expr) {
+  .msg <- character(0)
+  .out <- utils::capture.output({
+    .value <- try(withCallingHandlers(
+      expr,
+      message = function(m) {
+        .msg <<- c(.msg, conditionMessage(m))
+      },
+      warning = function(w) {
+        .msg <<- c(.msg, conditionMessage(w))
+      }
+    ), silent = TRUE)
+  })
+  if (length(.out) > 0L) {
+    cat(.out, sep = "\n")
+  }
+  if (inherits(.value, "try-error")) {
+    .msg <- c(.msg, attr(.value, "condition")$message)
+  }
+  list(value = .value, text = trimws(unlist(strsplit(c(.out, .msg), "\n"))))
+}
+
+#' Monolix's reason for a failed lixoftConnectors call
+#'
+#' @param text what lixoftConnectors printed (from `.lixoftCapture()`)
+#' @return the error lines (or everything printed), for an error message
+#' @noRd
+.lixoftReason <- function(text) {
+  text <- text[nzchar(text)]
+  .err <- grep("ERROR", text, value = TRUE)
+  if (length(.err) == 0L) .err <- text
+  if (length(.err) == 0L) {
+    return("(lixoftConnectors printed no reason)")
+  }
+  paste0("  ", .err, collapse = "\n")
+}
+
 #' Load and run a Monolix project with lixoftConnectors
 #'
 #' lixoftConnectors reports a failure by returning `FALSE` (with an
@@ -158,16 +205,18 @@
 #'   cannot load or run the project
 #' @noRd
 .monolixLixoftRun <- function(mlxtran) {
-  .x <- try(.lixoftLoadProject(mlxtran), silent=TRUE)
-  if (inherits(.x, "try-error") || isFALSE(.x)) {
-    stop("lixoftConnectors cannot load '", mlxtran, "' (see Monolix's [ERROR] above)",
-         call.=FALSE)
+  .x <- .lixoftCapture(.lixoftLoadProject(mlxtran))
+  if (inherits(.x$value, "try-error") || isFALSE(.x$value)) {
+    stop("lixoftConnectors cannot load '", mlxtran, "':\n",
+         .lixoftReason(.x$text),
+         call. = FALSE)
   }
   .minfo("lixoftConnectors::runScenario()")
-  .x <- .lixoftRunScenario()
-  if (isFALSE(.x)) {
-    stop("lixoftConnectors::runScenario() failed for '", mlxtran, "' (see Monolix's [ERROR] above)",
-         call.=FALSE)
+  .x <- .lixoftCapture(.lixoftRunScenario())
+  if (inherits(.x$value, "try-error") || isFALSE(.x$value)) {
+    stop("lixoftConnectors::runScenario() failed for '", mlxtran, "':\n",
+         .lixoftReason(.x$text),
+         call. = FALSE)
   }
   .minfo("done")
   invisible()

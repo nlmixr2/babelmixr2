@@ -572,6 +572,56 @@ test_that("a Monolix project lixoftConnectors cannot load or run is an error", {
   expect_error(suppressMessages(.b$.monolixLixoftRun("x.mlxtran")), NA)
 })
 
+test_that("Monolix's reason is part of the lixoftConnectors error", {
+  # however lixoftConnectors prints it (output, message, warning, error)
+  .err <- "[ERROR] The variable 'rx_f_depot' is not defined."
+  for (.load in list(
+    function(mlxtran) {
+      cat(.err, "\n")
+      FALSE
+    },
+    function(mlxtran) {
+      message(.err)
+      FALSE
+    },
+    function(mlxtran) {
+      warning(.err, call. = FALSE)
+      FALSE
+    },
+    function(mlxtran) stop(.err, call. = FALSE)
+  )) {
+    local_mocked_bindings(.lixoftLoadProject = .load)
+    expect_error(
+      suppressWarnings(suppressMessages(utils::capture.output(
+        .b$.monolixLixoftRun("x.mlxtran")
+      ))),
+      "rx_f_depot' is not defined",
+      fixed = TRUE
+    )
+  }
+  # only the error lines when Monolix also printed other things
+  local_mocked_bindings(.lixoftLoadProject = function(mlxtran) {
+    cat("loading project\n[ERROR] bad macro\n")
+    FALSE
+  })
+  .e <- tryCatch(utils::capture.output(.b$.monolixLixoftRun("x.mlxtran")),
+                 error = function(e) conditionMessage(e))
+  expect_match(.e, "bad macro", fixed = TRUE)
+  expect_false(grepl("loading project", .e, fixed = TRUE))
+  # the run step too
+  local_mocked_bindings(
+    .lixoftLoadProject = function(mlxtran) TRUE,
+    .lixoftRunScenario = function() {
+      message("[ERROR] SAEM diverged")
+      FALSE
+    }
+  )
+  expect_error(
+    suppressMessages(.b$.monolixLixoftRun("x.mlxtran")),
+    "SAEM diverged"
+  )
+})
+
 test_that("dotted mu-referenced parameters use one Monolix name (#220)", {
   f <- function() {
     ini({

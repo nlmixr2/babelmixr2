@@ -6,6 +6,9 @@
   the model still took `exp()` of it, so `exp()` was applied twice.
   It is now a normal parameter on nlmixr2's scale (its initial value,
   estimate and covariance too).
+* When lixoftConnectors cannot load or run a Monolix project, the error
+  now includes Monolix's reason (its `[ERROR]` lines) instead of
+  "see Monolix's [ERROR] above".
 
 * Fixes found by running the NONMEM/Monolix stress kit with NONMEM 7.4:
 
