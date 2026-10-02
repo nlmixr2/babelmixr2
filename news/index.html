@@ -42,6 +42,18 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.11.9000" id="babelmixr2-01119000">babelmixr2 0.1.11.9000<a class="anchor" aria-label="anchor" href="#babelmixr2-01119000"></a></h2>
 <ul><li>
+<p>Fixes found by running the NONMEM/Monolix stress kit with NONMEM 7.4:</p>
+<ul><li>
+<code>nonmemControl(est="imp")</code> and <code>est="its"</code> fits were always reported as unsuccessful; NONMEM ends them with “OPTIMIZATION WAS NOT TESTED FOR CONVERGENCE”, which is now read as finished.</li>
+<li>
+<code>nonmemControl(est="posthoc")</code> fits could not be read (no <code>#TERM:</code> block and no parameter history).</li>
+<li>Box-Cox, Yeo-Johnson and logit + Yeo-Johnson residual errors were rejected by NM-TRAN (IPRED redefined in nested/<code>ELSE IF</code> structures); the transformations are now written without nested IFs. They are still transform-both-sides (DV in <code>CCONTR</code>, IPRED in <code>$ERROR</code>). Predictions at or below <code>sqrt(DBL_EPSILON)</code> are floored like rxode2 instead of being set to <code>-1000000000</code> (which gave <code>lnorm()</code> fits a huge objective function), and Box-Cox no longer divides by zero when lambda is 0.</li>
+<li>The <code>IPRED</code>/<code>PRED</code> comparison with NONMEM now undoes the residual transformation first (NONMEM’s predictions are on the transformed scale).</li>
+<li>Censored (<code>CENS</code>, <code>CENS</code> + <code>LIMIT</code>, <code>LIMIT</code> only) models were rejected by NM-TRAN (“random variable is defined in a nested IF structure”).</li>
+<li>A <code>$PK</code> parameter changed later in the model (like <code>if (SEX == 1) cl &lt;- cl * 1.2</code>) was changed in <code>$DES</code>, which NONMEM does not allow, and used undefined in <code>$ERROR</code>; it is now defined as <code>RXPK_&lt;name&gt;</code> in <code>$PK</code>.</li>
+<li>Models without random effects are refused (NONMEM treats them as single-subject data, where <code>METHOD=COND</code> is invalid).</li>
+</ul></li>
+<li>
 <p>Monolix fixes found by running the NONMEM/Monolix stress kit:</p>
 <ul><li>Infusions given by rate (<code>RATE</code>) or duration (<code>TINF</code>) were written to the data but not declared in <code>[CONTENT]</code>, so Monolix gave them as bolus doses.</li>
 <li>Endpoints with dotted names (like <code>concentration.in.plasma</code>) kept the dots in the Monolix project (<code>OUTPUT</code>, observation names, predictions), which Monolix cannot load.</li>
