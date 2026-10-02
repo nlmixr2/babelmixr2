@@ -225,7 +225,14 @@ The output directory (by default `babelmixr2-stress-<date>-<time>`) has:
 - `sessionInfo.txt`: the R session (package versions).
 - `nonmem/<case>/` and `monolix/<case>/`: the control streams, data,
   and NONMEM/Monolix output for each case, to look at a failure in
-  detail (under `translate/` and `run/` with `--kit`).
+  detail (under `translate/` and `run/` with `--kit`). `fit.log` in
+  each case's directory has what NONMEM/Monolix printed (like Monolix's
+  `[ERROR]` lines).
+
+The simulated data are rounded to 8 significant digits, so every
+machine writes the same data; the saved NONMEM/Monolix output in a
+returned zip can then be read again (without running NONMEM/Monolix)
+on another machine.
 
 The script exits with status 1 when any case fails, so it can also be
 used in a CI job on a machine with NONMEM or Monolix.

@@ -45,7 +45,10 @@
   stopifnot(length(.obs) == length(.sobs),
             isTRUE(all.equal(.d$time[.obs], .s$time[.sobs])))
   .d$dv <- NA_real_
-  .d$dv[.obs] <- .s$sim[.sobs]
+  # rounded so every machine writes the same data (the last digits
+  # differ between platforms), so saved NONMEM/Monolix output can be
+  # read again elsewhere
+  .d$dv[.obs] <- signif(.s$sim[.sobs], 8)
   names(.d) <- toupper(names(.d))
   .keep <- vapply(names(.d), function(n) !all(is.na(.d[[n]])), logical(1))
   .keep[c("ID", "TIME", "EVID", "AMT", "CMT", "DV")] <- TRUE
@@ -856,7 +859,10 @@ stressCases <- function() {
   if (!is.null(.stressEnv$cases)) return(.stressEnv$cases)
   .m <- .stressModels
   .theo <- .stressTheo()
-  .theoPos <- .theo[.theo$EVID != 0 | .theo$DV > 0, ]
+  # positive observations after the dose: an oral model predicts 0 at
+  # the dose time, which proportional/log-normal/logit errors cannot fit
+  # (Monolix gives an infinite likelihood)
+  .theoPos <- .theo[.theo$EVID != 0 | (.theo$DV > 0 & .theo$TIME > 0), ]
   .theoWt <- .theo
   .theoWt$WT <- 70 + 5 * (.theoWt$ID %% 5 - 2)
   .theoSex <- .theo
@@ -962,7 +968,7 @@ stressCases <- function() {
                 checkNonmem=c("ADVAN2 TRANS1", "K=CL/V"),
                 checkMonolix="pkmodel\\(V=rx_v, k=rx_k, ka=rx_ka\\)",
                 description="linCmt() ~ endpoint; NONMEM ADVAN2, Monolix pkmodel()"),
-    .stressCase("linCmt 1-cmt oral lag and bioavailability", .m$lin1oralLagF, .theo,
+    .stressCase("linCmt 1-cmt oral lag and bioavailability", .m$lin1oralLagF, .theoPos,
                 checkNonmem=c("ADVAN2 TRANS1", "ALAG1=", "F1="),
                 checkMonolix=c("Tlag=rx_tlag", "p=rx_p")),
     .stressCase("linCmt 1-cmt iv bolus", .m$lin1iv, .ivBolus,
@@ -1535,10 +1541,27 @@ stressLintMonolix <- function(lines) {
   }
 }
 
+#' Fit (or translate) a case, keeping what it prints in `fit.log`
+#'
+#' NONMEM/Monolix errors (like Monolix's `[ERROR]` lines) are printed,
+#' not returned, so the log is where to look when a fit fails.
+#'
+#' @inheritParams stressRunCase
+#' @param modelName model name (file names)
+#' @return the fit, or the error
+#' @noRd
 .stressFit <- function(case, engine, mode, dir, modelName, runCommand) {
   withr::with_dir(dir, {
+    .con <- file("fit.log", open = "a")
+    sink(.con)
+    sink(.con, type = "message")
+    on.exit({
+      sink(type = "message")
+      sink()
+      close(.con)
+    })
     tryCatch(
-      suppressWarnings(suppressMessages(
+      withCallingHandlers(
         nlmixr2est::nlmixr2(
           case$model,
           case$data,
@@ -1550,9 +1573,16 @@ stressLintMonolix <- function(lines) {
             runCommand,
             case$control[[engine]]
           )
-        )
-      )),
-      error = function(e) e
+        ),
+        warning = function(w) {
+          message("Warning: ", conditionMessage(w))
+          invokeRestart("muffleWarning")
+        }
+      ),
+      error = function(e) {
+        message("Error: ", conditionMessage(e))
+        e
+      }
     )
   })
 }
@@ -1762,7 +1792,8 @@ stressRunCase <- function(
   if (length(.bad) > 0L) {
     .problems <- c(.problems, paste0("non-finite estimates: ", paste(.bad, collapse = ", ")))
   }
-  .pd <- .stressPredDiff(fit, engine)
+  # the NONMEM/Monolix tables are read relative to the fit's directory
+  .pd <- withr::with_dir(dir, .stressPredDiff(fit, engine))
   if (is.na(.pd[1])) {
     .problems <- c(.problems, "cannot compare the predictions with rxode2")
   } else if (.pd[1] > predTol) {

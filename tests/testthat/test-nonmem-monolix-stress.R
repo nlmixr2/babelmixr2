@@ -117,6 +117,8 @@ test_that("stressKit() runs from an R session and writes the report", {
       c("results.csv", "summary.md", "sessionInfo.txt")
     ))))
     expect_null(attr(.res, "zip"))
+    # what NONMEM/Monolix print is kept for each case
+    expect_true(file.exists(file.path("kit", "nonmem", "NONMEM_est_imp", "fit.log")))
     .l <- utils::capture.output(
       .lst <- .e$stressList(cases = "^NONMEM est=imp$")
     )
