@@ -41,7 +41,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.11.9000" id="babelmixr2-01119000">babelmixr2 0.1.11.9000<a class="anchor" aria-label="anchor" href="#babelmixr2-01119000"></a></h2>
-<ul><li><p>When lixoftConnectors cannot load or run a Monolix project, the error now includes Monolix’s reason (its <code>[ERROR]</code> lines) instead of “see Monolix’s [ERROR] above”.</p></li>
+<ul><li><p>Monolix: a mu-referenced parameter that stays inside <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp()</a></code> in the model (like <code>cl &lt;- exp(tcl + eta.cl) * (CRCL/100)^cl.crcl</code>, or <code>f(depot) &lt;- exp(lfdepot)</code>) was given a log-normal distribution while the model still took <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp()</a></code> of it, so <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp()</a></code> was applied twice. It is now a normal parameter on nlmixr2’s scale (its initial value, estimate and covariance too).</p></li>
+<li><p>When lixoftConnectors cannot load or run a Monolix project, the error now includes Monolix’s reason (its <code>[ERROR]</code> lines) instead of “see Monolix’s [ERROR] above”.</p></li>
 <li>
 <p>Fixes found by running the NONMEM/Monolix stress kit with NONMEM 7.4:</p>
 <ul><li>
