@@ -104,8 +104,8 @@ test_that("as.nlmixr2 gives a clear error for untranslated eps/err (#95)", {
       v2 <- exp(lvp + eta.v2)
       k21 <- q / v2
       k12 <- q / v
-      d / dt(CENTRAL) <- k21 * PERI - k12 * CENTRAL - cl * CENTRAL / v
-      d / dt(PERI) <- -k21 * PERI + k12 * CENTRAL
+      d/dt(CENTRAL) <- k21 * PERI - k12 * CENTRAL - cl * CENTRAL / v
+      d/dt(PERI) <- -k21 * PERI + k12 * CENTRAL
       f <- CENTRAL / v
       y <- f + f * eps1
       f ~ prop(RSV)

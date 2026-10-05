@@ -155,8 +155,8 @@
 #' variable.  The property is assigned in `EQUATION:` to a generated
 #' variable (like `rx_f_depot`) that the macro then uses, so
 #' expressions (issue #115) and conditional assignments translate.
-#' When the property is set inside a conditional, the variable starts
-#' at rxode2's default (1 for `f()`, 0 for `alag()`).
+#' When the property is set inside a conditional, every branch sets it
+#' (see `.monolixCompleteIfProps()`).
 #'
 #' @param x assignment expression, like `f(depot) <- exp(lfdepot)`
 #' @param prop the property name (`"f"`, `"F"`, `"alag"`, `"lag"`,
@@ -170,16 +170,6 @@
   .state <- as.character(x[[2]][[2]])
   .var <- paste0("rx_", .type, "_", gsub("[.]", "__", .state))
   .monolixSetAdm(ui, .state, .var, type = .type)
-  .default <- switch(.type, f = "1", lag = "0", NA_character_)
-  if (
-    !is.na(.default) &&
-      rxode2::rxGetControl(ui, ".mIndent", 0) > 0
-  ) {
-    assignInMyNamespace(
-      ".monolixCmtPropDefaults",
-      unique(c(.monolixCmtPropDefaults, paste0("   ", .var, " = ", .default)))
-    )
-  }
   .val <- .rxToMonolix(x[[3]], ui = ui)
   paste0(
     .rxToMonolixGetIndent(ui),
@@ -804,4 +794,177 @@ rxToMonolix <- function(x, ui) {
     lstExpr[[.i]] <- .e
   }
   lstExpr
+}
+
+#' Does a model line set a compartment property (f, alag, rate, dur)?
+#'
+#' @param x model line
+#' @return boolean
+#' @noRd
+.monolixSetsCmtProp <- function(x) {
+  if (!is.call(x)) {
+    return(FALSE)
+  }
+  if (
+    (identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) &&
+      is.call(x[[2]]) &&
+      as.character(x[[2]][[1]])[1] %in%
+        c("f", "F", "alag", "lag", "rate", "dur")
+  ) {
+    return(TRUE)
+  }
+  any(vapply(as.list(x)[-1], .monolixSetsCmtProp, logical(1)))
+}
+
+#' Is a model line an ODE (`d/dt(state) <- ...`)?
+#'
+#' @param x model line
+#' @return boolean
+#' @noRd
+.monolixIsOde <- function(x) {
+  is.call(x) &&
+    (identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) &&
+    is.call(x[[2]]) &&
+    identical(x[[2]][[1]], quote(`/`))
+}
+
+#' Variables a model line uses (not the targets it assigns)
+#'
+#' @param x model line
+#' @return character vector
+#' @noRd
+.monolixUsedVars <- function(x) {
+  if (is.name(x)) {
+    return(as.character(x))
+  }
+  if (!is.call(x)) {
+    return(character(0))
+  }
+  if (identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) {
+    return(.monolixUsedVars(x[[3]]))
+  }
+  unique(unlist(lapply(as.list(x)[-1], .monolixUsedVars)))
+}
+
+#' Move the compartment properties before the ODEs for Monolix
+#'
+#' Monolix's PK macros use the properties, and the macros come before the
+#' ODEs, so `f(depot) <- ...` written after the ODEs (allowed in rxode2)
+#' is moved before them when it does not depend on the ODEs.
+#'
+#' @param lstExpr model lines
+#' @param ui rxode2 ui
+#' @return model lines
+#' @noRd
+.monolixPropsBeforeOde <- function(lstExpr, ui) {
+  .ode <- which(vapply(lstExpr, .monolixIsOde, logical(1)))
+  if (length(.ode) == 0L) {
+    return(lstExpr)
+  }
+  .q <- .ode[1]
+  .prop <- which(vapply(lstExpr, .monolixSetsCmtProp, logical(1)))
+  .prop <- .prop[.prop > .q]
+  if (length(.prop) == 0L) {
+    return(lstExpr)
+  }
+  .after <- unique(c(
+    rxode2::rxState(ui),
+    unlist(lapply(lstExpr[.q:max(.prop)], .monolixAssigned))
+  ))
+  for (.p in .prop) {
+    .needs <- setdiff(
+      .monolixUsedVars(lstExpr[[.p]]),
+      .monolixAssigned(lstExpr[[.p]])
+    )
+    if (
+      any(.needs %in% .after) || any(ui$predDf$line > .q & ui$predDf$line < .p)
+    ) {
+      stop(
+        "Monolix needs the compartment properties (f, alag, dur, rate) ",
+        "defined before the ODEs, without using them",
+        call. = FALSE
+      )
+    }
+  }
+  c(
+    lstExpr[seq_len(.q - 1L)],
+    lstExpr[.prop],
+    lstExpr[setdiff(seq.int(.q, length(lstExpr)), .prop)]
+  )
+}
+
+#' Compartment properties an `if`/`else` branch sets
+#'
+#' @param x model line(s)
+#' @return named list of the property targets (like `f(depot)`), by
+#'   their deparsed text
+#' @noRd
+.monolixPropTargets <- function(x) {
+  if (is.list(x)) {
+    return(do.call(c, lapply(x, .monolixPropTargets)))
+  }
+  if (!is.call(x)) {
+    return(list())
+  }
+  if (
+    (identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) &&
+      is.call(x[[2]]) &&
+      as.character(x[[2]][[1]])[1] %in% c("f", "F", "alag", "lag")
+  ) {
+    return(setNames(list(x[[2]]), deparse1(x[[2]])))
+  }
+  do.call(c, lapply(as.list(x)[-1], .monolixPropTargets))
+}
+
+#' Set a compartment property in every branch of an `if`/`else`
+#'
+#' Monolix assigns each variable once, so a property set in only some
+#' branches cannot start from a default assigned before the `if`.  Each
+#' branch that does not set it gets rxode2's default (`f()` 1, `alag()`
+#' 0), adding an `else` when needed.
+#'
+#' @param x model line
+#' @return model line
+#' @noRd
+.monolixCompleteIfProps <- function(x) {
+  if (!is.call(x) || !identical(x[[1]], quote(`if`))) {
+    return(x)
+  }
+  .targets <- .monolixPropTargets(x)
+  if (length(.targets) == 0L) {
+    return(x)
+  }
+  .branch <- function(b) {
+    .lines <- if (is.null(b)) {
+      list()
+    } else if (is.call(b) && identical(b[[1]], quote(`{`))) {
+      as.list(b)[-1]
+    } else {
+      list(b)
+    }
+    .lines <- lapply(.lines, .monolixCompleteIfProps)
+    .have <- names(.monolixPropTargets(.lines))
+    for (.t in setdiff(names(.targets), .have)) {
+      .fun <- as.character(.targets[[.t]][[1]])
+      .lines <- c(
+        .lines,
+        list(call("<-", .targets[[.t]], if (.fun %in% c("f", "F")) 1 else 0))
+      )
+    }
+    as.call(c(quote(`{`), .lines))
+  }
+  x[[3]] <- .branch(x[[3]])
+  if (length(x) < 4L) {
+    x[[4]] <- .branch(NULL)
+  } else if (is.call(x[[4]]) && identical(x[[4]][[1]], quote(`if`))) {
+    # else if: the chain sets the same properties
+    x[[4]] <- .monolixCompleteIfProps(x[[4]])
+    .missing <- setdiff(names(.targets), names(.monolixPropTargets(x[[4]])))
+    if (length(.missing) > 0L) {
+      x[[4]] <- .branch(x[[4]])
+    }
+  } else {
+    x[[4]] <- .branch(x[[4]])
+  }
+  x
 }

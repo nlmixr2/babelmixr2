@@ -46,6 +46,10 @@
 .monolixFormatData <- function(data, ui) {
   .ret <- data
   .monolixAssertNoM2(.ret)
+  if (any(names(.ret) == "LIMIT")) {
+    # nlmixr2 writes no limit as -Inf/Inf; Monolix needs it missing
+    .ret$LIMIT[!is.finite(.ret$LIMIT)] <- NA_real_
+  }
   .ret$SS <- ifelse(.ret$SS == 0, NA_real_, .ret$SS)
   .ret$YTYPE <- ifelse(.ret$YTYPE == 0, NA_real_, .ret$YTYPE)
   .ret$ADM <- ifelse(.ret$ADM == 0, NA_real_, .ret$ADM)

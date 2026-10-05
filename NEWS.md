@@ -1,5 +1,15 @@
 # babelmixr2 0.1.11.9000
 
+* Monolix (fourth stress kit run): `EQUATION:` only has assignments
+  and conditions, so PK macros there were rejected.  The model lines
+  before the ODEs (with the compartment properties the macros use) are
+  now written in the `PK:` block before the macros, and the ODEs stay
+  in `EQUATION:`.  Compartment properties set after the ODEs are moved
+  before them, and a property set in an `if` is set in every branch
+  (rxode2's default in the others) instead of from a default assigned
+  before the `if`, which Monolix cannot reassign.  A missing `LIMIT`
+  is written as missing instead of `-Inf`.
+
 * Monolix projects Monolix could not load (third stress kit run, with
   Monolix's reasons):
 

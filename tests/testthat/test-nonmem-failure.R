@@ -195,8 +195,8 @@ withr::with_tempdir({
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d / dt(depot) <- -depot * ka
-      d / dt(central) <- depot * ka - cl * central / v
+      d/dt(depot) <- -depot * ka
+      d/dt(central) <- depot * ka - cl * central / v
       cp <- central / v
       cp ~ add(add.sd)
     })

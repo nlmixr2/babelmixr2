@@ -343,8 +343,8 @@ test_that("monolix complex bioavailability and lag time (issue #115)", {
         ka <- exp(tka + eta.ka)
         cl <- exp(tcl + eta.cl)
         v <- exp(tv + eta.v)
-        d / dt(depot) <- -depot * ka
-        d / dt(central) <- depot * ka - cl * central / v
+        d/dt(depot) <- -depot * ka
+        d/dt(central) <- depot * ka - cl * central / v
         f(depot) <- exp(lfdepot)
         alag(depot) <- exp(lalag) * ka
         cp <- central / v
@@ -388,8 +388,8 @@ test_that("monolix conditional f() keeps its default (issue #115)", {
         ka <- exp(tka + eta.ka)
         cl <- exp(tcl + eta.cl)
         v <- exp(tv + eta.v)
-        d / dt(depot) <- -depot * ka
-        d / dt(central) <- depot * ka - cl * central / v
+        d/dt(depot) <- -depot * ka
+        d/dt(central) <- depot * ka - cl * central / v
         if (WT > 70) {
           f(depot) <- 0.5
           alag(depot) <- 2
@@ -411,14 +411,17 @@ test_that("monolix conditional f() keeps its default (issue #115)", {
       .txt,
       fixed = TRUE
     )))
+    # in PK: before the macro (the f()/alag() after the ODEs moved
+    # before them); Monolix assigns once, so the defaults (f 1, alag 0)
+    # are the else branch, not lines before the if
+    .pk <- which(.txt == "PK:")
     .eq <- which(.txt == "EQUATION:")
-    # the defaults come first, then the conditional values
-    expect_equal(
-      trimws(.txt[.eq + 1:2]),
-      c("rx_f_depot = 1", "rx_lag_depot = 0")
-    )
-    expect_true(any(grepl("^ *rx_f_depot = 0.5$", .txt)))
-    expect_true(any(grepl("^ *rx_lag_depot = 2$", .txt)))
+    .b <- trimws(.txt[.pk:.eq])
+    .b <- .b[!grepl("^;", .b)]
+    expect_equal(.b[2:8], c("if WT>70", "rx_f_depot = 0.5",
+                            "rx_lag_depot = 2", "else", "rx_f_depot = 1",
+                            "rx_lag_depot = 0", "end"))
+    expect_true(grep("^depot\\(", .txt) < .eq)
   })
 })
 
@@ -637,8 +640,8 @@ test_that("dotted mu-referenced parameters use one Monolix name (#220)", {
       ka.x <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl + WT * cl.wt)
       v <- exp(tv + eta.v + WT * cl.wt)
-      d / dt(depot) <- -depot * ka.x
-      d / dt(central) <- depot * ka.x - cl * central / v
+      d/dt(depot) <- -depot * ka.x
+      d/dt(central) <- depot * ka.x - cl * central / v
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -768,7 +771,7 @@ test_that("Monolix files from the stress kit run", {
     model({
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d / dt(central) <- -cl / v * central
+      d/dt(central) <- -cl / v * central
       concentration.in.plasma <- central / v
       concentration.in.plasma ~ prop(prop.sd)
     })
@@ -817,8 +820,8 @@ test_that("Monolix covariance without the fixed parameters", {
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
       f(depot) <- tfdepot
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       cp ~ prop(prop.sd)
     })
@@ -862,8 +865,8 @@ test_that("a Monolix run command that writes nothing is an error, not a wait", {
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - cl / v * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / v * center
       cp <- center / v
       cp ~ add(add.sd)
     })
@@ -899,8 +902,8 @@ test_that("a mu-referenced parameter kept inside exp() is normal in Monolix", {
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl) * (CRCL / 100)^cl.crcl
       v <- exp(tv + eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -922,13 +925,13 @@ test_that("a mu-referenced parameter kept inside exp() is normal in Monolix", {
 test_that("Monolix variables are assigned once (stress kit)", {
   .ssa <- .b$.monolixSsa(
     list(quote(`_drop`), quote(fcl <- 1), quote(cl <- cl * fcl),
-         quote(cl <- cl * 2), quote(d / dt(central) <- -cl / v * central),
+         quote(cl <- cl * 2), quote(d/dt(central) <- -cl / v * central),
          quote(cp <- central / v), quote(cp ~ add(add.sd))),
     defined = c("cl", "v"), keep = "cp"
   )
   expect_equal(.ssa[[3]], quote(cl_rx1 <- cl * fcl))
   expect_equal(.ssa[[4]], quote(cl_rx2 <- cl_rx1 * 2))
-  expect_equal(.ssa[[5]], quote(d / dt(central) <- -cl_rx2 / v * central))
+  expect_equal(.ssa[[5]], quote(d/dt(central) <- -cl_rx2 / v * central))
   expect_equal(.ssa[[7]], quote(cp ~ add(add.sd)))
 })
 
@@ -959,16 +962,39 @@ test_that("Monolix project text from the third stress kit run", {
   expect_true(any(grepl("^ *cl_rx1 = ", .x)))
   expect_false(any(grepl("^ *cl = ", .x)))
   expect_true(any(grepl("ddt_central = ka\\*depot-cl_rx1/v\\*central", .x)))
-  # a macro using a model variable is written in EQUATION:, after it
+  # a macro using a model variable comes after it: the variable is
+  # assigned in PK: (EQUATION: cannot have macros), then the macros, then
+  # the ODEs in EQUATION:
   .x <- .files(.ode("f(depot) <- exp(lf)", "lf <- log(0.8)"), .theo)
-  expect_false("PK:" %in% .x)
+  .pk <- which(.x == "PK:")
   .f <- grep("^ *rx_f_depot = ", .x)
   .depot <- grep("^depot\\(", .x)
+  .eq <- which(.x == "EQUATION:")
   .ddt <- grep("^ *ddt_", .x)
-  expect_true(.f < .depot && .depot < min(.ddt))
+  expect_length(.pk, 1L)
+  expect_true(.pk < .f && .f < .depot && .depot < .eq && .eq < min(.ddt))
   # odeType is an EQUATION: setting
   .x <- .files(.ode(), .theo, stiff = TRUE)
   expect_equal(.x[which(.x == "EQUATION:") + 1L], "odeType = stiff")
+})
+
+test_that("Monolix gets no limit as missing, not -Inf", {
+  .d <- data.frame(ID = 1, TIME = 0:2, EVID = c(1, 0, 0), DV = c(NA, 1, 2),
+                   SS = 0, YTYPE = 0, ADM = c(1, 0, 0),
+                   CENS = c(0, 1, 0), LIMIT = c(-Inf, 0, -Inf))
+  .ui <- rxode2::rxUiDecompress(rxode2::rxode2(function() {
+    ini({
+      tcl <- 1
+      eta.cl ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      cp <- cl * t
+      cp ~ add(add.sd)
+    })
+  }))
+  expect_equal(.b$.monolixFormatData(.d, .ui)$LIMIT, c(NA, 0, NA))
 })
 
 test_that("a LIMIT on uncensored observations (M2) is refused for Monolix", {

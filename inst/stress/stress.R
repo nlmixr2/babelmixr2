@@ -603,8 +603,8 @@
       v <- exp(tv + eta.v)
       f(depot) <- exp(lfdepot)
       alag(depot) <- exp(llag)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -622,6 +622,30 @@
       v <- exp(tv + eta.v)
       d/dt(depot) <- -ka * depot
       d/dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  },
+  ifF = function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
+      if (WT > 70) {
+        f(depot) <- 0.8
+        alag(depot) <- 0.2
+      }
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -685,7 +709,7 @@
     model({
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d / dt(central) <- -cl / v * central
+      d/dt(central) <- -cl / v * central
       cp <- central / v
       cp ~ prop(prop.sd)
     })
@@ -704,7 +728,7 @@
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
       dur(central) <- exp(tdur + eta.dur)
-      d / dt(central) <- -cl / v * central
+      d/dt(central) <- -cl / v * central
       cp <- central / v
       cp ~ prop(prop.sd)
     })
@@ -730,8 +754,8 @@
       v <- exp(tv + eta.v)
       e0 <- exp(te0 + eta.e0)
       ic50 <- exp(tic50)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       eff <- e0 * (1 - timax * cp / (ic50 + cp))
       cp ~ prop(prop.sd)
@@ -752,8 +776,8 @@
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -775,8 +799,8 @@
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl + cl.wt * log(WT / 70) + cl.sex * SEX2)
       v <- exp(tv + eta.v + v.wt * log(WT / 70))
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -792,8 +816,8 @@
       ka <- exp(tka)
       cl <- exp(tcl)
       v <- exp(tv)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -1098,6 +1122,10 @@ stressCases <- function() {
     .stressCase("time-varying covariate", .stressCode$timeVaryingCov, .theoCrcl,
                 checkMonolix="CRCL"),
     .stressCase("probitInv", .stressCode$probitInv, .theo),
+    .stressCase("conditional f()/alag() after the ODEs", .stressCode$ifF, .theo,
+                checkNonmem = c("F1=", "ALAG1="),
+                checkMonolix = "Tlag=rx_lag_depot, p=rx_f_depot",
+                description = "Monolix: moved before the ODEs, an if in PK:"),
     .stressCase(
       "f()/alag() expressions", .stressCode$fExpr, .theo,
       checkNonmem = c("F1=", "ALAG1="),

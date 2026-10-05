@@ -80,26 +80,34 @@
   unique(paste0("   rx_tk0_", .s, " = amtDose/", adm$rate[.w]))
 }
 
-#' Put the PK macros in the EQUATION: block
+#' Write the PK macros after the variables they use
 #'
 #' Monolix reads the model in order, so a macro using a variable
-#' defined in `EQUATION:` (like `p=rx_f_depot`) cannot be in a `PK:`
-#' block before it ("Undefined variable").  The compartments and macros
-#' go in `EQUATION:` after these variables are defined, before the ODEs.
+#' defined in the model (like `p=rx_f_depot`) cannot be in a `PK:` block
+#' before the `EQUATION:` defining it ("Undefined variable"), and
+#' `EQUATION:` only has assignments and conditions (no macros).  The
+#' `PK:` block can have assignments, so the lines before the ODEs go in
+#' `PK:` followed by the macros, and the rest stays in `EQUATION:`.
 #'
 #' @param mod `EQUATION:` lines (one string)
 #' @param macros compartment and macro lines
-#' @return `EQUATION:` lines with the macros
+#' @return list with `pk` (the `PK:` block) and `mod` (the `EQUATION:`
+#'   lines)
 #' @noRd
-.monolixMacrosInEquation <- function(mod, macros) {
+.monolixMacrosInPk <- function(mod, macros) {
   .lines <- strsplit(mod, "\n")[[1]]
-  .prop <- grep("^\\s*rx_(f|lag|dur|rate)_[A-Za-z0-9_]+ *=", .lines)
+  .prop <- grep("^\\s*rx_(f|lag|dur|rate|tk0)_[A-Za-z0-9_]+ *=", .lines)
   .ode <- grep("^\\s*ddt_", .lines)
   .at <- if (length(.ode) > 0L) .ode[1] - 1L else length(.lines)
   if (length(.prop) > 0L && max(.prop) > .at) {
-    .at <- length(.lines)
+    stop("Monolix needs the compartment properties (f, alag, dur, rate) ",
+         "defined before the ODEs", call. = FALSE)
   }
-  paste(append(.lines, macros, after = .at), collapse = "\n")
+  list(
+    pk = paste0("\n\nPK:\n",
+                paste(c(.lines[seq_len(.at)], macros), collapse = "\n")),
+    mod = paste(.lines[-seq_len(.at)], collapse = "\n")
+  )
 }
 
 #' @export
@@ -111,6 +119,10 @@ rxUiGet.monolixModel <- function(x, ...) {
   .lstExpr <- .split$modelWithDrop
   .pkmodel <- .monolixPkModel(.ui, .lstExpr)
   if (!is.null(.pkmodel)) .lstExpr <- .pkmodel$lstExpr
+  # the PK macros (before the ODEs) use the compartment properties, set
+  # in every branch (no default assigned before an if)
+  .lstExpr <- .monolixPropsBeforeOde(.lstExpr, .ui)
+  .lstExpr <- lapply(.lstExpr, .monolixCompleteIfProps)
   # Monolix assigns each variable once
   .lstExpr <- .monolixSsa(.lstExpr,
                           defined = c(.split$pureMuRef, .split$taintMuRef,
@@ -144,12 +156,13 @@ rxUiGet.monolixModel <- function(x, ...) {
                  "; Define PK macros",
                  .monolixGetPkMacros(.ui))
     if (any(!is.na(c(.adm$f, .adm$lag, .adm$dur, .adm$rate)))) {
-      # the macros use variables defined in EQUATION:
-      .pk <- ""
-      .mod <- .monolixMacrosInEquation(
+      # the macros use variables defined in the model
+      .split <- .monolixMacrosInPk(
         .mod,
         c(.monolixTk0Lines(.adm, rxode2::rxState(.ui)), .macros)
       )
+      .pk <- .split$pk
+      .mod <- .split$mod
     } else {
       .pk <- paste0("\n\nPK:\n", paste(.macros, collapse = "\n"))
     }
