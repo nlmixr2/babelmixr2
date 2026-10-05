@@ -902,7 +902,9 @@ stressCases <- function() {
   .cens$CENS <- ifelse(.cens$EVID == 0 & .cens$DV < .loq, 1, 0)
   .cens$DV <- ifelse(.cens$CENS == 1, .loq, .cens$DV)
   .censLimit <- .cens
-  .censLimit$LIMIT <- 0
+  # M4: the limit of the censored values (a LIMIT on an uncensored
+  # value would be M2)
+  .censLimit$LIMIT <- ifelse(.censLimit$CENS == 1, 0, NA_real_)
   .limitOnly <- .theoPos
   .limitOnly$LIMIT <- 0
   # a reset and dose (evid=4) half way
@@ -1004,7 +1006,8 @@ stressCases <- function() {
                 description="Monolix pkmodel() cannot model the duration: ODEs"),
     .stressCase("linCmt modeled rate", .m$lin1ivRate, .ivModelRate,
                 checkNonmem=c("ADVAN1 TRANS1", "R1=", "\\$INPUT.* RATE"),
-                checkMonolix = c("ddt_central", "Tk0=amtDose/rx_rate_central"),
+                checkMonolix = c("ddt_central", "Tk0=rx_tk0_central",
+                                 "rx_tk0_central = amtDose/rx_rate_central"),
                 description="Monolix pkmodel() cannot model the rate: ODEs"),
     .stressCase("linCmt weight covariate", .m$lin1oralWt, .theoWt,
                 checkNonmem=c("ADVAN2 TRANS1", "\\$INPUT.* NLMIXRMUDERCOV1",
@@ -1074,8 +1077,8 @@ stressCases <- function() {
     .stressCase("censoring (CENS and LIMIT)", .m$lin1oral, .censLimit,
                 checkNonmem="LIMIT"),
     .stressCase("censoring LIMIT only", .m$lin1oral, .limitOnly,
-                checkNonmem = "RXCM2",
-                description = "M2: a finite LIMIT without CENS"),
+                checkNonmem = "RXCM2", monolix = "M2",
+                description = "M2: a LIMIT without CENS (not in Monolix)"),
     # model code ---------------------------------------------------------
     .stressCase("if/else", .stressCode$ifElse, .theoSex, checkNonmem="IF \\("),
     # NONMEM (and Monolix for ifelse()) prune the if/else branches (#11)

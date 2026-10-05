@@ -35,8 +35,10 @@
            ", Tlag=", ifelse(is.na(.adm$lag), "0", .adm$lag), ", p=",
            ifelse(is.na(.adm$f), "1", .adm$f), ")")
   } else if (.type == "modelRate") {
+    # macro arguments cannot be calculations: rx_tk0_<state> is
+    # amtDose/rate in EQUATION: (see .monolixTk0Lines())
     paste0("depot(type=", .adm$adm, ", target=", state[.adm$cmt],
-           ", Tk0=amtDose/", .adm$rate,
+           ", Tk0=rx_tk0_", state[.adm$cmt],
            ", Tlag=", ifelse(is.na(.adm$lag), "0", .adm$lag), ", p=",
            ifelse(is.na(.adm$f), "1", .adm$f), ")")
   } else if (.type == "modelDur") {
@@ -63,6 +65,43 @@
                USE.NAMES=FALSE), collapse="\n")
 }
 
+#' Infusion durations for modeled rates
+#'
+#' @param adm administrations (from `.monolixGetAdm()`)
+#' @param state model states
+#' @return `EQUATION:` lines defining `rx_tk0_<state>`
+#' @noRd
+.monolixTk0Lines <- function(adm, state) {
+  .w <- which(adm$type == "modelRate")
+  if (length(.w) == 0L) {
+    return(character(0))
+  }
+  .s <- state[adm$cmt[.w]]
+  unique(paste0("   rx_tk0_", .s, " = amtDose/", adm$rate[.w]))
+}
+
+#' Put the PK macros in the EQUATION: block
+#'
+#' Monolix reads the model in order, so a macro using a variable
+#' defined in `EQUATION:` (like `p=rx_f_depot`) cannot be in a `PK:`
+#' block before it ("Undefined variable").  The compartments and macros
+#' go in `EQUATION:` after these variables are defined, before the ODEs.
+#'
+#' @param mod `EQUATION:` lines (one string)
+#' @param macros compartment and macro lines
+#' @return `EQUATION:` lines with the macros
+#' @noRd
+.monolixMacrosInEquation <- function(mod, macros) {
+  .lines <- strsplit(mod, "\n")[[1]]
+  .prop <- grep("^\\s*rx_(f|lag|dur|rate)_[A-Za-z0-9_]+ *=", .lines)
+  .ode <- grep("^\\s*ddt_", .lines)
+  .at <- if (length(.ode) > 0L) .ode[1] - 1L else length(.lines)
+  if (length(.prop) > 0L && max(.prop) > .at) {
+    .at <- length(.lines)
+  }
+  paste(append(.lines, macros, after = .at), collapse = "\n")
+}
+
 #' @export
 rxUiGet.monolixModel <- function(x, ...) {
   .ui <- x[[1]]
@@ -72,6 +111,11 @@ rxUiGet.monolixModel <- function(x, ...) {
   .lstExpr <- .split$modelWithDrop
   .pkmodel <- .monolixPkModel(.ui, .lstExpr)
   if (!is.null(.pkmodel)) .lstExpr <- .pkmodel$lstExpr
+  # Monolix assigns each variable once
+  .lstExpr <- .monolixSsa(.lstExpr,
+                          defined = c(.split$pureMuRef, .split$taintMuRef,
+                                      .ui$allCovs),
+                          keep = .ui$predDf$var)
   # first drop the error lines
   .mainModel <- rxode2::rxCombineErrorLines(.ui,
                     errLines=nmGetDistributionMonolixLines(.ui),
@@ -94,10 +138,21 @@ rxUiGet.monolixModel <- function(x, ...) {
     .mod <- paste(c(.defaults, .mod), collapse = "\n")
   }
   if (is.null(.pkmodel)) {
-    .pk <- paste0("\n\nPK:\n; Define compartments with administrations\n",
-                  .monolixGetCompartmentInformation(.ui),
-                  "\n; Define PK macros\n",
-                  .monolixGetPkMacros(.ui))
+    .adm <- .monolixGetAdm(.ui)
+    .macros <- c("; Define compartments with administrations",
+                 .monolixGetCompartmentInformation(.ui),
+                 "; Define PK macros",
+                 .monolixGetPkMacros(.ui))
+    if (any(!is.na(c(.adm$f, .adm$lag, .adm$dur, .adm$rate)))) {
+      # the macros use variables defined in EQUATION:
+      .pk <- ""
+      .mod <- .monolixMacrosInEquation(
+        .mod,
+        c(.monolixTk0Lines(.adm, rxode2::rxState(.ui)), .macros)
+      )
+    } else {
+      .pk <- paste0("\n\nPK:\n", paste(.macros, collapse = "\n"))
+    }
   } else {
     .pk <- ""
     .mod <- .monolixPkModelInsert(.mod, .pkmodel, .ui)
@@ -119,9 +174,12 @@ rxUiGet.monolixModel <- function(x, ...) {
          paste(setNames(c(.monolixMuRef(.ui), .regress), NULL), collapse = ","),
          "}",
          .regressors,
-          ifelse(rxode2::rxGetControl(.ui, "stiff", FALSE), "\n\nodeType = stiff", ""),
          .pk,
-         "\n\nEQUATION:\n", .mod,
+         "\n\nEQUATION:\n",
+         # odeType is an EQUATION: setting (not an input definition)
+         ifelse(rxode2::rxGetControl(.ui, "stiff", FALSE),
+                "odeType = stiff\n", ""),
+         .mod,
          "\n\nOUTPUT:\noutput={",
          paste(.monolixResponses, collapse=", "), "}\n")
 }

@@ -918,3 +918,65 @@ test_that("a mu-referenced parameter kept inside exp() is normal in Monolix", {
   .par <- .lines(.ui$mlxtranParameter)
   expect_true(any(grepl("^rx__tcl_pop=\\{value=1, ", .par)))
 })
+
+test_that("Monolix variables are assigned once (stress kit)", {
+  .ssa <- .b$.monolixSsa(
+    list(quote(`_drop`), quote(fcl <- 1), quote(cl <- cl * fcl),
+         quote(cl <- cl * 2), quote(d / dt(central) <- -cl / v * central),
+         quote(cp <- central / v), quote(cp ~ add(add.sd))),
+    defined = c("cl", "v"), keep = "cp"
+  )
+  expect_equal(.ssa[[3]], quote(cl_rx1 <- cl * fcl))
+  expect_equal(.ssa[[4]], quote(cl_rx2 <- cl_rx1 * 2))
+  expect_equal(.ssa[[5]], quote(d / dt(central) <- -cl_rx2 / v * central))
+  expect_equal(.ssa[[7]], quote(cp ~ add(add.sd)))
+})
+
+test_that("Monolix project text from the third stress kit run", {
+  skip_on_cran()
+  .files <- function(model, data, name = "m", ...) {
+    withr::with_tempdir({
+      .ctl <- monolixControl(runCommand = NA, modelName = name, ...)
+      suppressMessages(nlmixr2(model, data, "monolix", .ctl))
+      readLines(paste0(name, "-monolix.txt"))
+    })
+  }
+  .theo <- nlmixr2data::theo_sd
+  .theo$SEX <- .theo$ID %% 2
+  .ode <- function(extra = "", ini = "") {
+    eval(str2lang(paste0(
+      "function() {\n ini({\n tka <- 0.45\n tcl <- 1\n tv <- 3.45\n", ini,
+      "\n eta.ka ~ 0.6\n eta.cl ~ 0.3\n eta.v ~ 0.1\n add.sd <- 0.7\n })\n",
+      " model({\n ka <- exp(tka + eta.ka)\n cl <- exp(tcl + eta.cl)\n",
+      " v <- exp(tv + eta.v)\n", extra, "\n d/dt(depot) <- -ka * depot\n",
+      " d/dt(central) <- ka * depot - cl / v * central\n cp <- central / v\n",
+      " cp ~ add(add.sd)\n })\n}"
+    )))
+  }
+  # an if changing an individual parameter: pruned and renamed
+  .if <- "if (SEX == 1) {\n cl <- cl * (1 + cl.sex)\n }"
+  .x <- .files(.ode(.if, "cl.sex <- 0.2"), .theo)
+  expect_true(any(grepl("^ *cl_rx1 = ", .x)))
+  expect_false(any(grepl("^ *cl = ", .x)))
+  expect_true(any(grepl("ddt_central = ka\\*depot-cl_rx1/v\\*central", .x)))
+  # a macro using a model variable is written in EQUATION:, after it
+  .x <- .files(.ode("f(depot) <- exp(lf)", "lf <- log(0.8)"), .theo)
+  expect_false("PK:" %in% .x)
+  .f <- grep("^ *rx_f_depot = ", .x)
+  .depot <- grep("^depot\\(", .x)
+  .ddt <- grep("^ *ddt_", .x)
+  expect_true(.f < .depot && .depot < min(.ddt))
+  # odeType is an EQUATION: setting
+  .x <- .files(.ode(), .theo, stiff = TRUE)
+  expect_equal(.x[which(.x == "EQUATION:") + 1L], "odeType = stiff")
+})
+
+test_that("a LIMIT on uncensored observations (M2) is refused for Monolix", {
+  .d <- data.frame(ID = 1, TIME = 0:2, EVID = c(1, 0, 0), DV = c(NA, 1, 2),
+                   CENS = c(0, 1, 0), LIMIT = c(NA, 0, NA))
+  # M3/M4: LIMIT only with censored values
+  expect_error(.b$.monolixAssertNoM2(.d), NA)
+  .d$LIMIT[3] <- 0.5
+  expect_error(.b$.monolixAssertNoM2(.d), "M2")
+  expect_error(.b$.monolixAssertNoM2(.d[, names(.d) != "CENS"]), "M2")
+})
