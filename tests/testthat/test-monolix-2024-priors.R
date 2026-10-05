@@ -88,6 +88,11 @@ test_that("a Monolix 2024R1 export with a mu-referenced covariate is read", {
   expect_equal(sqrt(.f$cov["tka", "tka"]), 0.309228983715958 / 1.56549133958774, tolerance=0.05)
   expect_equal(.f$theta[["cl.wt"]], 0.5653053, tolerance=1e-5)
   expect_equal(exp(.f$theta[["tka"]]), 1.565491, tolerance=1e-5)
+  # the observations Monolix used, for the objective function
+  .d <- .mlx2024Data()
+  .n <- sum(.d[[grep("^evid$", names(.d), ignore.case = TRUE)]] == 0 &
+              !is.na(.d[[grep("^dv$", names(.d), ignore.case = TRUE)]]))
+  expect_equal(.f$nobs, .n)
 })
 
 test_that("Monolix 2024R1 MAP estimates follow the ini() priors", {

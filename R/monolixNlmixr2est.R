@@ -17,8 +17,35 @@
   assign("control", .control, envir=.ui)
 }
 
+#' Refuse a LIMIT on uncensored observations (M2) for Monolix
+#'
+#' nlmixr2 reads a finite `LIMIT` on an uncensored observation as a
+#' truncated likelihood (M2); Monolix only uses `LIMIT` with a
+#' censored value (it needs a `CENS` column, "Column 'LIMIT' of type
+#' 'LIMIT' requires a column of type 'CENSORING'").
+#'
+#' @param data data written for Monolix
+#' @return nothing; an error for M2 data
+#' @noRd
+.monolixAssertNoM2 <- function(data) {
+  if (!any(names(data) == "LIMIT")) {
+    return(invisible())
+  }
+  .cens <- if (any(names(data) == "CENS")) data$CENS else rep(0, nrow(data))
+  .obs <- is.na(data$EVID) | data$EVID == 0
+  .m2 <- .obs & .cens %in% 0 & is.finite(data$LIMIT)
+  if (any(.m2)) {
+    stop("a LIMIT on uncensored observations (truncated, M2) is not ",
+         "supported in Monolix; Monolix only uses LIMIT with censored ",
+         "values (CENS)",
+         call. = FALSE)
+  }
+  invisible()
+}
+
 .monolixFormatData <- function(data, ui) {
   .ret <- data
+  .monolixAssertNoM2(.ret)
   .ret$SS <- ifelse(.ret$SS == 0, NA_real_, .ret$SS)
   .ret$YTYPE <- ifelse(.ret$YTYPE == 0, NA_real_, .ret$YTYPE)
   .ret$ADM <- ifelse(.ret$ADM == 0, NA_real_, .ret$ADM)
@@ -93,6 +120,11 @@
     env$covMethod <- rxode2::rxGetControl(.ui, ".covMethod", "Monolix")
   }
 
+  # the observations Monolix used (as for NONMEM): nlmixr2est also
+  # counts evid=2 rows and, with time not starting at zero, one more
+  # row per subject, which shifts the objective function
+  env$nobs <- .lastNobs
+  env$nobs2 <- .lastNobs
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
   .monolixControlToFoceiControl(env)
@@ -464,7 +496,9 @@ nlmixr2Est.monolix <- function(env, ...) {
                             native=(.bblLinCmtControl(env$control, "pkmodel") == "pkmodel"))
   # if/else branches Monolix cannot write are pruned (written as
   # arithmetic), as set by the prune option of monolixControl
-  if (.bblPruneControl(env, nested = TRUE)) .bblPruneIf(env, "Monolix")
+  if (.bblPruneControl(env, nested = TRUE, reassign = TRUE)) {
+    .bblPruneIf(env, "Monolix")
+  }
   .ui <- env$ui
   .monolixFamilyControl(env, ...)
   rxode2::rxAssignControlValue(.ui, ".linCmtMicro", .micro)

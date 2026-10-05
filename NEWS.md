@@ -1,5 +1,27 @@
 # babelmixr2 0.1.11.9000
 
+* Monolix projects Monolix could not load (third stress kit run, with
+  Monolix's reasons):
+
+  - "Conflicting variable definition": Monolix assigns a variable once,
+    so a reassigned variable (like `if (SEX == 1) cl <- cl * 1.2`, or
+    the pruned `else if`) gets a new name (`cl_rx1`); an `if`/`else`
+    that changes a defined variable is pruned first.
+  - "Undefined variable": compartment properties set in the model
+    (`f()`, `alag()`, `dur()`, `rate()`) are defined in `EQUATION:`, so
+    the PK macros using them are now written in `EQUATION:` after them
+    (not in a `PK:` block before).  A modeled rate uses
+    `Tk0=rx_tk0_<state>` with `rx_tk0_<state> = amtDose/rate` (macro
+    arguments cannot be calculations).
+  - `monolixControl(stiff=TRUE)` wrote `odeType = stiff` where Monolix
+    expects an input definition; it is now in `EQUATION:`.
+  - A `LIMIT` on uncensored observations (M2) is refused: Monolix only
+    uses `LIMIT` with censored values.
+
+* Monolix fits use the number of observations Monolix used for the
+  objective function, like NONMEM fits; it was off for data with
+  `evid=2` records or time not starting at zero.
+
 * Monolix: a mu-referenced parameter that stays inside `exp()` in the
   model (like `cl <- exp(tcl + eta.cl) * (CRCL/100)^cl.crcl`, or
   `f(depot) <- exp(lfdepot)`) was given a log-normal distribution while

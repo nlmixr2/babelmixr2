@@ -108,12 +108,14 @@
 #' @param env nlmixr2 estimation environment with `env$ui` and
 #'   `env$control`
 #' @param nested can the software write nested `if`/`else` statements?
+#' @param reassign must an `if`/`else` that changes a defined variable be
+#'   pruned (Monolix)?
 #' @return boolean, should the model be pruned; `"auto"` (the default)
 #'   prunes only when the `if`/`else` statements cannot be written
 #'   directly
 #' @noRd
 #' @author Matthew L. Fidler
-.bblPruneControl <- function(env, nested = FALSE) {
+.bblPruneControl <- function(env, nested = FALSE, reassign = FALSE) {
   .prune <- "auto"
   .control <- env$control
   if (is.list(.control) && !is.null(.control$prune)) {
@@ -125,5 +127,28 @@
   if (isFALSE(.prune)) {
     return(FALSE)
   }
-  .bblNeedsPrune(rxode2::rxUiDecompress(env$ui), nested = nested)
+  .ui <- rxode2::rxUiDecompress(env$ui)
+  .bblNeedsPrune(.ui, nested = nested) || (reassign && .bblIfReassigns(.ui))
+}
+
+#' Does an `if`/`else` statement change a variable defined before it?
+#'
+#' Monolix cannot assign a variable twice, so such a model is pruned
+#' and the reassignments get new variables (`.monolixSsa()`).
+#'
+#' @param ui rxode2 ui
+#' @return boolean
+#' @noRd
+#' @author Matthew L. Fidler
+.bblIfReassigns <- function(ui) {
+  .defined <- character(0)
+  for (.e in ui$lstExpr) {
+    .a <- .monolixAssigned(.e)
+    if (is.call(.e) && identical(.e[[1]], quote(`if`)) &&
+          any(.a %in% .defined)) {
+      return(TRUE)
+    }
+    .defined <- c(.defined, .a)
+  }
+  FALSE
 }

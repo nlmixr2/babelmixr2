@@ -721,3 +721,87 @@ rxToMonolix <- function(x, ui) {
   return(.rxToMonolix(eval(parse(text = paste0("quote({", x, "})"))),
                       ui=ui))
 }
+
+#' Replace variables in a model expression
+#'
+#' @param x model expression
+#' @param map named list of new names (symbols), by old name
+#' @return the expression with the variables replaced
+#' @noRd
+.monolixSubst <- function(x, map) {
+  if (length(map) == 0L) {
+    return(x)
+  }
+  if (is.name(x)) {
+    .n <- as.character(x)
+    if (.n %in% names(map)) {
+      return(map[[.n]])
+    }
+    return(x)
+  }
+  if (is.call(x)) {
+    for (.i in seq_along(x)[-1]) {
+      if (!is.null(x[[.i]])) x[[.i]] <- .monolixSubst(x[[.i]], map)
+    }
+  }
+  x
+}
+
+#' Variables assigned (with `<-` or `=`) in a model expression
+#'
+#' @param x model expression
+#' @return character vector of the assigned variables
+#' @noRd
+.monolixAssigned <- function(x) {
+  if (!is.call(x)) {
+    return(character(0))
+  }
+  .ret <- unlist(lapply(as.list(x)[-1], .monolixAssigned))
+  if ((identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) &&
+        is.name(x[[2]])) {
+    .ret <- c(as.character(x[[2]]), .ret)
+  }
+  unique(.ret)
+}
+
+#' Give every reassignment a new variable for Monolix
+#'
+#' Monolix variables are assigned once ("Conflicting variable
+#' definition"), so `cl <- cl * 1.2` after `cl` is defined (or is an
+#' individual parameter) becomes `cl_rx1 <- cl * 1.2`, and the rest of
+#' the model uses `cl_rx1`.  `if`/`else` statements that change a
+#' defined variable are pruned first (see `.bblIfReassigns()`).
+#'
+#' @param lstExpr model lines
+#' @param defined variables already defined (individual parameters,
+#'   regressors)
+#' @param keep variables never renamed (the endpoints)
+#' @return model lines
+#' @noRd
+.monolixSsa <- function(lstExpr, defined, keep = character(0)) {
+  .map <- list()
+  .count <- integer(0)
+  for (.i in seq_along(lstExpr)) {
+    .e <- lstExpr[[.i]]
+    if (identical(.e, quote(`_drop`))) next
+    if ((identical(.e[[1]], quote(`<-`)) || identical(.e[[1]], quote(`=`))) &&
+          is.name(.e[[2]])) {
+      .v <- as.character(.e[[2]])
+      .rhs <- .monolixSubst(.e[[3]], .map)
+      if (.v %in% defined && !(.v %in% keep)) {
+        .count[.v] <- ifelse(is.na(.count[.v]), 1L, .count[.v] + 1L)
+        .new <- as.name(paste0(.v, "_rx", .count[.v]))
+        .map[[.v]] <- .new
+        .e <- as.call(list(.e[[1]], .new, .rhs))
+      } else {
+        .e[[3]] <- .rhs
+        defined <- c(defined, .v)
+      }
+    } else {
+      .e <- .monolixSubst(.e, .map)
+      defined <- c(defined, .monolixAssigned(.e))
+    }
+    lstExpr[[.i]] <- .e
+  }
+  lstExpr
+}
