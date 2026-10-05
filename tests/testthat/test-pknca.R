@@ -1,4 +1,5 @@
 test_that("est='pknca'", {
+  skip_if_not_installed("PKNCA")
   modelGood <- function() {
     ini({
       tvka <- 0.45
@@ -124,6 +125,7 @@ test_that("ini_transform", {
 })
 
 test_that("dvParam", {
+  skip_if_not_installed("PKNCA")
   modelBad <- function() {
     ini({
       tvka <- 0.45
@@ -247,6 +249,7 @@ test_that("getDvLines", {
 })
 
 test_that("est='pknca' with non-mu-referenced models (#101)", {
+  skip_if_not_installed("PKNCA")
   nonmumod <- function() {
     ini({
       tka <- 0.45
@@ -581,6 +584,7 @@ test_that("pkncaParamMap skips thetas shared by more than one parameter", {
 })
 
 test_that("est='pknca' with parameters defined in ini()", {
+  skip_if_not_installed("PKNCA")
   model <- function() {
     ini({
       ka <- 0.45
@@ -659,6 +663,7 @@ test_that("ini_transform allows infinite bounds", {
 })
 
 test_that("pkncaParamMap: covariates and linCmt() arguments", {
+  skip_if_not_installed("PKNCA")
   covModel <- function() {
     ini({
       ka <- 0.45
@@ -909,6 +914,7 @@ test_that("pkncaSimplifyZeroEta", {
 
 
 test_that("est='pknca' with covariates and mixed IV/oral dosing (#102)", {
+  skip_if_not_installed("PKNCA")
   # Data from the issue: IDs 11-13 IV (CMT 2), IDs 21-23 oral (CMT 1)
   # fmt: skip
   dat <- data.frame(
@@ -1080,6 +1086,7 @@ test_that("est='pknca' with covariates and mixed IV/oral dosing (#102)", {
 })
 
 test_that("pkncaIntervals without extravascular-only doses (#102)", {
+  skip_if_not_installed("PKNCA")
   dose <- data.frame(
     ID = c(1, 3, 3),
     TIME = 0,
@@ -1123,6 +1130,7 @@ test_that("pkncaIntervals without extravascular-only doses (#102)", {
 })
 
 test_that("pkncaIntervals route handling (#102)", {
+  skip_if_not_installed("PKNCA")
   dose <- data.frame(
     ID = c(1, 2, 3, 3),
     TIME = 0,
@@ -1207,6 +1215,7 @@ test_that("pkncaIntervals route handling (#102)", {
 })
 
 test_that("pkncaAddIvC0 (#102)", {
+  skip_if_not_installed("PKNCA")
   dose <- data.frame(
     ID = 1,
     TIME = c(0, 12),
@@ -1345,6 +1354,7 @@ test_that("pkncaObsStates (#102)", {
 })
 
 test_that("est='pknca' oral without a CMT column is extravascular (#102)", {
+  skip_if_not_installed("PKNCA")
   modelGood <- function() {
     ini({
       tka <- 0.45
@@ -1398,6 +1408,7 @@ test_that("pkncaCmtOrder with linCmt() and ODEs (#102)", {
 })
 
 test_that("pkncaAutoIntervals (#102)", {
+  skip_if_not_installed("PKNCA")
   dose <- data.frame(
     ID = c(1, 2, 2, 2),
     TIME = c(0, 0, 24, 48),
@@ -1467,6 +1478,7 @@ test_that("pkncaAutoIntervals (#102)", {
 })
 
 test_that("pkncaIntervals first usable cmax.dn per route (#102)", {
+  skip_if_not_installed("PKNCA")
   dose <- data.frame(
     ID = 1,
     TIME = c(0, 24, 48, 72),
@@ -1541,6 +1553,7 @@ test_that("pkncaCollapseDose (#102)", {
 })
 
 test_that("est='pknca' with simultaneous IV and oral doses (#102)", {
+  skip_if_not_installed("PKNCA")
   mod <- function() {
     ini({
       tka <- 0.45
@@ -1579,6 +1592,7 @@ test_that("est='pknca' with simultaneous IV and oral doses (#102)", {
 })
 
 test_that("est='pknca' multiple-dose oral without dose-time conc (#102)", {
+  skip_if_not_installed("PKNCA")
   mod <- function() {
     ini({
       tka <- 0
