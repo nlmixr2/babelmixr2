@@ -72,7 +72,7 @@ withr::with_tempdir({
         v <- tv
         a <- log(cl) + lfactorial(v)
         b <- (cl - 1)^e + 3 / v + 2 / cl
-        d / dt(central) <- -cl / v * central
+        d/dt(central) <- -cl / v * central
         cp <- central / v
         cp ~ add(add.sd)
       })
@@ -121,7 +121,7 @@ withr::with_tempdir({
         a <- log(cl)
         cl <- cl * 2
         b <- log(cl)
-        d / dt(central) <- -cl * central
+        d/dt(central) <- -cl * central
         cp <- central + a + b
         cp ~ add(add.sd)
       })
@@ -153,7 +153,7 @@ withr::with_tempdir({
         }
         b <- log(cl)
         central(0) <- log(-70 + WT)
-        d / dt(central) <- -a * b * central
+        d/dt(central) <- -a * b * central
         cp <- central
         cp ~ add(add.sd)
       })
@@ -192,7 +192,7 @@ withr::with_tempdir({
         a <- log(cl + v) + lfactorial(v)
         cl <- cl * 2
         b <- log(cl + v)
-        d / dt(central) <- -q * central
+        d/dt(central) <- -q * central
         cp <- central + a + b
         cp ~ add(add.sd)
       })
@@ -225,7 +225,7 @@ withr::with_tempdir({
         cl <- tcl + eta.cl
         v <- tv
         alag(central) <- log(cl)
-        d / dt(central) <- -central
+        d/dt(central) <- -central
         cp <- central / v
         cp ~ add(add.sd)
       })
@@ -274,7 +274,7 @@ withr::with_tempdir({
         cl <- exp(tcl + eta.cl)
         lw <- log(-70 + WT)
         alag(central) <- log(WT - 70)
-        d / dt(central) <- -cl * lw * central
+        d/dt(central) <- -cl * lw * central
         cp <- central
         cp ~ add(add.sd)
       })
@@ -297,7 +297,7 @@ withr::with_tempdir({
         v <- exp(tv)
         alag(central) <- log(WT - 70)
         lw <- log(-70 + WT)
-        d / dt(central) <- -cl / v * central
+        d/dt(central) <- -cl / v * central
         cp <- central / v * lw
         cp ~ add(add.sd)
       })
@@ -1262,8 +1262,8 @@ withr::with_tempdir({
         cl <- exp(tcl) + log(0.5) - sqrt(4)
         plog <- log(2)
         v <- exp(tv) * plog * sqrt(pi) / sqrt(pi)
-        d / dt(pnp) <- -ka * pnp
-        d / dt(central) <- ka * pnp - cl / v * central
+        d/dt(pnp) <- -ka * pnp
+        d/dt(central) <- ka * pnp - cl / v * central
         cp <- central / v
         cp ~ add(add.sd)
       })
@@ -1509,8 +1509,8 @@ test_that("NONMEM control streams NM-TRAN accepts (stress kit)", {
         cl <- cl * (1 + cl.sex)
       }
       v <- exp(tv + eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })
@@ -1532,8 +1532,8 @@ test_that("NONMEM control streams NM-TRAN accepts (stress kit)", {
       ka <- exp(tka)
       cl <- exp(tcl)
       v <- exp(tv)
-      d / dt(depot) <- -ka * depot
-      d / dt(central) <- ka * depot - cl / v * central
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       cp ~ add(add.sd)
     })

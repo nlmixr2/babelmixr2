@@ -149,7 +149,7 @@ test_that("pheno NONMEM reading with tableControl(cwres=TRUE) (#94)", {
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
       ke <- cl / v
-      d / dt(A1) <- -ke * A1
+      d/dt(A1) <- -ke * A1
       cp <- A1 / v
       cp ~ add(add.err)
     })

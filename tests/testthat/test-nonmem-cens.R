@@ -13,8 +13,8 @@ withr::with_tempdir({
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - cl / v * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / v * center
       cp <- center / v
       cp ~ add(add.sd)
     })
@@ -225,10 +225,10 @@ withr::with_tempdir({
         PD <- 1 - emax * DCP / (ec50 + DCP)
         effect(0) <- e0
         kin <- e0 * kout
-        d / dt(depot) <- -ktr * depot
-        d / dt(gut) <- ktr * depot - ka * gut
-        d / dt(center) <- ka * gut - cl / v * center
-        d / dt(effect) <- kin * PD - kout * effect
+        d/dt(depot) <- -ktr * depot
+        d/dt(gut) <- ktr * depot - ka * gut
+        d/dt(center) <- ka * gut - cl / v * center
+        d/dt(effect) <- kin * PD - kout * effect
         cp <- center / v
         cp ~ prop(prop.err) + add(pkadd.err)
         effect ~ add(pdadd.err) | pca

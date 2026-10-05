@@ -261,8 +261,8 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
       ka <- tka * exp(eta.ka)
       cl <- tcl * exp(eta.cl)
       v <- tv * exp(eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - cl / v * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / v * center
       cp <- center / v
       cp ~ prop(prop.sd)
     })
@@ -281,8 +281,8 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
       ka <- exp(tka + eta.ka)
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - cl / v * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / v * center
       cp <- center / v
       cp ~ prop(prop.sd)
     })
@@ -342,8 +342,8 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
       cl <- tcl * exp(eta.cl)
       vc <- tvc * exp(eta.v)
       v <- tv * exp(eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - cl / vc * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / vc * center
       cp <- center / vc + 0 * v
       cp ~ prop(prop.sd)
     })
@@ -387,8 +387,8 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
       ka <- tka
       cl <- tcl
       v <- tv * exp(eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - cl / vc * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / vc * center
       cp <- center / vc + 0 * v
       cp ~ prop(prop.sd)
     })
@@ -422,13 +422,13 @@ test_that("est='pknca' with non-mu-referenced models (#101)", {
       V <- tV * exp(eta.v)
       v <- tv
       q <- tq
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka *
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka *
         depot -
         cl / V * center -
         q / V * center +
         q / v * periph
-      d / dt(periph) <- q / V * center - q / v * periph
+      d/dt(periph) <- q / V * center - q / v * periph
       cp <- center / V
       cp ~ prop(prop.sd)
     })
@@ -589,8 +589,8 @@ test_that("est='pknca' with parameters defined in ini()", {
       prop.err <- 0.5
     })
     model({
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - cl / vc * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / vc * center
       cp <- center / vc
       cp ~ prop(prop.err)
     })
@@ -620,8 +620,8 @@ test_that("pkncaParamMap skips direct thetas used in transformations", {
       ka <- tka
       CL <- exp(cl + 0.75 * log(WT / 70) + eta.cl)
       v <- tv
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - CL / v * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - CL / v * center
       cp <- center / v
       cp ~ prop(prop.err)
     })
@@ -668,8 +668,8 @@ test_that("pkncaParamMap: covariates and linCmt() arguments", {
     })
     model({
       CL <- cl * WT
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - CL / vc * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - CL / vc * center
       cp <- center / vc
       cp ~ prop(prop.err)
     })
@@ -709,8 +709,8 @@ test_that("pkncaParamMap: covariates and linCmt() arguments", {
       prop.err <- 0.5
     })
     model({
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - cl / f1 / vc * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / f1 / vc * center
       cp <- center / vc
       cp ~ prop(prop.err)
     })
@@ -732,8 +732,8 @@ test_that("pkncaParamMap: covariates and linCmt() arguments", {
       prop.err <- 0.5
     })
     model({
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - cl / v * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / v * center
       cp <- center / v
       cp ~ prop(prop.err)
     })
@@ -753,7 +753,7 @@ test_that("pkncaTransformedNames", {
   expect_equal(tn(quote(cp <- center / vc)), character())
   expect_equal(tn(quote(cp <- linCmt(ka, cl, vc))), character())
   expect_equal(
-    tn(quote(d / dt(center) <- ka * depot - cl / vc * center)),
+    tn(quote(d/dt(center) <- ka * depot - cl / vc * center)),
     character()
   )
   # transformations, scaling and shifts
@@ -950,8 +950,8 @@ test_that("est='pknca' with covariates and mixed IV/oral dosing (#102)", {
       }
       cl <- exp(tcl + eta.cl)
       v <- exp(tv + eta.v)
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - cl / v * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / v * center
       cp <- center / v
       cp ~ prop(prop.sd)
     })
@@ -1301,8 +1301,8 @@ test_that("pkncaObsStates (#102)", {
       ka <- exp(tka)
       cl <- exp(tcl)
       v <- exp(tv)
-      d / dt(depot) <- -ka * depot
-      d / dt(center) <- ka * depot - cl / v * center
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / v * center
       conc <- center
       cp <- conc / v
       cp ~ add(add.sd)
@@ -1389,7 +1389,7 @@ test_that("pkncaCmtOrder with linCmt() and ODEs (#102)", {
       v <- exp(lv)
       ke0 <- exp(lke0)
       cp <- linCmt()
-      d / dt(eff) <- ke0 * (cp - eff)
+      d/dt(eff) <- ke0 * (cp - eff)
       cp ~ add(add.sd)
     })
   }
