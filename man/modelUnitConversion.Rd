@@ -26,7 +26,9 @@ consistent with the data units.
 Unit conversion for pharmacokinetic models
 }
 \examples{
+\dontshow{if (requireNamespace("units", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 modelUnitConversion(dvu = "ng/mL", amtu = "mg", timeu = "hr", volumeu = "L")
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other Unit conversion:
