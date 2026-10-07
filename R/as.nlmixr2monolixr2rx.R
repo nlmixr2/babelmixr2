@@ -12,6 +12,16 @@ nmObjGetControl.monolix2rx <- function(x, ...) {
   stop("cannot find monolix2rx related control object", call.=FALSE)
 }
 
+## minSS/maxSS for Monolix's nbdoses, raised to rxode2's floor (minSS >= 5,
+## maxSS >= 7); monolix2rx >= 0.0.7 has .getSsLimits()
+.monolix2rxSsLimits <- function(model) {
+  .f <- tryCatch(getExportedValue("monolix2rx", ".getSsLimits"),
+                 error=function(e) NULL)
+  if (is.function(.f)) return(.f(model))
+  .nss <- monolix2rx::.getNbdoses(model)
+  c(minSS=max(.nss, 5L), maxSS=max(.nss + 1L, 7L))
+}
+
 .monolix2rxToFoceiControl <- function(env, model, assign=FALSE) {
   ## maxSS=nbSSDoses + 1,
   ## minSS=nbSSDoses,
@@ -20,15 +30,15 @@ nmObjGetControl.monolix2rx <- function(x, ...) {
   ## atol=ifelse(stiff, 1e-9, 1e-6),
   ## rtol=ifelse(stiff, 1e-6, 1e-3),
   ## method=ifelse(stiff, "liblsoda", "dop853")
-  .nbSsDoses <- monolix2rx::.getNbdoses(model)
+  .ss <- .monolix2rxSsLimits(model)
   .stiff <- monolix2rx::.getStiff(model)
   .rxControl <- rxode2::rxControl(covsInterpolation="locf",
                                   atol=ifelse(.stiff, 1e-9, 1e-6),
                                   rtol=ifelse(.stiff, 1e-6, 1e-3),
                                   ssRtol=100,
                                   ssAtol=100,
-                                  maxSS=.nbSsDoses + 1,
-                                  minSS=.nbSsDoses,
+                                  maxSS=.ss[["maxSS"]],
+                                  minSS=.ss[["minSS"]],
                                   method=ifelse(.stiff, "liblsoda", "dop853"),
                                   safeZero=FALSE)
   .foceiControl <- nlmixr2est::foceiControl(rxControl=.rxControl,
