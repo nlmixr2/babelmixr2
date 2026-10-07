@@ -13,7 +13,7 @@ nmObjGetControl.monolix2rx <- function(x, ...) {
 }
 
 ## minSS/maxSS for Monolix's nbdoses, raised to rxode2's floor (minSS >= 5,
-## maxSS >= 7); monolix2rx >= 0.0.7 has .getSsLimits()
+## maxSS >= 7); monolix2rx after 0.0.7 has .getSsLimits()
 .monolix2rxSsLimits <- function(model) {
   .f <- tryCatch(getExportedValue("monolix2rx", ".getSsLimits"),
                  error=function(e) NULL)
