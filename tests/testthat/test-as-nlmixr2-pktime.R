@@ -2,6 +2,16 @@
 
 .as.nonmem2rx <- function(...) suppressWarnings(suppressMessages(nonmem2rx::as.nonmem2rx(...)))
 
+test_that("the nonmem = TRUE gate sees what rxode2/nlmixr2est support (#252)", {
+  # an rxode2 without the option rejects rxControl(nonmem = TRUE)
+  .ctl <- try(rxode2::rxControl(nonmem = TRUE), silent = TRUE)
+  .rxode2 <- !inherits(.ctl, "try-error") && isTRUE(.ctl$nonmem) &&
+    "pkTime" %in% names(formals(rxode2::rxS))
+  .est <- exists(".rxSHasPkTime", envir = asNamespace("nlmixr2est"),
+                 inherits = FALSE)
+  expect_equal(.nonmem2rxHasNonmemSolve(), .rxode2 && .est)
+})
+
 test_that("nonmem2rx imports solve with rxControl(nonmem = TRUE) (#252)", {
   .ode <- rxode2::rxode2({
     cl <- 3 * (1 + 0.05 * time)
