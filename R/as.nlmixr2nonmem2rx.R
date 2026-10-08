@@ -29,7 +29,7 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
 #' @noRd
 #' @author Matthew L. Fidler
 .nonmem2rxUseNonmemSolve <- function(model) {
-  if (!any(names(formals(rxode2::rxControl)) == "nonmem")) {
+  if (!any(names(formals(rxode2::rxSolve)) == "nonmem")) {
     return(FALSE)
   }
   .code <- try(rxode2::rxNorm(model), silent = TRUE)
