@@ -1,5 +1,10 @@
 # babelmixr2 0.1.11.9000
 
+* Monolix imports (`as.nlmixr2()` of a monolix2rx model) no longer fail
+  when the project's steady-state dose count (`nbdoses`) is below 6:
+  `minSS`/`maxSS` come from monolix2rx's `.getSsLimits()`, raised to
+  rxode2's floor of 5 and 7.
+
 * `simplifyUnit()` and `modelUnitConversion()` work without the
   suggested packages testthat and units installed: `simplifyUnit()`
   checked its arguments with checkmate's `expect_*()` (testthat
