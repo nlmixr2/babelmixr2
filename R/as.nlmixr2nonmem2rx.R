@@ -9,7 +9,7 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
     .control <- get("foceiControl0", .env)
     if (inherits(.control, "foceiControl")) return(.control)
   }
-  stop("cannot find nonmem2rx related control object", call.=FALSE)
+  stop("cannot find nonmem2rx related control object", call. = FALSE)
 }
 
 #' Does the installed nlmixr2est keep the `$PK` record time?
@@ -32,8 +32,8 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
   if (!any(names(formals(rxode2::rxSolve)) == "nonmem")) {
     return(FALSE)
   }
-  .hasPkTime <- get0(".rxSHasPkTime", envir = asNamespace("nlmixr2est"),
-                     mode = "function", inherits = FALSE)
+  .est <- asNamespace("nlmixr2est")
+  .hasPkTime <- get0(".rxSHasPkTime", .est, mode = "function", inherits = FALSE)
   !is.null(.hasPkTime) && isTRUE(.hasPkTime())
 }
 
@@ -60,27 +60,33 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
   !any(grepl("\\bdelay\\(", .code))
 }
 
-.nonmem2rxToFoceiControl <- function(env, model, assign=FALSE) {
-  .args <- list(covsInterpolation="nocb",
-                atol=model$atol,
-                rtol=model$rtol,
-                ssRtol=model$ssRtol,
-                ssAtol=model$ssAtol,
-                method="lsoda",
-                safeZero=FALSE)
+.nonmem2rxToFoceiControl <- function(env, model, assign = FALSE) {
+  .args <- list(
+    covsInterpolation = "nocb",
+    atol = model$atol,
+    rtol = model$rtol,
+    ssRtol = model$ssRtol,
+    ssAtol = model$ssAtol,
+    method = "lsoda",
+    safeZero = FALSE
+  )
   if (.nonmem2rxUseNonmemSolve(model)) {
     # $PK statements read the record time and covariates between ADDL
     # doses are not carried from the dose, like NONMEM (#252)
-    .args <- c(.args, list(nonmem=TRUE, addlKeepsCov=FALSE))
+    .args <- c(.args, list(nonmem = TRUE, addlKeepsCov = FALSE))
   }
   .rxControl <- do.call(rxode2::rxControl, .args)
-  .foceiControl <- nlmixr2est::foceiControl(rxControl=.rxControl,
-                                            maxOuterIterations = 0L, maxInnerIterations = 0L,
-                                            etaMat = env$etaMat,
-                                            covMethod=0L,
-                                            interaction = 1L)
-  if (assign)
+  .foceiControl <- nlmixr2est::foceiControl(
+    rxControl = .rxControl,
+    maxOuterIterations = 0L,
+    maxInnerIterations = 0L,
+    etaMat = env$etaMat,
+    covMethod = 0L,
+    interaction = 1L
+  )
+  if (assign) {
     env$control <- .foceiControl
+  }
   .foceiControl
 }
 
@@ -153,123 +159,134 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
 }
 
 #' @export
-as.nlmixr2.nonmem2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl(), ci=0.95) {
+as.nlmixr2.nonmem2rx <- function(
+  x,
+  ...,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl(),
+  ci = 0.95
+) {
   #need x$nonmemData
   # need x to have at least one endpoint
   # The environment needs:
-  env <- new.env(parent=emptyenv())
+  env <- new.env(parent = emptyenv())
   x <- rxode2::rxUiDecompress(x)
   .nonmem2rxAssertNoEps(x)
   if (is.null(x$predDf)) {
-    stop("The input model does not have a endpoint specified in nlmixr2 format.",
-         " Please adjust manually and then use `as.nonmem2rx(new, old)` to update",
-         " and adjust and re-verify the manual model translation",
-         call.=FALSE)
+    stop(
+      "The input model does not have a endpoint specified in nlmixr2 format.",
+      " Please adjust manually and then use `as.nonmem2rx(new, old)` to update",
+      " and adjust and re-verify the manual model translation",
+      call. = FALSE
+    )
   }
-  nlmixr2est::nlmixrWithTiming("as.nlmixr2", {
-    .ui <- new.env(parent=emptyenv())
-    .oldUi <- x
-    for (n in ls(envir=.oldUi, all.names=TRUE)) {
-      assign(n, get(n, envir=.oldUi), envir=.ui)
-    }
-    class(.ui) <- class(.oldUi)
-    # - $table for table options -- already present
-    env$table <- table
-    env$origData <- x$nonmemData
-    nlmixr2est::.foceiPreProcessData(env$origData, env, .ui, rxControl)
-    # - $origData -- Original Data -- already present
-    # - $dataSav -- Processed data from .foceiPreProcessData --already present
-    # - $idLvl -- Level information for ID factor added -- already present
-    env$ui <- .ui
-    # - $ui for ui fullTheta Full theta information
-    env$fullTheta <- .ui$nonmemFullTheta
-    # - $etaObf data frame with ID, etas and OBJI
-    env$etaObf <- .ui$nonmemEtaObf
-    if (is.null(env$etaObf)) {
-      .df <- data.frame(ID=unique(env$dataSav$ID))
-      for (.n in .getEtaNames(.ui)) {
-        .df[[.n]] <- 0
+  nlmixr2est::nlmixrWithTiming(
+    "as.nlmixr2",
+    {
+      .ui <- new.env(parent = emptyenv())
+      .oldUi <- x
+      for (n in ls(envir = .oldUi, all.names = TRUE)) {
+        assign(n, get(n, envir = .oldUi), envir = .ui)
       }
-      .df[["OBJI"]] <- NA_real_
-      env$etaObf <- .df
-      warning("since NONMEM did not output between subject variability, assuming all ETA(#) are zero",
-              call.=FALSE)
-    }
-    # - $cov For covariance
-    .cov <- .ui$nonmemCovariance
-    if (!is.null(.cov)) {
-      env$cov <- .cov
-      # - $covMethod for the method of calculating the covariance
-      env$covMethod <- "nonmem2rx"
-    }
-    # - $objective objective function value
-    env$objective <- .ui$nonmemObjf
-    # - $extra Extra print information
-    env$extra <- paste0(" reading NONMEM ver ", env$ui$nonmemOutputVersion)
-    # - $method Estimation method (for printing)
-    env$method <- "nonmem2rx"
-    # - $omega Omega matrix
-    env$omega <- .ui$nonmemOutputOmega
-    # - $theta Is a theta data frame
-    env$theta <- .ui$nonmemThetaDf
-    # - $model a list of model information for table generation.  Needs a `predOnly` model
-    env$model <- .ui$ebe
-    # - $message Message for display
-    env$message <- ""
-    # - $est estimation method
-    env$est <- "nonmem2rx"
-    # - $ofvType (optional) tells the type of ofv is currently being used
-    #env$ofvType
-    env$ofvType <- .ui$nonmemObjfType
-    # Add parameter history
-    # a posthoc run (MAXEVALS=0) has no parameter history
-    .parHist <- .ui$nonmemParHistory
-    if (!is.null(.parHist)) {
-      env$parHistData <- .parHist
-    }
-    env$nobs <- x$dfObs
-    env$nobs2<- x$dfObs
-    # Run before converting to nonmemControl
-    .objf <- .ui$nonmemObjf
-    # Start from the imported etas; otherwise nlmixr2est may start from
-    # the etas of the last nlmixr2() fit (like the one run for the FOCEi
-    # objective of an earlier import with tableControl(cwres=TRUE))
-    env$etaMat <- .importEtaMat(.ui, env$etaObf, length(unique(env$dataSav$ID)))
-    # When running the focei problem to create the nlmixr object, you also need a
-    #  foceiControl object
-    .nonmem2rxToFoceiControl(env, x, TRUE)
-    .ofvType <- env$ofvType
-    .ret <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData,
-                                                  control=env$control, table=env$table,
-                                                  env=env, est="nonmem2rx")
-    if (inherits(.ret, "nlmixr2FitData")) {
-      # nlmixr2CreateOutputFromUi() may add its own objective (like FOCEi
-      # with tableControl(cwres=TRUE)) and make it the one in use; keep
-      # the imported NONMEM objective in use, like the fit itself (#94)
-      if (any(row.names(.ret$objDf) == .ofvType)) {
-        nlmixr2est::setOfv(.ret, .ofvType)
+      class(.ui) <- class(.oldUi)
+      # - $table for table options -- already present
+      env$table <- table
+      env$origData <- x$nonmemData
+      nlmixr2est::.foceiPreProcessData(env$origData, env, .ui, rxControl)
+      # - $origData -- Original Data -- already present
+      # - $dataSav -- Processed data from .foceiPreProcessData --already present
+      # - $idLvl -- Level information for ID factor added -- already present
+      env$ui <- .ui
+      # - $ui for ui fullTheta Full theta information
+      env$fullTheta <- .ui$nonmemFullTheta
+      # - $etaObf data frame with ID, etas and OBJI
+      env$etaObf <- .ui$nonmemEtaObf
+      if (is.null(env$etaObf)) {
+        .df <- data.frame(ID = unique(env$dataSav$ID))
+        for (.n in .getEtaNames(.ui)) {
+          .df[[.n]] <- 0
+        }
+        .df[["OBJI"]] <- NA_real_
+        env$etaObf <- .df
+        warning("since NONMEM did not output between subject variability, assuming all ETA(#) are zero", call. = FALSE)
       }
-      assign("nonmemControl", list(ci=ci), .ret$env)
-      .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
-      rm("nonmemControl", envir=.ret$env)
-      .prderrPath <- file.path(x$nonmemExportPath, "PRDERR")
-      .msg$message <- c(.ui$nonmemTransMessage,
-                        .ui$nonmemTermMessage,
-                        .msg$message)
-      if (file.exists(.prderrPath)) {
-        .prderr <- paste(readLines(.prderrPath), collapse="\n")
-        .msg$message <- c(.msg$message,
-                          "there are solving errors during optimization (see '$prderr')")
-        assign("prderr", .prderr, envir=.ret$env)
+      # - $cov For covariance
+      .cov <- .ui$nonmemCovariance
+      if (!is.null(.cov)) {
+        env$cov <- .cov
+        # - $covMethod for the method of calculating the covariance
+        env$covMethod <- "nonmem2rx"
       }
-      .msg$message <- c(.msg$message, paste0("nonmem2rx model file: '", x$file, "'"))
-      assign("message", paste(.msg$message, collapse="\n    "), envir=.ret$env)
-    }
-    .time <- get("time", .ret$env)
-    .time <- .time[,!(names(.time) %in% c("optimize", "covariance"))]
-    assign("time",
-           cbind(.time, data.frame(NONMEM=.ui$nonmemRunTime)),
-           .ret$env)
-    .ret
-  }, env=env)
+      # - $objective objective function value
+      env$objective <- .ui$nonmemObjf
+      # - $extra Extra print information
+      env$extra <- paste0(" reading NONMEM ver ", env$ui$nonmemOutputVersion)
+      # - $method Estimation method (for printing)
+      env$method <- "nonmem2rx"
+      # - $omega Omega matrix
+      env$omega <- .ui$nonmemOutputOmega
+      # - $theta Is a theta data frame
+      env$theta <- .ui$nonmemThetaDf
+      # - $model a list of model information for table generation.  Needs a `predOnly` model
+      env$model <- .ui$ebe
+      # - $message Message for display
+      env$message <- ""
+      # - $est estimation method
+      env$est <- "nonmem2rx"
+      # - $ofvType (optional) tells the type of ofv is currently being used
+      #env$ofvType
+      env$ofvType <- .ui$nonmemObjfType
+      # Add parameter history
+      # a posthoc run (MAXEVALS=0) has no parameter history
+      .parHist <- .ui$nonmemParHistory
+      if (!is.null(.parHist)) {
+        env$parHistData <- .parHist
+      }
+      env$nobs <- x$dfObs
+      env$nobs2 <- x$dfObs
+      # Run before converting to nonmemControl
+      .objf <- .ui$nonmemObjf
+      # Start from the imported etas; otherwise nlmixr2est may start from
+      # the etas of the last nlmixr2() fit (like the one run for the FOCEi
+      # objective of an earlier import with tableControl(cwres=TRUE))
+      env$etaMat <- .importEtaMat(.ui, env$etaObf, length(unique(env$dataSav$ID)))
+      # When running the focei problem to create the nlmixr object, you also need a
+      #  foceiControl object
+      .nonmem2rxToFoceiControl(env, x, TRUE)
+      .ofvType <- env$ofvType
+      .ret <- nlmixr2est::nlmixr2CreateOutputFromUi(
+        env$ui,
+        data = env$origData,
+        control = env$control,
+        table = env$table,
+        env = env,
+        est = "nonmem2rx"
+      )
+      if (inherits(.ret, "nlmixr2FitData")) {
+        # nlmixr2CreateOutputFromUi() may add its own objective (like FOCEi
+        # with tableControl(cwres=TRUE)) and make it the one in use; keep
+        # the imported NONMEM objective in use, like the fit itself (#94)
+        if (any(row.names(.ret$objDf) == .ofvType)) {
+          nlmixr2est::setOfv(.ret, .ofvType)
+        }
+        assign("nonmemControl", list(ci = ci), .ret$env)
+        .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
+        rm("nonmemControl", envir = .ret$env)
+        .prderrPath <- file.path(x$nonmemExportPath, "PRDERR")
+        .msg$message <- c(.ui$nonmemTransMessage, .ui$nonmemTermMessage, .msg$message)
+        if (file.exists(.prderrPath)) {
+          .prderr <- paste(readLines(.prderrPath), collapse = "\n")
+          .msg$message <- c(.msg$message, "there are solving errors during optimization (see '$prderr')")
+          assign("prderr", .prderr, envir = .ret$env)
+        }
+        .msg$message <- c(.msg$message, paste0("nonmem2rx model file: '", x$file, "'"))
+        assign("message", paste(.msg$message, collapse = "\n    "), envir = .ret$env)
+      }
+      .time <- get("time", .ret$env)
+      .time <- .time[, !(names(.time) %in% c("optimize", "covariance"))]
+      assign("time", cbind(.time, data.frame(NONMEM = .ui$nonmemRunTime)), .ret$env)
+      .ret
+    },
+    env = env
+  )
 }
