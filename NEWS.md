@@ -1,5 +1,9 @@
 # babelmixr2 0.1.11.9000
 
+* An empty Monolix administration table builds its `type` factor with
+  `factor(levels=)` instead of `structure(.Label=)`, which R-devel's
+  `R CMD check` flags as deprecated.
+
 * `simplifyUnit()` and `modelUnitConversion()` work without the
   suggested packages testthat and units installed: `simplifyUnit()`
   checked its arguments with checkmate's `expect_*()` (testthat
