@@ -1,15 +1,14 @@
 # babelmixr2 0.1.11.9000
 
 * `as.nlmixr2()` of a nonmem2rx import solves with
-  `rxControl(nonmem = TRUE, addlKeepsCov = FALSE)` when rxode2 supports
-  it (nlmixr2/rxode2#1429), the way nonmem2rx validates the import.
+  `rxControl(nonmem = TRUE, addlKeepsCov = FALSE)`, the way nonmem2rx
+  validates the import, when rxode2 supports it (nlmixr2/rxode2#1429)
+  and nlmixr2est keeps it through its fits (nlmixr2/nlmixr2est#1167).
   Statements that do not depend on a state (NONMEM's `$PK`) then read
   `TIME` as the time of the record ending each interval, like NONMEM,
   instead of the continuous time; for `TIME` in `$PK` the IPRED
   difference to NONMEM goes from 21.8% to 0.004% (#252).  Models with
-  `delay()` keep the continuous time.  nlmixr2est needs to load the
-  model with `rxS(pkTime = TRUE)` (nlmixr2/nlmixr2est#1167) for the
-  FOCEi evaluation to use the record time too.
+  `delay()` keep the continuous time.
 
 * Monolix imports (`as.nlmixr2()` of a monolix2rx model) no longer fail
   when the project's steady-state dose count (`nbdoses`) is below 6:

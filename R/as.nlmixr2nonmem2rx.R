@@ -12,16 +12,37 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
   stop("cannot find nonmem2rx related control object", call.=FALSE)
 }
 
+#' Does the installed nlmixr2est keep the `$PK` record time?
+#'
+#' With `rxControl(nonmem = TRUE)` (nlmixr2/rxode2#1429), statements that
+#' do not depend on a state (NONMEM's `$PK`) read `time` as the time of
+#' the data record that ends the interval being integrated, the way
+#' NONMEM evaluates `$PK` at its records.  nlmixr2est only keeps that
+#' time through its symengine models and table solves when it loads
+#' them with `rxode2::rxS(pkTime = TRUE)` (nlmixr2/nlmixr2est#1167);
+#' without it the objective would use the record time while IPRED and
+#' CWRES use the continuous time.  nlmixr2est has no version with it
+#' yet, so this checks for its `.rxSHasPkTime()`, which is `TRUE` only
+#' when rxode2 supports `rxS(pkTime = TRUE)` too.
+#'
+#' @return logical
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmem2rxHasNonmemSolve <- function() {
+  if (!any(names(formals(rxode2::rxSolve)) == "nonmem")) {
+    return(FALSE)
+  }
+  .hasPkTime <- get0(".rxSHasPkTime", envir = asNamespace("nlmixr2est"),
+                     mode = "function", inherits = FALSE)
+  !is.null(.hasPkTime) && isTRUE(.hasPkTime())
+}
+
 #' Should a nonmem2rx import be solved with `rxControl(nonmem = TRUE)`?
 #'
-#' With `nonmem = TRUE` (nlmixr2/rxode2#1429), statements that do not
-#' depend on a state (NONMEM's `$PK`) read `time` as the time of the
-#' data record that ends the interval being integrated, the way NONMEM
-#' evaluates `$PK` at its records.  Older rxode2 versions do not have
-#' the option.  rxode2 treats a `delay()` assigned outside of `d/dt()`
-#' as such a statement, so models with `delay()` (nonmem2rx's delay
-#' differential equation translations) keep the continuous time, as
-#' does a model whose code cannot be checked.  This mirrors how
+#' rxode2 treats a `delay()` assigned outside of `d/dt()` as a statement
+#' that does not depend on a state, so models with `delay()` (nonmem2rx's
+#' delay differential equation translations) keep the continuous time,
+#' as does a model whose code cannot be checked.  This mirrors how
 #' nonmem2rx validates the import.
 #'
 #' @param model rxode2 ui of the imported model
@@ -29,7 +50,7 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
 #' @noRd
 #' @author Matthew L. Fidler
 .nonmem2rxUseNonmemSolve <- function(model) {
-  if (!any(names(formals(rxode2::rxSolve)) == "nonmem")) {
+  if (!.nonmem2rxHasNonmemSolve()) {
     return(FALSE)
   }
   .code <- try(rxode2::rxNorm(model), silent = TRUE)
