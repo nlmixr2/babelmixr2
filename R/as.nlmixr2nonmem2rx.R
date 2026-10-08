@@ -12,14 +12,47 @@ nmObjGetControl.nonmem2rx <- function(x, ...) {
   stop("cannot find nonmem2rx related control object", call.=FALSE)
 }
 
+#' Should a nonmem2rx import be solved with `rxControl(nonmem = TRUE)`?
+#'
+#' With `nonmem = TRUE` (nlmixr2/rxode2#1429), statements that do not
+#' depend on a state (NONMEM's `$PK`) read `time` as the time of the
+#' data record that ends the interval being integrated, the way NONMEM
+#' evaluates `$PK` at its records.  Older rxode2 versions do not have
+#' the option.  rxode2 treats a `delay()` assigned outside of `d/dt()`
+#' as such a statement, so models with `delay()` (nonmem2rx's delay
+#' differential equation translations) keep the continuous time, as
+#' does a model whose code cannot be checked.  This mirrors how
+#' nonmem2rx validates the import.
+#'
+#' @param model rxode2 ui of the imported model
+#' @return logical
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmem2rxUseNonmemSolve <- function(model) {
+  if (!any(names(formals(rxode2::rxControl)) == "nonmem")) {
+    return(FALSE)
+  }
+  .code <- try(rxode2::rxNorm(model), silent = TRUE)
+  if (inherits(.code, "try-error")) {
+    return(FALSE)
+  }
+  !any(grepl("\\bdelay\\(", .code))
+}
+
 .nonmem2rxToFoceiControl <- function(env, model, assign=FALSE) {
-  .rxControl <- rxode2::rxControl(covsInterpolation="nocb",
-                                  atol=model$atol,
-                                  rtol=model$rtol,
-                                  ssRtol=model$ssRtol,
-                                  ssAtol=model$ssAtol,
-                                  method="lsoda",
-                                  safeZero=FALSE)
+  .args <- list(covsInterpolation="nocb",
+                atol=model$atol,
+                rtol=model$rtol,
+                ssRtol=model$ssRtol,
+                ssAtol=model$ssAtol,
+                method="lsoda",
+                safeZero=FALSE)
+  if (.nonmem2rxUseNonmemSolve(model)) {
+    # $PK statements read the record time and covariates between ADDL
+    # doses are not carried from the dose, like NONMEM (#252)
+    .args <- c(.args, list(nonmem=TRUE, addlKeepsCov=FALSE))
+  }
+  .rxControl <- do.call(rxode2::rxControl, .args)
   .foceiControl <- nlmixr2est::foceiControl(rxControl=.rxControl,
                                             maxOuterIterations = 0L, maxInnerIterations = 0L,
                                             etaMat = env$etaMat,
