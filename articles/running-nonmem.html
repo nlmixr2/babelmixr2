@@ -212,7 +212,7 @@ anyway:</p>
 <span><span class="co">#&gt; → finding duplicate expressions in EBE model...</span></span>
 <span><span class="co">#&gt; → compiling EBE model...</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
-<span><span class="co">#&gt; rxode2 5.1.9 using 2 threads (see ?getRxThreads)</span></span>
+<span><span class="co">#&gt; rxode2 5.1.8 using 2 threads (see ?getRxThreads)</span></span>
 <span><span class="co">#&gt;   no cache: create with `rxCreateCache()`</span></span>
 <span><span class="co">#&gt; → Calculating residuals/tables</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
@@ -260,7 +260,7 @@ object:</p>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Time (sec </span><span style="color: #0000BB; font-weight: bold;">$time</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;             setup preprocess postprocess table compress NONMEM</span></span>
-<span><span class="co">#&gt; elapsed 0.6565865       0.02       0.013 0.027     0.01 320.27</span></span>
+<span><span class="co">#&gt; elapsed 0.8581132      0.036       0.025  0.05    0.015 320.27</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">── Population Parameters (</span><span style="color: #0000BB; font-weight: bold;">$parFixed</span><span style="font-weight: bold;"> or </span><span style="color: #0000BB; font-weight: bold;">$parFixedDf</span><span style="font-weight: bold;">): ──</span></span></span>
 <span><span class="co">#&gt; </span></span>
@@ -349,49 +349,50 @@ wanted to add a covariance step you can with
 <span><span class="co">#&gt; → compiling events FD model...</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> done</span></span>
 <span><span class="co">#&gt; calculating covariance matrix</span></span>
-<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:00:09</span></span>
+<span><span class="co">#&gt; [====|====|====|====|====|====|====|====|====|====] 0:02:09</span></span>
 <span><span class="co">#&gt; Warning in foceiFitCpp_(.ret): using R matrix to calculate covariance, can</span></span>
 <span><span class="co">#&gt; check sandwich or S matrix with $covRS and $covS</span></span>
 <span><span class="co">#&gt; Warning in foceiFitCpp_(.ret): gradient problems with covariance; see</span></span>
 <span><span class="co">#&gt; $scaleInfo</span></span>
+<span><span class="co">#&gt; Warning: "r,s (full)" covariance needs a positive-definite R; kept "r"</span></span>
 <span><span class="co">#&gt; → compress origData in nlmixr2 object, save 27800</span></span>
 <span><span class="co">#&gt; Updated original fit object <span style="color: #BBBB00;">f</span></span></span>
 <span><span class="co">#&gt;                    tktr           tka           tcl            tv      prop.err</span></span>
-<span><span class="co">#&gt; tktr       9.438963e-03 -7.566105e-03 -8.391453e-06  1.638125e-04 -7.616849e-05</span></span>
-<span><span class="co">#&gt; tka       -7.566105e-03  9.434620e-03 -1.107997e-05  1.641275e-04 -7.568561e-05</span></span>
-<span><span class="co">#&gt; tcl       -8.391453e-06 -1.107997e-05  1.331091e-04  3.188611e-06 -6.762396e-06</span></span>
-<span><span class="co">#&gt; tv         1.638125e-04  1.641275e-04  3.188611e-06  1.585240e-04  7.586524e-06</span></span>
-<span><span class="co">#&gt; prop.err  -7.616849e-05 -7.568561e-05 -6.762396e-06  7.586524e-06  9.985179e-05</span></span>
-<span><span class="co">#&gt; pkadd.err  2.303286e-04  2.259924e-04  1.525928e-04 -2.635294e-05 -2.818821e-04</span></span>
-<span><span class="co">#&gt; temax      5.404351e-05  9.665538e-04 -3.265200e-04  4.443833e-04  3.421248e-05</span></span>
-<span><span class="co">#&gt; tec50      5.244441e-05  6.812173e-05 -1.929679e-04  6.422705e-05  1.591468e-05</span></span>
-<span><span class="co">#&gt; tkout      4.907512e-05  4.613610e-05 -5.420575e-05  6.020930e-05  7.931552e-06</span></span>
-<span><span class="co">#&gt; te0        7.120918e-06  6.412089e-06 -5.420980e-06  6.270989e-06  6.083454e-07</span></span>
-<span><span class="co">#&gt; pdadd.err  2.478591e-04  2.453652e-04 -1.536594e-04  2.027390e-04  1.793269e-05</span></span>
+<span><span class="co">#&gt; tktr       5.078510e-02  0.0067250411  6.172156e-04 -1.164976e-03  8.183599e-04</span></span>
+<span><span class="co">#&gt; tka        6.725041e-03  0.0509768602  6.241782e-04 -1.167342e-03  8.213604e-04</span></span>
+<span><span class="co">#&gt; tcl        6.172156e-04  0.0006241782  2.679180e-03 -7.109365e-05  1.817442e-04</span></span>
+<span><span class="co">#&gt; tv        -1.164976e-03 -0.0011673424 -7.109365e-05  1.967741e-03  1.230291e-06</span></span>
+<span><span class="co">#&gt; prop.err   8.183599e-04  0.0008213604  1.817442e-04  1.230291e-06  1.632777e-04</span></span>
+<span><span class="co">#&gt; pkadd.err -1.193408e-02 -0.0119834360 -8.648764e-04  1.033194e-03 -8.402040e-04</span></span>
+<span><span class="co">#&gt; temax      4.622916e-03  0.0046745387 -5.487416e-04  7.148922e-04  2.117864e-04</span></span>
+<span><span class="co">#&gt; tec50      1.009960e-03  0.0010117501 -1.204087e-04  5.305618e-06  6.081750e-05</span></span>
+<span><span class="co">#&gt; tkout     -9.560846e-05 -0.0000920118 -2.716814e-05  8.737889e-05  5.945345e-06</span></span>
+<span><span class="co">#&gt; te0        3.498748e-05  0.0000346659 -2.920670e-06  3.126282e-06  1.617468e-06</span></span>
+<span><span class="co">#&gt; pdadd.err  6.353920e-03  0.0063651920  3.681236e-04 -2.279479e-04  3.071237e-04</span></span>
 <span><span class="co">#&gt;               pkadd.err         temax         tec50         tkout           te0</span></span>
-<span><span class="co">#&gt; tktr       2.303286e-04  5.404351e-05  5.244441e-05  4.907512e-05  7.120918e-06</span></span>
-<span><span class="co">#&gt; tka        2.259924e-04  9.665538e-04  6.812173e-05  4.613610e-05  6.412089e-06</span></span>
-<span><span class="co">#&gt; tcl        1.525928e-04 -3.265200e-04 -1.929679e-04 -5.420575e-05 -5.420980e-06</span></span>
-<span><span class="co">#&gt; tv        -2.635294e-05  4.443833e-04  6.422705e-05  6.020930e-05  6.270989e-06</span></span>
-<span><span class="co">#&gt; prop.err  -2.818821e-04  3.421248e-05  1.591468e-05  7.931552e-06  6.083454e-07</span></span>
-<span><span class="co">#&gt; pkadd.err  2.916072e-03 -6.483022e-04 -2.468123e-04 -8.321612e-05 -7.742348e-06</span></span>
-<span><span class="co">#&gt; temax     -6.483022e-04  3.800252e+00  2.402185e-02 -9.570953e-03 -2.240365e-04</span></span>
-<span><span class="co">#&gt; tec50     -2.468123e-04  2.402185e-02  9.372351e-04  8.486017e-05 -6.716487e-05</span></span>
-<span><span class="co">#&gt; tkout     -8.321612e-05 -9.570953e-03  8.486017e-05  3.188372e-04  2.636143e-05</span></span>
-<span><span class="co">#&gt; te0       -7.742348e-06 -2.240365e-04 -6.716487e-05  2.636143e-05  4.424416e-05</span></span>
-<span><span class="co">#&gt; pdadd.err -8.642045e-05 -2.281107e-02  1.705815e-04  1.978084e-04  1.571583e-05</span></span>
+<span><span class="co">#&gt; tktr      -1.193408e-02  0.0046229160  1.009960e-03 -9.560846e-05  3.498748e-05</span></span>
+<span><span class="co">#&gt; tka       -1.198344e-02  0.0046745387  1.011750e-03 -9.201180e-05  3.466590e-05</span></span>
+<span><span class="co">#&gt; tcl       -8.648764e-04 -0.0005487416 -1.204087e-04 -2.716814e-05 -2.920670e-06</span></span>
+<span><span class="co">#&gt; tv         1.033194e-03  0.0007148922  5.305618e-06  8.737889e-05  3.126282e-06</span></span>
+<span><span class="co">#&gt; prop.err  -8.402040e-04  0.0002117864  6.081750e-05  5.945345e-06  1.617468e-06</span></span>
+<span><span class="co">#&gt; pkadd.err  9.930171e-03 -0.0018487223 -7.164673e-04 -4.403226e-05 -1.757569e-05</span></span>
+<span><span class="co">#&gt; temax     -1.848722e-03  6.2869980896  4.462461e-02 -1.457502e-02 -1.851239e-04</span></span>
+<span><span class="co">#&gt; tec50     -7.164673e-04  0.0446246082  7.140085e-03  9.235087e-05 -6.683182e-05</span></span>
+<span><span class="co">#&gt; tkout     -4.403226e-05 -0.0145750175  9.235087e-05  6.263912e-04  2.989766e-05</span></span>
+<span><span class="co">#&gt; te0       -1.757569e-05 -0.0001851239 -6.683182e-05  2.989766e-05  1.342166e-04</span></span>
+<span><span class="co">#&gt; pdadd.err -4.537929e-03 -0.0363764206  7.041380e-04  2.730351e-04  3.552082e-05</span></span>
 <span><span class="co">#&gt;               pdadd.err</span></span>
-<span><span class="co">#&gt; tktr       2.478591e-04</span></span>
-<span><span class="co">#&gt; tka        2.453652e-04</span></span>
-<span><span class="co">#&gt; tcl       -1.536594e-04</span></span>
-<span><span class="co">#&gt; tv         2.027390e-04</span></span>
-<span><span class="co">#&gt; prop.err   1.793269e-05</span></span>
-<span><span class="co">#&gt; pkadd.err -8.642045e-05</span></span>
-<span><span class="co">#&gt; temax     -2.281107e-02</span></span>
-<span><span class="co">#&gt; tec50      1.705815e-04</span></span>
-<span><span class="co">#&gt; tkout      1.978084e-04</span></span>
-<span><span class="co">#&gt; te0        1.571583e-05</span></span>
-<span><span class="co">#&gt; pdadd.err  3.897518e-02</span></span></code></pre></div>
+<span><span class="co">#&gt; tktr       6.353920e-03</span></span>
+<span><span class="co">#&gt; tka        6.365192e-03</span></span>
+<span><span class="co">#&gt; tcl        3.681236e-04</span></span>
+<span><span class="co">#&gt; tv        -2.279479e-04</span></span>
+<span><span class="co">#&gt; prop.err   3.071237e-04</span></span>
+<span><span class="co">#&gt; pkadd.err -4.537929e-03</span></span>
+<span><span class="co">#&gt; temax     -3.637642e-02</span></span>
+<span><span class="co">#&gt; tec50      7.041380e-04</span></span>
+<span><span class="co">#&gt; tkout      2.730351e-04</span></span>
+<span><span class="co">#&gt; te0        3.552082e-05</span></span>
+<span><span class="co">#&gt; pdadd.err  5.311022e-02</span></span></code></pre></div>
 <p><code>nlmixr2</code> is more generous in what constitutes a
 covariance step. The <code>r,s</code> covariance matrix is the “most”
 successful covariance step for <code>focei</code>, but the system will

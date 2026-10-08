@@ -70,8 +70,6 @@ mod <- nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
 #> ℹ getting information from  '/home/runner/work/_temp/Library/nonmem2rx/mods/cpt/runODE032.ctl'
 #> ℹ reading in xml file
 #> ℹ done
-#> ℹ reading in ext file
-#> ℹ done
 #> ℹ reading in phi file
 #> ℹ done
 #> ℹ reading in lst file
@@ -196,7 +194,7 @@ fit <- as.nlmixr2(new)
 #>  
 #>  
 #> ✔ done
-#> rxode2 5.1.9 using 2 threads (see ?getRxThreads)
+#> rxode2 5.1.8 using 2 threads (see ?getRxThreads)
 #>   no cache: create with `rxCreateCache()`
 #> → Calculating residuals/tables
 #> ✔ done
@@ -212,7 +210,7 @@ print(fit)
 #> ── Time (sec $time): ──
 #> 
 #>             setup postprocess table compress NONMEM as.nlmixr2
-#> elapsed 0.5822312        0.01 0.026        0 100.95        0.7
+#> elapsed 0.8369588       0.019 0.046    0.001 100.95      1.094
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 

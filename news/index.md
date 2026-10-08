@@ -2,6 +2,24 @@
 
 ## babelmixr2 0.1.11.9000
 
+- Monolix imports
+  ([`as.nlmixr2()`](https://nlmixr2.github.io/babelmixr2/reference/as.nlmixr2.md)
+  of a monolix2rx model) no longer fail when the project’s steady-state
+  dose count (`nbdoses`) is below 6: `minSS`/`maxSS` come from
+  monolix2rx’s `.getSsLimits()`, raised to rxode2’s floor of 5 and 7.
+
+- [`simplifyUnit()`](https://nlmixr2.github.io/babelmixr2/reference/simplifyUnit.md)
+  and
+  [`modelUnitConversion()`](https://nlmixr2.github.io/babelmixr2/reference/modelUnitConversion.md)
+  work without the suggested packages testthat and units installed:
+  [`simplifyUnit()`](https://nlmixr2.github.io/babelmixr2/reference/simplifyUnit.md)
+  checked its arguments with checkmate’s `expect_*()` (testthat
+  expectations) instead of `assert_*()`, and both now ask for units with
+  [`rxode2::rxReq()`](https://nlmixr2.github.io/rxode2/reference/rxReq.html).
+  Their examples run only when units is installed, and the PKNCA and
+  saemix tests skip when those packages are not installed (CRAN’s
+  noSuggests check).
+
 - Monolix (fourth stress kit run): `EQUATION:` only has assignments and
   conditions, so PK macros there were rejected. The model lines before
   the ODEs (with the compartment properties the macros use) are now

@@ -39,7 +39,6 @@ Other Unit conversion:
 
 ``` r
 modelUnitConversion(dvu = "ng/mL", amtu = "mg", timeu = "hr", volumeu = "L")
-#> Loading required namespace: testthat
 #> $amtu
 #> [1] "mg"
 #> 

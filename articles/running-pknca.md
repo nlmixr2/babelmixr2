@@ -33,7 +33,7 @@ library(nlmixr2)
 #> ★ nlmixr2est      7.1.0           ◯ nlmixr2rpt      0.2.3      
 #> ★ nlmixr2extra    5.2.1           ◯ nlmixr2targets  0.1.0      
 #> ★ nlmixr2plot     5.2.0           ◯ nonmem2rx       0.1.12     
-#> ★ rxode2          5.1.9           ◯ pmxNODE         0.2.1      
+#> ★ rxode2          5.1.8           ◯ pmxNODE         0.2.1      
 #> ◯ admixr2         0.4.1           ◯ PopED           0.7.0      
 #> ◯ babelmixr2      0.1.11.9000     ◯ posologyr       1.2.8      
 #> ◯ FME             1.3.6.4         ◯ shinyMixR       0.5.3      
@@ -88,7 +88,6 @@ prepared <-
   )
 #> ℹ parameter labels from comments are typically ignored in non-interactive mode
 #> ℹ Need to run with the source intact to parse comments
-#> Loading required namespace: testthat
 #> ℹ change initial estimate (0.89314878960486) and upper/lower bound (-3.50655789731998 to 3.72508541597241) of `tka`
 #> → significant model change detected
 #> → removed from model: '$getSplitModel'
