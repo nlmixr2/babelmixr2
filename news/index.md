@@ -2,6 +2,10 @@
 
 ## babelmixr2 0.1.11.9000
 
+- An empty Monolix administration table builds its `type` factor with
+  `factor(levels=)` instead of `structure(.Label=)`, which R-devel’s
+  `R CMD check` flags as deprecated.
+
 - Monolix imports
   ([`as.nlmixr2()`](https://nlmixr2.github.io/babelmixr2/reference/as.nlmixr2.md)
   of a monolix2rx model) no longer fail when the project’s steady-state
