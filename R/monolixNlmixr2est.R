@@ -291,7 +291,7 @@
   if (length(.tmp$adm) == 0) {
     .tmp <- structure(list(adm = integer(0),
                            cmt = integer(0),
-                           type = structure(integer(0), .Label = c("empty", "modelRate", "modelDur", "infusion", "bolus"), class = "factor"),
+                           type = factor(character(0), levels = c("empty", "modelRate", "modelDur", "infusion", "bolus")),
                            f = double(0),
                            dur=double(0),
                            lag=double(0),
