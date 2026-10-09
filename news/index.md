@@ -2,6 +2,18 @@
 
 ## babelmixr2 0.1.11.9000
 
+- [`as.nlmixr2()`](https://nlmixr2.github.io/babelmixr2/reference/as.nlmixr2.md)
+  of a nonmem2rx import solves with
+  `rxControl(nonmem = TRUE, addlKeepsCov = FALSE)`, the way nonmem2rx
+  validates the import, when rxode2 supports it (nlmixr2/rxode2#1429)
+  and nlmixr2est keeps it through its fits (nlmixr2/nlmixr2est#1167).
+  Statements that do not depend on a state (NONMEM’s `$PK`) then read
+  `TIME` as the time of the record ending each interval, like NONMEM,
+  instead of the continuous time; for `TIME` in `$PK` the IPRED
+  difference to NONMEM goes from 21.8% to 0.004%
+  ([\#252](https://github.com/nlmixr2/babelmixr2/issues/252)). Models
+  with `delay()` keep the continuous time.
+
 - An empty Monolix administration table builds its `type` factor with
   `factor(levels=)` instead of `structure(.Label=)`, which R-devel’s
   `R CMD check` flags as deprecated.
