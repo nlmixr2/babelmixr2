@@ -1,5 +1,8 @@
 # babelmixr2 0.1.11.9000
 
+* An empty Monolix administration table builds its `type` factor with
+  `factor(levels=)` instead of `structure(.Label=)`, which R-devel's
+  `R CMD check` flags as deprecated.
 * Monolix imports (`as.nlmixr2()` of a monolix2rx model) no longer fail
   when the project's steady-state dose count (`nbdoses`) is below 6:
   `minSS`/`maxSS` come from monolix2rx's `.getSsLimits()`, raised to
