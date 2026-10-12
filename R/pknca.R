@@ -194,7 +194,7 @@ nlmixr2Est.pknca <- function(env, ...) {
     newEnv <-
       eval(str2lang(
         sprintf(
-          "rxode2::model(newEnv, %s <- %g*%s)",
+          "rxode2::model(newEnv, %s <- %g*(%s))",
           dvParam,
           1 / unitConversions[["cmax"]],
           deparse1(dvAssign[[1]][[3]])

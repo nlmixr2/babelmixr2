@@ -1,5 +1,8 @@
 # babelmixr2 0.1.11.9000
 
+* `est="pknca"` unit conversion scales the whole DV expression, so an
+  additive term (like a baseline) is converted too (#236)
+
 * `as.nlmixr2()` of a nonmem2rx import solves with
   `rxControl(nonmem = TRUE, addlKeepsCov = FALSE)`, the way nonmem2rx
   validates the import, when rxode2 supports it (nlmixr2/rxode2#1429)

@@ -1619,3 +1619,47 @@ test_that("est='pknca' multiple-dose oral without dose-time conc (#102)", {
   expect_lt(abs(fe[["lcl"]] - trueCl), 0.5)
   expect_lt(abs(fe[["lv"]] - trueV), 0.5)
 })
+
+test_that("unit conversion scales the whole DV expression (#236)", {
+  mod <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      bsl <- 0.5
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      prop.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / v * center
+      cp <- center / v + bsl
+      cp ~ prop(prop.sd)
+    })
+  }
+  dMod <- nlmixr2data::theo_sd
+  dModNoZero <- dMod[(dMod$DV != 0 & dMod$EVID == 0) | (dMod$EVID == 101), ]
+  suppressMessages(
+    fit <- nlmixr(
+      mod,
+      data = dModNoZero,
+      est = "pknca",
+      control = pkncaControl(
+        concu = "ng/mL",
+        doseu = "mg",
+        timeu = "hr",
+        volumeu = "L"
+      )
+    )
+  )
+  # the factor applies to every term, not only the first
+  expect_equal(
+    getDvLines(fit$ui$fun, dvAssign = "cp")[[1]],
+    str2lang("cp <- 0.001 * (center / v + bsl)")
+  )
+})
