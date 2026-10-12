@@ -77,7 +77,10 @@
     return(character(0))
   }
   .s <- state[adm$cmt[.w]]
-  unique(paste0("   rx_tk0_", .s, " = amtDose/", adm$rate[.w]))
+  # rxode2 keeps the modeled rate and scales the amount by f, so the
+  # duration is f*amt/rate; p= scales the amount again with Tk0 fixed
+  .f <- ifelse(is.na(adm$f[.w]), "", paste0(adm$f[.w], "*"))
+  unique(paste0("   rx_tk0_", .s, " = ", .f, "amtDose/", adm$rate[.w]))
 }
 
 #' Write the PK macros after the variables they use

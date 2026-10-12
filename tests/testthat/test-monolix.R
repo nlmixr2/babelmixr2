@@ -801,6 +801,36 @@ test_that("Monolix files from the stress kit run", {
     .f$mlxtran,
     fixed = TRUE
   )))
+  # a modeled rate with f(): rxode2 keeps the rate and scales the amount,
+  # so the duration is f*amt/rate (#239)
+  .fr <- function() {
+    ini({
+      tcl <- log(4)
+      tv <- log(40)
+      eta.cl ~ 0.1
+      eta.v ~ 0.1
+      prop.sd <- 0.1
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      f(central) <- 0.5
+      rate(central) <- 10
+      d/dt(central) <- -cl / v * central
+      cp <- central / v
+      cp ~ prop(prop.sd)
+    })
+  }
+  .ev <- rxode2::et(amt = 500, cmt = "central", rate = -1) |>
+    rxode2::et(c(0.5, 1, 2, 4, 8, 12, 24)) |>
+    rxode2::et(id = 1:4)
+  .d <- as.data.frame(.ev)
+  .d$dv <- ifelse(.d$evid == 0, 5, NA)
+  .f <- .files(.fr, .d, "mr")
+  expect_true(any(grepl(
+    "^ *rx_tk0_central = rx_f_central\\*amtDose/rx_rate_central$",
+    .f$model
+  )))
 })
 
 test_that("Monolix covariance without the fixed parameters", {
