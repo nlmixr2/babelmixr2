@@ -68,6 +68,7 @@ rxUiGet.nonmemModel <- function(x, ...) {
   # reserved names are renamed once for the whole control stream so
   # $INPUT, $MODEL and the abbreviated code agree
   rxode2::rxAssignControlValue(.ui, ".nmVarResNum", 1)
+  rxode2::rxAssignControlValue(.ui, ".nmGetVarCaseDf", NULL)
   rxode2::rxAssignControlValue(
     .ui,
     ".nmGetVarReservedDf",

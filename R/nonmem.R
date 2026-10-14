@@ -461,6 +461,47 @@ rex::register_shortcuts("babelmixr2")
   nm
 }
 
+#' NONMEM names of model names that differ only by case
+#'
+#' Names like `wt` and `WT` are both `WT` in NONMEM.  The map is made
+#' once for the whole control stream (data file, `$INPUT`, `$PK`, `$DES`
+#' and `$ERROR`), so it does not depend on which name is seen first.  The
+#' name already in upper case (or else the first in sort order) keeps it;
+#' the others become `RXC001`, `RXC002`, ...
+#'
+#' @param ui rxode2 ui
+#' @return data frame with `var` and `nm`
+#' @noRd
+.nmGetVarCaseDf <- function(ui) {
+  .case <- rxode2::rxGetControl(ui, ".nmGetVarCaseDf", NULL)
+  if (!is.null(.case)) {
+    return(.case)
+  }
+  .all <- tryCatch(
+    {
+      .mv <- rxode2::rxModelVars(ui)
+      sort(unique(c(ui$allCovs, .mv$params, .mv$lhs)))
+    },
+    error = function(e) character(0)
+  )
+  .up <- gsub(".", "_", toupper(.all), fixed = TRUE)
+  .case <- data.frame(var = character(0), nm = character(0))
+  .num <- 1L
+  for (.u in unique(.up[duplicated(.up)])) {
+    .g <- .all[.up == .u]
+    .g <- c(.g[.g == .u], .g[.g != .u])
+    for (.v in .g[-1]) {
+      while (sprintf("RXC%03d", .num) %in% .up) {
+        .num <- .num + 1L
+      }
+      .case <- rbind(.case, data.frame(var = .v, nm = sprintf("RXC%03d", .num)))
+      .num <- .num + 1L
+    }
+  }
+  rxode2::rxAssignControlValue(ui, ".nmGetVarCaseDf", .case)
+  .case
+}
+
 #' Gets variable, respecting the many reserved names in NONMEM
 #'
 #'
@@ -497,6 +538,11 @@ rex::register_shortcuts("babelmixr2")
     rxode2::.minfo(paste0("renamed model variable '", var, "' to '", .newVar,
                           "' because '", .uvar, "' collides with a NONMEM reserved name"))
     return(.nmGetVarRegister(var, .newVar, .var, ui))
+  }
+  .case <- .nmGetVarCaseDf(ui)
+  .w <- which(.case$var == var)
+  if (length(.w) == 1) {
+    return(.nmGetVarRegister(var, .case$nm[.w], .var, ui))
   }
   .w <- which(.var$var == var)
   if (length(.w) == 1) return(.var$nm[.w])

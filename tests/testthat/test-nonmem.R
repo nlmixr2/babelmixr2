@@ -1582,3 +1582,44 @@ test_that("NONMEM predictions are back-transformed before comparing", {
   .add <- .ui("add(sd)", "sd <- 0.1")
   expect_equal(.nonmemUntransformPred(.x, NULL, .add), .x)
 })
+
+test_that("NONMEM names differing only by case agree everywhere (#237)", {
+  m <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl) * wt / WT
+      v <- exp(tv)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
+      cp <- central / v * WT / wt
+      cp ~ add(add.sd)
+    })
+  }
+  d <- nlmixr2data::theo_sd
+  d$wt <- d$WT
+  d$WT <- d$WT * 2
+  withr::with_tempdir({
+    suppressMessages(nlmixr2(
+      m,
+      d,
+      "nonmem",
+      nonmemControl(runCommand = NA, modelName = "case")
+    ))
+    .csv <- utils::read.csv(file.path("case-nonmem", "case.csv"))
+    .ctl <- readLines(file.path("case-nonmem", "case.nmctl"))
+  })
+  # WT keeps its name and wt is renamed, in the data and in the code
+  expect_equal(.csv$WT[1], 2 * .csv$RXC001[1])
+  .input <- strsplit(.ctl[grepl("^\\$INPUT", .ctl)], " ")[[1]]
+  expect_true(all(c("WT", "RXC001") %in% .input))
+  expect_true(any(grepl("CL=DEXP(RX__TCL)*RXC001/WT", .ctl, fixed = TRUE)))
+  expect_true(any(grepl("RXE_CL=DEXP(RX__TCL)*RXC001/WT", .ctl, fixed = TRUE)))
+  expect_false(any(grepl("RXE001", .ctl, fixed = TRUE)))
+})
