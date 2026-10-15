@@ -369,7 +369,13 @@ bblDatToMonolix <- function(
   .up <- toupper(covs)
   for (.u in unique(.up[duplicated(.up)])) {
     .w <- which(toupper(names(data)) == .u)
-    if (!all(vapply(.w[-1], function(i) identical(data[[i]], data[[.w[1]]]), logical(1)))) {
+    if (
+      !all(vapply(
+        .w[-1],
+        function(i) isTRUE(all.equal(data[[i]], data[[.w[1]]], check.attributes = FALSE)),
+        logical(1)
+      ))
+    ) {
       stop(
         "data columns '",
         paste(names(data)[.w], collapse = "', '"),
