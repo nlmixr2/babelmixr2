@@ -12,7 +12,7 @@
   .adm <- .monolixGetAdm(ui)
   .cmts <- sort(unique(.adm$cmt))
   .state <- rxode2::rxState(ui)[.cmts]
-  paste(paste0("compartment(cmt=", .cmts, ", amount=", .state, ")"), collapse="\n")
+  paste(paste0("compartment(cmt=", .cmts, ", amount=", .state, ")"), collapse = "\n")
 }
 #' Monolix get PK macros for I
 #'
@@ -31,21 +31,47 @@
   .adm <- adm[i, ]
   .type <- paste(.adm$type)
   if (.type %in% c("bolus", "infusion")) {
-    paste0("depot(type=", .adm$adm, ", target=", state[.adm$cmt],
-           ", Tlag=", ifelse(is.na(.adm$lag), "0", .adm$lag), ", p=",
-           ifelse(is.na(.adm$f), "1", .adm$f), ")")
+    paste0(
+      "depot(type=",
+      .adm$adm,
+      ", target=",
+      state[.adm$cmt],
+      ", Tlag=",
+      ifelse(is.na(.adm$lag), "0", .adm$lag),
+      ", p=",
+      ifelse(is.na(.adm$f), "1", .adm$f),
+      ")"
+    )
   } else if (.type == "modelRate") {
     # macro arguments cannot be calculations: rx_tk0_<state> is
     # amtDose/rate in EQUATION: (see .monolixTk0Lines())
-    paste0("depot(type=", .adm$adm, ", target=", state[.adm$cmt],
-           ", Tk0=rx_tk0_", state[.adm$cmt],
-           ", Tlag=", ifelse(is.na(.adm$lag), "0", .adm$lag), ", p=",
-           ifelse(is.na(.adm$f), "1", .adm$f), ")")
+    paste0(
+      "depot(type=",
+      .adm$adm,
+      ", target=",
+      state[.adm$cmt],
+      ", Tk0=rx_tk0_",
+      state[.adm$cmt],
+      ", Tlag=",
+      ifelse(is.na(.adm$lag), "0", .adm$lag),
+      ", p=",
+      ifelse(is.na(.adm$f), "1", .adm$f),
+      ")"
+    )
   } else if (.type == "modelDur") {
-    paste0("depot(type=", .adm$adm, ", target=", state[.adm$cmt],
-           ", Tk0=", .adm$dur,
-           ", Tlag=", ifelse(is.na(.adm$lag), "0", .adm$lag), ", p=",
-           ifelse(is.na(.adm$f), "1", .adm$f), ")")
+    paste0(
+      "depot(type=",
+      .adm$adm,
+      ", target=",
+      state[.adm$cmt],
+      ", Tk0=",
+      .adm$dur,
+      ", Tlag=",
+      ifelse(is.na(.adm$lag), "0", .adm$lag),
+      ", p=",
+      ifelse(is.na(.adm$f), "1", .adm$f),
+      ")"
+    )
   } else if (.type == "empty") {
     paste0("empty(adm=", .adm$adm, ", target=", state[.adm$cmt], ")")
   }
@@ -59,10 +85,10 @@
 .monolixGetPkMacros <- function(ui) {
   .adm <- .monolixGetAdm(ui)
   .state <- rxode2::rxState(ui)
-  paste(vapply(seq_along(.adm$adm),
-               .monolixGetPkMacrosForI,
-               character(1), adm=.adm, state=.state,
-               USE.NAMES=FALSE), collapse="\n")
+  paste(
+    vapply(seq_along(.adm$adm), .monolixGetPkMacrosForI, character(1), adm = .adm, state = .state, USE.NAMES = FALSE),
+    collapse = "\n"
+  )
 }
 
 #' Infusion durations for modeled rates
@@ -77,7 +103,10 @@
     return(character(0))
   }
   .s <- state[adm$cmt[.w]]
-  unique(paste0("   rx_tk0_", .s, " = amtDose/", adm$rate[.w]))
+  # rxode2 keeps the modeled rate and scales the amount by f, so the
+  # duration is f*amt/rate; p= scales the amount again with Tk0 fixed
+  .f <- ifelse(is.na(adm$f[.w]), "", paste0(adm$f[.w], "*"))
+  unique(paste0("   rx_tk0_", .s, " = ", .f, "amtDose/", adm$rate[.w]))
 }
 
 #' Write the PK macros after the variables they use
@@ -100,12 +129,10 @@
   .ode <- grep("^\\s*ddt_", .lines)
   .at <- if (length(.ode) > 0L) .ode[1] - 1L else length(.lines)
   if (length(.prop) > 0L && max(.prop) > .at) {
-    stop("Monolix needs the compartment properties (f, alag, dur, rate) ",
-         "defined before the ODEs", call. = FALSE)
+    stop("Monolix needs the compartment properties (f, alag, dur, rate) ", "defined before the ODEs", call. = FALSE)
   }
   list(
-    pk = paste0("\n\nPK:\n",
-                paste(c(.lines[seq_len(.at)], macros), collapse = "\n")),
+    pk = paste0("\n\nPK:\n", paste(c(.lines[seq_len(.at)], macros), collapse = "\n")),
     mod = paste(.lines[-seq_len(.at)], collapse = "\n")
   )
 }
@@ -118,25 +145,30 @@ rxUiGet.monolixModel <- function(x, ...) {
   assignInMyNamespace(".monolixResponses", NULL)
   .lstExpr <- .split$modelWithDrop
   .pkmodel <- .monolixPkModel(.ui, .lstExpr)
-  if (!is.null(.pkmodel)) .lstExpr <- .pkmodel$lstExpr
+  if (!is.null(.pkmodel)) {
+    .lstExpr <- .pkmodel$lstExpr
+  }
   # the PK macros (before the ODEs) use the compartment properties, set
   # in every branch (no default assigned before an if)
   .lstExpr <- .monolixPropsBeforeOde(.lstExpr, .ui)
   .lstExpr <- lapply(.lstExpr, .monolixCompleteIfProps)
   # Monolix assigns each variable once
-  .lstExpr <- .monolixSsa(.lstExpr,
-                          defined = c(.split$pureMuRef, .split$taintMuRef,
-                                      .ui$allCovs),
-                          keep = .ui$predDf$var)
+  .lstExpr <- .monolixSsa(
+    .lstExpr,
+    defined = c(.split$pureMuRef, .split$taintMuRef, .ui$allCovs),
+    keep = .ui$predDf$var
+  )
   # first drop the error lines
-  .mainModel <- rxode2::rxCombineErrorLines(.ui,
-                    errLines=nmGetDistributionMonolixLines(.ui),
-                    paramsLine=NA,
-                    modelVars=TRUE,
-                    cmtLines=FALSE,
-                    dvidLine=FALSE,
-                    lstExpr=.lstExpr,
-                    useIf=FALSE)
+  .mainModel <- rxode2::rxCombineErrorLines(
+    .ui,
+    errLines = nmGetDistributionMonolixLines(.ui),
+    paramsLine = NA,
+    modelVars = TRUE,
+    cmtLines = FALSE,
+    dvidLine = FALSE,
+    lstExpr = .lstExpr,
+    useIf = FALSE
+  )
   .norm <- rxode2::rxNorm(eval(.mainModel))
   .mv <- rxode2::rxModelVars(.ui)
   assignInMyNamespace(".monolixCmtPropDefaults", NULL)
@@ -151,10 +183,12 @@ rxUiGet.monolixModel <- function(x, ...) {
   }
   if (is.null(.pkmodel)) {
     .adm <- .monolixGetAdm(.ui)
-    .macros <- c("; Define compartments with administrations",
-                 .monolixGetCompartmentInformation(.ui),
-                 "; Define PK macros",
-                 .monolixGetPkMacros(.ui))
+    .macros <- c(
+      "; Define compartments with administrations",
+      .monolixGetCompartmentInformation(.ui),
+      "; Define PK macros",
+      .monolixGetPkMacros(.ui)
+    )
     if (any(!is.na(c(.adm$f, .adm$lag, .adm$dur, .adm$rate)))) {
       # the macros use variables defined in the model
       .split <- .monolixMacrosInPk(
@@ -178,23 +212,25 @@ rxUiGet.monolixModel <- function(x, ...) {
   .regress <- .regress[!(.regress %in% .cov$covariate)]
   .regressors <- ""
   if (length(.regress) > 0) {
-    .regressors <- paste0("\n", paste(paste0(.regress, "= {use=regressor}"), collapse="\n"))
+    .regressors <- paste0("\n", paste(paste0(.regress, "= {use=regressor}"), collapse = "\n"))
   }
-  paste0("DESCRIPTION:\n",
-         paste0("model translated from `babelmixr2` and `nlmixr2` function ", .ui$modelName, " to ", .txtFile, "\n\n"),
-         "[LONGITUDINAL]\n",
-         "input={",
-         paste(setNames(c(.monolixMuRef(.ui), .regress), NULL), collapse = ","),
-         "}",
-         .regressors,
-         .pk,
-         "\n\nEQUATION:\n",
-         # odeType is an EQUATION: setting (not an input definition)
-         ifelse(rxode2::rxGetControl(.ui, "stiff", FALSE),
-                "odeType = stiff\n", ""),
-         .mod,
-         "\n\nOUTPUT:\noutput={",
-         paste(.monolixResponses, collapse=", "), "}\n")
+  paste0(
+    "DESCRIPTION:\n",
+    paste0("model translated from `babelmixr2` and `nlmixr2` function ", .ui$modelName, " to ", .txtFile, "\n\n"),
+    "[LONGITUDINAL]\n",
+    "input={",
+    paste(setNames(c(.monolixMuRef(.ui), .regress), NULL), collapse = ","),
+    "}",
+    .regressors,
+    .pk,
+    "\n\nEQUATION:\n",
+    # odeType is an EQUATION: setting (not an input definition)
+    ifelse(rxode2::rxGetControl(.ui, "stiff", FALSE), "odeType = stiff\n", ""),
+    .mod,
+    "\n\nOUTPUT:\noutput={",
+    paste(.monolixResponses, collapse = ", "),
+    "}\n"
+  )
 }
 attr(rxUiGet.monolixModel, "rstudio") <- ""
 
@@ -209,11 +245,15 @@ attr(rxUiGet.monolixModel, "rstudio") <- ""
 #' @noRd
 #' @author Matthew L. Fidler
 .monolixPkModelProp <- function(expr) {
-  if (!.bblLinCmtIsCmtLine(expr)) return(NULL)
+  if (!.bblLinCmtIsCmtLine(expr)) {
+    return(NULL)
+  }
   .lhs <- expr[[2]]
-  if (identical(.lhs[[1]], quote(`/`))) return(list(fun="ode", state=""))
+  if (identical(.lhs[[1]], quote(`/`))) {
+    return(list(fun = "ode", state = ""))
+  }
   .state <- if (length(.lhs) >= 2L) deparse1(.lhs[[2]]) else ""
-  list(fun=as.character(.lhs[[1]]), state=.state)
+  list(fun = as.character(.lhs[[1]]), state = .state)
 }
 
 #' Write a linCmt() model with Monolix's pkmodel()
@@ -238,16 +278,22 @@ attr(rxUiGet.monolixModel, "rstudio") <- ""
 #' @author Matthew L. Fidler
 .monolixPkModel <- function(ui, lstExpr) {
   .micro <- rxode2::rxGetControl(ui, ".linCmtMicro", NULL)
-  if (is.null(.micro)) return(NULL)
+  if (is.null(.micro)) {
+    return(NULL)
+  }
   .states <- .bblLinCmtStates(.micro)
   .doseState <- .states[1]
   .oral <- .micro$oral0 == 1L
   # pkmodel() has a single administration: all doses go to the depot
   # (oral) or central compartment (bolus or infusion)
   .adm <- .monolixGetAdm(ui)
-  if (!all(.adm$cmt == 1L) || length(unique(.adm$adm)) > 1L) return(NULL)
+  if (!all(.adm$cmt == 1L) || length(unique(.adm$adm)) > 1L) {
+    return(NULL)
+  }
   .types <- if (.oral) "bolus" else c("bolus", "infusion")
-  if (!all(paste(.adm$type) %in% .types)) return(NULL)
+  if (!all(paste(.adm$type) %in% .types)) {
+    return(NULL)
+  }
   .conc <- call("/", quote(central), call("(", .micro$v))
   .pre <- list()
   .args <- NULL
@@ -260,7 +306,9 @@ attr(rxUiGet.monolixModel, "rstudio") <- ""
     .prop <- .monolixPkModelProp(.e)
     if (!is.null(.prop)) {
       if (.prop$fun != "ode") {
-        if (.prop$state != .doseState) return(NULL)
+        if (.prop$state != .doseState) {
+          return(NULL)
+        }
         if (.prop$fun %in% c("alag", "lag")) {
           .add("rx_tlag", .e[[3]])
           .args <- c(.args, "Tlag=rx_tlag")
@@ -285,7 +333,9 @@ attr(rxUiGet.monolixModel, "rstudio") <- ""
     # anything else that uses the amounts needs ODEs
     if (any(all.vars(.e) %in% .states)) return(NULL)
   }
-  if (!.found) return(NULL)
+  if (!.found) {
+    return(NULL)
+  }
   .add("rx_v", .micro$v)
   .add("rx_k", .micro$k)
   .pars <- c("V=rx_v", "k=rx_k")
@@ -299,8 +349,7 @@ attr(rxUiGet.monolixModel, "rstudio") <- ""
     .add("rx_ka", .micro$ka)
     .pars <- c(.pars, "ka=rx_ka")
   }
-  list(lstExpr=lstExpr, pre=.pre,
-       pkmodel=paste0("pkmodel(", paste(c(.pars, .args), collapse=", "), ")"))
+  list(lstExpr = lstExpr, pre = .pre, pkmodel = paste0("pkmodel(", paste(c(.pars, .args), collapse = ", "), ")"))
 }
 
 #' Replace a call inside an expression
@@ -312,9 +361,13 @@ attr(rxUiGet.monolixModel, "rstudio") <- ""
 #' @noRd
 #' @author Matthew L. Fidler
 .monolixPkModelReplace <- function(expr, what, by) {
-  if (identical(expr, what)) return(by)
-  if (!is.call(expr)) return(expr)
-  as.call(lapply(as.list(expr), .monolixPkModelReplace, what=what, by=by))
+  if (identical(expr, what)) {
+    return(by)
+  }
+  if (!is.call(expr)) {
+    return(expr)
+  }
+  as.call(lapply(as.list(expr), .monolixPkModelReplace, what = what, by = by))
 }
 
 #' Insert the pkmodel() lines into the translated Monolix equations
@@ -327,17 +380,16 @@ attr(rxUiGet.monolixModel, "rstudio") <- ""
 #' @noRd
 #' @author Matthew L. Fidler
 .monolixPkModelInsert <- function(mod, pkmodel, ui) {
-  .pre <- vapply(pkmodel$pre, function(e) .rxToMonolix(e, ui=ui),
-                 character(1), USE.NAMES=FALSE)
-  .pre <- c(paste0("   ", trimws(.pre)),
-            "   ; closed-form linear compartment model",
-            paste0("   ", .monolixPkModelVar, " = ", pkmodel$pkmodel))
+  .pre <- vapply(pkmodel$pre, function(e) .rxToMonolix(e, ui = ui), character(1), USE.NAMES = FALSE)
+  .pre <- c(
+    paste0("   ", trimws(.pre)),
+    "   ; closed-form linear compartment model",
+    paste0("   ", .monolixPkModelVar, " = ", pkmodel$pkmodel)
+  )
   .mod <- strsplit(mod, "\n")[[1]]
   .w <- which(grepl(paste0("\\b", .monolixPkModelVar, "\\b"), .mod))[1]
   if (is.na(.w)) {
-    stop("could not place Monolix's pkmodel() in the model; use monolixControl(linCmt=\"ode\")",
-         call.=FALSE)
+    stop("could not place Monolix's pkmodel() in the model; use monolixControl(linCmt=\"ode\")", call. = FALSE)
   }
-  paste(c(.mod[seq_len(.w - 1L)], .pre, .mod[seq(.w, length(.mod))]),
-        collapse="\n")
+  paste(c(.mod[seq_len(.w - 1L)], .pre, .mod[seq(.w, length(.mod))]), collapse = "\n")
 }
