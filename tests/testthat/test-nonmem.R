@@ -1730,3 +1730,148 @@ test_that("NONMEM compartment names differing only by case from a variable (#237
   expect_true(any(grepl("CP=A(2)/V*CENTRAL ", .ctl, fixed = TRUE)))
   expect_true(any(grepl("RXE_CP=A(2)/V*RXE_CENTRAL ", .ctl, fixed = TRUE)))
 })
+
+test_that("NONMEM case clashes: reserved, theta, dotted and linCmt names (#237)", {
+  .ctl <- function(m, d) {
+    withr::with_tempdir({
+      suppressMessages(nlmixr2(
+        m,
+        d,
+        "nonmem",
+        nonmemControl(runCommand = NA, modelName = "case")
+      ))
+      list(
+        csv = utils::read.csv(file.path("case-nonmem", "case.csv")),
+        ctl = readLines(file.path("case-nonmem", "case.nmctl"))
+      )
+    })
+  }
+  .has <- function(x, s) any(grepl(s, x$ctl, fixed = TRUE))
+  d <- nlmixr2data::theo_sd
+
+  # case-equal covariates with a reserved NONMEM name share one rename
+  m <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl) * f / F
+      v <- exp(tv)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+  d1 <- d
+  d1$f <- d1$WT
+  d1$F <- d1$WT
+  .x <- .ctl(m, d1)
+  expect_true(.has(.x, "$INPUT ID TIME EVID AMT DV CMT RXR1 RXROW"))
+  expect_equal(names(.x$csv)[7], "RXR1")
+  expect_true(.has(.x, "CL=DEXP(RX__TCL)*RXR1/RXR1"))
+
+  # thetas differing by case keep their THETA() in $PK, $DES and $ERROR
+  m <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      TCL <- 2
+      eta.ka ~ 0.6
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(TCL) + exp(tcl)
+      v <- 10
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+  .x <- strsplit(suppressMessages(nlmixr2(m)$nonmemModel), "\n")[[1]]
+  .x <- list(ctl = .x)
+  expect_true(.has(.x, "RXC001=THETA(2) ; rx__tcl <- tcl"))
+  expect_true(.has(.x, "RX__TCL=THETA(3) ; rx__TCL <- TCL"))
+  expect_true(.has(.x, "CL=DEXP(RX__TCL)+DEXP(RXC001)"))
+  expect_true(.has(.x, "RXE_CL=DEXP(RX__TCL)+DEXP(RXC001)"))
+
+  # wt.x and WT.X are one data item, apart from wt_x
+  m <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl) * wt_x * wt.x / WT.X
+      v <- exp(tv)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+  d1 <- d
+  d1$wt_x <- d1$WT
+  d1$wt.x <- d1$WT * 2
+  d1$WT.X <- d1$WT * 2
+  .x <- .ctl(m, d1)
+  expect_true(.has(.x, "$INPUT ID TIME EVID AMT DV CMT WT_X RXC001 RXROW"))
+  expect_equal(.x$csv$RXC001, 2 * .x$csv$WT_X)
+  expect_true(.has(.x, "CL=DEXP(RX__TCL)*WT_X*RXC001/RXC001"))
+
+  # a theta KA does not take the closed-form KA from ka
+  m <- function() {
+    ini({
+      KA <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(KA + eta.ka)
+      cl <- exp(tcl)
+      v <- exp(tv)
+      cp <- linCmt()
+      cp ~ add(add.sd)
+    })
+  }
+  .x <- .ctl(m, d)
+  expect_true(.has(.x, "ADVAN2 TRANS1"))
+  expect_true(.has(.x, "KA=DEXP(RX__KA)"))
+  expect_false(.has(.x, "RXC0"))
+
+  # data columns matching one covariate with different values stop
+  m <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl) * wt
+      v <- exp(tv)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+  d1 <- d
+  d1$wt <- d1$WT * 2
+  expect_error(.ctl(m, d1), "covariates ignore case")
+})

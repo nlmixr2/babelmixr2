@@ -508,14 +508,17 @@ rex::register_shortcuts("babelmixr2")
 #' Names like `wt` and `WT` are both `WT` in NONMEM.  The map is made
 #' once for the whole control stream (data file, `$INPUT`, `$MODEL`,
 #' `$PK`, `$DES` and `$ERROR`), so it does not depend on which name is
-#' seen first.  Compartment names are included, since `$MODEL` names
-#' them and a variable of the same name would clash.
+#' seen first.  It covers the names the translation sees: covariates,
+#' model variables, compartments and the `rx__` / `rxpk_` names of
+#' `$PK` (the `ini()` names themselves become `THETA()`/`ETA()`).
 #'
-#' Covariates are matched to the data ignoring case (like rxode2), so the
-#' covariates of a group (like `wt` and `WT`) are one data item and all
-#' keep the upper case name.  The other names of the group become
-#' `RXC001`, `RXC002`, ...; without a covariate, the name already in
-#' upper case (or else the first in sort order) keeps it.
+#' Each group of names with the same NONMEM name is split into items:
+#' covariates are matched to the data ignoring case (like rxode2), so
+#' covariates differing only by case (like `wt` and `WT`) are one item;
+#' every other name is its own item.  One item keeps the NONMEM name: a
+#' closed-form ADVAN parameter (like `ka` for `KA`), else a covariate,
+#' else a name already in upper case, else the first in sort order.
+#' Each other item becomes `RXC001`, `RXC002`, ...
 #'
 #' @param ui rxode2 ui
 #' @return data frame with `var` and `nm`
@@ -525,36 +528,52 @@ rex::register_shortcuts("babelmixr2")
   if (!is.null(.case)) {
     return(.case)
   }
+  .covs <- character(0)
+  .keep <- character(0)
   .all <- tryCatch(
     {
       .mv <- rxode2::rxModelVars(ui)
-      sort(unique(c(ui$allCovs, .mv$params, .mv$lhs, .mv$state)))
+      .covs <- ui$allCovs
+      .keep <- .nonmemLinCmtAdvan(ui)$keep
+      .ini <- ui$iniDf
+      .theta <- .ini$name[!is.na(.ini$ntheta)]
+      unique(c(
+        .covs,
+        setdiff(.mv$params, .ini$name),
+        .mv$lhs,
+        .mv$state,
+        paste0("rx__", .theta),
+        paste0("rxpk_", .mv$lhs)
+      ))
     },
     error = function(e) character(0)
   )
+  .all <- sort(.all, method = "radix")
   .up <- gsub(".", "_", toupper(.all), fixed = TRUE)
   .case <- data.frame(var = character(0), nm = character(0))
-  .covs <- tryCatch(ui$allCovs, error = function(e) character(0))
   .num <- 1L
   for (.u in unique(.up[duplicated(.up)])) {
     .g <- .all[.up == .u]
-    .cov <- .g[.g %in% .covs]
-    if (length(.cov) > 0) {
-      # only names differing by case are one data item (not wt.x and WT_X)
-      .key <- toupper(.cov)
-      .key <- if (any(.key == .u)) .u else sort(.key)[1]
-      .cov <- .cov[toupper(.cov) == .key]
-      .case <- rbind(.case, data.frame(var = .cov, nm = .u))
-      .g <- .g[!(.g %in% .cov)]
-    } else {
-      .g <- c(.g[.g == .u], .g[.g != .u])[-1]
-    }
-    for (.v in .g) {
-      while (sprintf("RXC%03d", .num) %in% .up) {
+    # items: case-equal covariates are one item, other names are alone
+    .item <- ifelse(.g %in% .covs, paste0("cov:", toupper(.g)), paste0("var:", .g))
+    .rank <- ifelse(
+      .g %in% .keep,
+      1L,
+      ifelse(.g %in% .covs, ifelse(toupper(.g) == .u, 2L, 3L), ifelse(.g == toupper(.g), 4L, 5L))
+    )
+    .items <- unique(.item[order(.rank, .g, method = "radix")])
+    for (.i in seq_along(.items)) {
+      if (.i == 1L) {
+        .nm <- .u
+      } else {
+        while (sprintf("RXC%03d", .num) %in% .up) {
+          .num <- .num + 1L
+        }
+        .nm <- sprintf("RXC%03d", .num)
         .num <- .num + 1L
       }
-      .case <- rbind(.case, data.frame(var = .v, nm = sprintf("RXC%03d", .num)))
-      .num <- .num + 1L
+      .v <- .g[.item == .items[.i]]
+      .case <- rbind(.case, data.frame(var = .v, nm = rep(.nm, length(.v))))
     }
   }
   rxode2::rxAssignControlValue(ui, ".nmGetVarCaseDf", .case)
@@ -577,9 +596,22 @@ rex::register_shortcuts("babelmixr2")
     ".nmGetVarDf",
     data.frame(var = character(0), nm = character(0))
   )
-  .w <- which(.reserved$var == var)
-  if (length(.w) == 1) {
-    return(.nmGetVarRegister(var, .reserved$nm[.w], .var, ui))
+  .case <- .nmGetVarCaseDf(ui)
+  .wc <- which(.case$var == var)
+  if (length(.wc) == 1 && .case$nm[.wc] != .uvar) {
+    # renamed for a case clash (RXC###, never reserved)
+    return(.nmGetVarRegister(var, .case$nm[.wc], .var, ui))
+  }
+  # names sharing one NONMEM name (like the covariates f and F) share
+  # its reserved rename too
+  .same <- if (length(.wc) == 1) .case$var[.case$nm == .case$nm[.wc]] else var
+  .w <- which(.reserved$var %in% .same)
+  if (length(.w) >= 1) {
+    if (!any(.reserved$var == var)) {
+      .reserved <- rbind(.reserved, data.frame(var = var, nm = .reserved$nm[.w[1]]))
+      rxode2::rxAssignControlValue(ui, ".nmGetVarReservedDf", .reserved)
+    }
+    return(.nmGetVarRegister(var, .reserved$nm[.w[1]], .var, ui))
   } else if (
     regexpr(.nmRes, .uvar, perl = TRUE) != -1 ||
       .uvar %in% rxode2::rxGetControl(ui, ".nmLinCmtReserved", character(0)) ||
@@ -587,7 +619,7 @@ rex::register_shortcuts("babelmixr2")
   ) {
     .num <- rxode2::rxGetControl(ui, ".nmVarResNum", 1)
     # skip names the model already uses (like a variable named RXR1)
-    while (sprintf("RXR%d", .num) %in% c(.var$nm, .reserved$nm)) {
+    while (sprintf("RXR%d", .num) %in% c(.var$nm, .reserved$nm, .case$nm)) {
       .num <- .num + 1
     }
     .newVar <- sprintf("RXR%d", .num)
@@ -605,10 +637,8 @@ rex::register_shortcuts("babelmixr2")
     ))
     return(.nmGetVarRegister(var, .newVar, .var, ui))
   }
-  .case <- .nmGetVarCaseDf(ui)
-  .w <- which(.case$var == var)
-  if (length(.w) == 1) {
-    return(.nmGetVarRegister(var, .case$nm[.w], .var, ui))
+  if (length(.wc) == 1) {
+    return(.nmGetVarRegister(var, .case$nm[.wc], .var, ui))
   }
   .w <- which(.var$var == var)
   if (length(.w) == 1) {

@@ -356,8 +356,9 @@ bblDatToMonolix <- function(
 #' Covariates are matched to the data ignoring case, so `wt` and `WT`
 #' in the model are one data item (one NONMEM column).  The processed
 #' data may have it under one name only, so the other covariates of the
-#' group are copied from it.  Data columns of the group (like `wt` and
-#' `WT`) with different values cannot be one item and stop.
+#' group are copied from it.  Data columns matching a covariate (like
+#' `wt` and `WT` for the covariate `wt`) with different values cannot
+#' be one item and stop.
 #'
 #' @param new processed data
 #' @param data original data
@@ -367,7 +368,7 @@ bblDatToMonolix <- function(
 #' @author Matthew L. Fidler
 .bblDatCaseCovs <- function(new, data, covs) {
   .up <- toupper(covs)
-  for (.u in unique(.up[duplicated(.up)])) {
+  for (.u in unique(.up)) {
     .w <- which(toupper(names(data)) == .u)
     if (
       !all(vapply(
@@ -460,6 +461,7 @@ bblDatToNonmem <- function(
     )
   }
   .ui <- model
+  .nonmemResetNames(.ui)
   env$nobs <- .lastNobs
   env$nmLikAdj <- 0
   env$nmNcmt <- .lastNobs

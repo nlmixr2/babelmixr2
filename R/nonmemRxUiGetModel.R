@@ -2,17 +2,27 @@
 rxUiGet.nonmemMod <- function(x, ...) {
   .ui <- x[[1]]
   .state <- rxode2::rxModelVars(.ui)$state
-  if (length(.state) == 0) return("")
+  if (length(.state) == 0) {
+    return("")
+  }
   # closed-form ADVANs have their own compartments
-  if (!is.null(.nonmemLinCmtAdvan(.ui))) return("")
-  paste(c(paste0("$MODEL NCOMPARTMENTS=", length(.state)),
-          vapply(.state,
-               function(s) {
-                 paste0("     COMP(", .nmGetVar(s, .ui),
-                        ifelse(s == .state[1], ", DEFDOSE", ""), ") ; ",
-                        s)
-               }, character(1), USE.NAMES=FALSE)),
-        collapse="\n")
+  if (!is.null(.nonmemLinCmtAdvan(.ui))) {
+    return("")
+  }
+  paste(
+    c(
+      paste0("$MODEL NCOMPARTMENTS=", length(.state)),
+      vapply(
+        .state,
+        function(s) {
+          paste0("     COMP(", .nmGetVar(s, .ui), ifelse(s == .state[1], ", DEFDOSE", ""), ") ; ", s)
+        },
+        character(1),
+        USE.NAMES = FALSE
+      )
+    ),
+    collapse = "\n"
+  )
 }
 attr(rxUiGet.nonmemMod, "rstudio") <- "nonmemMod"
 
@@ -26,25 +36,49 @@ attr(rxUiGet.nonmemMod, "rstudio") <- "nonmemMod"
 #' @author Matthew L. Fidler
 .nonmemModSection <- function(x, ...) {
   .mod <- rxUiGet.nonmemMod(x, ...)
-  if (.mod == "" && !is.null(.nonmemLinCmtAdvan(x[[1]]))) return("")
+  if (.mod == "" && !is.null(.nonmemLinCmtAdvan(x[[1]]))) {
+    return("")
+  }
   paste0(.mod, "\n\n")
 }
 
-.nonmemResetUi <- function(ui, extra="") {
-  rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf",
-                               data.frame(expr=character(0),
-                                          nm=character(0)))
+.nonmemResetUi <- function(ui, extra = "") {
+  rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf", data.frame(expr = character(0), nm = character(0)))
   rxode2::rxAssignControlValue(ui, ".nmVarNum", 1)
-  rxode2::rxAssignControlValue(ui, ".nmGetVarDf",
-                               data.frame(var=character(0),
-                                          nm=character(0)))
+  rxode2::rxAssignControlValue(ui, ".nmGetVarDf", data.frame(var = character(0), nm = character(0)))
 
   rxode2::rxAssignControlValue(ui, ".nmVarDZNum", 1)
-  rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf",
-                               data.frame(expr=character(0),
-                                          nm=character(0)))
+  rxode2::rxAssignControlValue(ui, ".nmGetDivideZeroDf", data.frame(expr = character(0), nm = character(0)))
   rxode2::rxAssignControlValue(ui, ".nmPrefixLines", NULL)
   rxode2::rxAssignControlValue(ui, ".nmVarExtra", extra)
+}
+
+#' Start the NONMEM names made once for the whole control stream
+#'
+#' Reserved and case-clashing names are renamed once for the whole
+#' control stream so the data file, $INPUT, $MODEL and the abbreviated
+#' code agree.  The data file is written before the control stream, so
+#' both start here.
+#'
+#' @param ui rxode2 ui
+#' @return nothing, called for its side effects
+#' @noRd
+#' @author Matthew L. Fidler
+.nonmemResetNames <- function(ui) {
+  rxode2::rxAssignControlValue(ui, ".nmVarResNum", 1)
+  rxode2::rxAssignControlValue(ui, ".nmGetVarCaseDf", NULL)
+  rxode2::rxAssignControlValue(
+    ui,
+    ".nmGetVarReservedDf",
+    data.frame(var = character(0), nm = character(0))
+  )
+  # closed-form ADVAN parameters (like K12) are reserved before $INPUT
+  rxode2::rxAssignControlValue(
+    ui,
+    ".nmLinCmtReserved",
+    .nonmemLinCmtAdvan(ui)$reserved
+  )
+  invisible()
 }
 
 #' @export
@@ -57,7 +91,7 @@ rxUiGet.nonmemAbbr <- function(x, ...) {
 }
 attr(rxUiGet.nonmemAbbr, "rstudio") <- "nonmemAbbr"
 
-rxUiGetNonememModelEnv <- new.env(parent=emptyenv())
+rxUiGetNonememModelEnv <- new.env(parent = emptyenv())
 rxUiGetNonememModelEnv$rxS <- NULL
 
 #' @export
@@ -65,38 +99,36 @@ rxUiGet.nonmemModel <- function(x, ...) {
   .ui <- x[[1]]
   rxUiGetNonememModelEnv$rxS <- .ui$loadPrune
   .nonmemResetUi(.ui)
-  # reserved names are renamed once for the whole control stream so
-  # $INPUT, $MODEL and the abbreviated code agree
-  rxode2::rxAssignControlValue(.ui, ".nmVarResNum", 1)
-  rxode2::rxAssignControlValue(.ui, ".nmGetVarCaseDf", NULL)
-  rxode2::rxAssignControlValue(
-    .ui,
-    ".nmGetVarReservedDf",
-    data.frame(var = character(0), nm = character(0))
-  )
-  # closed-form ADVAN parameters (like K12) are reserved before $INPUT
-  rxode2::rxAssignControlValue(
-    .ui,
-    ".nmLinCmtReserved",
-    .nonmemLinCmtAdvan(.ui)$reserved
-  )
+  .nonmemResetNames(.ui)
   .ret <- paste0(
-    "$PROBLEM ", .ui$nonmemModelName, " translated from babelmixr2\n; comments show mu referenced model in ui$getSplitMuModel\n\n",
-    "$DATA ", .ui$nonmemCsv, " IGNORE=@\n\n",
-    rxUiGet.nonmemInput(x, ...), "\n",
-    rxUiGet.nonmemSub(x, ...), "\n\n",
+    "$PROBLEM ",
+    .ui$nonmemModelName,
+    " translated from babelmixr2\n; comments show mu referenced model in ui$getSplitMuModel\n\n",
+    "$DATA ",
+    .ui$nonmemCsv,
+    " IGNORE=@\n\n",
+    rxUiGet.nonmemInput(x, ...),
+    "\n",
+    rxUiGet.nonmemSub(x, ...),
+    "\n\n",
     rxUiGet.nonmemAbbr(x, ...),
     rxUiGet.nonmemPrior(x, ...),
     .nonmemModSection(x, ...),
     rxUiGet.nonmemPkDesErr0(x, ...),
-    rxUiGet.nonmemErrF(x, ...),"\n",
-    rxUiGet.nonmemTheta(x, ...),"\n\n",
-    rxUiGet.nonmemOmega(x, ...),"\n",
+    rxUiGet.nonmemErrF(x, ...),
+    "\n",
+    rxUiGet.nonmemTheta(x, ...),
+    "\n\n",
+    rxUiGet.nonmemOmega(x, ...),
+    "\n",
     "$SIGMA 1 FIX\n\n",
     rxUiGet.nonmemPriorRecords(x, ...),
-    rxUiGet.nonmemEst(x, ...),"\n",
-    rxUiGet.nonmemCov(x, ...), "\n\n",
-    rxUiGet.nonmemTable(x, ...))
+    rxUiGet.nonmemEst(x, ...),
+    "\n",
+    rxUiGet.nonmemCov(x, ...),
+    "\n\n",
+    rxUiGet.nonmemTable(x, ...)
+  )
   .ret <- gsub("^ *$", "", .ret)
   .ret
 }
