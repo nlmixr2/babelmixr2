@@ -862,10 +862,31 @@ test_that("Monolix files from the stress kit run", {
   .d <- as.data.frame(.ev)
   .d$dv <- ifelse(.d$evid == 0, 5, NA)
   .f <- .files(.fr, .d, "mr")
-  expect_true(any(grepl(
-    "^ *rx_tk0_central = rx_f_central\\*amtDose/rx_rate_central$",
-    .f$model
-  )))
+  # f and rate are defined before the duration, which is defined before
+  # the macro; p= still scales the amount
+  .at <- vapply(
+    c(
+      "^PK:$",
+      "^ *rx_f_central = 0\\.5$",
+      "^ *rx_rate_central = 10$",
+      "^ *rx_tk0_central = rx_f_central\\*amtDose/rx_rate_central$",
+      "^depot\\(type=1, target=central, Tk0=rx_tk0_central, Tlag=0, p=rx_f_central\\)$",
+      "^EQUATION:$"
+    ),
+    function(re) {
+      .w <- grep(re, .f$model)
+      if (length(.w) == 1L) .w else NA_integer_
+    },
+    integer(1)
+  )
+  expect_false(anyNA(.at))
+  expect_false(is.unsorted(.at))
+  # without f() the duration is amt/rate
+  .f <- .files(rxode2::model(.fr, -f(central)), .d, "mr0")
+  expect_true("   rx_tk0_central = amtDose/rx_rate_central" %in% .f$model)
+  expect_true(
+    "depot(type=1, target=central, Tk0=rx_tk0_central, Tlag=0, p=1)" %in% .f$model
+  )
 })
 
 test_that("Monolix covariance without the fixed parameters", {
