@@ -1,5 +1,8 @@
 # babelmixr2 0.1.11.9000
 
+* Monolix: a modeled `rate()` with `f()` infuses over `f*amt/rate`, the
+  rxode2 (and NONMEM) duration, instead of `amt/rate` (#239)
+
 * `as.nlmixr2()` of a nonmem2rx import solves with
   `rxControl(nonmem = TRUE, addlKeepsCov = FALSE)`, the way nonmem2rx
   validates the import, when rxode2 supports it (nlmixr2/rxode2#1429)
