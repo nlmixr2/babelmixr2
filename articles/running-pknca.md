@@ -30,7 +30,7 @@ library(nlmixr2)
 #> ★ lotri           1.0.5           ◯ nlmixr2auto     1.0.0      
 #> ★ nlmixr2data     2.0.10          ◯ nlmixr2autoinit 1.0.1      
 #> ★ nlmixr2save     0.2.1           ◯ nlmixr2lib      0.3.2      
-#> ★ nlmixr2est      7.1.0           ◯ nlmixr2rpt      0.2.3      
+#> ★ nlmixr2est      7.2.1           ◯ nlmixr2rpt      0.2.3      
 #> ★ nlmixr2extra    5.2.1           ◯ nlmixr2targets  0.1.0      
 #> ★ nlmixr2plot     5.2.0           ◯ nonmem2rx       0.1.12     
 #> ★ rxode2          5.1.8           ◯ pmxNODE         0.2.1      
@@ -169,7 +169,7 @@ fit <- nlmixr(prepared, data = theo_sd, est = "focei", control = list(print = 0)
 #> → compiling events FD model...
 #> ✔ done
 #> calculating covariance matrix
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:00 
+#> [====|====|====|====|====|====|====|====|====|====] 0:00:01 
 #> done
 #> → Calculating residuals/tables
 #> ✔ done
