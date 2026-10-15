@@ -1,5 +1,10 @@
 # babelmixr2 0.1.11.9000
 
+* NONMEM: names that differ only by case get one NONMEM name each for
+  the whole control stream, so the data columns, `$INPUT`, `$MODEL`,
+  `$PK`, `$DES` and `$ERROR` agree.  Covariates ignore case (like
+  rxode2), so `wt` and `WT` are one data column; a variable or
+  compartment that clashes is renamed `RXC001`, ... (#237)
 * Monolix: a modeled `rate()` with `f()` infuses over `f*amt/rate`, the
   rxode2 (and NONMEM) duration, instead of `amt/rate` (#239)
 

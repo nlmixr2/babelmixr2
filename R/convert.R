@@ -99,59 +99,74 @@
 #' bblDatToRxode(pk.turnover.emax3, nlmixr2data::warfarin)
 #'
 #' @useDynLib babelmixr2, .registration=TRUE
-bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl(),
-                            env=NULL) {
+bblDatToMonolix <- function(
+  model,
+  data,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl(),
+  env = NULL
+) {
   # https://dataset.lixoft.com/faq/translating-your-dataset-from-nonmem-format-to-the-monolix-suite-format/
   nlmixr2est::nmObjUiSetCompressed(FALSE)
-  on.exit({nlmixr2est::nmObjUiSetCompressed(TRUE)})
-  model <- rxode2::assertRxUi(model, extra=" to convert the data with 'bblDatToMonolix'")
+  on.exit({
+    nlmixr2est::nmObjUiSetCompressed(TRUE)
+  })
+  model <- rxode2::assertRxUi(model, extra = " to convert the data with 'bblDatToMonolix'")
   model <- rxode2::rxUiDecompress(model)
-  rxode2::assertRxUiPrediction(model, extra=" to convert the data with 'bblDatToMonolix'")
+  rxode2::assertRxUiPrediction(model, extra = " to convert the data with 'bblDatToMonolix'")
   if (is.environment(env)) {
     .env <- env
   } else {
-    .env <- new.env(parent=emptyenv())
+    .env <- new.env(parent = emptyenv())
   }
   .env$table <- table
   nlmixr2est::.foceiPreProcessData(data, .env, model, rxControl)
   .mv <- rxode2::rxModelVars(model)
   .flag <- .mv$flags
-  .conv0 <- .Call(`_babelmixr2_convertDataBack`, .env$dataSav$ID, .env$dataSav$TIME, .env$dataSav$AMT,
-                  .env$dataSav$II, .env$dataSav$EVID, .env$dataSav$CMT,
-                  model$predDf$cmt, model$predDf$dvid, .flag["ncmt"], .flag["ka"], length(.mv$state),
-                  replaceEvid=5L, zeroDose2 = FALSE)
+  .conv0 <- .Call(
+    `_babelmixr2_convertDataBack`,
+    .env$dataSav$ID,
+    .env$dataSav$TIME,
+    .env$dataSav$AMT,
+    .env$dataSav$II,
+    .env$dataSav$EVID,
+    .env$dataSav$CMT,
+    model$predDf$cmt,
+    model$predDf$dvid,
+    .flag["ncmt"],
+    .flag["ka"],
+    length(.mv$state),
+    replaceEvid = 5L,
+    zeroDose2 = FALSE
+  )
   assignInMyNamespace(".lastNobs", .conv0$nobs)
   if (.conv0$hasTinf && .conv0$hasRate) {
-    stop("monolix does not support a fixed duration (`tinf`) and rate (`rate`) at the same time",
-         call.=FALSE)
+    stop("monolix does not support a fixed duration (`tinf`) and rate (`rate`) at the same time", call. = FALSE)
   }
   if (.conv0$hasTinf) {
-    warning("monolix changes infusion times for `tinf` with bioavailability differently than `nlmixr2`, make sure there is no bioavailability changes for this infusion in the model",
-            call.=FALSE)
+    warning(
+      "monolix changes infusion times for `tinf` with bioavailability differently than `nlmixr2`, make sure there is no bioavailability changes for this infusion in the model",
+      call. = FALSE
+    )
   }
   if (.conv0$hasPhantom) {
-    stop("transit compartment phantom events are not supported in babelmixr2 to monolix conversion",
-         call.=FALSE)
+    stop("transit compartment phantom events are not supported in babelmixr2 to monolix conversion", call. = FALSE)
   }
   if (.conv0$hasReplace) {
-    stop("replacement events are not supported in monolix",
-         call.=FALSE)
+    stop("replacement events are not supported in monolix", call. = FALSE)
   }
   if (.conv0$hasMult) {
-    stop("multiply events are not supported in monolix",
-         call.=FALSE)
+    stop("multiply events are not supported in monolix", call. = FALSE)
   }
   if (.conv0$hasSsRate) {
-    stop("steady state infusions are not supported in monolix",
-         call.=FALSE)
+    stop("steady state infusions are not supported in monolix", call. = FALSE)
   }
   if (.conv0$hasSs2) {
-    stop("complex steady state (ss=2) are not supported in monolix",
-         call.=FALSE)
+    stop("complex steady state (ss=2) are not supported in monolix", call. = FALSE)
   }
   .df <- .conv0$df
   .new <- .env$dataSav
-  .new$EVID <-.df$EVID
+  .new$EVID <- .df$EVID
   .new$AMT <- .df$AMT
   .new$YTYPE <- .df$DVID
   .new$SS <- .df$SS
@@ -176,100 +191,140 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), rxCon
   }
 
   .col0 <- c(.col0, model$allCovs, .censData, .limitData, "nlmixrRowNums")
-  list("monolix"=.bblDatAddMissing(.new, .col0)[.df$.nlmixrKeep, .col0],
-       "adm"=.conv0$adm)
+  list("monolix" = .bblDatAddMissing(.new, .col0)[.df$.nlmixrKeep, .col0], "adm" = .conv0$adm)
 }
 
 
 .bblGetLambda <- function(ui) {
-  .env <- new.env(parent=emptyenv())
+  .env <- new.env(parent = emptyenv())
   .env$isFixed <- TRUE
   .predDf <- ui$predDf
   .iniDf <- ui$iniDf
-  .ret <- vapply(seq_along(.predDf$cond),
-                 function(i) {
-                   .cond <- .predDf$cond[i]
-                   .df <- .iniDf[which(.iniDf$condition == .cond), ]
-                   if (length(.df$cond) == 0) return(1.0)
-                   .w <- which(.df$err == "yeoJohnson")
-                   if (length(.w) == 1) {
-                     if (!.df$fix[.w]) .env$isFixed <- FALSE
-                     return(.df$est[.w])
-                   }
-                   .w <- which(.df$err == "boxCox")
-                   if (length(.w) == 1) {
-                     if (!.df$fix[.w]) .env$isFixed <- FALSE
-                     return(.df$est[.w])
-                   }
-                   return(1.0)
-                 }, numeric(1), USE.NAMES=FALSE)
-  list(lambda=.ret, allFixed=.env$isFixed)
+  .ret <- vapply(
+    seq_along(.predDf$cond),
+    function(i) {
+      .cond <- .predDf$cond[i]
+      .df <- .iniDf[which(.iniDf$condition == .cond), ]
+      if (length(.df$cond) == 0) {
+        return(1.0)
+      }
+      .w <- which(.df$err == "yeoJohnson")
+      if (length(.w) == 1) {
+        if (!.df$fix[.w]) {
+          .env$isFixed <- FALSE
+        }
+        return(.df$est[.w])
+      }
+      .w <- which(.df$err == "boxCox")
+      if (length(.w) == 1) {
+        if (!.df$fix[.w]) {
+          .env$isFixed <- FALSE
+        }
+        return(.df$est[.w])
+      }
+      return(1.0)
+    },
+    numeric(1),
+    USE.NAMES = FALSE
+  )
+  list(lambda = .ret, allFixed = .env$isFixed)
 }
 
-.bblTransform <- function(dvIn, cmtIn, ui, onlyFixed=TRUE) {
+.bblTransform <- function(dvIn, cmtIn, ui, onlyFixed = TRUE) {
   .predDf <- ui$predDf
   .l <- .bblGetLambda(ui)
   if (onlyFixed & !.l$allFixed) {
-    stop("all transformations need to be fixed (not estimated) for multiple endpoint models with babelmixr2 NONMEM",
-         call.=FALSE)
+    stop(
+      "all transformations need to be fixed (not estimated) for multiple endpoint models with babelmixr2 NONMEM",
+      call. = FALSE
+    )
   }
-  .Call(`_babelmixr2_transDv`, dvIn, cmtIn, .predDf$cmt, .l$lambda,
-        as.integer(.predDf$transform) - 1,
-        .predDf$trLow, .predDf$trHi)
+  .Call(
+    `_babelmixr2_transDv`,
+    dvIn,
+    cmtIn,
+    .predDf$cmt,
+    .l$lambda,
+    as.integer(.predDf$transform) - 1,
+    .predDf$trLow,
+    .predDf$trHi
+  )
 }
 
-.bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl(),
-                                fun="bblDatToNonmem", replaceEvid=5L,
-                            replaceOK=FALSE, software="NONMEM", env=NULL) {
+.bblDatToNonmem <- function(
+  model,
+  data,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl(),
+  fun = "bblDatToNonmem",
+  replaceEvid = 5L,
+  replaceOK = FALSE,
+  software = "NONMEM",
+  env = NULL
+) {
   nlmixr2est::nmObjUiSetCompressed(FALSE)
-  on.exit({  nlmixr2est::nmObjUiSetCompressed(TRUE)})
+  on.exit({
+    nlmixr2est::nmObjUiSetCompressed(TRUE)
+  })
   .xtra <- paste0(" to convert the data with '", fun, "'")
-  model <- rxode2::assertRxUi(model, extra=.xtra)
+  model <- rxode2::assertRxUi(model, extra = .xtra)
   model <- rxode2::rxUiDecompress(model)
-  rxode2::assertRxUiPrediction(model, extra=.xtra)
+  rxode2::assertRxUiPrediction(model, extra = .xtra)
   if (is.environment(env)) {
     .env <- env
   } else {
-    .env <- new.env(parent=emptyenv())
+    .env <- new.env(parent = emptyenv())
   }
   .env$table <- table
   nlmixr2est::.foceiPreProcessData(data, .env, model, rxControl)
   .mv <- rxode2::rxModelVars(model)
   .flag <- .mv$flags
-  .conv0 <- .Call(`_babelmixr2_convertDataBack`, .env$dataSav$ID, .env$dataSav$TIME, .env$dataSav$AMT,
-                  .env$dataSav$II, .env$dataSav$EVID, .env$dataSav$CMT,
-                  model$predDf$cmt, model$predDf$dvid, .flag["ncmt"], .flag["ka"], length(.mv$state),
-                  replaceEvid=replaceEvid, zeroDose2 = TRUE)
+  .conv0 <- .Call(
+    `_babelmixr2_convertDataBack`,
+    .env$dataSav$ID,
+    .env$dataSav$TIME,
+    .env$dataSav$AMT,
+    .env$dataSav$II,
+    .env$dataSav$EVID,
+    .env$dataSav$CMT,
+    model$predDf$cmt,
+    model$predDf$dvid,
+    .flag["ncmt"],
+    .flag["ka"],
+    length(.mv$state),
+    replaceEvid = replaceEvid,
+    zeroDose2 = TRUE
+  )
   assignInMyNamespace(".lastNobs", .conv0$nobs)
   if (!is.na(replaceOK)) {
     if (.conv0$hasPhantom) {
-      stop("transit compartment phantom events are not supported in babelmixr2 to ", software, " conversion",
-           call.=FALSE)
+      stop(
+        "transit compartment phantom events are not supported in babelmixr2 to ",
+        software,
+        " conversion",
+        call. = FALSE
+      )
     }
-    if (replaceOK) {
-    } else if (.conv0$hasReplace) {
-      stop("replacement events are not supported in ", software,
-           call.=FALSE)
+    if (replaceOK) {} else if (.conv0$hasReplace) {
+      stop("replacement events are not supported in ", software, call. = FALSE)
     }
     if (.conv0$hasMult) {
-      stop("multiply events are not supported in ", software,
-           call.=FALSE)
+      stop("multiply events are not supported in ", software, call. = FALSE)
     }
     if (.conv0$hasTinf) {
-      stop(software, " does not support a duration/tinf data item",
-           call.=FALSE)
+      stop(software, " does not support a duration/tinf data item", call. = FALSE)
     }
   }
   .df <- .conv0$df
   .new <- .env$dataSav
-  .new$EVID <-.df$EVID
+  .new$EVID <- .df$EVID
   .new$AMT <- .df$AMT
   .new$DVID <- .df$DVID
   .new$SS <- .df$SS
   .new$CMT <- .df$CMT
   .col0 <- c("ID", "TIME", "EVID", "AMT", "II", "DV", "CMT", "DVID", "SS")
   # modeled rates/durations are RATE=-1/-2 in NONMEM
-  if (.conv0$hasRate || any(.df$RATE != 0, na.rm=TRUE)) {
+  if (.conv0$hasRate || any(.df$RATE != 0, na.rm = TRUE)) {
     .new$RATE <- .df$RATE
     .col0 <- c(.col0, "RATE")
   } else if (.conv0$hasTinf) {
@@ -291,8 +346,53 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), rxCon
     .limitData <- "LIMIT"
   }
 
+  .new <- .bblDatCaseCovs(.new, data, model$allCovs)
   .col0 <- c(.col0, model$allCovs, .censData, .limitData, "nlmixrRowNums")
   .bblDatAddMissing(.new, .col0)[.df$.nlmixrKeep, .col0]
+}
+
+#' Fill covariates that differ only by case from one data column
+#'
+#' Covariates are matched to the data ignoring case, so `wt` and `WT`
+#' in the model are one data item (one NONMEM column).  The processed
+#' data may have it under one name only, so the other covariates of the
+#' group are copied from it.  Data columns matching a covariate (like
+#' `wt` and `WT` for the covariate `wt`) with different values cannot
+#' be one item and stop.
+#'
+#' @param new processed data
+#' @param data original data
+#' @param covs model covariates
+#' @return processed data with every covariate in `covs`
+#' @noRd
+#' @author Matthew L. Fidler
+.bblDatCaseCovs <- function(new, data, covs) {
+  .up <- toupper(covs)
+  for (.u in unique(.up)) {
+    .w <- which(toupper(names(data)) == .u)
+    if (
+      !all(vapply(
+        .w[-1],
+        function(i) isTRUE(all.equal(data[[i]], data[[.w[1]]], check.attributes = FALSE)),
+        logical(1)
+      ))
+    ) {
+      stop(
+        "data columns '",
+        paste(names(data)[.w], collapse = "', '"),
+        "' differ, but covariates ignore case so they are one item",
+        call. = FALSE
+      )
+    }
+    .have <- which(toupper(names(new)) == .u)
+    if (length(.have) == 0) {
+      next
+    }
+    for (.c in setdiff(covs[.up == .u], names(new))) {
+      new[[.c]] <- new[[.have[1]]]
+    }
+  }
+  new
 }
 
 #' Add the event items a data set without them does not have
@@ -314,16 +414,31 @@ bblDatToMonolix <- function(model, data, table=nlmixr2est::tableControl(), rxCon
 
 #' @rdname bblDatToMonolix
 #' @export
-bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
-                           rxControl=rxode2::rxControl(), env=NULL) {
+bblDatToNonmem <- function(
+  model,
+  data,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl(),
+  env = NULL
+) {
   nlmixr2est::nmObjUiSetCompressed(FALSE)
-  on.exit({nlmixr2est::nmObjUiSetCompressed(TRUE)})
+  on.exit({
+    nlmixr2est::nmObjUiSetCompressed(TRUE)
+  })
   .xtra <- paste0(" to convert the data with 'bblDatToNonmem'")
-  model <- rxode2::assertRxUi(model, extra=.xtra)
+  model <- rxode2::assertRxUi(model, extra = .xtra)
   model <- rxode2::rxUiDecompress(model)
-  .ret <- .bblDatToNonmem (model, data, table, rxControl,
-                           fun="bblDatToNonmem", replaceEvid=5L,
-                           replaceOK=FALSE, software="NONMEM", env=env)
+  .ret <- .bblDatToNonmem(
+    model,
+    data,
+    table,
+    rxControl,
+    fun = "bblDatToNonmem",
+    replaceEvid = 5L,
+    replaceOK = FALSE,
+    software = "NONMEM",
+    env = env
+  )
   nlmixr2est::nmObjUiSetCompressed(FALSE)
   .ret <- .ret[, names(.ret) != "DVID"]
   if (any(names(.ret) == "LIMIT")) {
@@ -346,6 +461,9 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
     )
   }
   .ui <- model
+  # start the names as the control stream does, so the two agree
+  .nonmemResetUi(.ui)
+  .nonmemResetNames(.ui)
   env$nobs <- .lastNobs
   env$nmLikAdj <- 0
   env$nmNcmt <- .lastNobs
@@ -360,59 +478,107 @@ bblDatToNonmem <- function(model, data, table=nlmixr2est::tableControl(),
   # the dosing items are kept when the data use them (the $INPUT
   # record is written from the columns kept here)
   .hasItem <- function(n) {
-    any(names(.ret) == n) && any(.ret[[n]] != 0, na.rm=TRUE)
+    any(names(.ret) == n) && any(.ret[[n]] != 0, na.rm = TRUE)
   }
   .hasSs <- .hasItem("SS")
   .names <- c(
-    "ID", "TIME", "EVID", "AMT",
+    "ID",
+    "TIME",
+    "EVID",
+    "AMT",
     ifelse(.hasSs && .hasItem("II"), "II", ""),
-    "DV", "CMT",
+    "DV",
+    "CMT",
     ifelse(length(.ui$predDf$cond) > 1, "DVID", ""),
     ifelse(.hasSs, "SS", ""),
     ifelse(.hasItem("RATE"), "RATE", ""),
-    vapply(.ui$allCovs, .nmGetVar, character(1), ui=.ui,
-           USE.NAMES=FALSE),
+    unique(vapply(.ui$allCovs, .nmGetVar, character(1), ui = .ui, USE.NAMES = FALSE)),
     ifelse(any(names(.ret) == "CENS"), "CENS", ""),
     ifelse(any(names(.ret) == "LIMIT"), "LIMIT", ""),
-    "nlmixrRowNums")
+    "nlmixrRowNums"
+  )
   .names <- .names[.names != ""]
   .allCovs <- .ui$allCovs
-  names(.ret) <- vapply(names(.ret), function(n) {
-    if (any(n == .allCovs)) return(.nmGetVar(n, ui=.ui))
-    n
-  }, character(1), USE.NAMES=FALSE)
+  names(.ret) <- vapply(
+    names(.ret),
+    function(n) {
+      if (any(n == .allCovs)) {
+        return(.nmGetVar(n, ui = .ui))
+      }
+      n
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
   .ret <- .ret[, .names]
   .ret
 }
 
 #' @rdname bblDatToMonolix
 #' @export
-bblDatToRxode <- function(model, data, table=nlmixr2est::tableControl(),
-                          rxControl=rxode2::rxControl(), env=NULL) {
-  .bblDatToNonmem(model, data, table, rxControl,
-                  fun="bblDatToRxode", replaceEvid=5L,
-                  replaceOK=NA, software="rxode2", env=env)
+bblDatToRxode <- function(
+  model,
+  data,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl(),
+  env = NULL
+) {
+  .bblDatToNonmem(
+    model,
+    data,
+    table,
+    rxControl,
+    fun = "bblDatToRxode",
+    replaceEvid = 5L,
+    replaceOK = NA,
+    software = "rxode2",
+    env = env
+  )
 }
 
 
 #' @rdname bblDatToMonolix
 #' @export
-bblDatToMrgsolve <- function(model, data, table=nlmixr2est::tableControl(),
-                             rxControl=rxode2::rxControl(), env=NULL) {
-  .bblDatToNonmem(model, data, table, rxControl,
-                  fun="bblDatToMrgsolve", replaceEvid=8L,
-                  replaceOK=TRUE, software="mrgsolve", env=env)
+bblDatToMrgsolve <- function(
+  model,
+  data,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl(),
+  env = NULL
+) {
+  .bblDatToNonmem(
+    model,
+    data,
+    table,
+    rxControl,
+    fun = "bblDatToMrgsolve",
+    replaceEvid = 8L,
+    replaceOK = TRUE,
+    software = "mrgsolve",
+    env = env
+  )
 }
 
 #' @rdname bblDatToMonolix
 #' @export
-bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
-                          rxControl=rxode2::rxControl(), env=NULL) {
+bblDatToPknca <- function(
+  model,
+  data,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl(),
+  env = NULL
+) {
   newData <-
     .bblDatToNonmem(
-      model, data, table, rxControl,
-      fun="bblDatToPknca", replaceEvid=5L,
-      replaceOK=TRUE, software="pknca", env=env
+      model,
+      data,
+      table,
+      rxControl,
+      fun = "bblDatToPknca",
+      replaceEvid = 5L,
+      replaceOK = TRUE,
+      software = "pknca",
+      env = env
     )
   # When we have columns in both the old and new data, which should be
   # preferred?
@@ -432,14 +598,14 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
   dropFromNew <- newStdNames[prepDropFromNew]
 
   # Prepare for merging and merge
-  oldDataPrep <- oldData[, setdiff(names(oldData), dropFromOld), drop=FALSE]
+  oldDataPrep <- oldData[, setdiff(names(oldData), dropFromOld), drop = FALSE]
   # Other columns in both datasets (like covariates) are kept from the original
   # data (#102)
   dropFromNew <- c(
     dropFromNew,
     setdiff(intersect(names(oldDataPrep), names(newData)), "nlmixrRowNums")
   )
-  newDataPrep <- newData[, setdiff(names(newData), dropFromNew), drop=FALSE]
+  newDataPrep <- newData[, setdiff(names(newData), dropFromNew), drop = FALSE]
   stopifnot(identical(
     intersect(names(oldDataPrep), names(newDataPrep)),
     "nlmixrRowNums"
@@ -469,7 +635,11 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
   idWithAddl <- unique(doseData[[cleanStdNames["id"]]][doseData[[cleanStdNames["addl"]]] > 0])
   dropDoseAddl <- doseData[[cleanStdNames["id"]]] %in% idWithAddl
   if (any(dropDoseAddl)) {
-    cli::cli_alert_info(paste("ADDL dosing not supported with PKNCA estimation, dropping subjects using ADDL:", sum(dropDoseAddl), "rows"))
+    cli::cli_alert_info(paste(
+      "ADDL dosing not supported with PKNCA estimation, dropping subjects using ADDL:",
+      sum(dropDoseAddl),
+      "rows"
+    ))
     doseData <- doseData[!dropDoseAddl, ]
   }
 
@@ -489,7 +659,11 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
     dropIdCens <- c(idWithRightCens, idWithLeftCensNonzero)
     dropObsCens <- obsData[[cleanStdNames["id"]]] %in% dropIdCens
     if (any(dropObsCens)) {
-      cli::cli_alert_info(paste("Right censoring and left censoring with a value above zero is not supported with PKNCA estimation, dropping subjects with those censoring types:", sum(dropObsCens), "rows"))
+      cli::cli_alert_info(paste(
+        "Right censoring and left censoring with a value above zero is not supported with PKNCA estimation, dropping subjects with those censoring types:",
+        sum(dropObsCens),
+        "rows"
+      ))
       obsData <- obsData[!dropObsCens, ]
       rowsLeftCens <- rowsLeftCens[!dropObsCens]
     }
@@ -504,7 +678,11 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
       rowsWithLeftCensZero <- rowsLeftCens
     }
     if (any(rowsWithLeftCensZero)) {
-      cli::cli_alert_info(paste("Setting DV to zero for PKNCA estimation with left censoring:", sum(rowsWithLeftCensZero), "rows"))
+      cli::cli_alert_info(paste(
+        "Setting DV to zero for PKNCA estimation with left censoring:",
+        sum(rowsWithLeftCensZero),
+        "rows"
+      ))
       obsData[[cleanStdNames["dv"]]][rowsWithLeftCensZero] <- 0
     }
   }
@@ -513,14 +691,22 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
   dropDoseData <- !(doseData[[cleanStdNames["id"]]] %in% unique(obsData[[cleanStdNames["id"]]]))
   dropObsData <- !(obsData[[cleanStdNames["id"]]] %in% unique(doseData[[cleanStdNames["id"]]]))
   if (any(dropDoseData)) {
-    cli::cli_alert_info(paste("Dropping", sum(dropDoseData), "dosing rows with no observations for the subject with PKNCA estimation"))
+    cli::cli_alert_info(paste(
+      "Dropping",
+      sum(dropDoseData),
+      "dosing rows with no observations for the subject with PKNCA estimation"
+    ))
     doseData <- doseData[!dropDoseData, ]
   }
   if (any(dropObsData)) {
     # This is mostly handled with the original data mapping above with
     # .bblDatToNonmem, but in some cases, the subject may be dropped subsequent
     # to that.
-    cli::cli_alert_info(paste("Dropping", sum(dropObsData), "observation rows with no doses for the subject with PKNCA estimation"))
+    cli::cli_alert_info(paste(
+      "Dropping",
+      sum(dropObsData),
+      "observation rows with no doses for the subject with PKNCA estimation"
+    ))
     obsData <- obsData[!dropObsData, ]
   }
 
@@ -530,8 +716,8 @@ bblDatToPknca <- function(model, data, table=nlmixr2est::tableControl(),
     cli::cli_abort("No dose rows after filtering for analysis")
   }
   list(
-    obs=obsData,
-    dose=doseData
+    obs = obsData,
+    dose = doseData
   )
 }
 
@@ -548,9 +734,22 @@ getStandardColNames <- function(data) {
   stdCols <-
     c(
       # rxode2 columns
-      "id", "time", "amt", "rate", "dur", "evid", "cmt", "ss", "ii", "addl",
+      "id",
+      "time",
+      "amt",
+      "rate",
+      "dur",
+      "evid",
+      "cmt",
+      "ss",
+      "ii",
+      "addl",
       # nlmixr2 columns
-      "dv", "mdv", "dvid", "cens", "limit"
+      "dv",
+      "mdv",
+      "dvid",
+      "cens",
+      "limit"
     )
   stdCols <- setNames(rep(NA_character_, length(stdCols)), nm = stdCols)
   lowerNames <- tolower(names(data))
