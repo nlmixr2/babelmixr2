@@ -194,9 +194,9 @@ nlmixr2Est.pknca <- function(env, ...) {
     newEnv <-
       eval(str2lang(
         sprintf(
-          "rxode2::model(newEnv, %s <- %g*%s)",
+          "rxode2::model(newEnv, %s <- %s*(%s))",
           dvParam,
-          1 / unitConversions[["cmax"]],
+          deparse1(1 / unitConversions[["cmax"]]),
           deparse1(dvAssign[[1]][[3]])
         )
       ))
@@ -466,9 +466,7 @@ pkncaObsStates <- function(ui) {
       ) {
         nm <- as.character(x[[2]])
         assignRhs[[nm]] <<- c(assignRhs[[nm]], list(x[[3]]))
-      } else if (
-        identical(x[[1]], as.name("{")) || identical(x[[1]], as.name("if"))
-      ) {
+      } else if (identical(x[[1]], as.name("{")) || identical(x[[1]], as.name("if"))) {
         for (i in seq_along(x)[-1]) {
           addAssign(x[[i]])
         }
@@ -1391,9 +1389,7 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
         ) # nocov
       }
       # Infinite bounds are allowed, but not an infinite or undefined estimate
-      if (
-        anyNA(newValue) || !is.finite(newValue[ceiling(length(newValue) / 2)])
-      ) {
+      if (anyNA(newValue) || !is.finite(newValue[ceiling(length(newValue) / 2)])) {
         cli::cli_warn(
           paste(
             "cannot transform the estimate for {.code {nm}} to",
