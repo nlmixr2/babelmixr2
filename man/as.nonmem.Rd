@@ -37,8 +37,9 @@ as.monolix(
 \item{x}{nlmixr2 model function, \code{rxode2} ui or fit}
 
 \item{data}{optional data to translate with.  When \code{NULL} and \code{x} is
-a fit, the fit's data are used; otherwise a template dataset is
-made from the arguments below.}
+a fit (and none of the template arguments are given), the fit's
+data are used; otherwise a template dataset is made from the
+arguments below.}
 
 \item{modelName}{the base name of the files.  When \code{NULL}, the
 control's \code{modelName} is used, then the name of the model
@@ -49,7 +50,9 @@ with time (by default none do).  Time-varying covariates are not
 mu-referenced (and are Monolix regressors).}
 
 \item{dose}{the compartments receiving doses (names or numbers); by
-default the first compartment of the model}
+default the first compartment of the model (a model without
+compartments has no doses).  Numbers are in the translated order,
+where a \code{linCmt()} model's compartments come before its ODEs}
 
 \item{doseType}{the type of dose for each \code{dose} compartment
 (recycled): \code{"bolus"}, \code{"infusion"}, \code{"modelRate"} (a modeled
@@ -96,7 +99,14 @@ one-subject template dataset is made from the model and the
 \code{timeVarying}, \code{dose}, \code{doseType}, \code{ss}, \code{cens} and \code{limit}
 arguments.  This template dataset is written as the \code{.csv} file so
 you can see the columns the model expects; replace it with your
-data before running NONMEM or Monolix.
+data before running NONMEM or Monolix.  With the template dataset,
+covariate expressions (like \code{log(WT/70)}) are written in the model
+instead of as derived data columns (\code{muRefCovAlg=FALSE}), so the
+files only need the model's covariates.
+
+When files with the same name but a different model already exist,
+the new files are numbered (like \verb{<modelName>-001-nonmem}), as in
+\code{nlmixr2()}; files of the same model are left alone.
 }
 \examples{
 \donttest{

@@ -364,7 +364,7 @@
   .mlxtran <- .ui$monolixMlxtranFile
   .runLock <- .ui$monolixRunLock
   # the files written, for as.monolix()
-  assign(".bblExport", c(mlxtran=.mlxtran, model=.model, csv=.csv), envir=.ui)
+  .bblAsToolFiles$files <- c(mlxtran=.mlxtran, model=.model, csv=.csv)
 
   .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
   .cachedFit <- .babelmixr2LoadFitCache(.qs)

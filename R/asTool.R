@@ -20,12 +20,20 @@
 #' `timeVarying`, `dose`, `doseType`, `ss`, `cens` and `limit`
 #' arguments.  This template dataset is written as the `.csv` file so
 #' you can see the columns the model expects; replace it with your
-#' data before running NONMEM or Monolix.
+#' data before running NONMEM or Monolix.  With the template dataset,
+#' covariate expressions (like `log(WT/70)`) are written in the model
+#' instead of as derived data columns (`muRefCovAlg=FALSE`), so the
+#' files only need the model's covariates.
+#'
+#' When files with the same name but a different model already exist,
+#' the new files are numbered (like `<modelName>-001-nonmem`), as in
+#' `nlmixr2()`; files of the same model are left alone.
 #'
 #' @param x nlmixr2 model function, `rxode2` ui or fit
 #' @param data optional data to translate with.  When `NULL` and `x` is
-#'   a fit, the fit's data are used; otherwise a template dataset is
-#'   made from the arguments below.
+#'   a fit (and none of the template arguments are given), the fit's
+#'   data are used; otherwise a template dataset is made from the
+#'   arguments below.
 #' @param modelName the base name of the files.  When `NULL`, the
 #'   control's `modelName` is used, then the name of the model
 #'   variable.
@@ -33,7 +41,9 @@
 #'   with time (by default none do).  Time-varying covariates are not
 #'   mu-referenced (and are Monolix regressors).
 #' @param dose the compartments receiving doses (names or numbers); by
-#'   default the first compartment of the model
+#'   default the first compartment of the model (a model without
+#'   compartments has no doses).  Numbers are in the translated order,
+#'   where a `linCmt()` model's compartments come before its ODEs
 #' @param doseType the type of dose for each `dose` compartment
 #'   (recycled): `"bolus"`, `"infusion"`, `"modelRate"` (a modeled
 #'   `rate()`) or `"modelDur"` (a modeled `dur()`)
@@ -126,39 +136,41 @@ as.monolix <- function(x, data = NULL, modelName = NULL, timeVarying = character
     checkmate::assertCharacter(modelName, len = 1, any.missing = FALSE, min.chars = 1)
     control$modelName <- modelName
   }
-  if (is.null(data) && inherits(x, "nlmixr2FitCore")) {
-    data <- x$origData
-  }
-  .ui <- rxode2::rxUiDecompress(rxode2::assertRxUi(x))
-  if (is.null(data)) {
-    data <- .bblAsToolData(.ui, timeVarying = timeVarying, dose = dose,
-                           doseType = doseType, ss = ss, cens = cens, limit = limit)
-  } else if (length(timeVarying) > 0 || !is.null(dose) || !identical(doseType, "bolus") ||
-               !isFALSE(ss) || !isFALSE(cens) || !isFALSE(limit)) {
+  .templateArgs <- length(timeVarying) > 0 || !is.null(dose) || !identical(doseType, "bolus") ||
+    !isFALSE(ss) || !isFALSE(cens) || !isFALSE(limit)
+  if (!is.null(data) && .templateArgs) {
     warning("'data' is given, so 'timeVarying', 'dose', 'doseType', 'ss', 'cens' and 'limit' are ignored",
             call. = FALSE)
   }
+  .ui <- rxode2::rxUiDecompress(rxode2::assertRxUi(x))
+  if (is.null(data) && inherits(x, "nlmixr2FitCore") && !.templateArgs) {
+    data <- x$origData
+  }
+  if (is.null(data)) {
+    data <- .bblAsToolData(.ui, timeVarying = timeVarying, dose = dose,
+                           doseType = doseType, ss = ss, cens = cens, limit = limit)
+    # covariate expressions like log(WT/70) stay in the model instead of
+    # becoming derived data columns, so the files work with the user's
+    # data instead of the template
+    control$muRefCovAlg <- FALSE
+  }
   control$runCommand <- NA
-  .ret <- nlmixr2est::nlmixr2(.ui, data, est = est, control = control)
   # the translation records the files it wrote (their names include
   # the number given to a changed model)
-  .files <- NULL
-  if (inherits(.ret, "rxUi")) {
-    .ret <- rxode2::rxUiDecompress(.ret)
-    if (exists(".bblExport", envir = .ret)) {
-      .files <- get(".bblExport", envir = .ret)
-      rm(list = ".bblExport", envir = .ret)
-    }
-  }
-  if (is.null(.files) && exists(".bblExport", envir = .ui)) {
-    .files <- get(".bblExport", envir = .ui)
-    rm(list = ".bblExport", envir = .ui)
-  }
+  .bblAsToolFiles$files <- NULL
+  on.exit(.bblAsToolFiles$files <- NULL)
+  nlmixr2est::nlmixr2(.ui, data, est = est, control = control)
+  .files <- .bblAsToolFiles$files
   if (is.null(.files)) {
     stop("the ", est, " translation did not finish", call. = FALSE)
   }
   invisible(.files)
 }
+
+#' The files written by the last NONMEM/Monolix translation
+#'
+#' @noRd
+.bblAsToolFiles <- new.env(parent = emptyenv())
 
 #' Make a one-subject template dataset for translating a model
 #'
@@ -182,11 +194,14 @@ as.monolix <- function(x, data = NULL, modelName = NULL, timeVarying = character
          if (length(.covs) > 0) paste0("\n  the covariates are: ", paste(.covs, collapse = ", ")),
          call. = FALSE)
   }
-  .state <- ui$state
-  if (is.null(dose)) {
-    if (length(.state) == 0) {
-      stop("the model has no compartments to dose", call. = FALSE)
+  .state <- .bblAsToolStates(ui)
+  if (length(.state) == 0) {
+    # a model without compartments ($PRED) has no doses
+    if (!is.null(dose)) {
+      stop("'dose' is given, but the model has no compartments to dose", call. = FALSE)
     }
+    dose <- character(0)
+  } else if (is.null(dose)) {
     dose <- .state[1]
   }
   if (is.numeric(dose)) {
@@ -194,7 +209,7 @@ as.monolix <- function(x, data = NULL, modelName = NULL, timeVarying = character
                                 any.missing = FALSE, min.len = 1, unique = TRUE)
     dose <- .state[dose]
   }
-  checkmate::assertCharacter(dose, any.missing = FALSE, min.len = 1, unique = TRUE)
+  checkmate::assertCharacter(dose, any.missing = FALSE, min.len = as.integer(length(.state) > 0), unique = TRUE)
   .badDose <- dose[!(dose %in% .state)]
   if (length(.badDose) > 0) {
     stop("'dose' has compartments that are not in the model: ",
@@ -206,21 +221,29 @@ as.monolix <- function(x, data = NULL, modelName = NULL, timeVarying = character
   doseType <- vapply(doseType, match.arg, character(1),
                      choices = c("bolus", "infusion", "modelRate", "modelDur"),
                      USE.NAMES = FALSE)
-  if (length(doseType) != 1L && length(doseType) != length(dose)) {
+  if (length(doseType) != 1L && length(doseType) != length(dose) && length(dose) > 0) {
     stop("'doseType' must be length 1 or the same length as 'dose'", call. = FALSE)
   }
   doseType <- rep(doseType, length.out = length(dose))
   .rate <- c(bolus = 0, infusion = 10, modelRate = -1, modelDur = -2)[doseType]
-  .doses <- data.frame(id = 1L, time = 0, amt = 100, rate = unname(.rate),
-                       evid = 1L, cmt = dose, dv = NA_real_)
+  .n <- length(dose)
+  .doses <- data.frame(id = rep(1L, .n), time = rep(0, .n), amt = rep(100, .n),
+                       rate = unname(.rate), evid = rep(1L, .n), cmt = dose,
+                       dv = rep(NA_real_, .n))
   if (ss) {
-    .doses$ss <- 1L
-    .doses$ii <- 24
+    .doses$ss <- rep(1L, .n)
+    .doses$ii <- rep(24, .n)
   }
-  .cond <- ui$predDf$cond
+  .predDf <- ui$predDf
+  .cond <- .predDf$cond
+  # an observation inside the bounds of each endpoint's transformation
+  # (like logitNorm(sd, 10, 100))
+  .dv <- ifelse(is.finite(.predDf$trLow) & is.finite(.predDf$trHi),
+                (.predDf$trLow + .predDf$trHi) / 2,
+                ifelse(is.finite(.predDf$trLow), .predDf$trLow + 1, 1))
   .obs <- data.frame(id = 1L, time = rep(c(1, 2), each = length(.cond)),
                      amt = 0, rate = 0, evid = 0L,
-                     cmt = rep(.cond, 2), dv = 1)
+                     cmt = rep(.cond, 2), dv = rep(.dv, 2))
   if (ss) {
     .obs$ss <- 0L
     .obs$ii <- 0
@@ -233,7 +256,8 @@ as.monolix <- function(x, data = NULL, modelName = NULL, timeVarying = character
   }
   if (limit) {
     .ret$limit <- -Inf
-    .ret$limit[nrow(.doses) + 1L] <- 0
+    .low <- .predDf$trLow[1]
+    .ret$limit[nrow(.doses) + 1L] <- ifelse(is.finite(.low), (.low + .dv[1]) / 2, .dv[1] / 2)
   }
   for (.cov in .covs) {
     if (tolower(.cov) %in% tolower(timeVarying)) {
@@ -243,4 +267,21 @@ as.monolix <- function(x, data = NULL, modelName = NULL, timeVarying = character
     }
   }
   .ret
+}
+
+#' The compartments of a model in the order the translation numbers them
+#'
+#' A `linCmt()` model with ODEs puts the `linCmt()` compartments first
+#' when it is translated (`rxode2::linToOde()`).
+#'
+#' @param ui rxode2 ui
+#' @return character vector of compartment names
+#' @noRd
+.bblAsToolStates <- function(ui) {
+  .state <- ui$state
+  if (.bblHasLinCmt(ui)) {
+    .ode <- try(rxode2::linToOde(ui), silent = TRUE)
+    if (!inherits(.ode, "try-error")) .state <- .ode$state
+  }
+  .state
 }
