@@ -363,6 +363,8 @@
   .model <- .ui$monolixModelFileName
   .mlxtran <- .ui$monolixMlxtranFile
   .runLock <- .ui$monolixRunLock
+  # the files written, for as.monolix()
+  assign(".bblExport", c(mlxtran=.mlxtran, model=.model, csv=.csv), envir=.ui)
 
   .cmd <- rxode2::rxGetControl(.ui, "runCommand", "")
   .cachedFit <- .babelmixr2LoadFitCache(.qs)
@@ -389,13 +391,13 @@
     .minfo("done")
     if (!rxode2::rxGetControl(.ui, "run", TRUE)) {
       .minfo("only exported Monolix mlxtran, txt model and data")
-      return(invisible())
+      return(invisible(.ui))
     }
     .runLS <- FALSE
     if (!identical(.cmd, "")) {
       .monolixRunner(ui=.ui)
       if (is.na(.cmd)) {
-        return(invisible())
+        return(invisible(.ui))
       }
     } else {
       if (.hasLixoftConnectors()) {
@@ -413,7 +415,7 @@
   } else {
     if (is.na(.cmd)) {
       .minfo(paste0("leaving alone monolix files because '", .model, "' is present"))
-      return(invisible())
+      return(invisible(.ui))
     }
     .minfo(paste0("assuming monolix is running because '", .model, "' is present"))
   }

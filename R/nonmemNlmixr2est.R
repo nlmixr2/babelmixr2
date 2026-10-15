@@ -256,6 +256,8 @@
   .contraFile <- file.path(.exportPath, .ui$nonmemContraName)
   .ccontraFile <- file.path(.exportPath, .ui$nonmemCcontraName)
   .qs <- file.path(.exportPath, .ui$nonmemQs)
+  # the files written, for as.nonmem()
+  assign(".bblExport", c(nmctl=.nmctlFile, csv=.csv), envir=.ui)
 
   .cachedFit <- .babelmixr2LoadFitCache(.qs)
   if (!is.null(.cachedFit)) {
