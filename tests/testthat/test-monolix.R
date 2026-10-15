@@ -2,128 +2,161 @@
 
 if (FALSE) {
   test_that("pure mu refrence parsing", {
-
     # this was moved to rxode2
 
-    expect_equal(.b$getPureMuRef(quote(cl <- tcl),
-                                 muRefCurEval=data.frame(parameter="tcl", curEval="",
-                                                         low=NA_character_, hi=NA_character_)),
-                 c(tcl="cl"))
+    expect_equal(
+      .b$getPureMuRef(
+        quote(cl <- tcl),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "", low = NA_character_, hi = NA_character_)
+      ),
+      c(tcl = "cl")
+    )
 
-    expect_equal(.b$.getPureMuRef(quote(cl <- tcl),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="exp",
-                                                          low=NA_character_, hi=NA_character_)), NULL)
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- tcl),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "exp", low = NA_character_, hi = NA_character_)
+      ),
+      NULL
+    )
 
-    expect_equal(.b$.getPureMuRef(quote(cl <- exp(tcl)),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="exp",
-                                                          low=NA_character_, hi=NA_character_)),
-                 c(tcl="cl"))
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- exp(tcl)),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "exp", low = NA_character_, hi = NA_character_)
+      ),
+      c(tcl = "cl")
+    )
 
-    expect_equal(.b$.getPureMuRef(quote(cl <- exp(tcl)),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="",
-                                                          low=NA_character_, hi=NA_character_)),
-                 NULL)
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- exp(tcl)),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "", low = NA_character_, hi = NA_character_)
+      ),
+      NULL
+    )
 
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- expit(tcl, 0, 1)),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "expit", low = NA_character_, hi = NA_character_)
+      ),
+      c(tcl = "cl")
+    )
 
-    expect_equal(.b$.getPureMuRef(quote(cl <- expit(tcl, 0, 1)),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                          low=NA_character_, hi=NA_character_)),
-                 c(tcl="cl"))
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- expit(tcl, 0, 2)),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "expit", low = NA_character_, hi = NA_character_)
+      ),
+      NULL
+    )
 
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- expit(tcl, 0, 2)),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "expit", low = 0, hi = 2)
+      ),
+      c(tcl = "cl")
+    )
 
-    expect_equal(.b$.getPureMuRef(quote(cl <- expit(tcl, 0, 2)),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                          low=NA_character_, hi=NA_character_)),
-                 NULL)
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- expit(tcl, 0.5, 1)),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "expit", low = NA_character_, hi = NA_character_)
+      ),
+      NULL
+    )
 
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- expit(tcl, 0.5, 1)),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "expit", low = 0.5, hi = NA_character_)
+      ),
+      c(tcl = "cl")
+    )
 
-    expect_equal(.b$.getPureMuRef(quote(cl <- expit(tcl, 0, 2)),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                          low=0, hi=2)),
-                 c(tcl="cl"))
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- expit(tcl, 0.5)),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "expit", low = 0.5, hi = NA_character_)
+      ),
+      c(tcl = "cl")
+    )
 
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- expit(tcl, 0.5)),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "expit", low = 0.4, hi = NA_character_)
+      ),
+      NULL
+    )
 
-    expect_equal(.b$.getPureMuRef(quote(cl <- expit(tcl, 0.5, 1)),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                          low=NA_character_, hi=NA_character_)),
-                 NULL)
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- expit(tcl)),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "expit", low = 0, hi = 1)
+      ),
+      c(tcl = "cl")
+    )
 
-    expect_equal(.b$.getPureMuRef(quote(cl <- expit(tcl, 0.5, 1)),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                          low=0.5, hi=NA_character_)),
-                 c(tcl="cl"))
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- expit(tcl)),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "expit", low = NA_real_, hi = 1)
+      ),
+      c(tcl = "cl")
+    )
 
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl <- expit(tcl)),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "expit", low = 0, hi = NA_real_)
+      ),
+      c(tcl = "cl")
+    )
 
-    expect_equal(.b$.getPureMuRef(quote(cl <- expit(tcl, 0.5)),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                          low=0.5, hi=NA_character_)),
-                 c(tcl="cl"))
-
-
-    expect_equal(.b$.getPureMuRef(quote(cl <- expit(tcl, 0.5)),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                          low=0.4, hi=NA_character_)),
-                 NULL)
-
-    expect_equal(.b$.getPureMuRef(quote(cl <- expit(tcl)),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                          low=0, hi=1)),
-                 c(tcl="cl"))
-
-    expect_equal(.b$.getPureMuRef(quote(cl <- expit(tcl)),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                          low=NA_real_, hi=1)),
-                 c(tcl="cl"))
-
-    expect_equal(.b$.getPureMuRef(quote(cl <- expit(tcl)),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="expit",
-                                                          low=0, hi=NA_real_)),
-                 c(tcl="cl"))
-
-    expect_equal(.b$.getPureMuRef(quote(cl(0) <- tcl),
-                                  muRefCurEval=data.frame(parameter="tcl", curEval="",
-                                                          low=NA_real_, hi=NA_real_)),
-                 NULL)
+    expect_equal(
+      .b$.getPureMuRef(
+        quote(cl(0) <- tcl),
+        muRefCurEval = data.frame(parameter = "tcl", curEval = "", low = NA_real_, hi = NA_real_)
+      ),
+      NULL
+    )
   })
-
 }
 
 
 test_that("individual distribution switch", {
-  expect_equal(.b$.mlxTranCurEvalToDistribution("exp"),
-               "distribution=logNormal")
-  expect_equal(.b$.mlxTranCurEvalToDistribution("expit"),
-               "distribution=logitNormal")
-  expect_equal(.b$.mlxTranCurEvalToDistribution("probitInv"),
-               "distribution=probitNormal")
-  expect_equal(.b$.mlxTranCurEvalToDistribution(""),
-               "distribution=normal")
+  expect_equal(.b$.mlxTranCurEvalToDistribution("exp"), "distribution=logNormal")
+  expect_equal(.b$.mlxTranCurEvalToDistribution("expit"), "distribution=logitNormal")
+  expect_equal(.b$.mlxTranCurEvalToDistribution("probitInv"), "distribution=probitNormal")
+  expect_equal(.b$.mlxTranCurEvalToDistribution(""), "distribution=normal")
   expect_error(.b$.mlxTranCurEvalToDistribution("log"))
 })
 
 test_that("can determine if parameter is population only", {
-  .df <- data.frame(theta = c("tktr", "tka", "tcl", "tv", "tkout", "te0", "tdepot"),
-                    eta = c("eta.ktr", "eta.ka", "eta.cl", "eta.v", "eta.kout", "eta.e0", "eta.depot"),
-                    level="id")
+  .df <- data.frame(
+    theta = c("tktr", "tka", "tcl", "tv", "tkout", "te0", "tdepot"),
+    eta = c("eta.ktr", "eta.ka", "eta.cl", "eta.v", "eta.kout", "eta.e0", "eta.depot"),
+    level = "id"
+  )
   expect_true(.b$.mlxTranIsPopOnly("temax", .df))
   expect_false(.b$.mlxTranIsPopOnly("tka", .df))
 })
 
 test_that("get variability component", {
+  .df <- data.frame(
+    theta = c("tktr", "tka", "tcl", "tv", "tkout", "te0", "tdepot"),
+    eta = c("eta.ktr", "eta.ka", "eta.cl", "eta.v", "eta.kout", "eta.e0", "eta.depot"),
+    level = "id"
+  )
+  expect_equal(.b$.mlxTranGetVaraibility("emax", "temax", .df), "no-variability")
 
-  .df <- data.frame(theta = c("tktr", "tka", "tcl", "tv", "tkout", "te0", "tdepot"),
-                    eta = c("eta.ktr", "eta.ka", "eta.cl", "eta.v", "eta.kout", "eta.e0", "eta.depot"),
-                    level="id")
-  expect_equal(.b$.mlxTranGetVaraibility("emax", "temax", .df),
-               "no-variability")
-
-  expect_equal(.b$.mlxTranGetVaraibility("ka", "tka", .df),
-               "sd=omega_ka")
-
+  expect_equal(.b$.mlxTranGetVaraibility("ka", "tka", .df), "sd=omega_ka")
 })
 
 test_that("test datafile use", {
-
   one.cmt <- function() {
     ini({
       tka <- 0.45 ; label("Ka")
@@ -186,11 +219,9 @@ test_that("test datafile use", {
   expect_equal(.monolixMapDataUse("wt2", ui), "")
   # This is only true with the new rxode2;
   expect_equal(.monolixMapDataUse("WT", ui), "WT = {use=regressor}")
-
 })
 
 test_that("monolix dsl", {
-
   one.cmt <- function() {
     ini({
       tka <- 0.45 ; label("Ka")
@@ -252,22 +283,23 @@ test_that("monolix dsl", {
   .ee(.rxToM("probit(a,b,c)"), "probit(((a)-(b))/((c)-(b)))")
   .ee(.rxToM("d/dt(depot)=-depot*kel"), "ddt_depot = - depot*kel")
   .ee(.rxToM("depot(0)=50"), "depot_0 = 50")
-  .ee(.rxToM("f(depot)=3"),
-      ";f defined in PK section\nrx_f_depot = 3")
-  .ee(.rxToM("f(depot)=exp(a)"),
-      ";f defined in PK section\nrx_f_depot = exp(a)")
-  .ee(.rxToM("alag(depot)=0.1*a"),
-      ";alag defined in PK section\nrx_lag_depot = 0.1*a")
-  .ee(.rxToM("rate(depot)=exp(a)"),
-      ";rate defined in PK section\nrx_rate_depot = exp(a)")
-  .ee(.rxToM("dur(depot)=2*a"),
-      ";dur defined in PK section\nrx_dur_depot = 2*a")
+  .ee(.rxToM("f(depot)=3"), ";f defined in PK section\nrx_f_depot = 3")
+  .ee(.rxToM("f(depot)=exp(a)"), ";f defined in PK section\nrx_f_depot = exp(a)")
+  .ee(.rxToM("alag(depot)=0.1*a"), ";alag defined in PK section\nrx_lag_depot = 0.1*a")
+  .ee(.rxToM("rate(depot)=exp(a)"), ";rate defined in PK section\nrx_rate_depot = exp(a)")
+  .ee(.rxToM("dur(depot)=2*a"), ";dur defined in PK section\nrx_dur_depot = 2*a")
   # variables named like a property are not a property
   .ee(.rxToM("f=3"), "f = 3")
   .ee(.rxToM("alag=3*a"), "alag = 3*a")
   .ee(.rxToM("a**b"), "a^b")
-  .ee(.rxToM("if (a<=b){c=1} else if (a==4) {c=2} else {c=4}"), "if a<=b\n  c = 1\nelseif a==4\n  c = 2\nelse \n  c = 4\nend\n")
-  .ee(.rxToM("if (a<=b){c=1} else if (a==4) {c=2} else if (a==30) {c=4} else {c=100}"), "if a<=b\n  c = 1\nelseif a==4\n  c = 2\nelseif a==30\n  c = 4\nelse \n  c = 100\nend\n")
+  .ee(
+    .rxToM("if (a<=b){c=1} else if (a==4) {c=2} else {c=4}"),
+    "if a<=b\n  c = 1\nelseif a==4\n  c = 2\nelse \n  c = 4\nend\n"
+  )
+  .ee(
+    .rxToM("if (a<=b){c=1} else if (a==4) {c=2} else if (a==30) {c=4} else {c=100}"),
+    "if a<=b\n  c = 1\nelseif a==4\n  c = 2\nelseif a==30\n  c = 4\nelse \n  c = 100\nend\n"
+  )
   .ee(.rxToM("if (a<=b){c=1} else if (a==4) {c=2}"), "if a<=b\n  c = 1\nelseif a==4\n  c = 2\nend\n")
   .ee(.rxToM("if (a<=b){c=1}"), "if a<=b\n  c = 1\nend\n")
   .ee(.rxToM("time"), "t")
@@ -277,12 +309,10 @@ test_that("monolix dsl", {
 
   .ee(.rxToM("4.3"), "4.3")
   .ee(.rxToM("add.sd"), "add__sd")
-
 })
 
 test_that("monolix model creation without running", {
   withr::with_tempdir({
-
     one.cmt <- function() {
       ini({
         tka <- 0.45 ; label("Ka")
@@ -306,21 +336,24 @@ test_that("monolix model creation without running", {
       })
     }
 
-    files <- c("monolixTest-monolix.csv", "monolixTest-monolix.mlxtran",
-               "monolixTest-monolix.md5", "monolixTest-monolix.txt")
+    files <- c(
+      "monolixTest-monolix.csv",
+      "monolixTest-monolix.mlxtran",
+      "monolixTest-monolix.md5",
+      "monolixTest-monolix.txt"
+    )
 
-    nlmixr2(one.cmt, nlmixr2data::theo_sd, "monolix",
-            monolixControl(runCommand=NA, modelName="monolixTest"))
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "monolix", monolixControl(runCommand = NA, modelName = "monolixTest"))
 
-    lapply(files, function(f) { expect_true(file.exists(f)) })
+    lapply(files, function(f) {
+      expect_true(file.exists(f))
+    })
 
-    nlmixr2(one.cmt, nlmixr2data::theo_sd, "monolix",
-            monolixControl(runCommand=NA, modelName="monolixTest"))
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "monolix", monolixControl(runCommand = NA, modelName = "monolixTest"))
     lapply(files, function(f) {
       expect_true(file.exists(f))
       unlink(f)
     })
-
   })
 })
 
@@ -418,15 +451,15 @@ test_that("monolix conditional f() keeps its default (issue #115)", {
     .eq <- which(.txt == "EQUATION:")
     .b <- trimws(.txt[.pk:.eq])
     .b <- .b[!grepl("^;", .b)]
-    expect_equal(.b[2:8], c("if WT>70", "rx_f_depot = 0.5",
-                            "rx_lag_depot = 2", "else", "rx_f_depot = 1",
-                            "rx_lag_depot = 0", "end"))
+    expect_equal(
+      .b[2:8],
+      c("if WT>70", "rx_f_depot = 0.5", "rx_lag_depot = 2", "else", "rx_f_depot = 1", "rx_lag_depot = 0", "end")
+    )
     expect_true(grep("^depot\\(", .txt) < .eq)
   })
 })
 
 test_that("monolix treatment of +var()", {
-
   one.cmt <- function() {
     ini({
       tka <- 0.45 ; label("Ka")
@@ -457,7 +490,7 @@ test_that("monolix treatment of +var()", {
 
   expect_equal(par, "add__sd={value=0.7, method=MLE}")
 
-  f2 <- try(model(f, {cp~add(add.sd) + var()}), silent=TRUE)
+  f2 <- try(model(f, {cp~add(add.sd) + var()}), silent = TRUE)
   if (inherits(f2, "try-error")) {
     skip("rxode2 doesn't support + var()")
   } else {
@@ -465,7 +498,6 @@ test_that("monolix treatment of +var()", {
     par <- par[grepl("add__sd", par)]
     expect_equal(par, paste0("add__sd={value=", sqrt(.7), ", method=MLE}"))
   }
-
 })
 
 test_that("mu-referenced covariates are [INDIVIDUAL] inputs", {
@@ -494,8 +526,10 @@ test_that("mu-referenced covariates are [INDIVIDUAL] inputs", {
   f <- rxode2::rxode2(one.cmt)
   ind <- strsplit(f$mlxtranModelIndividual, "\n")[[1]]
   # without lWT here Monolix stops with "Undefined variable 'lWT'"
-  expect_equal(ind[grepl("^input=", ind)],
-               "input={ka_pop, omega_ka, cl_pop, lWT, beta_cl_lWT, omega_cl, v_pop, beta_v_lWT, omega_v}")
+  expect_equal(
+    ind[grepl("^input=", ind)],
+    "input={ka_pop, omega_ka, cl_pop, lWT, beta_cl_lWT, omega_cl, v_pop, beta_v_lWT, omega_v}"
+  )
 
   # several covariates on one parameter, one of them shared: each covariate
   # is listed once
@@ -509,8 +543,10 @@ test_that("mu-referenced covariates are [INDIVIDUAL] inputs", {
   expect_equal(sum(inp == "AGE"), 1L)
   expect_true(all(c("beta_cl_lWT", "beta_cl_AGE", "beta_v_lWT") %in% inp))
   def <- ind[grepl("^cl = ", ind)]
-  expect_true(grepl("covariate = {lWT, AGE}", def, fixed=TRUE) ||
-                grepl("covariate = {AGE, lWT}", def, fixed=TRUE))
+  expect_true(
+    grepl("covariate = {lWT, AGE}", def, fixed = TRUE) ||
+      grepl("covariate = {AGE, lWT}", def, fixed = TRUE)
+  )
 })
 
 test_that("only non mu-referenced covariates are regressors in the Monolix model", {
@@ -560,18 +596,18 @@ test_that("only non mu-referenced covariates are regressors in the Monolix model
 
 test_that("a Monolix project lixoftConnectors cannot load or run is an error", {
   # lixoftConnectors returns FALSE on failure rather than signalling an error
-  local_mocked_bindings(.lixoftLoadProject=function(mlxtran) FALSE,
-                        .lixoftRunScenario=function() stop("should not run"))
+  local_mocked_bindings(.lixoftLoadProject = function(mlxtran) FALSE, .lixoftRunScenario = function() {
+    stop("should not run")
+  })
   expect_error(.b$.monolixLixoftRun("x.mlxtran"), "cannot load 'x.mlxtran'")
 
-  local_mocked_bindings(.lixoftLoadProject=function(mlxtran) stop("boom"))
+  local_mocked_bindings(.lixoftLoadProject = function(mlxtran) stop("boom"))
   expect_error(.b$.monolixLixoftRun("x.mlxtran"), "cannot load 'x.mlxtran'")
 
-  local_mocked_bindings(.lixoftLoadProject=function(mlxtran) TRUE,
-                        .lixoftRunScenario=function() FALSE)
+  local_mocked_bindings(.lixoftLoadProject = function(mlxtran) TRUE, .lixoftRunScenario = function() FALSE)
   expect_error(suppressMessages(.b$.monolixLixoftRun("x.mlxtran")), "runScenario\\(\\) failed")
 
-  local_mocked_bindings(.lixoftRunScenario=function() TRUE)
+  local_mocked_bindings(.lixoftRunScenario = function() TRUE)
   expect_error(suppressMessages(.b$.monolixLixoftRun("x.mlxtran")), NA)
 })
 
@@ -607,8 +643,7 @@ test_that("Monolix's reason is part of the lixoftConnectors error", {
     cat("loading project\n[ERROR] bad macro\n")
     FALSE
   })
-  .e <- tryCatch(utils::capture.output(.b$.monolixLixoftRun("x.mlxtran")),
-                 error = function(e) conditionMessage(e))
+  .e <- tryCatch(utils::capture.output(.b$.monolixLixoftRun("x.mlxtran")), error = function(e) conditionMessage(e))
   expect_match(.e, "bad macro", fixed = TRUE)
   expect_false(grepl("loading project", .e, fixed = TRUE))
   # the run step too
@@ -941,11 +976,9 @@ test_that("a mu-referenced parameter kept inside exp() is normal in Monolix", {
   .ui <- rxode2::rxUiDecompress(rxode2::rxode2(f))
   .lines <- function(x) strsplit(x, "\n")[[1]]
   .ind <- .lines(.ui$mlxtranModelIndividual)
-  expect_true(paste0("rx__tcl = {distribution=normal, typical=rx__tcl_pop, ",
-                     "sd=omega_rx__tcl}") %in% .ind)
+  expect_true(paste0("rx__tcl = {distribution=normal, typical=rx__tcl_pop, ", "sd=omega_rx__tcl}") %in% .ind)
   # pure mu-referenced parameters stay log-normal
-  expect_true(paste0("ka = {distribution=logNormal, typical=ka_pop, ",
-                     "sd=omega_ka}") %in% .ind)
+  expect_true(paste0("ka = {distribution=logNormal, typical=ka_pop, ", "sd=omega_ka}") %in% .ind)
   expect_true(any(grepl("^   cl = exp\\(rx__tcl\\)", .lines(.ui$monolixModel))))
   # the initial value is tcl itself, not exp(tcl)
   .par <- .lines(.ui$mlxtranParameter)
@@ -954,10 +987,17 @@ test_that("a mu-referenced parameter kept inside exp() is normal in Monolix", {
 
 test_that("Monolix variables are assigned once (stress kit)", {
   .ssa <- .b$.monolixSsa(
-    list(quote(`_drop`), quote(fcl <- 1), quote(cl <- cl * fcl),
-         quote(cl <- cl * 2), quote(d/dt(central) <- -cl / v * central),
-         quote(cp <- central / v), quote(cp ~ add(add.sd))),
-    defined = c("cl", "v"), keep = "cp"
+    list(
+      quote(`_drop`),
+      quote(fcl <- 1),
+      quote(cl <- cl * fcl),
+      quote(cl <- cl * 2),
+      quote(d/dt(central) <- -cl / v * central),
+      quote(cp <- central / v),
+      quote(cp ~ add(add.sd))
+    ),
+    defined = c("cl", "v"),
+    keep = "cp"
   )
   expect_equal(.ssa[[3]], quote(cl_rx1 <- cl * fcl))
   expect_equal(.ssa[[4]], quote(cl_rx2 <- cl_rx1 * 2))
@@ -978,10 +1018,13 @@ test_that("Monolix project text from the third stress kit run", {
   .theo$SEX <- .theo$ID %% 2
   .ode <- function(extra = "", ini = "") {
     eval(str2lang(paste0(
-      "function() {\n ini({\n tka <- 0.45\n tcl <- 1\n tv <- 3.45\n", ini,
+      "function() {\n ini({\n tka <- 0.45\n tcl <- 1\n tv <- 3.45\n",
+      ini,
       "\n eta.ka ~ 0.6\n eta.cl ~ 0.3\n eta.v ~ 0.1\n add.sd <- 0.7\n })\n",
       " model({\n ka <- exp(tka + eta.ka)\n cl <- exp(tcl + eta.cl)\n",
-      " v <- exp(tv + eta.v)\n", extra, "\n d/dt(depot) <- -ka * depot\n",
+      " v <- exp(tv + eta.v)\n",
+      extra,
+      "\n d/dt(depot) <- -ka * depot\n",
       " d/dt(central) <- ka * depot - cl / v * central\n cp <- central / v\n",
       " cp ~ add(add.sd)\n })\n}"
     )))
@@ -1009,9 +1052,17 @@ test_that("Monolix project text from the third stress kit run", {
 })
 
 test_that("Monolix gets no limit as missing, not -Inf", {
-  .d <- data.frame(ID = 1, TIME = 0:2, EVID = c(1, 0, 0), DV = c(NA, 1, 2),
-                   SS = 0, YTYPE = 0, ADM = c(1, 0, 0),
-                   CENS = c(0, 1, 0), LIMIT = c(-Inf, 0, -Inf))
+  .d <- data.frame(
+    ID = 1,
+    TIME = 0:2,
+    EVID = c(1, 0, 0),
+    DV = c(NA, 1, 2),
+    SS = 0,
+    YTYPE = 0,
+    ADM = c(1, 0, 0),
+    CENS = c(0, 1, 0),
+    LIMIT = c(-Inf, 0, -Inf)
+  )
   .ui <- rxode2::rxUiDecompress(rxode2::rxode2(function() {
     ini({
       tcl <- 1
@@ -1028,8 +1079,7 @@ test_that("Monolix gets no limit as missing, not -Inf", {
 })
 
 test_that("a LIMIT on uncensored observations (M2) is refused for Monolix", {
-  .d <- data.frame(ID = 1, TIME = 0:2, EVID = c(1, 0, 0), DV = c(NA, 1, 2),
-                   CENS = c(0, 1, 0), LIMIT = c(NA, 0, NA))
+  .d <- data.frame(ID = 1, TIME = 0:2, EVID = c(1, 0, 0), DV = c(NA, 1, 2), CENS = c(0, 1, 0), LIMIT = c(NA, 0, NA))
   # M3/M4: LIMIT only with censored values
   expect_error(.b$.monolixAssertNoM2(.d), NA)
   .d$LIMIT[3] <- 0.5
