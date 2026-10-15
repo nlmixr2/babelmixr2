@@ -1621,6 +1621,7 @@ test_that("est='pknca' multiple-dose oral without dose-time conc (#102)", {
 })
 
 test_that("unit conversion scales the whole DV expression (#236)", {
+  skip_if_not_installed("PKNCA")
   mod <- function() {
     ini({
       tka <- 0.45
