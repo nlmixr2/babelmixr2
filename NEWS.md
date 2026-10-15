@@ -1,8 +1,10 @@
 # babelmixr2 0.1.11.9000
 
-* NONMEM: names that differ only by case (like the covariates `wt` and
-  `WT`) get one NONMEM name each for the whole control stream, so the data
-  columns, `$PK`, `$DES` and `$ERROR` agree (#237)
+* NONMEM: names that differ only by case get one NONMEM name each for
+  the whole control stream, so the data columns, `$INPUT`, `$MODEL`,
+  `$PK`, `$DES` and `$ERROR` agree.  Covariates ignore case (like
+  rxode2), so `wt` and `WT` are one data column; a variable or
+  compartment that clashes is renamed `RXC001`, ... (#237)
 
 * `as.nlmixr2()` of a nonmem2rx import solves with
   `rxControl(nonmem = TRUE, addlKeepsCov = FALSE)`, the way nonmem2rx

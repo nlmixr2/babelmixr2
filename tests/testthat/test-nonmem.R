@@ -1,7 +1,6 @@
 withr::with_tempdir({
-  test_that("alag vs lag in NONMEM translation",{
-
-    rx_fun = function() {
+  test_that("alag vs lag in NONMEM translation", {
+    rx_fun <- function() {
       description <- "PK double absorption model with simultaneous zero order and first order absorptions"
       ini({
         tk01 <- 0.4
@@ -41,21 +40,21 @@ withr::with_tempdir({
 
     rx_obj <- rxode2::rxode2(rx_fun)
 
-    dataset = data.frame(
+    dataset <- data.frame(
       id = c(1L, 1L, 2L, 2L),
       time = c(0, 1, 0, 1),
       cmt = c("Cc", "Cc", "Cc", "Cc"),
       evid = c(0L, 0L, 0L, 0L),
-      dv = c(0, 0, 0, 0))
+      dv = c(0, 0, 0, 0)
+    )
 
-    expect_error(nlmixr2(rx_obj, dataset, "nonmem",
-                         nonmemControl(modelName="test_nm", runCommand=NA)),
-                 NA)
+    expect_error(nlmixr2(rx_obj, dataset, "nonmem", nonmemControl(modelName = "test_nm", runCommand = NA)), NA)
 
     # $PROBLEM carries the model name (#209)
-    expect_equal(readLines(file.path("test_nm-nonmem", "test_nm.nmctl"), n=1),
-                 "$PROBLEM test_nm translated from babelmixr2")
-
+    expect_equal(
+      readLines(file.path("test_nm-nonmem", "test_nm.nmctl"), n = 1),
+      "$PROBLEM test_nm translated from babelmixr2"
+    )
   })
 
   test_that("zero protection IF blocks are commented (#91)", {
@@ -314,9 +313,8 @@ withr::with_tempdir({
     expect_true(any(grepl("^  LW=DLOG\\(RXDZ", .mod)))
     .expectPkDefined(.mod)
   })
-  withr::with_options(list(babelmixr2.protectZeros=FALSE), {
+  withr::with_options(list(babelmixr2.protectZeros = FALSE), {
     test_that("NONMEM dsl, individual lines", {
-
       one.cmt <- function() {
         ini({
           tka <- 0.45 ; label("Ka")
@@ -398,37 +396,40 @@ withr::with_tempdir({
         .rxToN("if (a<=b){c=1} else if (a==4) {c=2} else {c=4}"),
         # Prior result:
         # "  IF (RXR1.LE.RXR2) THEN\n    RXR3=1\n  ELSE IF (RXR1.EQ.4) THEN\n    RXR3=2\n  ELSE\n    RXR3=4\n  END IF\n"
-        regexp="babelmixr2 will not allow `else if` or `else` statements in NONMEM models"
+        regexp = "babelmixr2 will not allow `else if` or `else` statements in NONMEM models"
       )
       expect_error(
         .rxToN("if (a<=b){c=1} else if (a==4) {c=2} else if (a==30) {c=4} else {c=100}"),
         # Prior result:
         #"  IF (RXR1.LE.RXR2) THEN\n    RXR3=1\n  ELSE IF (RXR1.EQ.4) THEN\n    RXR3=2\n  ELSE IF (RXR1.EQ.30) THEN\n    RXR3=4\n  ELSE\n    RXR3=1R\n  END IF\n"
-        regexp="babelmixr2 will not allow `else if` or `else` statements in NONMEM models"
+        regexp = "babelmixr2 will not allow `else if` or `else` statements in NONMEM models"
       )
       expect_error(
         .rxToN("if (a<=b){c=1} else if (a==4) {c=2}"),
         # Prior result:
         # "  IF (RXR1.LE.RXR2) THEN\n    RXR3=1\n  ELSE IF (RXR1.EQ.4) THEN\n    RXR3=2\n  END IF\n"
-        regexp="babelmixr2 will not allow `else if` or `else` statements in NONMEM models"
+        regexp = "babelmixr2 will not allow `else if` or `else` statements in NONMEM models"
       )
       expect_equal(
         .rxToN("if (a<=b){c=1}"),
-        paste(c(
-          "  IF (RXR1.LE.RXR2) THEN",
-          "    RXR3=1 ; c = 1",
-          "  END IF",
-          ""
-        ), collapse="\n")
+        paste(
+          c(
+            "  IF (RXR1.LE.RXR2) THEN",
+            "    RXR3=1 ; c = 1",
+            "  END IF",
+            ""
+          ),
+          collapse = "\n"
+        )
       )
       expect_equal(.rxToN("time"), "TIME")
       expect_error(
         .rxToN("NA"),
-        regexp="'NA' cannot be translated to NONMEM"
+        regexp = "'NA' cannot be translated to NONMEM"
       )
       expect_error(
         .rxToN("newind"),
-        regexp="'newind' cannot be translated to NONMEM"
+        regexp = "'newind' cannot be translated to NONMEM"
       )
       expect_equal(.rxToN("log1pmx(a)"), "(DLOG(1+RXR1)-(RXR1))")
 
@@ -441,7 +442,6 @@ withr::with_tempdir({
     })
 
     test_that("NONMEM dsl, full model", {
-
       one.cmt <- function() {
         ini({
           tka <- 0.45 ; label("Ka")
@@ -464,11 +464,13 @@ withr::with_tempdir({
       }
 
       expect_message(
-          nlmixr2est::nlmixr(
-            one.cmt, data=nlmixr2data::Oral_1CPT, est="nonmem",
-            control=nonmemControl(runCommand=NA)
-          ),
-        regexp="only exported NONMEM"
+        nlmixr2est::nlmixr(
+          one.cmt,
+          data = nlmixr2data::Oral_1CPT,
+          est = "nonmem",
+          control = nonmemControl(runCommand = NA)
+        ),
+        regexp = "only exported NONMEM"
       )
 
       ui <- one.cmt()
@@ -544,10 +546,9 @@ withr::with_tempdir({
             "    FORMAT=s1PE17.9 NOAPPEND FILE=one.cmt.pred",
             ""
           ),
-          collapse="\n"
+          collapse = "\n"
         )
       )
-
     })
 
     test_that("NONMEM export assigns ALAG for absorption lag (issue #190)", {
@@ -587,7 +588,7 @@ withr::with_tempdir({
       }
       for (m in list(lagDirect, lagVar, alagVar)) {
         nm <- m()$nonmemModel
-        expect_match(nm, "ALAG1 *=", all=FALSE)
+        expect_match(nm, "ALAG1 *=", all = FALSE)
       }
     })
 
@@ -606,9 +607,9 @@ withr::with_tempdir({
       }
       expect_message(
         nm <- reservedVar()$nonmemModel,
-        regexp="renamed model variable 'alag' to 'RXR1'"
+        regexp = "renamed model variable 'alag' to 'RXR1'"
       )
-      expect_match(nm, "RXR1 *=", all=FALSE)
+      expect_match(nm, "RXR1 *=", all = FALSE)
     })
 
     # pk.turnover.emax3 <- function() {
@@ -669,7 +670,6 @@ withr::with_tempdir({
     # w <- pk.turnover.emax3()
 
     test_that("tbs tests", {
-
       pheno <- function() {
         ini({
           tcl <- log(0.008) # typical value of clearance
@@ -705,32 +705,35 @@ withr::with_tempdir({
       # https://doi.org/10.1007/s10928-015-9460-y
       expect_equal(
         p$nonmemErrF,
-        paste(c(
-          "",
-          "  ; Write out expressions for ipred and w",
-          "  ; Box-Cox like rxode2: x - 1 for lambda=1, otherwise with x",
-          "  ; floored at sqrt(DBL_EPSILON); the formula is picked with",
-          "  ; indicators because NM-TRAN cannot redefine RX_IP1 in an ELSE IF",
-          "  ; chain",
-          "  RX_IP1 = RX_PF1",
-          "  RX_IP1X = RX_IP1",
-          "  IF (RX_IP1X .LE. 1.4901161E-8) RX_IP1X = 1.4901161E-8",
-          "  RX_IP1L0 = 0.0",
-          "  IF (THETA(4) .EQ. 0.0) RX_IP1L0 = 1.0",
-          "  RX_IP1L1 = 0.0",
-          "  IF (THETA(4) .EQ. 1.0) RX_IP1L1 = 1.0",
-          "  RX_IP1BC = (RX_IP1X**THETA(4) - 1.0)/(THETA(4) + RX_IP1L0)",
-          "  RX_IP1BC = RX_IP1L0*DLOG(RX_IP1X) + (1.0 - RX_IP1L0)*RX_IP1BC",
-          "  RX_IP1 = RX_IP1L1*(RX_IP1 - 1.0) + (1.0 - RX_IP1L1)*RX_IP1BC",
-          "  RX_P1 = RX_IP1",
-          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((add.err)^2)",
-          "  ; keep W1 away from zero (a zero residual variance is undefined)",
-          "  IF (W1 .EQ. 0.0) W1 = 1",
-          "  IPRED = RX_IP1",
-          "  W     = W1",
-          "  Y     = IPRED + W*EPS(1)",
-          ""
-        ), collapse="\n")
+        paste(
+          c(
+            "",
+            "  ; Write out expressions for ipred and w",
+            "  ; Box-Cox like rxode2: x - 1 for lambda=1, otherwise with x",
+            "  ; floored at sqrt(DBL_EPSILON); the formula is picked with",
+            "  ; indicators because NM-TRAN cannot redefine RX_IP1 in an ELSE IF",
+            "  ; chain",
+            "  RX_IP1 = RX_PF1",
+            "  RX_IP1X = RX_IP1",
+            "  IF (RX_IP1X .LE. 1.4901161E-8) RX_IP1X = 1.4901161E-8",
+            "  RX_IP1L0 = 0.0",
+            "  IF (THETA(4) .EQ. 0.0) RX_IP1L0 = 1.0",
+            "  RX_IP1L1 = 0.0",
+            "  IF (THETA(4) .EQ. 1.0) RX_IP1L1 = 1.0",
+            "  RX_IP1BC = (RX_IP1X**THETA(4) - 1.0)/(THETA(4) + RX_IP1L0)",
+            "  RX_IP1BC = RX_IP1L0*DLOG(RX_IP1X) + (1.0 - RX_IP1L0)*RX_IP1BC",
+            "  RX_IP1 = RX_IP1L1*(RX_IP1 - 1.0) + (1.0 - RX_IP1L1)*RX_IP1BC",
+            "  RX_P1 = RX_IP1",
+            "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((add.err)^2)",
+            "  ; keep W1 away from zero (a zero residual variance is undefined)",
+            "  IF (W1 .EQ. 0.0) W1 = 1",
+            "  IPRED = RX_IP1",
+            "  W     = W1",
+            "  Y     = IPRED + W*EPS(1)",
+            ""
+          ),
+          collapse = "\n"
+        )
       )
 
       pheno <- function() {
@@ -765,34 +768,37 @@ withr::with_tempdir({
       # https://en.wikipedia.org/wiki/Power_transform#Yeo%E2%80%93Johnson_transformation
       expect_equal(
         p$nonmemErrF,
-        paste(c(
-          "",
-          "  ; Write out expressions for ipred and w",
-          "  ; Yeo-Johnson; the branches are picked with indicators because",
-          "  ; NM-TRAN cannot redefine RX_IP1 in nested IF structures",
-          "  RX_IP1 = RX_PF1",
-          "  RX_IP1P = 0.0",
-          "  IF (RX_IP1 .GE. 0.0) RX_IP1P = 1.0",
-          "  RX_IP1A = RX_IP1P*RX_IP1",
-          "  RX_IP1B = (1.0 - RX_IP1P)*RX_IP1",
-          "  RX_IP1L0 = 0.0",
-          "  IF (THETA(4) .EQ. 0.0) RX_IP1L0 = 1.0",
-          "  RX_IP1L2 = 0.0",
-          "  IF (THETA(4) .EQ. 2.0) RX_IP1L2 = 1.0",
-          "  RX_IP1Y1 = ((RX_IP1A + 1.0)**THETA(4) - 1.0)/(THETA(4) + RX_IP1L0)",
-          "  RX_IP1Y1 = RX_IP1L0*DLOG(RX_IP1A + 1.0) + (1.0 - RX_IP1L0)*RX_IP1Y1",
-          "  RX_IP1Y2 = (1.0 - (1.0 - RX_IP1B)**(2.0 - THETA(4)))/(2.0 - THETA(4) + RX_IP1L2)",
-          "  RX_IP1Y2 = -RX_IP1L2*DLOG(1.0 - RX_IP1B) + (1.0 - RX_IP1L2)*RX_IP1Y2",
-          "  RX_IP1 = RX_IP1P*RX_IP1Y1 + (1.0 - RX_IP1P)*RX_IP1Y2",
-          "  RX_P1 = RX_IP1",
-          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((add.err)^2)",
-          "  ; keep W1 away from zero (a zero residual variance is undefined)",
-          "  IF (W1 .EQ. 0.0) W1 = 1",
-          "  IPRED = RX_IP1",
-          "  W     = W1",
-          "  Y     = IPRED + W*EPS(1)",
-          ""
-        ), collapse="\n")
+        paste(
+          c(
+            "",
+            "  ; Write out expressions for ipred and w",
+            "  ; Yeo-Johnson; the branches are picked with indicators because",
+            "  ; NM-TRAN cannot redefine RX_IP1 in nested IF structures",
+            "  RX_IP1 = RX_PF1",
+            "  RX_IP1P = 0.0",
+            "  IF (RX_IP1 .GE. 0.0) RX_IP1P = 1.0",
+            "  RX_IP1A = RX_IP1P*RX_IP1",
+            "  RX_IP1B = (1.0 - RX_IP1P)*RX_IP1",
+            "  RX_IP1L0 = 0.0",
+            "  IF (THETA(4) .EQ. 0.0) RX_IP1L0 = 1.0",
+            "  RX_IP1L2 = 0.0",
+            "  IF (THETA(4) .EQ. 2.0) RX_IP1L2 = 1.0",
+            "  RX_IP1Y1 = ((RX_IP1A + 1.0)**THETA(4) - 1.0)/(THETA(4) + RX_IP1L0)",
+            "  RX_IP1Y1 = RX_IP1L0*DLOG(RX_IP1A + 1.0) + (1.0 - RX_IP1L0)*RX_IP1Y1",
+            "  RX_IP1Y2 = (1.0 - (1.0 - RX_IP1B)**(2.0 - THETA(4)))/(2.0 - THETA(4) + RX_IP1L2)",
+            "  RX_IP1Y2 = -RX_IP1L2*DLOG(1.0 - RX_IP1B) + (1.0 - RX_IP1L2)*RX_IP1Y2",
+            "  RX_IP1 = RX_IP1P*RX_IP1Y1 + (1.0 - RX_IP1P)*RX_IP1Y2",
+            "  RX_P1 = RX_IP1",
+            "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((add.err)^2)",
+            "  ; keep W1 away from zero (a zero residual variance is undefined)",
+            "  IF (W1 .EQ. 0.0) W1 = 1",
+            "  IPRED = RX_IP1",
+            "  W     = W1",
+            "  Y     = IPRED + W*EPS(1)",
+            ""
+          ),
+          collapse = "\n"
+        )
       )
 
       pheno <- function() {
@@ -817,27 +823,32 @@ withr::with_tempdir({
 
       p <- pheno()
 
-      expect_equal(p$nonmemCcontra,
-                   "      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)\n      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2\n      USE NM_INTERFACE,ONLY: CELS\n!      parameter (lth=40,lvr=30,no=50)\n!      common /rocm0/ theta (lth)\n!      common /rocm4/ y\n!      double precision c1,c2,c3,theta,y,w,one,two\n      double precision c1,c2,c3,w,one,two\n      dimension c2(:),c3(:,:)\n      data one,two/1.,2./\n      if (icall.le.1) return\n      w=y(1)\n      y(1)=log(y(1))\n      call cels (c1,c2,c3,ier1,ier2)\n      y(1)=w\n      c1=c1+two*log(y(1))\n      return\n      end")
+      expect_equal(
+        p$nonmemCcontra,
+        "      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)\n      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2\n      USE NM_INTERFACE,ONLY: CELS\n!      parameter (lth=40,lvr=30,no=50)\n!      common /rocm0/ theta (lth)\n!      common /rocm4/ y\n!      double precision c1,c2,c3,theta,y,w,one,two\n      double precision c1,c2,c3,w,one,two\n      dimension c2(:),c3(:,:)\n      data one,two/1.,2./\n      if (icall.le.1) return\n      w=y(1)\n      y(1)=log(y(1))\n      call cels (c1,c2,c3,ier1,ier2)\n      y(1)=w\n      c1=c1+two*log(y(1))\n      return\n      end"
+      )
 
       expect_equal(
         p$nonmemErrF,
-        paste(c(
-          "",
-          "  ; Write out expressions for ipred and w",
-          "  ; log(), with rxode2's floor of sqrt(DBL_EPSILON)",
-          "  RX_IP1 = RX_PF1",
-          "  IF (RX_IP1 .LE. 1.4901161E-8) RX_IP1 = 1.4901161E-8",
-          "  RX_IP1 = DLOG(RX_IP1)",
-          "  RX_P1 = RX_IP1",
-          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
-          "  ; keep W1 away from zero (a zero residual variance is undefined)",
-          "  IF (W1 .EQ. 0.0) W1 = 1",
-          "  IPRED = RX_IP1",
-          "  W     = W1",
-          "  Y     = IPRED + W*EPS(1)",
-          ""
-        ), collapse="\n")
+        paste(
+          c(
+            "",
+            "  ; Write out expressions for ipred and w",
+            "  ; log(), with rxode2's floor of sqrt(DBL_EPSILON)",
+            "  RX_IP1 = RX_PF1",
+            "  IF (RX_IP1 .LE. 1.4901161E-8) RX_IP1 = 1.4901161E-8",
+            "  RX_IP1 = DLOG(RX_IP1)",
+            "  RX_P1 = RX_IP1",
+            "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
+            "  ; keep W1 away from zero (a zero residual variance is undefined)",
+            "  IF (W1 .EQ. 0.0) W1 = 1",
+            "  IPRED = RX_IP1",
+            "  W     = W1",
+            "  Y     = IPRED + W*EPS(1)",
+            ""
+          ),
+          collapse = "\n"
+        )
       )
 
       pheno <- function() {
@@ -862,29 +873,34 @@ withr::with_tempdir({
 
       p <- pheno()
 
-      expect_equal(p$nonmemCcontra,
-                   "      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)\n      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2\n      USE NM_INTERFACE,ONLY: CELS\n!      parameter (lth=40,lvr=30,no=50)\n!      common /rocm0/ theta (lth)\n!      common /rocm4/ y\n!      double precision c1,c2,c3,theta,y,w,one,two\n      double precision c1,c2,c3,w,one,two,xl,hl,hl2\n      dimension c2(:),c3(:,:)\n      data one,two/1.,2./\n      if (icall.le.1) return\n      w=y(1)\n      xl = (y(1)-(-0.1))/((70.0)-(-0.1))\n      y(1) = -log(one/xl-one)\n      call cels (c1,c2,c3,ier1,ier2)\n      y(1)=w\n      xl = (y(1)-(-0.1))\n      hl = ((70.0) - (-0.1))\n      hl2 = hl-xl\n      c1=c1-two*(log(hl)-log(xl)-log(hl2))\n      return\n      end")
+      expect_equal(
+        p$nonmemCcontra,
+        "      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)\n      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2\n      USE NM_INTERFACE,ONLY: CELS\n!      parameter (lth=40,lvr=30,no=50)\n!      common /rocm0/ theta (lth)\n!      common /rocm4/ y\n!      double precision c1,c2,c3,theta,y,w,one,two\n      double precision c1,c2,c3,w,one,two,xl,hl,hl2\n      dimension c2(:),c3(:,:)\n      data one,two/1.,2./\n      if (icall.le.1) return\n      w=y(1)\n      xl = (y(1)-(-0.1))/((70.0)-(-0.1))\n      y(1) = -log(one/xl-one)\n      call cels (c1,c2,c3,ier1,ier2)\n      y(1)=w\n      xl = (y(1)-(-0.1))\n      hl = ((70.0) - (-0.1))\n      hl2 = hl-xl\n      c1=c1-two*(log(hl)-log(xl)-log(hl2))\n      return\n      end"
+      )
 
       expect_equal(
         p$nonmemErrF,
-        paste(c(
-          "",
-          "  ; Write out expressions for ipred and w",
-          "  ; logit, with the fraction kept in [sqrt(DBL_EPSILON), 1 - sqrt(DBL_EPSILON)]",
-          "  RX_IP1 = RX_PF1",
-          "  XL  = (RX_IP1 - (-0.1))/((70.0) - (-0.1))",
-          "  IF (XL .LT. 1.4901161E-8) XL = 1.4901161E-8",
-          "  IF (XL .GT. 0.999999985098839) XL = 0.999999985098839",
-          "  RX_IP1 = -DLOG(1.0/XL - 1.0)",
-          "  RX_P1 = RX_IP1",
-          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
-          "  ; keep W1 away from zero (a zero residual variance is undefined)",
-          "  IF (W1 .EQ. 0.0) W1 = 1",
-          "  IPRED = RX_IP1",
-          "  W     = W1",
-          "  Y     = IPRED + W*EPS(1)",
-          ""
-        ), collapse="\n")
+        paste(
+          c(
+            "",
+            "  ; Write out expressions for ipred and w",
+            "  ; logit, with the fraction kept in [sqrt(DBL_EPSILON), 1 - sqrt(DBL_EPSILON)]",
+            "  RX_IP1 = RX_PF1",
+            "  XL  = (RX_IP1 - (-0.1))/((70.0) - (-0.1))",
+            "  IF (XL .LT. 1.4901161E-8) XL = 1.4901161E-8",
+            "  IF (XL .GT. 0.999999985098839) XL = 0.999999985098839",
+            "  RX_IP1 = -DLOG(1.0/XL - 1.0)",
+            "  RX_P1 = RX_IP1",
+            "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
+            "  ; keep W1 away from zero (a zero residual variance is undefined)",
+            "  IF (W1 .EQ. 0.0) W1 = 1",
+            "  IPRED = RX_IP1",
+            "  W     = W1",
+            "  Y     = IPRED + W*EPS(1)",
+            ""
+          ),
+          collapse = "\n"
+        )
       )
 
       pheno <- function() {
@@ -910,44 +926,49 @@ withr::with_tempdir({
 
       p <- pheno()
 
-      expect_equal(p$nonmemCcontra,
-                   "      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)\n      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2\n      USE NM_INTERFACE,ONLY: CELS\n!      parameter (lth=40,lvr=30,no=50)\n!      common /rocm0/ theta (lth)\n!      common /rocm4/ y\n!      double precision c1,c2,c3,theta,y,w,one,two\n      double precision c1,c2,c3,w,one,two,xl,hl,hl2,pd,pdd1,pdd2,p\n      dimension c2(:),c3(:,:)\n      data one,two/1.,2./\n      if (icall.le.1) return\n      w=y(1)\n      xl = (y(1)-(-0.1))/((70.0)-(-0.1))\n      xl = -log(one/xl-one)\n      if (theta(4) .eq. 1.0) then\n         y(1) = xl\n      else if (xl .ge. 0) then\n         if (theta(4) .eq. 0) then\n            y(1) = log(one+xl)\n         else\n            y(1) = ((xl + one)**theta(4) - one)/theta(4)\n         end if\n      else\n         if (theta(4) .eq. 2.0) then\n            y(1) = -log(one-xl)\n         else\n            hl = two - theta(4)\n            y(1) = (one - (one - xl)**hl)/hl\n         end if\n      end if\n      call cels (c1,c2,c3,ier1,ier2)\n      y(1)=w\n      p = (y(1)-(-0.1))/((70.0)-(-0.1))\n      pd = -log(one/p-one)\n      if (theta(4) .eq. one) then\n         pdd1 = 1.0\n      else if (pd .ge. 0) then\n         if (theta(4) .eq. 0.0) then\n            pdd1 = one/(pd + one)\n         else\n            pdd1 = (pd + one)**(theta(4)-1.0)\n         end if\n      else \n         if (theta(4) .eq. 2.0) then\n            pdd1 =  -one/(one - pd);\n         else\n            pdd1 = (one - pd)**(one-theta(4))\n         end if\n      end if\n      xl = (y(1)-(-0.1))\n      hl = ((70.0) - (-0.1));\n      pdd2 = hl/(xl*(hl-xl));\n      c1=c1-two*(log(pdd1)+log(pdd2))\n      return\n      end")
+      expect_equal(
+        p$nonmemCcontra,
+        "      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)\n      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2\n      USE NM_INTERFACE,ONLY: CELS\n!      parameter (lth=40,lvr=30,no=50)\n!      common /rocm0/ theta (lth)\n!      common /rocm4/ y\n!      double precision c1,c2,c3,theta,y,w,one,two\n      double precision c1,c2,c3,w,one,two,xl,hl,hl2,pd,pdd1,pdd2,p\n      dimension c2(:),c3(:,:)\n      data one,two/1.,2./\n      if (icall.le.1) return\n      w=y(1)\n      xl = (y(1)-(-0.1))/((70.0)-(-0.1))\n      xl = -log(one/xl-one)\n      if (theta(4) .eq. 1.0) then\n         y(1) = xl\n      else if (xl .ge. 0) then\n         if (theta(4) .eq. 0) then\n            y(1) = log(one+xl)\n         else\n            y(1) = ((xl + one)**theta(4) - one)/theta(4)\n         end if\n      else\n         if (theta(4) .eq. 2.0) then\n            y(1) = -log(one-xl)\n         else\n            hl = two - theta(4)\n            y(1) = (one - (one - xl)**hl)/hl\n         end if\n      end if\n      call cels (c1,c2,c3,ier1,ier2)\n      y(1)=w\n      p = (y(1)-(-0.1))/((70.0)-(-0.1))\n      pd = -log(one/p-one)\n      if (theta(4) .eq. one) then\n         pdd1 = 1.0\n      else if (pd .ge. 0) then\n         if (theta(4) .eq. 0.0) then\n            pdd1 = one/(pd + one)\n         else\n            pdd1 = (pd + one)**(theta(4)-1.0)\n         end if\n      else \n         if (theta(4) .eq. 2.0) then\n            pdd1 =  -one/(one - pd);\n         else\n            pdd1 = (one - pd)**(one-theta(4))\n         end if\n      end if\n      xl = (y(1)-(-0.1))\n      hl = ((70.0) - (-0.1));\n      pdd2 = hl/(xl*(hl-xl));\n      c1=c1-two*(log(pdd1)+log(pdd2))\n      return\n      end"
+      )
 
       expect_equal(
         p$nonmemErrF,
-        paste(c(
-          "",
-          "  ; Write out expressions for ipred and w",
-          "  ; logit followed by Yeo-Johnson; the branches are picked with",
-          "  ; indicators because NM-TRAN cannot redefine RX_IP1 in nested IF",
-          "  ; structures",
-          "  RX_IP1 = RX_PF1",
-          "  XL  = (RX_IP1 - (-0.1))/((70.0) - (-0.1))",
-          "  IF (XL .LT. 1.4901161E-8) XL = 1.4901161E-8",
-          "  IF (XL .GT. 0.999999985098839) XL = 0.999999985098839",
-          "  XL  = -DLOG(1.0/XL - 1.0)",
-          "  RX_IP1P = 0.0",
-          "  IF (XL .GE. 0.0) RX_IP1P = 1.0",
-          "  RX_IP1A = RX_IP1P*XL",
-          "  RX_IP1B = (1.0 - RX_IP1P)*XL",
-          "  RX_IP1L0 = 0.0",
-          "  IF (THETA(4) .EQ. 0.0) RX_IP1L0 = 1.0",
-          "  RX_IP1L2 = 0.0",
-          "  IF (THETA(4) .EQ. 2.0) RX_IP1L2 = 1.0",
-          "  RX_IP1Y1 = ((RX_IP1A + 1.0)**THETA(4) - 1.0)/(THETA(4) + RX_IP1L0)",
-          "  RX_IP1Y1 = RX_IP1L0*DLOG(RX_IP1A + 1.0) + (1.0 - RX_IP1L0)*RX_IP1Y1",
-          "  RX_IP1Y2 = (1.0 - (1.0 - RX_IP1B)**(2.0 - THETA(4)))/(2.0 - THETA(4) + RX_IP1L2)",
-          "  RX_IP1Y2 = -RX_IP1L2*DLOG(1.0 - RX_IP1B) + (1.0 - RX_IP1L2)*RX_IP1Y2",
-          "  RX_IP1 = RX_IP1P*RX_IP1Y1 + (1.0 - RX_IP1P)*RX_IP1Y2",
-          "  RX_P1 = RX_IP1",
-          "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
-          "  ; keep W1 away from zero (a zero residual variance is undefined)",
-          "  IF (W1 .EQ. 0.0) W1 = 1",
-          "  IPRED = RX_IP1",
-          "  W     = W1",
-          "  Y     = IPRED + W*EPS(1)",
-          ""
-        ), collapse="\n")
+        paste(
+          c(
+            "",
+            "  ; Write out expressions for ipred and w",
+            "  ; logit followed by Yeo-Johnson; the branches are picked with",
+            "  ; indicators because NM-TRAN cannot redefine RX_IP1 in nested IF",
+            "  ; structures",
+            "  RX_IP1 = RX_PF1",
+            "  XL  = (RX_IP1 - (-0.1))/((70.0) - (-0.1))",
+            "  IF (XL .LT. 1.4901161E-8) XL = 1.4901161E-8",
+            "  IF (XL .GT. 0.999999985098839) XL = 0.999999985098839",
+            "  XL  = -DLOG(1.0/XL - 1.0)",
+            "  RX_IP1P = 0.0",
+            "  IF (XL .GE. 0.0) RX_IP1P = 1.0",
+            "  RX_IP1A = RX_IP1P*XL",
+            "  RX_IP1B = (1.0 - RX_IP1P)*XL",
+            "  RX_IP1L0 = 0.0",
+            "  IF (THETA(4) .EQ. 0.0) RX_IP1L0 = 1.0",
+            "  RX_IP1L2 = 0.0",
+            "  IF (THETA(4) .EQ. 2.0) RX_IP1L2 = 1.0",
+            "  RX_IP1Y1 = ((RX_IP1A + 1.0)**THETA(4) - 1.0)/(THETA(4) + RX_IP1L0)",
+            "  RX_IP1Y1 = RX_IP1L0*DLOG(RX_IP1A + 1.0) + (1.0 - RX_IP1L0)*RX_IP1Y1",
+            "  RX_IP1Y2 = (1.0 - (1.0 - RX_IP1B)**(2.0 - THETA(4)))/(2.0 - THETA(4) + RX_IP1L2)",
+            "  RX_IP1Y2 = -RX_IP1L2*DLOG(1.0 - RX_IP1B) + (1.0 - RX_IP1L2)*RX_IP1Y2",
+            "  RX_IP1 = RX_IP1P*RX_IP1Y1 + (1.0 - RX_IP1P)*RX_IP1Y2",
+            "  RX_P1 = RX_IP1",
+            "  W1=DSQRT(((THETA(3))*(THETA(3)))) ; W1 ~ sqrt((lnorm.err)^2)",
+            "  ; keep W1 away from zero (a zero residual variance is undefined)",
+            "  IF (W1 .EQ. 0.0) W1 = 1",
+            "  IPRED = RX_IP1",
+            "  W     = W1",
+            "  Y     = IPRED + W*EPS(1)",
+            ""
+          ),
+          collapse = "\n"
+        )
       )
     })
 
@@ -1005,19 +1026,22 @@ withr::with_tempdir({
 
       expect_equal(
         w$nonmemErrF,
-        paste(c(
-          "",
-          "  ; Write out expressions for ipred and w",
-          "  RX_IP1 = RX_PF1",
-          "  RX_P1 = RX_IP1",
-          "  W1=DSQRT(((RX_PF1*THETA(5))*(RX_PF1*THETA(5)))) ; W1 ~ sqrt((rx_pred_f_ * prop.err)^2)",
-          "  ; keep W1 away from zero (a zero residual variance is undefined)",
-          "  IF (W1 .EQ. 0.0) W1 = 1",
-          "  IPRED = RX_IP1",
-          "  W     = W1",
-          "  Y     = IPRED + W*EPS(1)",
-          ""
-        ), collapse="\n")
+        paste(
+          c(
+            "",
+            "  ; Write out expressions for ipred and w",
+            "  RX_IP1 = RX_PF1",
+            "  RX_P1 = RX_IP1",
+            "  W1=DSQRT(((RX_PF1*THETA(5))*(RX_PF1*THETA(5)))) ; W1 ~ sqrt((rx_pred_f_ * prop.err)^2)",
+            "  ; keep W1 away from zero (a zero residual variance is undefined)",
+            "  IF (W1 .EQ. 0.0) W1 = 1",
+            "  IPRED = RX_IP1",
+            "  W     = W1",
+            "  Y     = IPRED + W*EPS(1)",
+            ""
+          ),
+          collapse = "\n"
+        )
       )
     })
 
@@ -1079,56 +1103,59 @@ withr::with_tempdir({
       w <- pk.turnover.emax3()
       expect_equal(
         w$nonmemErrF,
-        paste(c(
-          "",
-          "  ; Write out expressions for ipred and w",
-          "  ; Box-Cox like rxode2: x - 1 for lambda=1, otherwise with x",
-          "  ; floored at sqrt(DBL_EPSILON); the formula is picked with",
-          "  ; indicators because NM-TRAN cannot redefine RX_IP1 in an ELSE IF",
-          "  ; chain",
-          "  RX_IP1 = RX_PF1",
-          "  RX_IP1X = RX_IP1",
-          "  IF (RX_IP1X .LE. 1.4901161E-8) RX_IP1X = 1.4901161E-8",
-          "  RX_IP1L0 = 0.0",
-          "  IF (THETA(10) .EQ. 0.0) RX_IP1L0 = 1.0",
-          "  RX_IP1L1 = 0.0",
-          "  IF (THETA(10) .EQ. 1.0) RX_IP1L1 = 1.0",
-          "  RX_IP1BC = (RX_IP1X**THETA(10) - 1.0)/(THETA(10) + RX_IP1L0)",
-          "  RX_IP1BC = RX_IP1L0*DLOG(RX_IP1X) + (1.0 - RX_IP1L0)*RX_IP1BC",
-          "  RX_IP1 = RX_IP1L1*(RX_IP1 - 1.0) + (1.0 - RX_IP1L1)*RX_IP1BC",
-          "  RX_P1 = RX_IP1",
-          "  W1=DSQRT(((THETA(5))*(THETA(5)))) ; W1 ~ sqrt((cpadd.sd)^2)",
-          "  ; keep W1 away from zero (a zero residual variance is undefined)",
-          "  IF (W1 .EQ. 0.0) W1 = 1",
-          "  ; Yeo-Johnson; the branches are picked with indicators because",
-          "  ; NM-TRAN cannot redefine RX_IP2 in nested IF structures",
-          "  RX_IP2 = RX_PF2",
-          "  RX_IP2P = 0.0",
-          "  IF (RX_IP2 .GE. 0.0) RX_IP2P = 1.0",
-          "  RX_IP2A = RX_IP2P*RX_IP2",
-          "  RX_IP2B = (1.0 - RX_IP2P)*RX_IP2",
-          "  RX_IP2L0 = 0.0",
-          "  IF (THETA(11) .EQ. 0.0) RX_IP2L0 = 1.0",
-          "  RX_IP2L2 = 0.0",
-          "  IF (THETA(11) .EQ. 2.0) RX_IP2L2 = 1.0",
-          "  RX_IP2Y1 = ((RX_IP2A + 1.0)**THETA(11) - 1.0)/(THETA(11) + RX_IP2L0)",
-          "  RX_IP2Y1 = RX_IP2L0*DLOG(RX_IP2A + 1.0) + (1.0 - RX_IP2L0)*RX_IP2Y1",
-          "  RX_IP2Y2 = (1.0 - (1.0 - RX_IP2B)**(2.0 - THETA(11)))/(2.0 - THETA(11) + RX_IP2L2)",
-          "  RX_IP2Y2 = -RX_IP2L2*DLOG(1.0 - RX_IP2B) + (1.0 - RX_IP2L2)*RX_IP2Y2",
-          "  RX_IP2 = RX_IP2P*RX_IP2Y1 + (1.0 - RX_IP2P)*RX_IP2Y2",
-          "  RX_P2 = RX_IP2",
-          "  W2=DSQRT(((THETA(12))*(THETA(12)))) ; W2 ~ sqrt((pdadd.err)^2)",
-          "  ; keep W2 away from zero (a zero residual variance is undefined)",
-          "  IF (W2 .EQ. 0.0) W2 = 1",
-          "  IPRED = RX_IP1",
-          "  W     = W1",
-          "  IF (DVID .EQ. 2) THEN",
-          "    IPRED = RX_IP2",
-          "    W     = W2",
-          "  END IF",
-          "  Y     = IPRED + W*EPS(1)",
-          ""
-        ), collapse="\n")
+        paste(
+          c(
+            "",
+            "  ; Write out expressions for ipred and w",
+            "  ; Box-Cox like rxode2: x - 1 for lambda=1, otherwise with x",
+            "  ; floored at sqrt(DBL_EPSILON); the formula is picked with",
+            "  ; indicators because NM-TRAN cannot redefine RX_IP1 in an ELSE IF",
+            "  ; chain",
+            "  RX_IP1 = RX_PF1",
+            "  RX_IP1X = RX_IP1",
+            "  IF (RX_IP1X .LE. 1.4901161E-8) RX_IP1X = 1.4901161E-8",
+            "  RX_IP1L0 = 0.0",
+            "  IF (THETA(10) .EQ. 0.0) RX_IP1L0 = 1.0",
+            "  RX_IP1L1 = 0.0",
+            "  IF (THETA(10) .EQ. 1.0) RX_IP1L1 = 1.0",
+            "  RX_IP1BC = (RX_IP1X**THETA(10) - 1.0)/(THETA(10) + RX_IP1L0)",
+            "  RX_IP1BC = RX_IP1L0*DLOG(RX_IP1X) + (1.0 - RX_IP1L0)*RX_IP1BC",
+            "  RX_IP1 = RX_IP1L1*(RX_IP1 - 1.0) + (1.0 - RX_IP1L1)*RX_IP1BC",
+            "  RX_P1 = RX_IP1",
+            "  W1=DSQRT(((THETA(5))*(THETA(5)))) ; W1 ~ sqrt((cpadd.sd)^2)",
+            "  ; keep W1 away from zero (a zero residual variance is undefined)",
+            "  IF (W1 .EQ. 0.0) W1 = 1",
+            "  ; Yeo-Johnson; the branches are picked with indicators because",
+            "  ; NM-TRAN cannot redefine RX_IP2 in nested IF structures",
+            "  RX_IP2 = RX_PF2",
+            "  RX_IP2P = 0.0",
+            "  IF (RX_IP2 .GE. 0.0) RX_IP2P = 1.0",
+            "  RX_IP2A = RX_IP2P*RX_IP2",
+            "  RX_IP2B = (1.0 - RX_IP2P)*RX_IP2",
+            "  RX_IP2L0 = 0.0",
+            "  IF (THETA(11) .EQ. 0.0) RX_IP2L0 = 1.0",
+            "  RX_IP2L2 = 0.0",
+            "  IF (THETA(11) .EQ. 2.0) RX_IP2L2 = 1.0",
+            "  RX_IP2Y1 = ((RX_IP2A + 1.0)**THETA(11) - 1.0)/(THETA(11) + RX_IP2L0)",
+            "  RX_IP2Y1 = RX_IP2L0*DLOG(RX_IP2A + 1.0) + (1.0 - RX_IP2L0)*RX_IP2Y1",
+            "  RX_IP2Y2 = (1.0 - (1.0 - RX_IP2B)**(2.0 - THETA(11)))/(2.0 - THETA(11) + RX_IP2L2)",
+            "  RX_IP2Y2 = -RX_IP2L2*DLOG(1.0 - RX_IP2B) + (1.0 - RX_IP2L2)*RX_IP2Y2",
+            "  RX_IP2 = RX_IP2P*RX_IP2Y1 + (1.0 - RX_IP2P)*RX_IP2Y2",
+            "  RX_P2 = RX_IP2",
+            "  W2=DSQRT(((THETA(12))*(THETA(12)))) ; W2 ~ sqrt((pdadd.err)^2)",
+            "  ; keep W2 away from zero (a zero residual variance is undefined)",
+            "  IF (W2 .EQ. 0.0) W2 = 1",
+            "  IPRED = RX_IP1",
+            "  W     = W1",
+            "  IF (DVID .EQ. 2) THEN",
+            "    IPRED = RX_IP2",
+            "    W     = W2",
+            "  END IF",
+            "  Y     = IPRED + W*EPS(1)",
+            ""
+          ),
+          collapse = "\n"
+        )
       )
     })
 
@@ -1166,7 +1193,6 @@ withr::with_tempdir({
 
 test_that("nonmem model creation without running", {
   withr::with_tempdir({
-
     one.cmt <- function() {
       ini({
         tka <- 0.45 ; label("Ka")
@@ -1192,24 +1218,22 @@ test_that("nonmem model creation without running", {
 
     files <- c("nonmemTest.csv", "nonmemTest.md5", "nonmemTest.nmctl")
 
-    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
-            nonmemControl(runCommand=NA, modelName="nonmemTest"))
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem", nonmemControl(runCommand = NA, modelName = "nonmemTest"))
 
-    lapply(files, function(f) { expect_true(file.exists(file.path("nonmemTest-nonmem", f))) })
+    lapply(files, function(f) {
+      expect_true(file.exists(file.path("nonmemTest-nonmem", f)))
+    })
 
-    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
-            nonmemControl(runCommand=NA, modelName="nonmemTest"))
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem", nonmemControl(runCommand = NA, modelName = "nonmemTest"))
 
     lapply(files, function(f) {
       expect_true(file.exists(file.path("nonmemTest-nonmem", f)))
       unlink(file.path("nonmemTest-nonmem", f))
     })
     unlink("nonmemTest-nonmem", recursive = TRUE)
-
   })
 
   test_that("a changed model moves past every stale numbered export (#209)", {
-
     one.cmt <- function() {
       ini({
         tka <- 0.45
@@ -1237,14 +1261,11 @@ test_that("nonmem model creation without running", {
       writeLines("stale", file.path(d, "staleTest.md5"))
     }
 
-    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem",
-            nonmemControl(runCommand=NA, modelName="staleTest"))
+    nlmixr2(one.cmt, nlmixr2data::theo_sd, "nonmem", nonmemControl(runCommand = NA, modelName = "staleTest"))
 
     expect_true(file.exists(file.path("staleTest-002-nonmem", "staleTest.nmctl")))
     expect_true(file.exists(file.path("staleTest-002-nonmem", "staleTest.md5")))
-    unlink(c("staleTest-nonmem", "staleTest-001-nonmem", "staleTest-002-nonmem"),
-           recursive=TRUE)
-
+    unlink(c("staleTest-nonmem", "staleTest-001-nonmem", "staleTest-002-nonmem"), recursive = TRUE)
   })
 })
 withr::with_tempdir({
@@ -1583,7 +1604,7 @@ test_that("NONMEM predictions are back-transformed before comparing", {
   expect_equal(.nonmemUntransformPred(.x, NULL, .add), .x)
 })
 
-test_that("NONMEM names differing only by case agree everywhere (#237)", {
+test_that("NONMEM covariates differing only by case are one data item (#237)", {
   m <- function() {
     ini({
       tka <- 0.45
@@ -1604,7 +1625,6 @@ test_that("NONMEM names differing only by case agree everywhere (#237)", {
   }
   d <- nlmixr2data::theo_sd
   d$wt <- d$WT
-  d$WT <- d$WT * 2
   withr::with_tempdir({
     suppressMessages(nlmixr2(
       m,
@@ -1615,11 +1635,98 @@ test_that("NONMEM names differing only by case agree everywhere (#237)", {
     .csv <- utils::read.csv(file.path("case-nonmem", "case.csv"))
     .ctl <- readLines(file.path("case-nonmem", "case.nmctl"))
   })
-  # WT keeps its name and wt is renamed, in the data and in the code
-  expect_equal(.csv$WT[1], 2 * .csv$RXC001[1])
+  # covariates ignore case, so wt and WT are the one WT data column
+  expect_equal(.csv$WT, d$WT)
+  expect_equal(sum(names(.csv) == "WT"), 1L)
   .input <- strsplit(.ctl[grepl("^\\$INPUT", .ctl)], " ")[[1]]
-  expect_true(all(c("WT", "RXC001") %in% .input))
-  expect_true(any(grepl("CL=DEXP(RX__TCL)*RXC001/WT", .ctl, fixed = TRUE)))
-  expect_true(any(grepl("RXE_CL=DEXP(RX__TCL)*RXC001/WT", .ctl, fixed = TRUE)))
-  expect_false(any(grepl("RXE001", .ctl, fixed = TRUE)))
+  expect_equal(sum(.input == "WT"), 1L)
+  expect_true(any(grepl("CL=DEXP(RX__TCL)*WT/WT", .ctl, fixed = TRUE)))
+  expect_true(any(grepl("RXE_CL=DEXP(RX__TCL)*WT/WT", .ctl, fixed = TRUE)))
+  expect_false(any(grepl("RX(C|E)?[0-9]{3}", .ctl)))
+
+  # wt and WT with different values cannot be one item
+  d$WT <- d$WT * 2
+  withr::with_tempdir({
+    expect_error(
+      suppressMessages(nlmixr2(
+        m,
+        d,
+        "nonmem",
+        nonmemControl(runCommand = NA, modelName = "case")
+      )),
+      "covariates ignore case"
+    )
+  })
+})
+
+test_that("NONMEM covariate and variable differing only by case (#237)", {
+  m <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      WT <- wt / 70
+      cl <- exp(tcl) * WT
+      v <- exp(tv)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
+      cp <- central / v * WT
+      cp ~ add(add.sd)
+    })
+  }
+  d <- nlmixr2data::theo_sd
+  d$wt <- d$WT
+  d$WT <- NULL
+  withr::with_tempdir({
+    suppressMessages(nlmixr2(
+      m,
+      d,
+      "nonmem",
+      nonmemControl(runCommand = NA, modelName = "case")
+    ))
+    .csv <- utils::read.csv(file.path("case-nonmem", "case.csv"))
+    .ctl <- readLines(file.path("case-nonmem", "case.nmctl"))
+  })
+  # the covariate keeps the data column; the variable is renamed
+  expect_equal(.csv$WT, d$wt)
+  expect_true(any(grepl("RXC001=WT/70", .ctl, fixed = TRUE)))
+  expect_true(any(grepl("CL=DEXP(RX__TCL)*RXC001", .ctl, fixed = TRUE)))
+  expect_true(
+    any(grepl("RXE_CP=A(2)/V*RXE_RXC001", .ctl, fixed = TRUE)) ||
+      any(grepl("RXE_CP=A(2)/V*RXC001", .ctl, fixed = TRUE))
+  )
+})
+
+test_that("NONMEM compartment names differing only by case from a variable (#237)", {
+  m <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl)
+      v <- exp(tv)
+      CENTRAL <- 3
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
+      cp <- central / v * CENTRAL
+      cp ~ add(add.sd)
+    })
+  }
+  .ctl <- suppressMessages(nlmixr2(m)$nonmemModel)
+  .ctl <- strsplit(.ctl, "\n")[[1]]
+  # the compartment is renamed; the variable keeps CENTRAL in $DES and $ERROR
+  expect_true(any(grepl("COMP(RXC001) ; central", .ctl, fixed = TRUE)))
+  expect_false(any(grepl("COMP(CENTRAL)", .ctl, fixed = TRUE)))
+  expect_true(any(grepl("CP=A(2)/V*CENTRAL ", .ctl, fixed = TRUE)))
+  expect_true(any(grepl("RXE_CP=A(2)/V*RXE_CENTRAL ", .ctl, fixed = TRUE)))
 })
