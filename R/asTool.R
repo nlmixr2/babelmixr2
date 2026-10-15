@@ -235,6 +235,9 @@ as.monolix <- function(x, data = NULL, modelName = NULL, timeVarying = character
     .doses$ii <- rep(24, .n)
   }
   .predDf <- ui$predDf
+  if (is.null(.predDf) || nrow(.predDf) == 0L) {
+    stop("the model has no residual error model (endpoints) to translate", call. = FALSE)
+  }
   .cond <- .predDf$cond
   # an observation inside the bounds of each endpoint's transformation
   # (like logitNorm(sd, 10, 100))

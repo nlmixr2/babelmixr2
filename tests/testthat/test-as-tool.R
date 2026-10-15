@@ -256,3 +256,39 @@ test_that("as.nonmem()/as.monolix() handle multiple endpoints, PRED models and l
     expect_equal(.d$cmt[.d$evid == 1], "depot")
   })
 })
+
+test_that("as.nonmem()/as.monolix() of imported models use modelName", {
+  skip_on_cran()
+  skip_if_not_installed("nonmem2rx")
+  skip_if_not_installed("monolix2rx")
+  .nm <- suppressMessages(nonmem2rx::nonmem2rx(
+    system.file("mods/cpt/runODE032.ctl", package = "nonmem2rx"),
+    lst = ".res", save = FALSE
+  ))
+  .mlx <- suppressMessages(monolix2rx::monolix2rx(
+    system.file("theo/theophylline_project.mlxtran", package = "monolix2rx")
+  ))
+  withr::with_tempdir({
+    .f <- suppressMessages(as.nonmem(.nm, modelName = "nm"))
+    expect_equal(.f[["nmctl"]], file.path("nm-nonmem", "nm.nmctl"))
+    expect_true(all(file.exists(.f)))
+    .f <- suppressMessages(as.monolix(.mlx, modelName = "mlx"))
+    expect_equal(.f[["mlxtran"]], "mlx-monolix.mlxtran")
+    expect_true(all(file.exists(.f)))
+
+    # an import's file does not redirect the output
+    dir.create("orig")
+    .ui <- rxode2::rxUiDecompress(rxode2::rxode2(.asToolModel))
+    assign("file", file.path(getwd(), "orig", "orig.ctl"), envir = .ui)
+    .f <- suppressMessages(as.nonmem(.ui, modelName = "custom"))
+    expect_equal(.f[["nmctl"]], file.path("custom-nonmem", "custom.nmctl"))
+    expect_length(list.files("orig"), 0L)
+  })
+
+  # a model without endpoints cannot be translated with template data
+  .noErr <- suppressMessages(nonmem2rx::nonmem2rx(
+    system.file("mods/cpt/runODE032.ctl", package = "nonmem2rx"),
+    lst = ".res", save = FALSE, determineError = FALSE
+  ))
+  expect_error(as.nonmem(.noErr), "no residual error")
+})
