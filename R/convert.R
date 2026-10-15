@@ -461,6 +461,8 @@ bblDatToNonmem <- function(
     )
   }
   .ui <- model
+  # start the names as the control stream does, so the two agree
+  .nonmemResetUi(.ui)
   .nonmemResetNames(.ui)
   env$nobs <- .lastNobs
   env$nmLikAdj <- 0

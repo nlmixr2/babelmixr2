@@ -1875,3 +1875,50 @@ test_that("NONMEM case clashes: reserved, theta, dotted and linCmt names (#237)"
   d1$wt <- d1$WT * 2
   expect_error(.ctl(m, d1), "covariates ignore case")
 })
+
+test_that("NONMEM reserved renames skip names the model uses (#237)", {
+  m <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka + eta.ka) * f
+      cl <- exp(tcl) * RXR1
+      v <- exp(tv)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd)
+    })
+  }
+  d <- nlmixr2data::theo_sd
+  d$f <- d$WT
+  d$RXR1 <- d$WT * 2
+  withr::with_tempdir({
+    suppressMessages(nlmixr2(
+      m,
+      d,
+      "nonmem",
+      nonmemControl(runCommand = NA, modelName = "case")
+    ))
+    .csv <- utils::read.csv(file.path("case-nonmem", "case.csv"))
+    .ctl <- readLines(file.path("case-nonmem", "case.nmctl"))
+  })
+  # f is renamed past the model's own RXR1, in the data and every block
+  expect_equal(.csv$RXR2, d$WT)
+  expect_equal(.csv$RXR1, 2 * d$WT)
+  expect_true(any(grepl("$INPUT ID TIME EVID AMT DV CMT RXR2 RXR1 RXROW", .ctl, fixed = TRUE)))
+  expect_true(any(grepl("KA=DEXP(RX__TKA)*RXR2 ", .ctl, fixed = TRUE)))
+  expect_true(any(grepl("RXE_CL=DEXP(RX__TCL)*RXR1 ", .ctl, fixed = TRUE)))
+
+  # the data file starts its names like the control stream does
+  .ui <- rxode2::rxUiDecompress(rxode2::rxode2(m))
+  .ctl <- suppressMessages(.ui$nonmemModel)
+  expect_true(grepl("$INPUT ID TIME EVID AMT DV CMT RXR2 RXR1 RXROW", .ctl, fixed = TRUE))
+  .dat <- suppressMessages(bblDatToNonmem(.ui, d))
+  expect_true(all(c("RXR2", "RXR1") %in% names(.dat)))
+})

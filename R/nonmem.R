@@ -521,7 +521,8 @@ rex::register_shortcuts("babelmixr2")
 #' Each other item becomes `RXC001`, `RXC002`, ...
 #'
 #' @param ui rxode2 ui
-#' @return data frame with `var` and `nm`
+#' @return data frame with `var` and `nm`; its `up` attribute has every
+#'   NONMEM name of the model, so new names can avoid them
 #' @noRd
 .nmGetVarCaseDf <- function(ui) {
   .case <- rxode2::rxGetControl(ui, ".nmGetVarCaseDf", NULL)
@@ -576,6 +577,8 @@ rex::register_shortcuts("babelmixr2")
       .case <- rbind(.case, data.frame(var = .v, nm = rep(.nm, length(.v))))
     }
   }
+  # every NONMEM name the model uses, so new names (like RXR1) avoid them
+  attr(.case, "up") <- .up
   rxode2::rxAssignControlValue(ui, ".nmGetVarCaseDf", .case)
   .case
 }
@@ -619,7 +622,7 @@ rex::register_shortcuts("babelmixr2")
   ) {
     .num <- rxode2::rxGetControl(ui, ".nmVarResNum", 1)
     # skip names the model already uses (like a variable named RXR1)
-    while (sprintf("RXR%d", .num) %in% c(.var$nm, .reserved$nm, .case$nm)) {
+    while (sprintf("RXR%d", .num) %in% c(.var$nm, .reserved$nm, .case$nm, attr(.case, "up"))) {
       .num <- .num + 1
     }
     .newVar <- sprintf("RXR%d", .num)
@@ -646,7 +649,7 @@ rex::register_shortcuts("babelmixr2")
   }
   .w <- which(.var$nm == .uvar)
   .doRx <- FALSE
-  if (length(.w) == 1) {
+  if (length(.w) >= 1) {
     .doRx <- TRUE
   }
   .extra <- rxode2::rxGetControl(ui, ".nmVarExtra", "")
