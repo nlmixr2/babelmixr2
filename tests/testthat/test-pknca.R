@@ -1657,9 +1657,9 @@ test_that("unit conversion scales the whole DV expression (#236)", {
       )
     )
   )
-  # the factor applies to every term, not only the first
+  # mg/L -> ng/mL is x1000, and it applies to every term, not only the first
   expect_equal(
     getDvLines(fit$ui$fun, dvAssign = "cp")[[1]],
-    str2lang("cp <- 0.001 * (center / v + bsl)")
+    str2lang("cp <- 1000 * (center / v + bsl)")
   )
 })
