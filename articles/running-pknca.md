@@ -116,7 +116,7 @@ prepared$ui
 {vc} & = \exp\left({tv}+{eta.v}\right) \\
 \frac{d \: depot}{dt} & = -{ka} {\times} {depot} \\
 \frac{d \: center}{dt} & = {ka} {\times} {depot}-\frac{{cl}}{{vc}} {\times} {center} \\
-{cp} & = \frac{{1000} {\times} {center}}{{vc}} \\
+{cp} & = {1000} {\times} \left(\frac{{center}}{{vc}}\right) \\
 {cp} & \sim add({add.sd})
 \end{align*}
 ```
@@ -184,7 +184,7 @@ fit
 {vc} & = \exp\left({tv}+{eta.v}\right) \\
 \frac{d \: depot}{dt} & = -{ka} {\times} {depot} \\
 \frac{d \: center}{dt} & = {ka} {\times} {depot}-\frac{{cl}}{{vc}} {\times} {center} \\
-{cp} & = \frac{{1000} {\times} {center}}{{vc}} \\
+{cp} & = {1000} {\times} \left(\frac{{center}}{{vc}}\right) \\
 {cp} & \sim add({add.sd})
 \end{align*}
 ```
@@ -236,7 +236,7 @@ preparedNcaData$ui
 {vc} & = \exp\left({tv}+{eta.v}\right) \\
 \frac{d \: depot}{dt} & = -{ka} {\times} {depot} \\
 \frac{d \: center}{dt} & = {ka} {\times} {depot}-\frac{{cl}}{{vc}} {\times} {center} \\
-{cp} & = \frac{{1000} {\times} {center}}{{vc}} \\
+{cp} & = {1000} {\times} \left(\frac{{center}}{{vc}}\right) \\
 {cp} & \sim add({add.sd})
 \end{align*}
 ```
