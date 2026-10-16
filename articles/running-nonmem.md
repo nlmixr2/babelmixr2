@@ -195,7 +195,7 @@ print(f)
 #> ── Time (sec $time): ──
 #> 
 #>             setup preprocess postprocess table compress NONMEM
-#> elapsed 0.8697239      0.033       0.027 0.051    0.015 320.27
+#> elapsed 0.8659589      0.036       0.027 0.053    0.016 320.27
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 
@@ -285,7 +285,7 @@ getVarCov(f)
 #> → compiling events FD model...
 #> ✔ done
 #> calculating covariance matrix
-#> [====|====|====|====|====|====|====|====|====|====] 0:05:10
+#> [====|====|====|====|====|====|====|====|====|====] 0:05:09
 #> Warning: "r,s" not usable (S not PD); installed "r"
 #> → compress origData in nlmixr2 object, save 27800
 #> Updated original fit object f

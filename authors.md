@@ -15,7 +15,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/nlmixr2/babelmixr2/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/nlmixr2/babelmixr2/blob/v0.1.12/inst/CITATION)
 
 Fidler M, Xiong Y, Schoemaker R, Wilkins J, Trame M, Hooijmaijers R,
 Post T, Wang W (2026). *nlmixr: Nonlinear Mixed Effects Models in
