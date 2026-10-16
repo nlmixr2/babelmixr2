@@ -52,7 +52,7 @@
 #'
 #' @return saemix control structure
 #' @export
-#' @author Matthew L. Fidler & Antigravity
+#' @author Matthew L. Fidler
 #' @examples
 #' \donttest{
 #' # Example showing control creation:
