@@ -1,5 +1,19 @@
 # Changelog
 
+## babelmixr2 (development version)
+
+- New
+  [`as.nonmem()`](https://nlmixr2.github.io/babelmixr2/reference/as.nonmem.md)
+  and
+  [`as.monolix()`](https://nlmixr2.github.io/babelmixr2/reference/as.nonmem.md)
+  write the NONMEM control stream or Monolix project of an nlmixr2 model
+  without running NONMEM or Monolix, with the file names of
+  `nonmemControl(modelName=)` and `monolixControl(modelName=)`. Without
+  `data=`, a one-subject template dataset is made from the model;
+  `timeVarying=` (none by default) names the time-varying covariates,
+  and `dose=`, `doseType=`, `ss=`, `cens=` and `limit=` describe the
+  doses and observations.
+
 ## babelmixr2 0.1.12
 
 - `est="pknca"` unit conversion scales the whole DV expression, so an

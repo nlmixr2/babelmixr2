@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">babelmixr2</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.12</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.12.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,9 +36,13 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/nlmixr2/babelmixr2/blob/v0.1.12/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/nlmixr2/babelmixr2/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="babelmixr2-development-version">babelmixr2 (development version)<a class="anchor" aria-label="anchor" href="#babelmixr2-development-version"></a></h2>
+<ul><li>New <code><a href="../reference/as.nonmem.html">as.nonmem()</a></code> and <code><a href="../reference/as.nonmem.html">as.monolix()</a></code> write the NONMEM control stream or Monolix project of an nlmixr2 model without running NONMEM or Monolix, with the file names of <code>nonmemControl(modelName=)</code> and <code>monolixControl(modelName=)</code>. Without <code>data=</code>, a one-subject template dataset is made from the model; <code>timeVarying=</code> (none by default) names the time-varying covariates, and <code>dose=</code>, <code>doseType=</code>, <code>ss=</code>, <code>cens=</code> and <code>limit=</code> describe the doses and observations.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.12" id="babelmixr2-0112">babelmixr2 0.1.12<a class="anchor" aria-label="anchor" href="#babelmixr2-0112"></a></h2>
 <ul><li><p><code>est="pknca"</code> unit conversion scales the whole DV expression, so an additive term (like a baseline) is converted too (<a href="https://github.com/nlmixr2/babelmixr2/issues/236" class="external-link">#236</a>)</p></li>

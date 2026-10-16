@@ -15,18 +15,18 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/nlmixr2/babelmixr2/blob/v0.1.12/inst/CITATION)
+[`inst/CITATION`](https://github.com/nlmixr2/babelmixr2/blob/main/inst/CITATION)
 
 Fidler M, Xiong Y, Schoemaker R, Wilkins J, Trame M, Hooijmaijers R,
 Post T, Wang W (2026). *nlmixr: Nonlinear Mixed Effects Models in
 Population Pharmacokinetics and Pharmacodynamics*. R package version
-0.1.12, <https://CRAN.R-project.org/package=nlmixr>.
+0.1.12.9000, <https://CRAN.R-project.org/package=nlmixr>.
 
     @Manual{,
       title = {{nlmixr}: Nonlinear Mixed Effects Models in Population Pharmacokinetics and Pharmacodynamics},
       author = {Matthew Fidler and Yuan Xiong and Rik Schoemaker and Justin Wilkins and Mirjam Trame and Richard Hooijmaijers and Teun Post and Wenping Wang},
       year = {2026},
-      note = {R package version 0.1.12},
+      note = {R package version 0.1.12.9000},
       url = {https://CRAN.R-project.org/package=nlmixr},
     }
 

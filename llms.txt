@@ -99,6 +99,11 @@ mod <- nlmixr(nlmixrFun, nlmmixrData, est="nonmem")
   [`as.nlmixr()`](https://nlmixr2.github.io/babelmixr2/reference/as.nlmixr2.md)
   : Convert an object to a nlmixr2 fit object
 
+- [`as.nonmem()`](https://nlmixr2.github.io/babelmixr2/reference/as.nonmem.md)
+  [`as.monolix()`](https://nlmixr2.github.io/babelmixr2/reference/as.nonmem.md)
+  : Convert an nlmixr2 model to a NONMEM control stream or Monolix
+  project
+
 - [`babel.poped.database()`](https://nlmixr2.github.io/babelmixr2/reference/babel.poped.database.md)
   : Expand a babelmixr2 PopED database
 
