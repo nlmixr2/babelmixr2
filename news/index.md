@@ -1,6 +1,6 @@
 # Changelog
 
-## babelmixr2 0.1.11.9000
+## babelmixr2 0.1.12
 
 - `est="pknca"` unit conversion scales the whole DV expression, so an
   additive term (like a baseline) is converted too
@@ -424,7 +424,7 @@
   prior. Checked with Monolix 2024R1: tight priors pin `ka_pop`,
   `cl_pop`, a covariate effect and a logit-normal parameter at the prior
   mean, and a vague prior leaves the estimate at the MLE. Priors Monolix
-  cannot honour are errors rather than being dropped: priors on omega
+  cannot honor are errors rather than being dropped: priors on omega
   elements or omega blocks, multivariate normal priors, non-normal
   priors, priors on a
   [`probitInv()`](https://nlmixr2.github.io/rxode2/reference/probit.html)
@@ -499,7 +499,7 @@
 - `nonmemControl(est="its")` now writes
   `$ESTIMATION METHOD=ITS INTERACTION` (iterative two stage). It wrote
   `METHOD=IMP`, so NONMEM ran importance sampling while the returned fit
-  was labelled with the `nonmem its` objective function type
+  was labeled with the `nonmem its` objective function type
   ([\#211](https://github.com/nlmixr2/babelmixr2/issues/211)).
 
 - A PopED design dataset that gives `cmt` as a compartment *number*

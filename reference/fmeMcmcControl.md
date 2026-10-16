@@ -303,9 +303,8 @@ fmeMcmcControl(
 
 - sigdigTable:
 
-  Significant digits in the final output table. If not specified, then
-  it matches the significant digits in the \`sigdig\` optimization
-  algorithm. If \`sigdig\` is NULL, use 3.
+  Significant digits in the final output table. If not specified
+  (\`NULL\`), it defaults to \`sigdig\`.
 
 - eventSens:
 
@@ -385,10 +384,10 @@ print(fit2)
 #> 
 #> ── Time (sec $time): ──
 #> 
-#>             setup    optimize covariance preprocess postprocess table compress
-#> elapsed 0.0329493 0.002892458 1.0953e-05      0.047        0.01 0.026    0.019
+#>              setup    optimize covariance preprocess postprocess table compress
+#> elapsed 0.03622759 0.002159455 1.1041e-05      0.046       0.011 0.031    0.021
 #>            other
-#> elapsed 1.643147
+#> elapsed 1.819602
 #> 
 #> ── ($parFixed or $parFixedDf): ──
 #> 

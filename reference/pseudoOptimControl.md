@@ -259,9 +259,8 @@ pseudoOptimControl(
 
 - sigdigTable:
 
-  Significant digits in the final output table. If not specified, then
-  it matches the significant digits in the \`sigdig\` optimization
-  algorithm. If \`sigdig\` is NULL, use 3.
+  Significant digits in the final output table. If not specified
+  (\`NULL\`), it defaults to \`sigdig\`.
 
 - eventSens:
 
@@ -346,9 +345,9 @@ print(fit2)
 #> ── Time (sec $time): ──
 #> 
 #>              setup    optimize covariance preprocess postprocess table compress
-#> elapsed 0.01933184 0.001851465 1.1239e-05      0.045       0.009 0.023    0.031
+#> elapsed 0.02038616 0.001908331 1.2083e-05      0.047       0.009 0.025    0.033
 #>             other
-#> elapsed 0.8158055
+#> elapsed 0.9096934
 #> 
 #> ── ($parFixed or $parFixedDf): ──
 #> 
