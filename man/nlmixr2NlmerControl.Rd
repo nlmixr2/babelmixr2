@@ -164,8 +164,7 @@ exactly the precision the solve supports.  At the default \code{sigdig = 3}
 this is \code{atol = 1e-6}, \code{rtol = 1e-3}.}
 
 \item{sigdigTable}{Significant digits in the final output table.
-If not specified, then it matches the significant digits in the
-`sigdig` optimization algorithm.  If `sigdig` is NULL, use 3.}
+If not specified (`NULL`), it defaults to `sigdig`.}
 
 \item{addProp}{Type of additive-plus-proportional error: `"combined1"`,
 where standard deviations add:

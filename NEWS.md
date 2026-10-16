@@ -1,4 +1,4 @@
-# babelmixr2 0.1.11.9000
+# babelmixr2 0.1.12
 
 * New `as.nonmem()` and `as.monolix()` write the NONMEM control stream
   or Monolix project of an nlmixr2 model without running NONMEM or
@@ -374,7 +374,7 @@
   prior.  Checked with Monolix 2024R1: tight priors pin `ka_pop`,
   `cl_pop`, a covariate effect and a logit-normal parameter at the prior
   mean, and a vague prior leaves the estimate at the MLE.  Priors Monolix
-  cannot honour are errors rather than being dropped: priors on omega
+  cannot honor are errors rather than being dropped: priors on omega
   elements or omega blocks, multivariate normal priors, non-normal
   priors, priors on a `probitInv()` parameter with bounds other than
   (0, 1), and priors on residual error parameters -- Monolix accepts a
@@ -438,7 +438,7 @@
 
 * `nonmemControl(est="its")` now writes `$ESTIMATION METHOD=ITS
   INTERACTION` (iterative two stage).  It wrote `METHOD=IMP`, so NONMEM
-  ran importance sampling while the returned fit was labelled with the
+  ran importance sampling while the returned fit was labeled with the
   `nonmem its` objective function type (#211).
 
 * A PopED design dataset that gives `cmt` as a compartment *number*
