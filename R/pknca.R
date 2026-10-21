@@ -176,11 +176,12 @@ nlmixr2Est.pknca <- function(env, ...) {
       dvResid <- getDvLines(env$ui$fun)
       if (length(dvResid) == 1) {
         dvParam <- dvResid[[1]][[2]]
-        if (is.name(dvParam)) {
+        if (!is.name(dvParam)) {
           cli::cli_abort(
             "Could not detect the dependent variable (not a name), use pkncaControl(dvParam) to fix"
           )
         }
+        dvParam <- as.character(dvParam)
       } else {
         cli::cli_abort(
           "Could not detect the dependent variable (no specific line found), use pkncaControl(dvParam) to fix"
@@ -1422,7 +1423,8 @@ ini_transform <- function(x, ..., envir = parent.frame()) {
 #'   initial estimates for vp, q, vp2, and q2
 #' @param dvParam The parameter name in the model that should be modified for
 #'   concentration unit conversions.  It must be assigned on a line by itself,
-#'   separate from the residual error model line.
+#'   separate from the residual error model line.  With `NULL`, the variable on
+#'   the left of the residual error line is used.
 #' @param groups Grouping columns for NCA summaries by group (required if
 #'   \code{sparse = TRUE})
 #' @param ncaData Data to use for calculating NCA parameters.  Typical use is
@@ -1525,7 +1527,7 @@ getValidNlmixrCtl.pknca <- function(control) {
     control$dvParam,
     min.chars = 1,
     len = 1,
-    null.ok = FALSE
+    null.ok = TRUE
   )
   checkmate::assert_character(
     control$groups,

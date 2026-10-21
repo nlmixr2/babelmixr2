@@ -33,7 +33,8 @@ initial estimates for vp, q, vp2, and q2}
 
 \item{dvParam}{The parameter name in the model that should be modified for
 concentration unit conversions.  It must be assigned on a line by itself,
-separate from the residual error model line.}
+separate from the residual error model line.  With \code{NULL}, the variable on
+the left of the residual error line is used.}
 
 \item{groups}{Grouping columns for NCA summaries by group (required if
 \code{sparse = TRUE})}
