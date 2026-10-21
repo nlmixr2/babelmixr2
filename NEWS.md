@@ -1,5 +1,9 @@
 # babelmixr2 (development version)
 
+* `pkncaControl(dvParam = NULL)` uses the variable on the left of the residual
+  error line for the unit conversion; the auto-detection could not be reached
+  and failed when it found a DV (#260)
+
 * New `as.nonmem()` and `as.monolix()` write the NONMEM control stream
   or Monolix project of an nlmixr2 model without running NONMEM or
   Monolix, with the file names of `nonmemControl(modelName=)` and
