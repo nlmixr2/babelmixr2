@@ -182,6 +182,10 @@ nlmixr2Est.pknca <- function(env, ...) {
           )
         }
         dvParam <- as.character(dvParam)
+      } else if (length(dvResid) > 1) {
+        cli::cli_abort(
+          "Could not detect the dependent variable (more than one residual error line), use pkncaControl(dvParam) to choose one"
+        )
       } else {
         cli::cli_abort(
           "Could not detect the dependent variable (no specific line found), use pkncaControl(dvParam) to fix"

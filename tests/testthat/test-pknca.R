@@ -1709,3 +1709,59 @@ test_that("dvParam = NULL finds the DV from the residual error line (#260)", {
     str2lang("conc <- 1000 * (center / v)")
   )
 })
+
+test_that("dvParam = NULL aborts when the DV cannot be detected (#260)", {
+  skip_if_not_installed("PKNCA", "0.10.0.9000")
+  .ctl <- pkncaControl(
+    concu = "ng/mL",
+    doseu = "mg",
+    timeu = "hr",
+    volumeu = "L",
+    dvParam = NULL
+  )
+  modLinCmt <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      prop.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(tcl)
+      v <- exp(tv)
+      linCmt() ~ prop(prop.sd)
+    })
+  }
+  suppressMessages(expect_error(
+    nlmixr(modLinCmt, data = nlmixr2data::theo_sd, est = "pknca", control = .ctl),
+    regexp = "not a name"
+  ))
+  modTwo <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      prop.sd <- 0.7
+      add.sd <- 0.1
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(tcl)
+      v <- exp(tv)
+      d/dt(depot) <- -ka * depot
+      d/dt(center) <- ka * depot - cl / v * center
+      conc <- center / v
+      conc2 <- conc
+      conc ~ prop(prop.sd)
+      conc2 ~ add(add.sd)
+    })
+  }
+  dTwo <- nlmixr2data::theo_sd
+  dTwo$DVID <- 1L
+  dTwo$DVID[dTwo$EVID == 0 & dTwo$TIME > 5] <- 2L
+  suppressMessages(expect_error(
+    nlmixr(modTwo, data = dTwo, est = "pknca", control = .ctl),
+    regexp = "more than one residual error line"
+  ))
+})
