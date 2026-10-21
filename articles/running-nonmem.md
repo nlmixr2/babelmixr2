@@ -149,7 +149,7 @@ f <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "nonmem",
 #> → finding duplicate expressions in EBE model...
 #> → compiling EBE model...
 #> ✔ done
-#> rxode2 5.1.8 using 2 threads (see ?getRxThreads)
+#> rxode2 5.1.8.9000 using 2 threads (see ?getRxThreads)
 #>   no cache: create with `rxCreateCache()`
 #> → Calculating residuals/tables
 #> ✔ done
@@ -195,7 +195,7 @@ print(f)
 #> ── Time (sec $time): ──
 #> 
 #>             setup preprocess postprocess table compress NONMEM
-#> elapsed 0.8542892      0.035       0.027 0.063    0.016 320.27
+#> elapsed 0.9062915      0.033       0.025 0.064    0.016 320.27
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 
@@ -285,7 +285,7 @@ getVarCov(f)
 #> → compiling events FD model...
 #> ✔ done
 #> calculating covariance matrix
-#> [====|====|====|====|====|====|====|====|====|====] 0:05:04
+#> [====|====|====|====|====|====|====|====|====|====] 0:05:56
 #> Warning: "r,s" not usable (S not PD); installed "r"
 #> → compress origData in nlmixr2 object, save 27800
 #> Updated original fit object f

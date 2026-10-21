@@ -2,6 +2,11 @@
 
 ## babelmixr2 (development version)
 
+- `pkncaControl(dvParam = NULL)` uses the variable on the left of the
+  residual error line for the unit conversion; the auto-detection could
+  not be reached and failed when it found a DV
+  ([\#260](https://github.com/nlmixr2/babelmixr2/issues/260))
+
 - New
   [`as.nonmem()`](https://nlmixr2.github.io/babelmixr2/reference/as.nonmem.md)
   and
@@ -15,6 +20,8 @@
   doses and observations.
 
 ## babelmixr2 0.1.12
+
+CRAN release: 2026-10-16
 
 - `est="pknca"` unit conversion scales the whole DV expression, so an
   additive term (like a baseline) is converted too

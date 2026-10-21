@@ -44,7 +44,8 @@ pkncaControl(
 
   The parameter name in the model that should be modified for
   concentration unit conversions. It must be assigned on a line by
-  itself, separate from the residual error model line.
+  itself, separate from the residual error model line. With `NULL`, the
+  variable on the left of the residual error line is used.
 
 - groups:
 
