@@ -215,6 +215,8 @@ nlmixr2Est.pknca <- function(env, ...) {
 }
 attr(nlmixr2Est.pknca, "type") <- "External"
 attr(nlmixr2Est.pknca, "description") <- "PKNCA-based initial estimates (NCA)"
+# pknca takes the model's omega as given, so a repeated (same()) block is kept
+attr(nlmixr2Est.pknca, "sameBlock") <- "fixed"
 
 #' Get the lines of the model which assign the dependent variable(s)
 #' @return A list of dependent variable lines (or NULL if there are no dependent
