@@ -1,5 +1,9 @@
 # babelmixr2 (development version)
 
+* `est="poped"` designs of a model that reads `newind` now see `newind == 2`
+  after a subject's first record, as `rxSolve()` does; every record saw
+  `newind == 1`, so the design was computed for a different model
+
 * `pkncaControl(dvParam = NULL)` uses the variable on the left of the residual
   error line for the unit conversion; the auto-detection could not be reached
   and failed when it found a DV (#260)

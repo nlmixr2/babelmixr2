@@ -507,6 +507,14 @@ static inline bool solveCached(NumericVector &theta, int &id) {
   return as<bool>(all(last == theta));
 }
 
+// calc_lhs does not advance ind->_newind; rxode2's own output walk leaves it
+// at 2 after each record, so only a subject's first record sees newind == 1.
+static inline void popedCalcLhs(int id, double curT, rx_solving_options_ind *ind,
+                                rx_solving_options *op, int j, double *lhs) {
+  rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+  ind->_newind = 2;
+}
+
 void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, int nend) {
   // arma::vec ret(retD, nobs, false, true);
   rx_solving_options_ind *ind =  updateParamRetInd(theta, id);
@@ -525,11 +533,11 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
     isMT = evid >= 10 && evid <= 99;
     // REprintf("curT: %f; evid: %d; isMT: %d; kk: %d\n", curT, evid, isMT, kk);
     if (isDose(getIndEvid(ind, kk))) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      popedCalcLhs(id, curT, ind, op, j, lhs);
       continue;
     } else if (isMT) {
       // mtimes to calculate information
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      popedCalcLhs(id, curT, ind, op, j, lhs);
       if (ISNA(lhs[0])) {
         popedOp.naZero=1;
         lhs[0] = 0.0;
@@ -544,7 +552,7 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
         return; // vector has been created, break
       }
     } else if (getIndEvid(ind, kk) == 0) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      popedCalcLhs(id, curT, ind, op, j, lhs);
       if (ISNA(lhs[0])) {
         popedOp.naZero=1;
         lhs[0] = 0.0;
@@ -630,10 +638,10 @@ void popedSolveFidMat2(arma::mat &matMT, NumericVector &theta, int id, int nrow,
     curT = getTime(kk, ind);
     double *lhs = getIndLhs(ind);
     if (isDose(getIndEvid(ind, kk))) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      popedCalcLhs(id, curT, ind, op, j, lhs);
       continue;
     } else if (getIndEvid(ind, kk) == 0) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      popedCalcLhs(id, curT, ind, op, j, lhs);
       if (ISNA(lhs[0])) {
         popedOp.naZero=1;
         lhs[0] = 0.0;
