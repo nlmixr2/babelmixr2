@@ -40,7 +40,7 @@ NOT_CRAN=true Rscript -e "devtools::test(filter='nonmem')"   # file name without
 - On CI (`CI=true`, not CRAN), R-CMD-check runs only the fast subset: all
   files except those in `.slowBatches`.
 - `BABELMIXR2_TEST_BATCH=<n>` runs only slow batch `n`
-  (1 = `saemix`; 2 = `nonmem-read`, `monolix-read`, `poped`,
+  (1 = `saemix`; 2 = `nonmem-read`, `monolix-read`, `poped`, `poped-newind`,
   `as-nlmixr2`; 3 = `nonmem-monolix-stress`, `nonmem-monolix-nlmixr2lib`).
   The weekly `.github/workflows/slow-tests.yaml` matrix must match the
   number of batches; update both together.
