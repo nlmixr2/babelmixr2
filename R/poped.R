@@ -362,7 +362,8 @@ rxUiGet.popedFfFun <- function(x, ...) {
                                    .id-1, .totn), silent=TRUE)
     }
     return(list(f=matrix(.ret$rx_pred_, ncol=1),
-                poped.db=poped.db))
+                poped.db=poped.db,
+                w=.ret$w))
   })
   .f <- function(model_switch, xt, p, poped.db){}
   body(.f) <- .body
@@ -747,10 +748,11 @@ rxUiGet.popedFErrorFun  <- function(x, ...) {
   .ui <- x[[1]]
   if (rxode2::rxGetControl(.ui, "fixRes", FALSE)) {
     f <- function(model_switch, xt, parameters, epsi, poped.db) {
-      # Will assign in babelmixr2 namespace
-      do.call(poped.db$model$ff_pointer,list(model_switch,xt,parameters,poped.db))
-      y <- .popedF(poped.db) + .popedW(poped.db) * epsi[, 1]
-      return(list(y=y,poped.db=poped.db))
+      # use ff's own return: ff is memoised, so the last solve stored in
+      # poped.db$babelmixr2$s can belong to other parameters
+      rxReturnArgs <- do.call(poped.db$model$ff_pointer,list(model_switch,xt,parameters,poped.db))
+      y <- rxReturnArgs$f + sqrt(rxReturnArgs$w) * epsi[, 1]
+      return(list(y=y,poped.db=rxReturnArgs$poped.db))
     }
     return(f)
   } else {
