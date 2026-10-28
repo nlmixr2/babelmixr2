@@ -4,6 +4,11 @@
   residuals (`fixRes = TRUE`) with a warning; they were translated as
   combined2 (#151)
 
+* `popedControl(fixRes = TRUE)` takes the prediction and residual weight
+  from the model function's own return; it read the last stored solve,
+  which the memoised model function can leave stale, so the random-effect
+  block of the FIM was wrong and the design OFV was `-Inf`
+
 * `pkncaControl(dvParam = NULL)` uses the variable on the left of the residual
   error line for the unit conversion; the auto-detection could not be reached
   and failed when it found a DV (#260)

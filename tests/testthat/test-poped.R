@@ -1176,7 +1176,7 @@ test_that("popedControl(sigdig=) tolerances ignore rxode2 version (#223)", {
   expect_equal(.rx$rtol, 1e-4)
 })
 
-test_that("a combined1 add+prop error model fixes the PopED residuals (#151)", {
+test_that("fixRes and combined1 residuals in PopED designs (#151)", {
   skip_on_cran()
   skip_if_not_installed("PopED")
   f <- function() {
@@ -1199,7 +1199,7 @@ test_that("a combined1 add+prop error model fixes the PopED residuals (#151)", {
       d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
       f(depot) <- DOSE * Favail
-      cp ~ add(add.sd) + prop(prop.sd) + combined1()
+      cp ~ add(add.sd) + prop(prop.sd)
     })
   }
   e <- rxode2::et(amt=1, ii=24, until=250) |>
@@ -1207,16 +1207,20 @@ test_that("a combined1 add+prop error model fixes the PopED residuals (#151)", {
     as.data.frame()
   e$low <- c(NA, 0, 0, 0, 240, 240)
   e$high <- c(NA, 10, 10, 10, 248, 248)
-  ctl <- popedControl(a=list(c(DOSE=20), c(DOSE=40)),
-                      maxa=c(DOSE=200), mina=c(DOSE=0))
+  ctl <- function(...) {
+    popedControl(a=list(c(DOSE=20), c(DOSE=40)),
+                 maxa=c(DOSE=200), mina=c(DOSE=0), ...)
+  }
+  # fixing the residuals only drops the sigma rows of the FIM
+  fimEst <- PopED::evaluate_design(suppressMessages(nlmixr2(f, e, "poped", ctl())))$fim
+  fimFix <- PopED::evaluate_design(suppressMessages(nlmixr2(f, e, "poped", ctl(fixRes=TRUE))))$fim
+  expect_equal(fimFix, fimEst[rownames(fimFix), colnames(fimFix)], tolerance=1e-6)
+  # combined1 has no PopED epsilon form, so it uses the fixed residuals
+  f1 <- f |> rxode2::model(cp ~ add(add.sd) + prop(prop.sd) + combined1())
   expect_warning(
-    db1 <- suppressMessages(nlmixr2(f, e, "poped", ctl)),
+    db1 <- suppressMessages(nlmixr2(f1, e, "poped", ctl())),
     "combined1"
   )
   expect_equal(NROW(as.matrix(db1$parameters$sigma)), 1L)
   expect_true(is.finite(PopED::evaluate_design(db1)$ofv))
-  # combined2 still estimates both residual variances
-  f2 <- f |> rxode2::model(cp ~ add(add.sd) + prop(prop.sd) + combined2())
-  db2 <- suppressMessages(nlmixr2(f2, e, "poped", ctl))
-  expect_equal(NROW(as.matrix(db2$parameters$sigma)), 2L)
 })
