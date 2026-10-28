@@ -507,12 +507,13 @@ static inline bool solveCached(NumericVector &theta, int &id) {
   return as<bool>(all(last == theta));
 }
 
-// calc_lhs does not advance ind->_newind; rxode2's own output walk leaves it
-// at 2 after each record, so only a subject's first record sees newind == 1.
+// calc_lhs does not advance newind; rxode2's own output walk leaves it at 2
+// after each record, so only a subject's first record sees newind == 1.
+// setIndNewind() is rxode2's accessor, so the field offset is not compiled in.
 static inline void popedCalcLhs(int id, double curT, rx_solving_options_ind *ind,
                                 rx_solving_options *op, int j, double *lhs) {
   rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
-  ind->_newind = 2;
+  setIndNewind(ind, 2);
 }
 
 void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, int nend) {
