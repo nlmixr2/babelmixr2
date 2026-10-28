@@ -1,5 +1,9 @@
 # babelmixr2 (development version)
 
+* PopED designs of a `combined1()` add + prop error model now fix the
+  residuals (`fixRes = TRUE`) with a warning; they were translated as
+  combined2 (#151)
+
 * `pkncaControl(dvParam = NULL)` uses the variable on the left of the residual
   error line for the unit conversion; the auto-detection could not be reached
   and failed when it found a DV (#260)

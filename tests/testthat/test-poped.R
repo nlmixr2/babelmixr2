@@ -1175,3 +1175,43 @@ test_that("popedControl(sigdig=) tolerances ignore rxode2 version (#223)", {
   expect_equal(.rx$atol, 1e-4)
   expect_equal(.rx$rtol, 1e-4)
 })
+
+test_that("a combined1 add+prop error model fixes the PopED residuals (#151)", {
+  skip_on_cran()
+  skip_if_not_installed("PopED")
+  f <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      eta.ka ~ 0.6
+      eta.cl ~ 0.3
+      eta.v ~ 0.1
+      add.sd <- 0.7
+      prop.sd <- 0.1
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      cp ~ add(add.sd) + prop(prop.sd) + combined1()
+    })
+  }
+  e <- rxode2::et(amt=320) |>
+    rxode2::et(c(0.25, 1, 2, 4, 8, 12, 24)) |>
+    rxode2::et(id=1:2) |>
+    as.data.frame()
+  expect_warning(
+    db1 <- suppressMessages(nlmixr2(f, e, "poped", popedControl(maxn=15))),
+    "combined1"
+  )
+  expect_equal(NROW(as.matrix(db1$parameters$sigma)), 1L)
+  expect_true(is.finite(PopED::evaluate_design(db1)$ofv))
+  # combined2 still estimates both residual variances
+  f2 <- f |> rxode2::model(cp ~ add(add.sd) + prop(prop.sd) + combined2())
+  db2 <- suppressMessages(nlmixr2(f2, e, "poped", popedControl(maxn=15)))
+  expect_equal(NROW(as.matrix(db2$parameters$sigma)), 2L)
+})

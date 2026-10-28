@@ -2238,6 +2238,15 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   # Set control options to be used within functions
   .ctl <- control
   class(.ctl) <- NULL
+  # PopED's epsilons enter as y = f*(1 + eps_prop) + eps_add (combined2);
+  # combined1 (sd = add + prop*f) needs the fixed residual weight instead
+  .predDf <- .ui$predDf
+  if (!isTRUE(.ctl$fixRes) &&
+        any(.predDf$errType == "add + prop" & .predDf$addProp == "combined1")) {
+    warning("PopED cannot estimate combined1 residual parameters; using fixRes=TRUE",
+            call.=FALSE)
+    .ctl$fixRes <- TRUE
+  }
   rxode2::rxSetControl(.ui, .ctl)
   .toScript <- rxode2::rxGetControl(.ui, "script", NULL)
   # To get the sigma estimates, this needs to be called before any of
