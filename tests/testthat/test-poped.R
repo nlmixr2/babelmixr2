@@ -1181,37 +1181,42 @@ test_that("a combined1 add+prop error model fixes the PopED residuals (#151)", {
   skip_if_not_installed("PopED")
   f <- function() {
     ini({
-      tka <- 0.45
-      tcl <- 1
-      tv <- 3.45
-      eta.ka ~ 0.6
-      eta.cl ~ 0.3
-      eta.v ~ 0.1
-      add.sd <- 0.7
-      prop.sd <- 0.1
+      tV <- 72.8
+      tKA <- 0.25
+      tCL <- 3.75
+      Favail <- fix(0.9)
+      eta.ka ~ 0.09
+      eta.cl ~ 0.25 ^ 2
+      eta.v ~ 0.09
+      prop.sd <- sqrt(0.04)
+      add.sd <- fix(sqrt(5e-6))
     })
     model({
-      ka <- exp(tka + eta.ka)
-      cl <- exp(tcl + eta.cl)
-      v <- exp(tv + eta.v)
+      ka <- tKA * exp(eta.ka)
+      v <- tV * exp(eta.v)
+      cl <- tCL * exp(eta.cl)
       d/dt(depot) <- -ka * depot
       d/dt(central) <- ka * depot - cl / v * central
       cp <- central / v
+      f(depot) <- DOSE * Favail
       cp ~ add(add.sd) + prop(prop.sd) + combined1()
     })
   }
-  e <- rxode2::et(amt=320) |>
-    rxode2::et(c(0.25, 1, 2, 4, 8, 12, 24)) |>
-    rxode2::et(id=1:2) |>
+  e <- rxode2::et(amt=1, ii=24, until=250) |>
+    rxode2::et(c(1, 2, 8, 240, 245)) |>
     as.data.frame()
+  e$low <- c(NA, 0, 0, 0, 240, 240)
+  e$high <- c(NA, 10, 10, 10, 248, 248)
+  ctl <- popedControl(a=list(c(DOSE=20), c(DOSE=40)),
+                      maxa=c(DOSE=200), mina=c(DOSE=0))
   expect_warning(
-    db1 <- suppressMessages(nlmixr2(f, e, "poped", popedControl(maxn=15))),
+    db1 <- suppressMessages(nlmixr2(f, e, "poped", ctl)),
     "combined1"
   )
   expect_equal(NROW(as.matrix(db1$parameters$sigma)), 1L)
   expect_true(is.finite(PopED::evaluate_design(db1)$ofv))
   # combined2 still estimates both residual variances
   f2 <- f |> rxode2::model(cp ~ add(add.sd) + prop(prop.sd) + combined2())
-  db2 <- suppressMessages(nlmixr2(f2, e, "poped", popedControl(maxn=15)))
+  db2 <- suppressMessages(nlmixr2(f2, e, "poped", ctl))
   expect_equal(NROW(as.matrix(db2$parameters$sigma)), 2L)
 })
