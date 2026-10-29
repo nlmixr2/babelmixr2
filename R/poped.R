@@ -3268,6 +3268,8 @@ nlmixr2Est.poped <- function(env, ...) {
 }
 attr(nlmixr2Est.poped, "type") <- "Optimal Design"
 attr(nlmixr2Est.poped, "description") <- "PopED optimal design"
+# poped takes the model's omega as given, so a repeated (same()) block is kept
+attr(nlmixr2Est.poped, "sameBlock") <- "fixed"
 
 
 # This is a way to export a rxode2 optimization alternative via a file

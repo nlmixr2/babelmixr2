@@ -1,5 +1,10 @@
 # babelmixr2 (development version)
 
+* `est="pknca"` and `est="poped"` accept a model with a repeated (`same()`)
+  omega block, which they take as given; `nlmixr2est` refuses the block to an
+  estimation method that does not say it keeps the tie.  `est="nonmem"`,
+  `"monolix"`, `"saemix"` and `"nlmer"` are still refused it.
+
 * `pkncaControl(dvParam = NULL)` uses the variable on the left of the residual
   error line for the unit conversion; the auto-detection could not be reached
   and failed when it found a DV (#260)
