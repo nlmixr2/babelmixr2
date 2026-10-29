@@ -2243,8 +2243,12 @@ attr(rxUiGet.popedOptsw, "rstudio") <- 1
   # PopED's epsilons enter as y = f*(1 + eps_prop) + eps_add (combined2);
   # combined1 (sd = add + prop*f) needs the fixed residual weight instead
   .predDf <- .ui$predDf
+  # "default" follows the rxode2.addProp option, as rxode2 does for the
+  # residual weight
+  .addProp <- as.character(.predDf$addProp)
+  .addProp[.addProp == "default"] <- getOption("rxode2.addProp", "combined2")
   if (!isTRUE(.ctl$fixRes) &&
-        any(.predDf$errType == "add + prop" & .predDf$addProp == "combined1")) {
+        any(.predDf$errType == "add + prop" & .addProp == "combined1")) {
     warning("PopED cannot estimate combined1 residual parameters; using fixRes=TRUE",
             call.=FALSE)
     .ctl$fixRes <- TRUE

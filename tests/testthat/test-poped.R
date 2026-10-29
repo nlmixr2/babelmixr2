@@ -1223,4 +1223,11 @@ test_that("fixRes and combined1 residuals in PopED designs (#151)", {
   )
   expect_equal(NROW(as.matrix(db1$parameters$sigma)), 1L)
   expect_true(is.finite(PopED::evaluate_design(db1)$ofv))
+  # a default add + prop model follows options(rxode2.addProp=)
+  withr::with_options(list(rxode2.addProp="combined1"), {
+    expect_warning(
+      suppressMessages(nlmixr2(f, e, "poped", ctl())),
+      "combined1"
+    )
+  })
 })
