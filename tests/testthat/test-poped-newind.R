@@ -72,6 +72,9 @@ newindDesign <- function(ui, maxn) {
 test_that("est='poped' predicts newind as rxSolve() does, on both walks", {
   skip_on_cran()
   skip_if_not_installed("PopED")
+  # rxode2's setIndNewind() (slot 104) advances newind; the skip goes with
+  # test-dependency-workarounds.R's slot-104 block
+  skip_if_not(.rxode2Optional()[["setIndNewind"]], "the installed rxode2 has no setIndNewind()")
   solved <- as.data.frame(rxode2::rxSolve(newindProbe, newindEvents()))
   # every observation follows its subject's dose record
   expect_equal(solved$cp, rep(2, 12))
@@ -84,6 +87,9 @@ test_that("est='poped' predicts newind as rxSolve() does, on both walks", {
 test_that("est='poped' designs a model that reads newind as the model it is", {
   skip_on_cran()
   skip_if_not_installed("PopED")
+  # rxode2's setIndNewind() (slot 104) advances newind; the skip goes with
+  # test-dependency-workarounds.R's slot-104 block
+  skip_if_not(.rxode2Optional()[["setIndNewind"]], "the installed rxode2 has no setIndNewind()")
   for (walk in names(newindMaxn)) {
     # after the dose record e0 is 1.2 at every observation
     expect_equal(
