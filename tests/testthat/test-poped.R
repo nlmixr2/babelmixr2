@@ -1,6 +1,7 @@
-if (requireNamespace("PopED", quietly=TRUE) &&
-    identical(Sys.getenv("NOT_CRAN"), "true")) {
-
+if (
+  requireNamespace("PopED", quietly = TRUE) &&
+    identical(Sys.getenv("NOT_CRAN"), "true")
+) {
   pheno <- function() {
     ini({
       tcl <- log(0.008) # typical value of clearance
@@ -20,7 +21,6 @@ if (requireNamespace("PopED", quietly=TRUE) &&
       cp ~ add(add.err)       # define error model
     })
   }
-
 
   # Add modeled time for err in procedure
   phenoMT <- function() {
@@ -65,15 +65,12 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     })
   }
 
-
-
   test_that("test poped interface functions", {
-
     # Test covariance of omega
 
     p <- pheno()
 
-    expect_equal(p$popedD, c(eta.cl=1, eta.v=1))
+    expect_equal(p$popedD, c(eta.cl = 1, eta.v = 1))
 
     expect_equal(p$popedNotfixedD, NULL)
 
@@ -103,7 +100,7 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
     p <- phenoF()
 
-    expect_equal(p$popedD, c(eta.cl=1, eta.v=1))
+    expect_equal(p$popedD, c(eta.cl = 1, eta.v = 1))
 
     expect_equal(p$popedNotfixedD, c(0L, 0L))
 
@@ -111,28 +108,27 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
     expect_equal(p$popedNotfixedCovd, 0L)
 
-    expect_equal(p$popedSigma,c(var_add.err=0.1^2))
+    expect_equal(p$popedSigma, c(var_add.err = 0.1^2))
 
-    p <- try(p %>%
-               model(cp ~ add(add.err) + var()),
-             silent=TRUE)      # define error model
+    p <- try(
+      p %>%
+        model(cp ~ add(add.err) + var()),
+      silent = TRUE
+    ) # define error model
 
-    if (inherits(p,"try-error")) {
+    if (inherits(p, "try-error")) {
       skip("rxode2 does not support var()")
     } else {
-      expect_equal(p$popedSigma, c(add.err=0.1))
+      expect_equal(p$popedSigma, c(add.err = 0.1))
     }
-
   })
 
   test_that("modeled time behavior for models", {
-
     p <- phenoMT()
 
     f <- suppressMessages(.popedRxModel(p, 5))
 
-    expect_equal(attr(f, "mtime"),
-                 FALSE)
+    expect_equal(attr(f, "mtime"), FALSE)
 
     expect_equal(attr(f, "maxNumTime"), 0L)
 
@@ -142,43 +138,46 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
     f <- .popedRxModel(p, 5)
 
-    expect_equal(attr(f, "mtime"),
-                 TRUE)
+    expect_equal(attr(f, "mtime"), TRUE)
 
     expect_equal(attr(f, "maxNumTime"), 5L)
 
     expect_error(eval(f), NA)
-
   })
 
   test_that("importance test; should only be needed with ofv_calc_type=6", {
-
     p <- pheno()
 
     lst <- p$popedParameters
 
-    expect_equal(.popedImportant(p, lst, important=NULL, unimportant=NULL)$parameters$ds_index,
-                 c(tcl = 0, tv = 0, eta.cl = 1, eta.v = 1, add.err = 1))
+    expect_equal(
+      .popedImportant(p, lst, important = NULL, unimportant = NULL)$parameters$ds_index,
+      c(tcl = 0, tv = 0, eta.cl = 1, eta.v = 1, add.err = 1)
+    )
 
-    expect_equal(.popedImportant(p, lst, important="eta.cl", unimportant=NULL)$parameters$ds_index,
-                 c(tcl = 0, tv = 0, eta.cl = 0, eta.v = 1, add.err = 1))
+    expect_equal(
+      .popedImportant(p, lst, important = "eta.cl", unimportant = NULL)$parameters$ds_index,
+      c(tcl = 0, tv = 0, eta.cl = 0, eta.v = 1, add.err = 1)
+    )
 
-    expect_equal(.popedImportant(p, lst, important=NULL, unimportant="tcl")$parameters$ds_index,
-                 c(tcl = 1, tv = 0, eta.cl = 1, eta.v = 1, add.err = 1))
+    expect_equal(
+      .popedImportant(p, lst, important = NULL, unimportant = "tcl")$parameters$ds_index,
+      c(tcl = 1, tv = 0, eta.cl = 1, eta.v = 1, add.err = 1)
+    )
 
-    expect_equal(.popedImportant(p, lst, important=NULL, unimportant="matt")$parameters$ds_index,
-                 c(tcl = 0, tv = 0, eta.cl = 1, eta.v = 1, add.err = 1))
+    expect_equal(
+      .popedImportant(p, lst, important = NULL, unimportant = "matt")$parameters$ds_index,
+      c(tcl = 0, tv = 0, eta.cl = 1, eta.v = 1, add.err = 1)
+    )
 
-    expect_equal(.popedImportant(p, lst, important="matt", unimportant=NULL)$parameters$ds_index,
-                 c(tcl = 0, tv = 0, eta.cl = 1, eta.v = 1, add.err = 1))
-
+    expect_equal(
+      .popedImportant(p, lst, important = "matt", unimportant = NULL)$parameters$ds_index,
+      c(tcl = 0, tv = 0, eta.cl = 1, eta.v = 1, add.err = 1)
+    )
   })
 
-
   test_that("data to design", {
-
     withr::with_seed(42, {
-
       set.seed(42)
 
       phenoWt <- function() {
@@ -204,58 +203,53 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
       p <- phenoWt()
 
-      e <- et(amt=25) %>%
+      e <- et(amt = 25) %>%
         et(c(0.25, 1.2, 2, 4, 10, 20)) %>%
-        et(id=1:2) %>%
+        et(id = 1:2) %>%
         as.data.frame() %>%
-        merge(data.frame(id=1:2, WT=c(1.4, 1.5)))
+        merge(data.frame(id = 1:2, WT = c(1.4, 1.5)))
 
       e$low <- c(NA, 0, 0.5, 1.5, 2.75, 8, 18, NA, 0, 0.5, 1.5, 2.75, 8, 18)
       e$high <- c(NA, 0.5, 1.5, 2.5, 6, 14, 26, NA, 0.5, 1.5, 2.5, 6, 14, 26)
 
-      expect_error(.popedDataToDesignSpace(p, e, groupsize=20), NA)
+      expect_error(.popedDataToDesignSpace(p, e, groupsize = 20), NA)
 
       db <- nlmixr2(p, e, "poped", popedControl(maxn = 15))
 
       library(PopED)
 
       expect_equal(
-        list(ofv = 20.9329909188822,
-            fim = lotri({
+        list(
+          ofv = 20.9329909188822,
+          fim = lotri({
                tcl ~ 38.5287781777289
                tv ~ c(-0.378676299928052, 40.0036518825547)
                sig_var_add.err ~ 800272.653189197
              }),
-            rse = c(tcl = 3.33681479771409, tv = 30.9526409413885,
-                    sig_var_add.err = 11.1784351522799)),
-        evaluate_design(db), tolerance = 1e-4)
+          rse = c(tcl = 3.33681479771409, tv = 30.9526409413885, sig_var_add.err = 11.1784351522799)
+        ),
+        evaluate_design(db),
+        tolerance = 1e-4
+      )
 
       ## v <- poped_optim(db, opt_xt=TRUE)
 
       ## expect_equal(v$ofv, 20.9503530468227, tolerance = 1e-4)
-
-
-
     })
-
   })
-
 
   # Test the poped intro example in nlmixr2 speak
 
   test_that("poped intro", {
-
     library(PopED)
 
     withr::with_seed(42, {
-
       set.seed(42)
 
-      e <- et(amt=1, ii=24, until=250) %>%
+      e <- et(amt = 1, ii = 24, until = 250) %>%
         et(c(1, 2, 8, 240, 245)) %>%
         as.data.frame() %>%
-      dplyr::mutate(low=c(NA, 0, 0, 0, 240, 240),
-                    high=c(NA, 10, 10, 10,  248, 248))
+        dplyr::mutate(low = c(NA, 0, 0, 0, 240, 240), high = c(NA, 10, 10, 10, 248, 248))
 
       # model
       f <- function() {
@@ -283,25 +277,26 @@ if (requireNamespace("PopED", quietly=TRUE) &&
       }
 
       withr::with_seed(42, {
-
         set.seed(42)
-        db <- nlmixr2(f, e, "poped",
-                      popedControl(a=list(c(DOSE=20),
-                                          c(DOSE=40)),
-                                   maxa=c(DOSE=200),
-                                   mina=c(DOSE=0)))
+        db <- nlmixr2(
+          f,
+          e,
+          "poped",
+          popedControl(a = list(c(DOSE = 20), c(DOSE = 40)), maxa = c(DOSE = 200), mina = c(DOSE = 0))
+        )
 
         expect_error(plot_model_prediction(db, model_num_points = 300), NA)
 
-        expect_error(plot_model_prediction(db,
-                                           PI=TRUE,
-                                           separate.groups=TRUE,
-                                           model_num_points = 300,
-                                           sample.times = FALSE), NA)
+        expect_error(
+          plot_model_prediction(db, PI = TRUE, separate.groups = TRUE, model_num_points = 300, sample.times = FALSE),
+          NA
+        )
 
-        expect_equal(evaluate_design(db),
-                     list(ofv = 39.3090057657525,
-                          fim = lotri({
+        expect_equal(
+          evaluate_design(db),
+          list(
+            ofv = 39.3090057657525,
+            fim = lotri({
                             tV + tKA + tCL ~ c(0.0533669124790745, -8.68396393002656,
                                                2999.85286248872, -0.058634133188746, -14.4306063906335,
                                                37.1524325291608)
@@ -310,21 +305,23 @@ if (requireNamespace("PopED", quietly=TRUE) &&
                                 2.2878439908508, 3412.00514559432, 312.24028527664, 3.20285380277308,
                                 999.953201635217, 638.582017761863, 1182.32547832173,
                                 575.347350448117, 33864.3205676804)}),
-                          rse = c(tV = 8.21533739750444,
-                                  tKA = 10.0909508715706, tCL = 4.40030409644082, d_eta.ka = 60.6550666795227,
-                                  d_eta.cl = 27.562540815783, d_eta.v = 39.8447671522606, sig_prop.var = 13.8653576106817)), tolerance=1e-4)
-
+            rse = c(
+              tV = 8.21533739750444,
+              tKA = 10.0909508715706,
+              tCL = 4.40030409644082,
+              d_eta.ka = 60.6550666795227,
+              d_eta.cl = 27.562540815783,
+              d_eta.v = 39.8447671522606,
+              sig_prop.var = 13.8653576106817
+            )
+          ),
+          tolerance = 1e-4
+        )
       })
-
     })
-
-
   })
 
   test_that("shrinkage", {
-
-
-
     f <- function() {
       ini({
         tV <- 72.8
@@ -352,27 +349,27 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     }
 
     # minxt, maxxt
-    e <- try(et(list(c(0, 1, 10),
-                 c(0, 2, 10),
-                 c(0, 8, 10),
-                 c(240, 240, 248),
-                 c(240, 245, 248))) %>%
-               as.data.frame())
+    e <- try(
+      et(list(c(0, 1, 10), c(0, 2, 10), c(0, 8, 10), c(240, 240, 248), c(240, 245, 248))) %>%
+        as.data.frame()
+    )
 
-    skip_if(inherits(e, "try-error"),
-                 "et() does not support 3 element list input, skipping test")
+    skip_if(inherits(e, "try-error"), "et() does not support 3 element list input, skipping test")
 
-
-    babel.db <- nlmixr2(f, e, "poped",
-                        popedControl(groupsize=20,
-                                     bUseGrouped_xt=TRUE,
-                                     a=list(c(DOSE=20,TAU=24),
-                                            c(DOSE=40, TAU=24)),
-                                     maxa=c(DOSE=200,TAU=24),
-                                     mina=c(DOSE=0,TAU=24)))
+    babel.db <- nlmixr2(
+      f,
+      e,
+      "poped",
+      popedControl(
+        groupsize = 20,
+        bUseGrouped_xt = TRUE,
+        a = list(c(DOSE = 20, TAU = 24), c(DOSE = 40, TAU = 24)),
+        maxa = c(DOSE = 200, TAU = 24),
+        mina = c(DOSE = 0, TAU = 24)
+      )
+    )
 
     expect_error(shrinkage(babel.db), NA)
-
   })
 
   test_that("mixing 2 poped databases at the same time", {
@@ -406,15 +403,19 @@ if (requireNamespace("PopED", quietly=TRUE) &&
       })
     }
 
-    e <- et(c( 1,8,10,240,245))
+    e <- et(c(1, 8, 10, 240, 245))
 
-    babel.db <- nlmixr2(f, e, "poped",
-                        popedControl(m = 2,
-                                     groupsize=20,
-                                     bUseGrouped_xt=TRUE,
-                                     a=list(c(DOSE=20,TAU=24,isPediatric = 0),
-                                            c(DOSE=40, TAU=24,isPediatric = 0))))
-
+    babel.db <- nlmixr2(
+      f,
+      e,
+      "poped",
+      popedControl(
+        m = 2,
+        groupsize = 20,
+        bUseGrouped_xt = TRUE,
+        a = list(c(DOSE = 20, TAU = 24, isPediatric = 0), c(DOSE = 40, TAU = 24, isPediatric = 0))
+      )
+    )
 
     # Note, to be able to use the adults FIM to combine with the pediatrics,
     # both have to have the parameter "pedCL" defined and set notfixed_bpop to 1.
@@ -422,25 +423,23 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     ## Define pediatric model/design (isPediatric = 1)
     ## One arm, 4 time points only
 
-    e.ped <- et(c( 1,2,6,240))
+    e.ped <- et(c(1, 2, 6, 240))
 
-    babel.db.ped <- nlmixr2(f, e.ped, "poped",
-                            popedControl(m = 1,
-                                         groupsize=6,
-                                         bUseGrouped_xt=TRUE,
-                                         a=list(c(DOSE=40,TAU=24,isPediatric = 1))))
-
+    babel.db.ped <- nlmixr2(
+      f,
+      e.ped,
+      "poped",
+      popedControl(m = 1, groupsize = 6, bUseGrouped_xt = TRUE, a = list(c(DOSE = 40, TAU = 24, isPediatric = 1)))
+    )
 
     ##  Create plot of model of adult data without variability
     expect_error(plot_model_prediction(babel.db, model_num_points = 300), NA)
 
-    expect_error(plot_model_prediction(babel.db.ped,
-                                       model_num_points = 300), NA)
+    expect_error(plot_model_prediction(babel.db.ped, model_num_points = 300), NA)
 
     expect_equal(babelBpopIdx(babel.db.ped, "pedCL"), 4L)
 
     expect_error(babelBpopIdx(babel.db, "matt"))
-
   })
 
   ##  The tests run interactively runs OK
@@ -487,7 +486,6 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
   ##   #xt
   ##   e$time <-  c(1,2,8,240,245)
-
 
   ##   babel.db <- nlmixr2(f, e, "poped",
   ##                       popedControl(groupsize=20,
@@ -601,7 +599,6 @@ if (requireNamespace("PopED", quietly=TRUE) &&
   ##     evaluate_design(babel.db,d_switch=FALSE,ED_samp_size=20)
   ##   })
 
-
   ##   # Example changes the model to add+prop error model
 
   ##   f <- function() {
@@ -639,7 +636,6 @@ if (requireNamespace("PopED", quietly=TRUE) &&
   ##                                    # selecting important/unimportant
   ##                                    # parameters assumes Ds optimal design.
   ##                                    important=c("tCl", "tV", "tKa")))
-
 
   ##   babelDs <- withr::with_seed(42, evaluate_design(babel.db))
 
@@ -723,7 +719,6 @@ if (requireNamespace("PopED", quietly=TRUE) &&
   ## })
 
   test_that("PopED lhs", {
-
     pheno <- function() {
       ini({
         tcl <- log(0.008) # typical value of clearance
@@ -749,11 +744,9 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     p <- pheno()
 
     expect_equal(eval(.popedRxModel(p))$lhs, c("rx_pred_", "rx_r_"))
-
   })
 
   test_that("test G_xt setup", {
-
     library(PopED)
 
     ##-- Model: One comp first order absorption + inhibitory imax
@@ -798,12 +791,12 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     }
 
     # Note that design point 240 is repeated
-    e1 <- et(c( 1,2,8,240, 240)) %>%
+    e1 <- et(c(1, 2, 8, 240, 240)) %>%
       as.data.frame() %>%
-      dplyr::mutate(dvid=1)
+      dplyr::mutate(dvid = 1)
 
-    e1$low <- c(0,0,0,240, 240)
-    e1$high <- c(10,10,10,248, 248)
+    e1$low <- c(0, 0, 0, 240, 240)
+    e1$high <- c(10, 10, 10, 248, 248)
     # Since the design point is repeated, there needs to be a grouping
     # variable which is defined in the dataset as G_xt since it is defined
     # in PopED as G_xt
@@ -813,41 +806,45 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     e2$dvid <- 2
     e <- rbind(e1, e2)
 
-    babel.db <- nlmixr2(f, e, "poped",
-                        popedControl(
-                          groupsize=20,
-                          discrete_xt = list(0:248),
-                          bUseGrouped_xt=TRUE,
-                          a=list(c(DOSE=20,TAU=24),
-                                 c(DOSE=40, TAU=24),
-                                 c(DOSE=0, TAU=24)),
-                          maxa=c(DOSE=200,TAU=40),
-                          mina=c(DOSE=0,TAU=2),
-                          ourzero=0))
+    babel.db <- nlmixr2(
+      f,
+      e,
+      "poped",
+      popedControl(
+        groupsize = 20,
+        discrete_xt = list(0:248),
+        bUseGrouped_xt = TRUE,
+        a = list(c(DOSE = 20, TAU = 24), c(DOSE = 40, TAU = 24), c(DOSE = 0, TAU = 24)),
+        maxa = c(DOSE = 200, TAU = 40),
+        mina = c(DOSE = 0, TAU = 2),
+        ourzero = 0
+      )
+    )
 
     expect_false(is.null(babel.db$design_space$G_xt))
 
     e <- rbind(e1, e2)
-    e <- e[,names(e) != "G_xt"]
+    e <- e[, names(e) != "G_xt"]
 
-    babel.db <- nlmixr2(f, e, "poped",
-                        popedControl(
-                          groupsize=20,
-                          discrete_xt = list(0:248),
-                          bUseGrouped_xt=TRUE,
-                          a=list(c(DOSE=20,TAU=24),
-                                 c(DOSE=40, TAU=24),
-                                 c(DOSE=0, TAU=24)),
-                          maxa=c(DOSE=200,TAU=40),
-                          mina=c(DOSE=0,TAU=2),
-                          ourzero=0))
+    babel.db <- nlmixr2(
+      f,
+      e,
+      "poped",
+      popedControl(
+        groupsize = 20,
+        discrete_xt = list(0:248),
+        bUseGrouped_xt = TRUE,
+        a = list(c(DOSE = 20, TAU = 24), c(DOSE = 40, TAU = 24), c(DOSE = 0, TAU = 24)),
+        maxa = c(DOSE = 200, TAU = 40),
+        mina = c(DOSE = 0, TAU = 2),
+        ourzero = 0
+      )
+    )
 
     expect_true(is.null(babel.db$design$G_xt))
-
   })
 
   test_that("a numeric cmt gives the same design as a named cmt (#201)", {
-
     library(PopED)
 
     f <- function() {
@@ -873,62 +870,58 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
     tms <- c(0.25, 0.5, 1, 2, 3, 6, 8, 12, 24)
 
-    evName <- et(amt=180, rate=180, ii=24, addl=3, cmt="depot") |> et(tms)
-    evNum <- et(amt=180, rate=180, ii=24, addl=3, cmt=1) |> et(tms)
+    evName <- et(amt = 180, rate = 180, ii = 24, addl = 3, cmt = "depot") |> et(tms)
+    evNum <- et(amt = 180, rate = 180, ii = 24, addl = 3, cmt = 1) |> et(tms)
 
-    predName <- model_prediction(nlmixr2(f, evName, "poped",
-                                         popedControl(groupsize=20)))$PRED
-    predNum <- model_prediction(nlmixr2(f, evNum, "poped",
-                                        popedControl(groupsize=20)))$PRED
+    predName <- model_prediction(nlmixr2(f, evName, "poped", popedControl(groupsize = 20)))$PRED
+    predNum <- model_prediction(nlmixr2(f, evNum, "poped", popedControl(groupsize = 20)))$PRED
 
     # the dose has to actually reach the system
     expect_true(all(predName > 0))
     expect_equal(predNum, predName)
 
     # dosing into the second compartment is also honored
-    evNum2 <- et(amt=180, rate=180, ii=24, addl=3, cmt=2) |> et(tms)
-    evName2 <- et(amt=180, rate=180, ii=24, addl=3, cmt="central") |> et(tms)
+    evNum2 <- et(amt = 180, rate = 180, ii = 24, addl = 3, cmt = 2) |> et(tms)
+    evName2 <- et(amt = 180, rate = 180, ii = 24, addl = 3, cmt = "central") |> et(tms)
 
-    expect_equal(model_prediction(nlmixr2(f, evNum2, "poped",
-                                          popedControl(groupsize=20)))$PRED,
-                 model_prediction(nlmixr2(f, evName2, "poped",
-                                          popedControl(groupsize=20)))$PRED)
+    expect_equal(
+      model_prediction(nlmixr2(f, evNum2, "poped", popedControl(groupsize = 20)))$PRED,
+      model_prediction(nlmixr2(f, evName2, "poped", popedControl(groupsize = 20)))$PRED
+    )
 
     # rxode2 doses cmt=0 into the default compartment
-    evZero <- et(amt=180, rate=180, ii=24, addl=3, cmt=0) |> et(tms)
+    evZero <- et(amt = 180, rate = 180, ii = 24, addl = 3, cmt = 0) |> et(tms)
 
-    expect_equal(model_prediction(nlmixr2(f, evZero, "poped",
-                                          popedControl(groupsize=20)))$PRED,
-                 predName)
+    expect_equal(model_prediction(nlmixr2(f, evZero, "poped", popedControl(groupsize = 20)))$PRED, predName)
 
     # a column that mixes compartment names and numbers still has to
     # translate the numbers
-    evMix <- et(amt=180, cmt="depot") |>
-      et(amt=50, time=2, cmt=2) |>
+    evMix <- et(amt = 180, cmt = "depot") |>
+      et(amt = 50, time = 2, cmt = 2) |>
       et(tms)
-    evMixName <- et(amt=180, cmt="depot") |>
-      et(amt=50, time=2, cmt="central") |>
+    evMixName <- et(amt = 180, cmt = "depot") |>
+      et(amt = 50, time = 2, cmt = "central") |>
       et(tms)
 
-    expect_equal(model_prediction(nlmixr2(f, evMix, "poped",
-                                          popedControl(groupsize=20)))$PRED,
-                 model_prediction(nlmixr2(f, evMixName, "poped",
-                                          popedControl(groupsize=20)))$PRED)
+    expect_equal(
+      model_prediction(nlmixr2(f, evMix, "poped", popedControl(groupsize = 20)))$PRED,
+      model_prediction(nlmixr2(f, evMixName, "poped", popedControl(groupsize = 20)))$PRED
+    )
 
     # a dose that cannot be matched to a compartment is an error instead
     # of a silently empty design
-    expect_error(nlmixr2(f, et(amt=180, cmt=5) |> et(tms), "poped",
-                         popedControl(groupsize=20)),
-                 "not in the model")
+    expect_error(
+      nlmixr2(f, et(amt = 180, cmt = 5) |> et(tms), "poped", popedControl(groupsize = 20)),
+      "not in the model"
+    )
 
-    expect_error(nlmixr2(f, et(amt=180, cmt="matt") |> et(tms), "poped",
-                         popedControl(groupsize=20)),
-                 "not in the model")
-
+    expect_error(
+      nlmixr2(f, et(amt = 180, cmt = "matt") |> et(tms), "poped", popedControl(groupsize = 20)),
+      "not in the model"
+    )
   })
 
   test_that("cmt normalization edge cases (#201)", {
-
     f <- function() {
       ini({
         tKA <- log(0.8)
@@ -952,58 +945,48 @@ if (requireNamespace("PopED", quietly=TRUE) &&
 
     # a column of numbers only becomes integer, the way rxode2 does it
     # before solving
-    expect_equal(.popedFixDataCmt(p, data.frame(cmt=c("1", NA, "(default)",
-                                                      "(obs)", "-2")))$cmt,
-                 c(1L, NA_integer_, 1L, 1L, -2L))
+    expect_equal(
+      .popedFixDataCmt(p, data.frame(cmt = c("1", NA, "(default)", "(obs)", "-2")))$cmt,
+      c(1L, NA_integer_, 1L, 1L, -2L)
+    )
 
     # a column that mixes names and numbers stays character; a negative
     # compartment (evid=2 turns it off) keeps its sign, and cmt=0 is the
     # default compartment rather than a missing one
-    expect_equal(.popedFixDataCmt(p, data.frame(cmt=c("depot", "0", "2", "-2",
-                                                      NA, "5")))$cmt,
-                 c("depot", "depot", "central", "-central", NA, "5"))
+    expect_equal(
+      .popedFixDataCmt(p, data.frame(cmt = c("depot", "0", "2", "-2", NA, "5")))$cmt,
+      c("depot", "depot", "central", "-central", NA, "5")
+    )
 
     # a factor is normalized too
-    expect_equal(.popedFixDataCmt(p, data.frame(cmt=factor(c("depot", "2"))))$cmt,
-                 c("depot", "central"))
+    expect_equal(.popedFixDataCmt(p, data.frame(cmt = factor(c("depot", "2"))))$cmt, c("depot", "central"))
 
     # nothing to do without a cmt column
-    expect_equal(.popedFixDataCmt(p, data.frame(time=1:2))$time, 1:2)
+    expect_equal(.popedFixDataCmt(p, data.frame(time = 1:2))$time, 1:2)
 
     # a reset (evid=3) ignores its compartment in rxode2, so it cannot be
     # an error here
-    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 3),
-                                                   cmt=c(1L, 99L))),
-                 NA)
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid = c(1, 3), cmt = c(1L, 99L))), NA)
 
     # neither does an evid=2 record, which turns a compartment on or off
     # and may point at an endpoint rather than an ODE state
-    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 2),
-                                                   cmt=c("depot", "cp"))),
-                 NA)
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid = c(1, 2), cmt = c("depot", "cp"))), NA)
 
     # evid=4 (reset and dose), 5 (replace) and 6 (multiply) all put an
     # amount into a compartment, so they are checked
     for (.evid in c(1, 4, 5, 6)) {
-      expect_error(.popedAssertDoseCmt(p, data.frame(evid=.evid, cmt=99L)),
-                   "not in the model")
+      expect_error(.popedAssertDoseCmt(p, data.frame(evid = .evid, cmt = 99L)), "not in the model")
     }
 
-    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 1),
-                                                   cmt=c(1L, 99L))),
-                 "not in the model")
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid = c(1, 1), cmt = c(1L, 99L))), "not in the model")
 
     # rxode2 doses cmt=0 into the default compartment, so it is not an
     # unmatched compartment
-    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 1),
-                                                   cmt=c(0L, 1L))),
-                 NA)
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid = c(1, 1), cmt = c(0L, 1L))), NA)
 
     # observation records are not checked; a multiple endpoint design
     # names the endpoint there
-    expect_error(.popedAssertDoseCmt(p, data.frame(evid=c(1, 0),
-                                                   cmt=c("depot", "cp"))),
-                 NA)
+    expect_error(.popedAssertDoseCmt(p, data.frame(evid = c(1, 0), cmt = c("depot", "cp"))), NA)
 
     # a linCmt() model numbers its compartments differently from
     # rxModelVars()$state, so its numbers must not be placed by position
@@ -1037,15 +1020,12 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     # the number is left for rxode2 to resolve rather than mapped to "ce"
     expect_equal(rxode2::rxModelVars(pLin)$state, c("ce", "depot", "central"))
 
-    expect_equal(.popedFixDataCmt(pLin, data.frame(cmt=c("depot", "1")))$cmt,
-                 c("depot", "1"))
+    expect_equal(.popedFixDataCmt(pLin, data.frame(cmt = c("depot", "1")))$cmt, c("depot", "1"))
 
-    expect_error(.popedAssertDoseCmt(pLin, data.frame(evid=1, cmt="1")), NA)
-
+    expect_error(.popedAssertDoseCmt(pLin, data.frame(evid = 1, cmt = "1")), NA)
   })
 
   test_that("a numeric cmt works for a multiple endpoint design (#201)", {
-
     library(PopED)
 
     f <- function() {
@@ -1077,45 +1057,45 @@ if (requireNamespace("PopED", quietly=TRUE) &&
     # the design points name the endpoint with dvid, the dose names the
     # compartment
     .mkData <- function(doseCmt) {
-      .d <- as.data.frame(et(amt=180, cmt=doseCmt) |> et(tms))
+      .d <- as.data.frame(et(amt = 180, cmt = doseCmt) |> et(tms))
       .d$id <- 1
       .obs1 <- .d[.d$evid == 0, ]
       .obs1$dvid <- 1
       .obs2 <- .obs1
       .obs2$dvid <- 2
-      .dose <- .d[.d$evid != 0, , drop=FALSE]
+      .dose <- .d[.d$evid != 0, , drop = FALSE]
       .dose$dvid <- 1
       rbind(.dose, .obs1, .obs2)
     }
 
-    expect_equal(model_prediction(nlmixr2(f, .mkData(1), "poped",
-                                          popedControl(groupsize=20)))$PRED,
-                 model_prediction(nlmixr2(f, .mkData("depot"), "poped",
-                                          popedControl(groupsize=20)))$PRED)
+    expect_equal(
+      model_prediction(nlmixr2(f, .mkData(1), "poped", popedControl(groupsize = 20)))$PRED,
+      model_prediction(nlmixr2(f, .mkData("depot"), "poped", popedControl(groupsize = 20)))$PRED
+    )
 
     # the design points can name their endpoint with cmt instead of dvid;
     # the dose can still use a compartment number, which makes the cmt
     # column a mix of names and numbers
     .mkCmtData <- function(doseCmt) {
-      .d <- as.data.frame(et(amt=180, cmt=doseCmt) |>
-                            et(time=tms, cmt="cp") |>
-                            et(time=tms, cmt="eff"))
+      .d <- as.data.frame(
+        et(amt = 180, cmt = doseCmt) |>
+          et(time = tms, cmt = "cp") |>
+          et(time = tms, cmt = "eff")
+      )
       .d$id <- 1
       .d
     }
 
-    expect_equal(model_prediction(nlmixr2(f, .mkCmtData(1), "poped",
-                                          popedControl(groupsize=20)))$PRED,
-                 model_prediction(nlmixr2(f, .mkCmtData("depot"), "poped",
-                                          popedControl(groupsize=20)))$PRED)
+    expect_equal(
+      model_prediction(nlmixr2(f, .mkCmtData(1), "poped", popedControl(groupsize = 20)))$PRED,
+      model_prediction(nlmixr2(f, .mkCmtData("depot"), "poped", popedControl(groupsize = 20)))$PRED
+    )
 
-    expect_equal(model_prediction(nlmixr2(f, .mkCmtData(1), "poped",
-                                          popedControl(groupsize=20)))$PRED,
-                 model_prediction(nlmixr2(f, .mkData(1), "poped",
-                                          popedControl(groupsize=20)))$PRED)
-
+    expect_equal(
+      model_prediction(nlmixr2(f, .mkCmtData(1), "poped", popedControl(groupsize = 20)))$PRED,
+      model_prediction(nlmixr2(f, .mkData(1), "poped", popedControl(groupsize = 20)))$PRED
+    )
   })
-
 }
 
 test_that("PopED designs linCmt() models like their ODE version", {
@@ -1140,15 +1120,13 @@ test_that("PopED designs linCmt() models like their ODE version", {
     })
   }
   ode <- rxode2::linToOde(lin)
-  e <- rxode2::et(amt=320) |>
+  e <- rxode2::et(amt = 320) |>
     rxode2::et(c(0.25, 1, 2, 4, 8, 12, 24)) |>
-    rxode2::et(id=1:2) |>
+    rxode2::et(id = 1:2) |>
     as.data.frame()
-  dbLin <- suppressMessages(nlmixr2(lin, e, "poped", popedControl(maxn=15)))
-  dbOde <- suppressMessages(nlmixr2(ode, e, "poped", popedControl(maxn=15)))
-  expect_equal(PopED::evaluate_design(dbLin)$ofv,
-               PopED::evaluate_design(dbOde)$ofv,
-               tolerance=1e-4)
+  dbLin <- suppressMessages(nlmixr2(lin, e, "poped", popedControl(maxn = 15)))
+  dbOde <- suppressMessages(nlmixr2(ode, e, "poped", popedControl(maxn = 15)))
+  expect_equal(PopED::evaluate_design(dbLin)$ofv, PopED::evaluate_design(dbOde)$ofv, tolerance = 1e-4)
 })
 
 test_that("popedControl(sigdig=) tolerances ignore rxode2 version (#223)", {
@@ -1174,4 +1152,59 @@ test_that("popedControl(sigdig=) tolerances ignore rxode2 version (#223)", {
   .rx <- popedControl(sigdig = NULL)$rxControl
   expect_equal(.rx$atol, 1e-4)
   expect_equal(.rx$rtol, 1e-4)
+})
+
+test_that("fixRes and combined1 residuals in PopED designs (#151)", {
+  skip_on_cran()
+  skip_if_not_installed("PopED")
+  f <- function() {
+    ini({
+      tV <- 72.8
+      tKA <- 0.25
+      tCL <- 3.75
+      Favail <- fix(0.9)
+      eta.ka ~ 0.09
+      eta.cl ~ 0.25 ^ 2
+      eta.v ~ 0.09
+      prop.sd <- sqrt(0.04)
+      add.sd <- fix(sqrt(5e-6))
+    })
+    model({
+      ka <- tKA * exp(eta.ka)
+      v <- tV * exp(eta.v)
+      cl <- tCL * exp(eta.cl)
+      d/dt(depot) <- -ka * depot
+      d/dt(central) <- ka * depot - cl / v * central
+      cp <- central / v
+      f(depot) <- DOSE * Favail
+      cp ~ add(add.sd) + prop(prop.sd)
+    })
+  }
+  e <- rxode2::et(amt = 1, ii = 24, until = 250) |>
+    rxode2::et(c(1, 2, 8, 240, 245)) |>
+    as.data.frame()
+  e$low <- c(NA, 0, 0, 0, 240, 240)
+  e$high <- c(NA, 10, 10, 10, 248, 248)
+  ctl <- function(...) {
+    popedControl(a = list(c(DOSE = 20), c(DOSE = 40)), maxa = c(DOSE = 200), mina = c(DOSE = 0), ...)
+  }
+  # fixing the residuals only drops the sigma rows of the FIM
+  fimEst <- PopED::evaluate_design(suppressMessages(nlmixr2(f, e, "poped", ctl())))$fim
+  fimFix <- PopED::evaluate_design(suppressMessages(nlmixr2(f, e, "poped", ctl(fixRes = TRUE))))$fim
+  expect_equal(fimFix, fimEst[rownames(fimFix), colnames(fimFix)], tolerance = 1e-6)
+  # combined1 has no PopED epsilon form, so it uses the fixed residuals
+  f1 <- f |> rxode2::model(cp ~ add(add.sd) + prop(prop.sd) + combined1())
+  expect_warning(
+    db1 <- suppressMessages(nlmixr2(f1, e, "poped", ctl())),
+    "combined1"
+  )
+  expect_equal(NROW(as.matrix(db1$parameters$sigma)), 1L)
+  expect_true(is.finite(PopED::evaluate_design(db1)$ofv))
+  # a default add + prop model follows options(rxode2.addProp=)
+  withr::with_options(list(rxode2.addProp = "combined1"), {
+    expect_warning(
+      suppressMessages(nlmixr2(f, e, "poped", ctl())),
+      "combined1"
+    )
+  })
 })
