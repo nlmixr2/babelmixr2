@@ -1,13 +1,16 @@
 # Work-arounds for rxode2 features newer than the oldest rxode2 babelmixr2
 # supports (DESCRIPTION).  Off CRAN, each block warns once the installed rxode2
 # is a release that has its feature, and names what to remove then; before
-# that it is quiet.  A new work-around adds a block here.
+# that it is quiet.  A new work-around adds a block here, and a row to
+# .depBlocks so the files it touches are checked against what it names.
 
-# The warning a work-around's block gives for the installed rxode2 version, or
-# NULL while rxode2 is `dev` (the development version that added the feature)
-# or older
-.depWorkaroundWarning <- function(installed, dev, remove) {
-  if (installed <= dev) {
+# The warning a work-around's block gives, or NULL unless the block's probe
+# found the feature (`present`) and the installed version is a release after
+# `dev`, the development version that added it.  A development build
+# (x.y.z.9000 and later) is never a release, and a release without the
+# feature still needs the work-around.
+.depWorkaroundWarning <- function(installed, dev, remove, present) {
+  if (!isTRUE(present) || !.depIsRelease(installed) || installed <= dev) {
     return(NULL)
   }
   paste0(
@@ -23,20 +26,82 @@
   )
 }
 
+# A release rather than a development version (a fourth component of 9000 or
+# more)
+.depIsRelease <- function(version) {
+  .p <- unlist(numeric_version(version))
+  length(.p) < 4L || .p[[4L]] < 9000L
+}
+
+# Does the file use any of `symbols`?
+.depFileUses <- function(file, symbols) {
+  .l <- readLines(file, warn = FALSE)
+  any(vapply(symbols, .depLinesUse, logical(1), lines = .l))
+}
+
+.depLinesUse <- function(symbol, lines) {
+  any(grepl(symbol, lines, fixed = TRUE))
+}
+
+# The files under R/ and src/ (when the source tree is there) and
+# tests/testthat that use any of `symbols`, other than this file
+.depFilesUsing <- function(symbols) {
+  .root <- testthat::test_path("..", "..")
+  .dirs <- c(file.path(.root, c("R", "src")), testthat::test_path())
+  .f <- unlist(lapply(
+    .dirs[dir.exists(.dirs)],
+    list.files,
+    pattern = "\\.(R|c|cpp|h|hpp)$",
+    full.names = TRUE
+  ))
+  .f <- .f[basename(.f) != "test-dependency-workarounds.R"]
+  basename(.f[vapply(.f, .depFileUses, logical(1), symbols = symbols)])
+}
+
+# stand-ins for the version mocks
+.depVersion519 <- function() numeric_version("5.1.9")
+.depVersionDev <- function() numeric_version("5.1.9.9000")
+
 .depSlot104Remove <- paste(
   "rxode2's setIndNewind() (slot 104): remove bmSetIndNewind from src/rxode2Optional.h",
   "and its row of rxode2OptionalSlots in src/poped.cpp, the NULL check in popedCalcLhs()",
   "(src/poped.cpp, which then calls setIndNewind()), the skips in test-poped-newind.R,",
-  "and this block (and the rxode2Optional machinery if no entry is left)"
+  "and this block; if no entry is left, also the rest of the rxode2Optional machinery:",
+  "src/rxode2Optional.h, iniRxode2Optional() and rxode2Optional() in src/poped.cpp,",
+  "their registration in src/init.c, .rxode2Optional() and its call in R/zzz.R, and",
+  "its test in test-dependency-workarounds.R"
 )
 
-test_that("the work-around warning is given only for a release after the development version", {
-  expect_null(.depWorkaroundWarning(numeric_version("5.1.8"), "5.1.8.9000", "x"))
-  expect_null(.depWorkaroundWarning(numeric_version("5.1.8.9000"), "5.1.8.9000", "x"))
+# The slot-104 block's warning for the installed rxode2
+.depSlot104Warning <- function(present = .rxode2Optional()[["setIndNewind"]]) {
+  .depWorkaroundWarning(.rxode2Version(), "5.1.8.9000", .depSlot104Remove, present = present)
+}
+
+# Each block: what its warning names to remove, and the symbols of its
+# probe, skips and fallbacks
+.depBlocks <- list(
+  slot104 = list(
+    remove = .depSlot104Remove,
+    symbols = c("bmSetIndNewind", "rxode2Optional")
+  )
+)
+
+test_that("the work-around warning is given only for a release with the feature", {
+  expect_null(.depWorkaroundWarning(numeric_version("5.1.8"), "5.1.8.9000", "x", present = TRUE))
+  expect_null(.depWorkaroundWarning(numeric_version("5.1.8.9000"), "5.1.8.9000", "x", present = TRUE))
+  # a development build after the development version is not a release
+  expect_null(.depWorkaroundWarning(numeric_version("5.1.8.9001"), "5.1.8.9000", "x", present = TRUE))
+  expect_null(.depWorkaroundWarning(numeric_version("5.1.9.9000"), "5.1.8.9000", "x", present = TRUE))
+  # a release without the feature still needs the work-around
+  expect_null(.depWorkaroundWarning(numeric_version("5.1.9"), "5.1.8.9000", "x", present = FALSE))
+  expect_null(.depWorkaroundWarning(numeric_version("5.1.9"), "5.1.8.9000", "x", present = NA))
   expect_match(
-    .depWorkaroundWarning(numeric_version("5.1.9"), "5.1.8.9000", "x"),
+    .depWorkaroundWarning(numeric_version("5.1.9"), "5.1.8.9000", "x", present = TRUE),
     "rxode2 5.1.9 is a release after 5.1.8.9000.*x; and raise DESCRIPTION to rxode2 \\(>= 5.1.9\\)"
   )
+  expect_true(.depIsRelease("5.1.9"))
+  expect_true(.depIsRelease("6.0.0.1"))
+  expect_false(.depIsRelease("5.1.8.9000"))
 })
 
 test_that(".rxode2Optional() reports setIndNewind from rxode2's pointer table", {
@@ -57,11 +122,30 @@ test_that(".rxode2Optional() reports setIndNewind from rxode2's pointer table", 
   }
 })
 
+test_that("slot-104 work-around: warns only for a release with setIndNewind()", {
+  local_mocked_bindings(.rxode2Version = .depVersion519)
+  expect_null(.depSlot104Warning(present = FALSE))
+  expect_match(.depSlot104Warning(present = TRUE), "rxode2 5.1.9 is a release after 5.1.8.9000", fixed = TRUE)
+  local_mocked_bindings(.rxode2Version = .depVersionDev)
+  expect_null(.depSlot104Warning(present = TRUE))
+})
+
 test_that("slot-104 work-around: rxode2's setIndNewind()", {
   skip_on_cran()
-  .w <- .depWorkaroundWarning(.rxode2Version(), "5.1.8.9000", .depSlot104Remove)
+  .w <- .depSlot104Warning()
   if (!is.null(.w)) {
     warning(.w, call. = FALSE)
   }
   succeed()
+})
+
+# after every block has added its row
+test_that("each work-around names every file that uses its probe, skips and fallbacks", {
+  for (.b in names(.depBlocks)) {
+    .files <- .depFilesUsing(.depBlocks[[.b]]$symbols)
+    expect_gt(length(.files), 0L)
+    for (.f in .files) {
+      expect_true(grepl(.f, .depBlocks[[.b]]$remove, fixed = TRUE), label = paste(.b, "names", .f))
+    }
+  }
 })
