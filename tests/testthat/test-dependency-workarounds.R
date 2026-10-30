@@ -77,11 +77,13 @@
   .depWorkaroundWarning(.rxode2Version(), "5.1.8.9000", .depSlot104Remove, present = present)
 }
 
-# Each block: what its warning names to remove, and the symbols of its
-# probe, skips and fallbacks
+# Each block: what its warning names to remove, the symbols of its probe,
+# skips and fallbacks, and a file the scan must find (anchor), so a scan run
+# from the wrong root fails instead of passing on what little it saw
 .depBlocks <- list(
   slot104 = list(
     remove = .depSlot104Remove,
+    anchor = "zzz.R",
     symbols = c("bmSetIndNewind", "rxode2Optional")
   )
 )
@@ -141,9 +143,14 @@ test_that("slot-104 work-around: rxode2's setIndNewind()", {
 
 # after every block has added its row
 test_that("each work-around names every file that uses its probe, skips and fallbacks", {
+  # tests/ alone (an installed-package check) cannot show what R/ uses
+  skip_if_not(
+    dir.exists(file.path(testthat::test_path("..", ".."), "R")),
+    "no R/ beside tests/: the file-name check needs the source tree"
+  )
   for (.b in names(.depBlocks)) {
     .files <- .depFilesUsing(.depBlocks[[.b]]$symbols)
-    expect_gt(length(.files), 0L)
+    expect_true(.depBlocks[[.b]]$anchor %in% .files, label = paste(.b, "scan finds its anchor"))
     for (.f in .files) {
       expect_true(grepl(.f, .depBlocks[[.b]]$remove, fixed = TRUE), label = paste(.b, "names", .f))
     }
