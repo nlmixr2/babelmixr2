@@ -95,7 +95,7 @@ fit <- nlmixr(pk.turnover.emax3, nlmixr2data::warfarin, "monolix",
 #> ✔ done
 #> → Calculating residuals/tables
 #> ✔ done
-#> → compress origData in nlmixr2 object, save 27800
+#> → compress origData in nlmixr2 object, save 27816
 #> ℹ monolix parameter history needs exported charts, please export charts
 ```
 

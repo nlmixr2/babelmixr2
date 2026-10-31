@@ -170,9 +170,10 @@ f$popedFfFun
 #>         .ret <- try(.popedSolveIdME2(.p, .u, .xt, model_switch, 
 #>             1L, .id - 1, .totn), silent = TRUE)
 #>     }
-#>     return(list(f = matrix(.ret$rx_pred_, ncol = 1), poped.db = poped.db))
+#>     return(list(f = matrix(.ret$rx_pred_, ncol = 1), poped.db = poped.db, 
+#>         w = .ret$w))
 #> }
-#> <environment: 0x560c64d3fb50>
+#> <environment: 0x564ea950f680>
 ```
 
 Some things to note in this function:
@@ -207,8 +208,8 @@ design:
 ``` r
 
 summary(poped_db_ode_babelmixr2$babelmixr2$modelMT)
-#> rxode2 5.1.8.9000 model named rx_56d4384b54271dfbb1aafdf68adf73fe model (✔ ready). 
-#> DLL: /tmp/RtmpehQfKC/rxode2/rx_56d4384b54271dfbb1aafdf68adf73fe__.rxd/rx_56d4384b54271dfbb1aafdf68adf73fe_.so
+#> rxode2 5.1.8.9000 model named rx_89c6ab4d0d1bb0684d8b3c48d11be7c5 model (✔ ready). 
+#> DLL: /tmp/Rtmp9ateW9/rxode2/rx_89c6ab4d0d1bb0684d8b3c48d11be7c5__.rxd/rx_89c6ab4d0d1bb0684d8b3c48d11be7c5_.so
 #> NULL
 #> 
 #> Calculated Variables:
@@ -245,8 +246,8 @@ time points greater than the design specification:
 ``` r
 
 summary(poped_db_ode_babelmixr2$babelmixr2$modelF)
-#> rxode2 5.1.8.9000 model named rx_19099ddda95abb6a113f36bd91917a76 model (✔ ready). 
-#> DLL: /tmp/RtmpehQfKC/rxode2/rx_19099ddda95abb6a113f36bd91917a76__.rxd/rx_19099ddda95abb6a113f36bd91917a76_.so
+#> rxode2 5.1.8.9000 model named rx_50951754df475c381a85967b2ccdc467 model (✔ ready). 
+#> DLL: /tmp/Rtmp9ateW9/rxode2/rx_50951754df475c381a85967b2ccdc467__.rxd/rx_50951754df475c381a85967b2ccdc467_.so
 #> NULL
 #> 
 #> Calculated Variables:
@@ -365,7 +366,7 @@ f$popedFgFun
 #>         NULL), rx__eta.cl = setNames(rx__eta.cl, NULL), DOSE = setNames(DOSE, 
 #>         NULL))
 #> }
-#> <environment: 0x560c6d215408>
+#> <environment: 0x564eb20bda38>
 ```
 
 ##### PopED’s error function `fError_fun`
@@ -384,7 +385,7 @@ f$popedFErrorFun
 #>     rxErr1 <- rxF * (1 + epsi[, 1]) + epsi[, 2]
 #>     return(list(y = rxErr1, poped.db = rxPoped.db))
 #> }
-#> <environment: 0x560c6ea03dc0>
+#> <environment: 0x564eb3a1d418>
 ```
 
 One really important note to keep in mind is that `PopED` works with
