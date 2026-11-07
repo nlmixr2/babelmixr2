@@ -51,6 +51,21 @@ nmObjGetControl.monolix2rx <- function(x, ...) {
   .foceiControl
 }
 
+#' Number of fitted, uncensored observations of a monolix2rx import
+#'
+#' @param dataSav data after `.foceiPreProcessData()`; only the
+#'   observations of the fitted outputs are left as `EVID == 0`
+#' @return their number
+#' @noRd
+.monolix2rxNobs <- function(dataSav) {
+  .obs <- dataSav$EVID == 0
+  .cens <- dataSav[["CENS"]]
+  if (!is.null(.cens)) {
+    .obs <- .obs & (is.na(.cens) | .cens == 0)
+  }
+  sum(.obs)
+}
+
 #' @export
 as.nlmixr2.monolix2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxControl=rxode2::rxControl(), ci=0.95) {
   #need x$nonmemData
@@ -113,9 +128,12 @@ as.nlmixr2.monolix2rx <- function(x, ..., table=nlmixr2est::tableControl(), rxCo
     # - $ofvType (optional) tells the type of ofv is currently being used
     #env$ofvType
     env$ofvType <- .ui$monolixObjfType
-    # Add parameter history
-    env$nobs <- x$dfObs
-    env$nobs2<- x$dfObs
+    # nlmixr2est takes n log(2 pi) off Monolix's -2LL for the OBJF, so n
+    # has to be the fitted, uncensored observations: monolix2rx's dfObs
+    # counts every output in the data, fitted or not, and the censored
+    # observations, whose likelihood is a probability, not a density (#270)
+    env$nobs <- .monolix2rxNobs(env$dataSav)
+    env$nobs2 <- env$nobs
     # Run before converting to nonmemControl
     .objf <- .ui$monolixObjf
     # Start from the imported etas; otherwise nlmixr2est may start from

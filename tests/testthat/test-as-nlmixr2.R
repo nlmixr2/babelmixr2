@@ -169,6 +169,25 @@ test_that("nlmixr2 translation from monolix2rx", {
   expect_true(inherits(fit, "nlmixr2FitData"))
 })
 
+test_that("as.nlmixr2 on a monolix2rx import counts the fitted, uncensored observations (#270)", {
+  skip_on_cran()
+
+  # warfarin_covariate1 fits output 1 (247 observations) of the 479 in the data
+  mod <- .monolix2rx(system.file("cov/warfarin_covariate1_project.mlxtran", package = "monolix2rx"))
+  expect_equal(mod$dfObs, 479L)
+  fit <- .as.nlmixr2(mod)
+  expect_equal(nobs(fit), 247L)
+  expect_equal(fit$objf, 657.358312 - 247 * log(2 * pi))
+  expect_equal(fit$objDf[fit$ofvType, "OBJF"], fit$objf)
+
+  # parent_metabolite fits both outputs; 113 of its 2720 observations are censored
+  mod <- .monolix2rx(system.file("theo/parent_metabolite_project.mlxtran", package = "monolix2rx"))
+  expect_equal(mod$dfObs, 2720L)
+  fit <- .as.nlmixr2(mod)
+  expect_equal(nobs(fit), 2607L)
+  expect_equal(fit$objf, 8406.011668 - 2607 * log(2 * pi))
+})
+
 test_that(".importEtaMat() only uses etas that match the model (#94)", {
   .b <- loadNamespace("babelmixr2")
   .ui <- rxode2::rxode2(function() {
