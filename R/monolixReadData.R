@@ -180,7 +180,7 @@ attr(rxUiGet.monolixOmega, "rstudio") <- lotri::lotri(a~0.1)
 #' @param muRef mu-referenced theta to Monolix variable names
 #' @param covDataFrame mu-referenced covariate data frame
 #' @return `beta_<var>_<covariate>` for a mu-referenced covariate effect,
-#'   otherwise `<var>_pop`
+#'   `<var>_pop` for a mu-referenced theta, otherwise the name itself
 #' @noRd
 .monolixPopParName <- function(name, muRef, covDataFrame) {
   .w <- which(covDataFrame$covariateParameter == name)
@@ -188,7 +188,12 @@ attr(rxUiGet.monolixOmega, "rstudio") <- lotri::lotri(a~0.1)
     return(paste0("beta_", muRef[covDataFrame$theta[.w]], "_",
                   covDataFrame$covariate[.w]))
   }
-  paste0(muRef[name], "_pop")
+  .var <- muRef[name]
+  # a theta the mu model does not reference keeps its own name; in a
+  # monolix2rx import that is a categorical covariate coefficient like
+  # `beta_V_tAPGAR_High` (#269)
+  if (is.na(.var)) return(name)
+  paste0(.var, "_pop")
 }
 
 .monolixGetPopParValue <- function(name, muRefCurEval, muRef, covDataFrame, pop) {
@@ -196,6 +201,8 @@ attr(rxUiGet.monolixOmega, "rstudio") <- lotri::lotri(a~0.1)
   if (length(.w) == 1) {
     .par <- .monolixPopParName(name, muRef, covDataFrame)
     .w <- which(pop$parameter == .par)
+    # a monolix2rx import keeps Monolix's own name for the coefficient
+    if (length(.w) != 1) .w <- which(pop$parameter == name)
     if (length(.w) != 1) return(NA_real_)
     return(pop$value[.w])
   }
@@ -211,8 +218,9 @@ attr(rxUiGet.monolixOmega, "rstudio") <- lotri::lotri(a~0.1)
     .low <- 0
     .hi <- 1
   }
-  .par <- paste0(muRef[name], "_pop")
+  .par <- .monolixPopParName(name, muRef, covDataFrame)
   .w <- which(pop$parameter == .par)
+  if (length(.w) != 1) .w <- which(pop$parameter == name)
   if (length(.w) != 1) return(NA_real_)
   .par <- pop$value[.w]
   return(switch(.curEval,
@@ -470,11 +478,16 @@ rxUiGet.monolixCovariance <- function(x, ...) {
   .j <- rxUiGet.monolixJacobian(x, ...)
   # a covariate effect is beta_<var>_<covariate>, not <var>_pop
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
-  .n <- vapply(dimnames(.j)[[1]], .monolixPopParName, character(1),
+  .theta <- dimnames(.j)[[1]]
+  .n <- vapply(.theta, .monolixPopParName, character(1),
                muRef=.muRef, covDataFrame=.covDataFrame, USE.NAMES=FALSE)
+  # a monolix2rx import keeps Monolix's own names (#269)
+  .covNames <- dimnames(.cov)[[1]]
+  .own <- !(.n %in% .covNames) & (.theta %in% .covNames)
+  .n[.own] <- .theta[.own]
   # Monolix's covariance has only the estimated parameters (not fixed
   # ones like `tfdepot <- fix(0.8)`)
-  .keep <- .n %in% dimnames(.cov)[[1]]
+  .keep <- .n %in% .covNames
   .j <- .j[.keep, .keep, drop = FALSE]
   .n <- .n[.keep]
   .cov <- .cov[.n, .n, drop = FALSE]
