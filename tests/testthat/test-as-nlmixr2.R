@@ -169,6 +169,31 @@ test_that("nlmixr2 translation from monolix2rx", {
   expect_true(inherits(fit, "nlmixr2FitData"))
 })
 
+test_that("as.nlmixr2 on a nonmem2rx import without an eta table uses zero etas (#268)", {
+  skip_on_cran()
+
+  # runODE032 as nonmem2rx installs it, minus the $TABLE file that carries the etas
+  d <- withr::local_tempdir()
+  file.copy(list.files(system.file("mods/cpt", package = "nonmem2rx"), full.names = TRUE), d)
+  unlink(file.path(d, "runODE032.csv"))
+  mod <- .nonmem2rx(file.path(d, "runODE032.res"), save = FALSE)
+  expect_null(mod$etaData)
+  expect_null(mod$nonmemEtaObf)
+
+  # expect_warning() would hand back the condition, not the fit
+  w <- character(0)
+  fit <- withCallingHandlers(
+    suppressMessages(as.nlmixr2(mod)),
+    warning = function(cnd) {
+      w <<- c(w, conditionMessage(cnd))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_match(w, "assuming all ETA", all = FALSE)
+  expect_true(inherits(fit, "nlmixr2FitData"))
+  expect_true(all(as.matrix(fit$eta[, .getEtaNames(fit$ui)]) == 0))
+})
+
 test_that(".importEtaMat() only uses etas that match the model (#94)", {
   .b <- loadNamespace("babelmixr2")
   .ui <- rxode2::rxode2(function() {
