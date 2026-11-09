@@ -169,6 +169,22 @@ test_that("nlmixr2 translation from monolix2rx", {
   expect_true(inherits(fit, "nlmixr2FitData"))
 })
 
+test_that("as.nlmixr2 on a nonmem2rx import keeps NONMEM's objective and adds the constant to the likelihood (#267)", {
+  skip_on_cran()
+
+  ctl <- system.file("mods/cpt/runODE032.ctl", package = "nonmem2rx")
+  ext <- read.table(sub("\\.ctl$", ".ext", ctl), skip = 1, header = TRUE)
+  nmObj <- ext$OBJ[ext$ITERATION == -1000000000]
+  fit <- .as.nlmixr2(.nonmem2rx(ctl, lst = ".res", save = FALSE))
+  expect_equal(nobs(fit), 2280L)
+  expect_equal(fit$objf, nmObj)
+  expect_equal(fit$objDf["nonmem2rx", "OBJF"], nmObj)
+  ll <- logLik(fit)
+  expect_equal(as.numeric(ll), -(nmObj + 2280 * log(2 * pi)) / 2)
+  expect_equal(AIC(fit), -2 * as.numeric(ll) + 2 * attr(ll, "df"))
+  expect_equal(BIC(fit), -2 * as.numeric(ll) + log(2280) * attr(ll, "df"))
+})
+
 test_that(".importEtaMat() only uses etas that match the model (#94)", {
   .b <- loadNamespace("babelmixr2")
   .ui <- rxode2::rxode2(function() {

@@ -1,5 +1,10 @@
 # babelmixr2 (development version)
 
+* `as.nlmixr2()` on a nonmem2rx import reports NONMEM's objective as the
+  OBJF and a log-likelihood, AIC and BIC that include the normal constant
+  n log(2 pi), like `nlmixr2(est = "nonmem")`; they were off by that
+  constant (#267)
+
 * PopED designs of a `combined1()` add + prop error model now fix the
   residuals (`fixRes = TRUE`) with a warning; they were translated as
   combined2 (#151)
