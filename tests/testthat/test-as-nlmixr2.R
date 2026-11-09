@@ -7,10 +7,14 @@
 test_that("nlmixr2 translation from nonmem2x", {
   skip_on_cran()
 
-  mod <- .nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
-                   determineError=FALSE, lst=".res", save=FALSE)
+  mod <- .nonmem2rx(
+    system.file("mods/cpt/runODE032.ctl", package = "nonmem2rx"),
+    determineError = FALSE,
+    lst = ".res",
+    save = FALSE
+  )
 
-  mod2 <-function() {
+  mod2 <- function() {
     ini({
       lcl <- 1.37034036528946
       lvc <- 4.19814911033061
@@ -44,8 +48,12 @@ test_that("nlmixr2 translation from nonmem2x", {
 
   expect_true(inherits(.as.nlmixr(new), "nlmixr2FitData"))
 
-  mod <- .nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
-                   determineError=TRUE, lst=".res", save=FALSE)
+  mod <- .nonmem2rx(
+    system.file("mods/cpt/runODE032.ctl", package = "nonmem2rx"),
+    determineError = TRUE,
+    lst = ".res",
+    save = FALSE
+  )
 
   new <- .as.nonmem2rx(mod2, mod)
 
@@ -64,11 +72,10 @@ test_that("nlmixr2 translation from nonmem2x", {
 
   # a different model right after the cwres=TRUE import must not start
   # from the etas of the FOCEi objective's nlmixr2() fit (#94)
-  rx <- .nonmem2rx(system.file("mods/err/run006.lst", package="nonmem2rx"))
+  rx <- .nonmem2rx(system.file("mods/err/run006.lst", package = "nonmem2rx"))
   fit <- .as.nlmixr(rx)
   expect_true(inherits(fit, "nlmixr2FitData"))
   expect_true(any(names(fit$time) == "NONMEM"))
-
 })
 
 test_that("as.nlmixr2 gives a clear error for untranslated eps/err (#95)", {
@@ -140,7 +147,7 @@ test_that("as.nlmixr2 gives a clear error for untranslated eps/err (#95)", {
 test_that("nlmixr2 translation from monolix2rx", {
   skip_on_cran()
 
-  pkgTheo <- system.file("theo/theophylline_project.mlxtran", package="monolix2rx")
+  pkgTheo <- system.file("theo/theophylline_project.mlxtran", package = "monolix2rx")
 
   mod <- .monolix2rx(pkgTheo)
 
@@ -169,23 +176,25 @@ test_that("nlmixr2 translation from monolix2rx", {
   expect_true(inherits(fit, "nlmixr2FitData"))
 })
 
-test_that("as.nlmixr2 on a monolix2rx import counts the fitted, uncensored observations (#270)", {
+test_that("as.nlmixr2 on a monolix2rx import counts the observations of the fitted outputs (#270)", {
   skip_on_cran()
 
   # warfarin_covariate1 fits output 1 (247 observations) of the 479 in the data
   mod <- .monolix2rx(system.file("cov/warfarin_covariate1_project.mlxtran", package = "monolix2rx"))
-  expect_equal(mod$dfObs, 479L)
   fit <- .as.nlmixr2(mod)
   expect_equal(nobs(fit), 247L)
+  expect_equal(attr(logLik(fit), "nobs"), 247L)
   expect_equal(fit$objf, 657.358312 - 247 * log(2 * pi))
   expect_equal(fit$objDf[fit$ofvType, "OBJF"], fit$objf)
+  expect_equal(BIC(fit), 657.358312 + attr(logLik(fit), "df") * log(247))
 
-  # parent_metabolite fits both outputs; 113 of its 2720 observations are censored
+  # parent_metabolite fits both outputs; its 113 censored observations
+  # are counted, like nlmixr2est and est="monolix" count them
   mod <- .monolix2rx(system.file("theo/parent_metabolite_project.mlxtran", package = "monolix2rx"))
-  expect_equal(mod$dfObs, 2720L)
   fit <- .as.nlmixr2(mod)
-  expect_equal(nobs(fit), 2607L)
-  expect_equal(fit$objf, 8406.011668 - 2607 * log(2 * pi))
+  expect_equal(nobs(fit), 2720L)
+  expect_equal(fit$objf, 8406.011668 - 2720 * log(2 * pi))
+  expect_equal(fit$objDf[fit$ofvType, "OBJF"], fit$objf)
 })
 
 test_that(".importEtaMat() only uses etas that match the model (#94)", {
