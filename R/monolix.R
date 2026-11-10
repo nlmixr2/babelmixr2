@@ -385,9 +385,32 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .monolixMuRef <- function(ui) {
+  .mlxtran <- monolix2rx::.monolixGetMlxtran(ui)
+  if (inherits(.mlxtran, "monolix2rxMlxtran")) {
+    return(.monolix2rxMuRef(.mlxtran))
+  }
   .split <- ui$getSplitMuModel
   .muRef <- c(.split$pureMuRef, .split$taintMuRef)
   setNames(gsub("[.]", "__", .muRef), names(.muRef))
+}
+
+#' Mu-referenced theta to Monolix parameter name map of a monolix2rx import
+#'
+#' The project says which `[INDIVIDUAL]` parameter each typical value
+#' belongs to, and Monolix names its output after that parameter
+#' (`V_pop`, `omega_V`, `eta_V_SAEM`).  The split mu model names a
+#' parameter with a covariate `rx__V_pop` instead (#269).
+#'
+#' @param mlxtran parsed mlxtran of the import
+#' @return named character vector; names are the thetas, values are
+#'   the Monolix parameter names
+#' @noRd
+.monolix2rxMuRef <- function(mlxtran) {
+  .vars <- mlxtran$MODEL$INDIVIDUAL$DEFINITION$vars
+  .theta <- vapply(.vars, function(v) {
+    if (is.null(v$typical)) v$mean else v$typical
+  }, character(1), USE.NAMES = FALSE)
+  setNames(names(.vars), .theta)
 }
 
 #' Transformations of the Monolix individual parameters
@@ -402,6 +425,11 @@
 #' @noRd
 .monolixMuRefCurEval <- function(ui) {
   .ret <- ui$muRefCurEval
+  # a monolix2rx import keeps its exp()/expit() under Monolix's own names,
+  # so nothing in it is tainted (#269)
+  if (inherits(monolix2rx::.monolixGetMlxtran(ui), "monolix2rxMlxtran")) {
+    return(.ret)
+  }
   .taint <- names(ui$getSplitMuModel$taintMuRef)
   if (length(.taint) == 0L) {
     return(.ret)

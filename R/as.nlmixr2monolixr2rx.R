@@ -30,8 +30,12 @@ nmObjGetControl.monolix2rx <- function(x, ...) {
   ## atol=ifelse(stiff, 1e-9, 1e-6),
   ## rtol=ifelse(stiff, 1e-6, 1e-3),
   ## method=ifelse(stiff, "liblsoda", "dop853")
-  .ss <- .monolix2rxSsLimits(model)
-  .stiff <- monolix2rx::.getStiff(model)
+  # the parsed project itself: with babelmixr2 loaded, `model$mlxtran`
+  # would build an mlxtran from the model instead, which stops on a
+  # parameter it cannot name, like a covariate coefficient (#269)
+  .mlxtran <- monolix2rx::.monolixGetMlxtran(model)
+  .ss <- .monolix2rxSsLimits(.mlxtran)
+  .stiff <- monolix2rx::.getStiff(.mlxtran)
   .rxControl <- rxode2::rxControl(covsInterpolation="locf",
                                   atol=ifelse(.stiff, 1e-9, 1e-6),
                                   rtol=ifelse(.stiff, 1e-6, 1e-3),
