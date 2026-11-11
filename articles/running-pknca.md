@@ -40,7 +40,7 @@ library(nlmixr2)
 #> ◯ nlmixr2lib      0.3.2           ★ nlmixr2est      7.2.1      
 #> ◯ nlmixr2rpt      0.2.3           ★ nlmixr2extra    5.2.1      
 #> ◯ nlmixr2targets  0.1.0           ★ nlmixr2plot     5.2.1      
-#> ◯ nonmem2rx       0.1.12          ★ rxode2          5.1.8.9000 
+#> ◯ nonmem2rx       0.1.12.9000     ★ rxode2          5.1.8.9000 
 #> ◯ pmxNODE         0.2.1
 #> ── Conflicts ───────────────────────────────────────────── nlmixr2conflicts() ──
 #> ✖ rxode2::boxCox()         masks nlmixr2est::boxCox()

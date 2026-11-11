@@ -195,7 +195,7 @@ print(f)
 #> ── Time (sec $time): ──
 #> 
 #>             setup preprocess postprocess table compress NONMEM
-#> elapsed 0.7311034      0.027       0.019 0.058    0.013 320.27
+#> elapsed 0.7381953      0.031       0.033 0.043    0.013 320.27
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 
@@ -285,9 +285,9 @@ getVarCov(f)
 #> → compiling events FD model...
 #> ✔ done
 #> calculating covariance matrix
-#> [====|====|====|====|====|====|====|====|====|====] 0:03:47
+#> [====|====|====|====|====|====|====|====|====|====] 0:03:49
 #> Warning: "r,s" not usable (S not PD); installed "r"
-#> Warning: full R matrix non-positive definite; using s (full)
+#> Warning: "r,s (full)" needs a positive-definite R; using "s (full)"
 #> → compress origData in nlmixr2 object, save 27816
 #> Updated original fit object f
 #>                      tktr           tka           tcl            tv

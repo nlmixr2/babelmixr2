@@ -809,6 +809,9 @@ nonmemControl()
 #> $nonmem
 #> [1] FALSE
 #> 
+#> $tieOrder
+#> [1] "evid"
+#> 
 #> attr(,"class")
 #> [1] "rxControl"
 #> 
