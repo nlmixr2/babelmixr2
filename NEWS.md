@@ -1,5 +1,9 @@
 # babelmixr2 (development version)
 
+* `as.nlmixr2()` on a nonmem2rx import whose run wrote no `$TABLE` with its
+  etas uses zero etas, with the existing warning, instead of stopping with
+  "Must be of type 'data.frame', not 'list'" (#268)
+
 * PopED designs of a `combined1()` add + prop error model now fix the
   residuals (`fixRes = TRUE`) with a warning; they were translated as
   combined2 (#151)
