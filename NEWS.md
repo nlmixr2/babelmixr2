@@ -1,5 +1,10 @@
 # babelmixr2 (development version)
 
+* `as.nlmixr2()` on a monolix2rx import counts only the observations of
+  the outputs the project fits for `nobs` and the n log(2 pi) constant of
+  the OBJF; it counted every output in the data. Censored observations
+  are still counted, as in nlmixr2est and `est = "monolix"` (#270)
+
 * PopED designs of a `combined1()` add + prop error model now fix the
   residuals (`fixRes = TRUE`) with a warning; they were translated as
   combined2 (#151)
