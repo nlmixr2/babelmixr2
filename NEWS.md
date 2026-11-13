@@ -1,5 +1,9 @@
 # babelmixr2 (development version)
 
+* `as.nlmixr2()` on a nonmem2rx import reports NONMEM's objective as the
+  OBJF and a log-likelihood, AIC and BIC that include the normal constant
+  n log(2 pi), like `nlmixr2(est = "nonmem")`; they were off by that
+  constant (#267)
 * `as.nlmixr2()` on a monolix2rx import counts only the observations of
   the outputs the project fits for `nobs` and the n log(2 pi) constant of
   the OBJF; it counted every output in the data. Censored observations
