@@ -202,15 +202,15 @@ fit <- as.nlmixr2(new)
 print(fit)
 #> ── nlmixr² nonmem2rx reading NONMEM ver 7.4.3 ──
 #> 
-#>               OBJF      AIC      BIC Log-likelihood Condition#(Cov)
-#> nonmem2rx 15977.28 20185.64 20237.23      -10083.82        335.4129
+#>               OBJF   AIC      BIC Log-likelihood Condition#(Cov)
+#> nonmem2rx 20167.64 24376 24427.59         -12179        335.4129
 #>           Condition#(Cor)
 #> nonmem2rx        2.096559
 #> 
 #> ── Time (sec $time): ──
 #> 
-#>             setup postprocess table compress NONMEM as.nlmixr2
-#> elapsed 0.1187723       0.022 0.043    0.001 100.95      0.878
+#>           setup postprocess table compress NONMEM as.nlmixr2
+#> elapsed 0.13924       0.027 0.054    0.001 100.95      1.086
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 
