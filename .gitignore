@@ -16,5 +16,6 @@ inst/doc
 /src/Makevars.win
 docs
 /.vexp/
+/src/*.d
 tests/testthat/_problems/
 tests/testthat/testthat-problems.rds

@@ -14,6 +14,7 @@
 ^vignettes/articles$
 ^_pkgdown\.yml$
 ^\.vexp$
+^src/.*[.]d$
 ^air\.toml$
 ^CLAUDE\.md$
 ^README\.Rmd$
