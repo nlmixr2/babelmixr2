@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2013-2016 European Molecular Biology Laboratory, Heidelberg,
+Germany and Novo Nordisk A/S, Bagsvaerd, Denmark.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you
+may not use this file except in compliance with the License.  You may
+obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+     
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing
+permissions and limitations under the License.
+-->    
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://www.pharmml.org/pharmml/0.9/PharmML"
+    xmlns:mml="http://www.pharmml.org/pharmml/0.9/PharmML"
+    xmlns:math="http://www.pharmml.org/pharmml/0.9/Maths" 
+    xmlns:distrib="http://www.uncertml.org/3.0"
+    xmlns:po="http://www.pharmml.org/probonto/ProbOnto"
+    xmlns:design="http://www.pharmml.org/pharmml/0.9/TrialDesign"
+    xmlns:ct="http://www.pharmml.org/pharmml/0.9/CommonTypes"
+    xmlns:msteps="http://www.pharmml.org/pharmml/0.9/ModellingSteps"
+    xmlns:mdef="http://www.pharmml.org/pharmml/0.9/ModelDefinition" version="0.9"
+    elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:import namespace="http://www.pharmml.org/pharmml/0.9/Maths"
+        schemaLocation="maths.xsd"/>
+    
+    <xs:import namespace="http://www.uncertml.org/3.0" 
+        schemaLocation="uncertweb/UncertML30.xsd"/>
+
+    <xs:import namespace="http://www.pharmml.org/pharmml/0.9/TrialDesign"
+        schemaLocation="trialDesign.xsd"/>
+
+    <xs:import namespace="http://www.pharmml.org/pharmml/0.9/ModellingSteps"
+        schemaLocation="modellingSteps.xsd"/>
+
+    <xs:import namespace="http://www.pharmml.org/pharmml/0.9/CommonTypes"
+        schemaLocation="commonTypes.xsd"/>
+
+    <xs:import namespace="http://www.pharmml.org/pharmml/0.9/ModelDefinition"
+        schemaLocation="modelDefinition.xsd"/>
+    
+    <xs:complexType name="IndependentVariableType">
+        <xs:annotation>
+            <xs:documentation>
+                Type used to specify the indepdent variable of the model.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="ct:PharmMLRootType">
+                <xs:attributeGroup ref="ct:SymbolDefinitionGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+        
+    <xs:element name="PharmML">
+        <xs:annotation>
+            <xs:documentation>
+                The root element of the PharmML document.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="ct:Name"/>
+                <xs:element minOccurs="0" ref="ct:Description"/>
+                <xs:element minOccurs="0" maxOccurs="unbounded" name="IndependentVariable"
+                    type="mml:IndependentVariableType"> </xs:element>
+                <xs:element maxOccurs="unbounded" minOccurs="0" ref="ct:FunctionDefinition">
+                    <xs:annotation>
+                        <xs:documentation>The definition of a symbol. Essentially as a function.</xs:documentation>
+                        <xs:documentation/>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="1" ref="mdef:ModelDefinition">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Defines the model definition section.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element maxOccurs="1" minOccurs="0" ref="design:TrialDesign">
+                    <xs:annotation>
+                        <xs:documentation>Defines the trial design for the model.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element ref="msteps:ModellingSteps" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>Defines the tasks (or in PharmML speak) "modelling steps" that are perfromed on the model.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="writtenVersion" type="xs:string" use="required">
+                <xs:annotation>
+                    <xs:documentation>The version of PharmML that this document was compliant with when this document was written.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="implementedBy" type="xs:string" use="optional">
+                <xs:annotation>
+                    <xs:documentation>The author of this PharmML implementation.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="metadataFile" type="xs:string" use="optional">
+                <xs:annotation>
+                    <xs:documentation>The RDF file wth annotations for this model.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attributeGroup ref="ct:RootAttributesGroup"/> 
+        </xs:complexType>
+        <!-- KEYS -->
+        <!-- Note that these keys are here to give some basic assistence when authoring PharmmL
+            by hand but the checks are limited and to ensure all symbols are used correctly you
+            need proper XML validation. The keys here,give a degree of uniqueness checking, but
+            are very limited in what they check. Symbol (symbId) scoping is ignored and the
+            OID and blKID symbols share the same namespace, but here are checked separately for
+            uniqueness.-->
+        <xs:key name="blockIdKey">
+            <xs:annotation>
+                <xs:documentation>Contains the block ids within the model to be unique.</xs:documentation>
+            </xs:annotation>
+            <xs:selector xpath="mdef:ModelDefinition/*"/>
+            <xs:field xpath="@blkId"/>
+        </xs:key>
+        <xs:keyref refer="mml:blockIdKey" name="blockIdKeyRef">
+            <xs:annotation>
+                <xs:documentation>Ensures all block refs point to valid block value. Prevents dangling references.</xs:documentation>
+            </xs:annotation>
+            <xs:selector xpath=".//ct:SymbRef"/>
+            <xs:field xpath="@blkIdRef"/>
+        </xs:keyref>
+        <xs:key name="oidKey">
+            <xs:annotation>
+                <xs:documentation>Defines the OID key.</xs:documentation>
+            </xs:annotation>
+            <xs:selector    
+                xpath=".//design:Arm|.//design:Action|.//design:Administration|.//design:Individual|.//msteps:SimulationStep|.//msteps:EstimationStep|.//msteps:OptimalDesignStep|.//design:ExternalDataSet|.//msteps:TargetTool|.//design:Observation|.//design:ObservationsCombination|.//design:IndividualObservations|.//design:InterventionsCombination|.//design:DesignSpace|.//design:IndividualCovariates|.//design:CovariateModel|.//design:OccasionList"/>
+            <xs:field xpath="@oid"/>
+        </xs:key>
+        <xs:keyref refer="mml:oidKey" name="oidRef">
+            <xs:annotation>
+                <xs:documentation>Ensures all treatment Id refs point to valid treatment id. Prevents dangling references.</xs:documentation>
+            </xs:annotation>
+            <xs:selector
+                xpath=".//design:ObservationRef|.//design:InterventionRef|.//design:ArmRef|.//ct:OidRef"/>
+            <xs:field xpath="@oidRef"/>
+        </xs:keyref>
+    </xs:element>
+    
+</xs:schema>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PharmML xmlns="http://www.pharmml.org/pharmml/0.9/PharmML"
+    xmlns:ct="http://www.pharmml.org/pharmml/0.9/CommonTypes"
+    xmlns:mdef="http://www.pharmml.org/pharmml/0.9/ModelDefinition"
+    writtenVersion="0.9" id="i1">
+    <ct:Name>minimal</ct:Name>
+    <IndependentVariable symbId="t"/>
+    <mdef:ModelDefinition/>
+</PharmML>
