@@ -61,7 +61,7 @@ rxUiGet.monolixParHistory <- function(x, ...) {
     .ui <- x[[1]]
     .iniDf <- .ui$iniDf
     .muRef <- .monolixMuRef(.ui)
-    .muRefCurEval <- .ui$muRefCurEval
+    .muRefCurEval <- .monolixMuRefCurEval(.ui)
     .eta <- .iniDf[is.na(.iniDf$ntheta), ]
     .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
     .r <- .getOmegaR(.ui)
@@ -132,7 +132,7 @@ rxUiGet.monolixOmega <- function(x, ...) {
   if (is.null(.pop)) return(NULL)
   .iniDf <- .ui$iniDf
   .muRef <- .monolixMuRef(.ui)
-  .muRefCurEval <- .ui$muRefCurEval
+  .muRefCurEval <- .monolixMuRefCurEval(.ui)
   .eta <- .iniDf[is.na(.iniDf$ntheta), ]
   .r <- .getOmegaR(.ui)
   for (.i in seq_along(.eta$name)) {
@@ -242,7 +242,7 @@ rxUiGet.monolixFullTheta <- function(x, ...) {
   if (is.null(.pop)) return(NULL)
   .iniDf <- .ui$iniDf
   .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
-  .muRefCurEval <- .ui$muRefCurEval
+  .muRefCurEval <- .monolixMuRefCurEval(.ui)
   .muRef <- .monolixMuRef(.ui)
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
   .fullTheta <- setNames(vapply(seq_along(.theta$name),
@@ -472,7 +472,12 @@ rxUiGet.monolixCovariance <- function(x, ...) {
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
   .n <- vapply(dimnames(.j)[[1]], .monolixPopParName, character(1),
                muRef=.muRef, covDataFrame=.covDataFrame, USE.NAMES=FALSE)
-  .cov <- .cov[.n, .n]
+  # Monolix's covariance has only the estimated parameters (not fixed
+  # ones like `tfdepot <- fix(0.8)`)
+  .keep <- .n %in% dimnames(.cov)[[1]]
+  .j <- .j[.keep, .keep, drop = FALSE]
+  .n <- .n[.keep]
+  .cov <- .cov[.n, .n, drop = FALSE]
   # nlmixr2's parameter names whichever Monolix version wrote the matrix
   # (only the pre-2020/2021 conversion below used to rename it)
   dimnames(.cov) <- dimnames(.j)
@@ -531,7 +536,7 @@ rxUiGet.monolixPreds <- function(x, ...) {
     if (length(.predDf$var) > 1) {
       do.call("rbind", lapply(seq_along(.predDf$var),
                               function(i) {
-                                .var <- .predDf$var[i]
+                                .var <- .monolixVar(.predDf$var[i])
                                 .file <- file.path(.exportPath,
                                                    paste0("predictions_rx_prd_", .var, ".txt"))
                                 .monolixWaitForFile(.file)
@@ -543,7 +548,7 @@ rxUiGet.monolixPreds <- function(x, ...) {
                                 .ret
                               }))
     } else {
-      .var <- .predDf$var
+      .var <- .monolixVar(.predDf$var)
       .file <- file.path(.exportPath,"predictions.txt")
       .monolixWaitForFile(.file)
       .ret <- read.csv(.file)

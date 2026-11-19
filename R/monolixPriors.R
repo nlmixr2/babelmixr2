@@ -119,7 +119,7 @@
   }
   .muRef <- .monolixMuRef(.ui)
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
-  .curEval <- .ui$muRefCurEval
+  .curEval <- .monolixMuRefCurEval(.ui)
   .def <- vapply(seq_along(.p$name), function(i) {
     .name <- .p$name[i]
     .mv <- .mlxtranPriorNormal(.p$prior[i], .name)

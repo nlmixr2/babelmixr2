@@ -64,3 +64,25 @@ test_that("fmeMcmc works", {
   })
 
 })
+
+test_that("pseudoOptim fits linCmt() models", {
+  skip_if_not_installed("FME")
+  skip_on_cran()
+  lin <- function() {
+    ini({
+      tka <- c(-5, 0.45, 5)
+      tcl <- c(-5, 1, 5)
+      tv <- c(-5, 3.45, 10)
+      add.sd <- c(0, 0.7, 10)
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(tcl)
+      v <- exp(tv)
+      cp <- linCmt()
+      cp ~ add(add.sd)
+    })
+  }
+  fit <- suppressMessages(nlmixr(lin, nlmixr2data::theo_sd, est="pseudoOptim"))
+  expect_s3_class(fit, "nlmixr2.pseudoOptim")
+})

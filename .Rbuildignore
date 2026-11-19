@@ -17,3 +17,11 @@
 ^pharmml-plan\.md$
 ^pharmml-implementation-plan\.md$
 ^pr-body\.md$
+^air\.toml$
+^CLAUDE\.md$
+^README\.Rmd$
+^\.claude$
+^\.habit-hooks$
+^\.RData$
+^\.Rhistory$
+^src/compile_commands\.json$

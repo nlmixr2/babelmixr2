@@ -1,13 +1,15 @@
 Package: babelmixr2
 Type: Package
 Title: Use 'nlmixr2' to Interact with Open Source and Commercial Software
-Version: 0.1.11.9000
+Version: 0.1.12.9000
 Authors@R: c(person("Matthew","Fidler", role = c("aut", "cre"), email = "matthew.fidler@gmail.com", comment=c(ORCID="0000-0001-8538-6691")),
            person("Bill", "Denney", email="wdenney@humanpredictions.com", role="aut", comment=c(ORCID="0000-0002-5759-428X")),
            person("Theodoros", "Papathanasiou",  role="ctb"),
            person("Nook", "Fulloption", role="ctb", comment="goldfish art"))
 Description: Run other estimation and simulation software via the 'nlmixr2' (Fidler et al (2019)
-  <doi:10.1002/psp4.12445>) interface including 'PKNCA', 'NONMEM' and 'Monolix'. While not required, you can
+  <doi:10.1002/psp4.12445>) interface including 'PKNCA', 'NONMEM' and 'Monolix'. It also converts
+  'nlmixr2'/'rxode2' models to 'PopED' optimal design databases (Fidler et al (2024)
+  <doi:10.70534/XUMG6226>). While not required, you can
   get/install the 'lixoftConnectors' package in the 'Monolix' installation, as
   described at the following url
   <https://monolixsuite.slp-software.com/r-functions/2024R1/installation-and-initialization>. When
@@ -35,7 +37,8 @@ Suggests:
     coda,
     crayon,
     saemix,
-    lme4
+    lme4,
+    nlmixr2lib
 Depends:
     R (>= 3.5)
 Imports:

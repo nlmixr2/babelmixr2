@@ -8,6 +8,8 @@ monolixControl(
   nbSSDoses = 7,
   useLinearization = FALSE,
   stiff = FALSE,
+  linCmt = c("pkmodel", "ode"),
+  prune = "auto",
   addProp = c("combined2", "combined1"),
   exploratoryAutoStop = FALSE,
   smoothingAutoStop = FALSE,
@@ -42,6 +44,21 @@ monolixControl(
 fim.}
 
 \item{stiff}{boolean for using the stiff ODE solver}
+
+\item{linCmt}{How a \code{linCmt()} model is written for Monolix:
+\code{"pkmodel"} uses Monolix's closed-form \code{pkmodel()} macro when the
+model allows it and otherwise translates the model to ODEs;
+\code{"ode"} always translates the model to ODEs (with
+\code{rxode2::linToOde()})}
+
+\item{prune}{How \code{if}/\verb{else} statements are written for Monolix:
+\code{"auto"} (default) writes \code{if}/\code{elseif}/\verb{else} statements as
+Monolix \code{if} blocks and prunes the \code{if}/\verb{else} branches only when
+the model uses \code{ifelse()} (which Monolix cannot write); \code{TRUE}
+always prunes a model with \code{if}/\verb{else} statements and \code{FALSE}
+never prunes.  Pruning uses \code{rxode2}'s branch pruning, which writes
+each branch as an arithmetic expression.  A pruned fit contains the
+pruned model.}
 
 \item{addProp}{Type of additive-plus-proportional error: `"combined1"`,
 where standard deviations add:

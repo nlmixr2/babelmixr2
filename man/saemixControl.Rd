@@ -244,5 +244,5 @@ ctrl <- saemixControl(seed = 123456)
 }
 }
 \author{
-Matthew L. Fidler & Antigravity
+Matthew L. Fidler
 }

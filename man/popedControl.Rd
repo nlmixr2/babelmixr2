@@ -166,19 +166,16 @@ in the babelmixr2 dataset (when \code{NULL})}
 
 \item{rxControl}{`rxode2` ODE solving options during fitting, created with `rxControl()`}
 
-\item{sigdig}{Optimization significant digits.  One value drives, with a single
-consistent formula, the inner/outer optimizer convergence tolerance
-(\code{10^-sigdig}), the boundary check tolerance (\code{5*10^(-sigdig+1)}),
-and the ODE solver tolerances: the \code{rtol} exponent IS \code{sigdig} and
-\code{atol} sits three orders below, so \code{rtol = 10^-sigdig},
-\code{atol = 10^(-sigdig-3)} for every solver (stiff, non-stiff or
-auto-switching).  The sensitivity (\code{atolSens}/\code{rtolSens})
-tolerances match the main solve (the outer gradient and covariance are built
-from them); the steady-state (\code{ssAtol}/\code{ssRtol}) tolerances run one
-order looser.
-Keying the optimizer to the same \code{10^-sigdig} means it converges to
-exactly the precision the solve supports.  At the default \code{sigdig = 3}
-this is \code{atol = 1e-6}, \code{rtol = 1e-3}.}
+\item{sigdig}{Significant digits used to derive the ODE solver
+tolerances when \code{rxControl} is not supplied.  The tolerances are
+fixed here rather than taken from \code{rxode2::rxControl(sigdig=)} so
+they do not change with the rxode2 version: \code{atol}/\code{rtol} are
+\code{0.5*10^(-sigdig-2)}, the sensitivity tolerances are
+\code{0.5*10^(-sigdig-1.5)}, the steady-state tolerances are
+\code{0.5*10^(-sigdig)} and the steady-state sensitivity tolerances
+are \code{0.5*10^(-sigdig+0.625)}.  PopED computes the FIM by finite
+differences (see \code{hm1} and \code{hm2}), so the ODE solve must be much
+more accurate than those step sizes.}
 
 \item{important}{character vector of important parameters or NULL
 for default.  This is used with Ds-optimality}
@@ -602,6 +599,14 @@ popedControl object
 }
 \description{
 Control for a PopED design task
+}
+\references{
+Fidler ML, Denney W, Harrold J, Hooijmaijers R,
+Papathanasiou T, Schoemaker R, Taubert M, Trame M, Wilkins J
+(2024). babelmixr2 and PopED: Quick Conversion of NONMEM, Monolix
+and nlmixr2/rxode2 Models to PopED Optimal Design Analysis.
+American Conference on Pharmacometrics (ACoP) 2024.
+\doi{10.70534/XUMG6226}
 }
 \author{
 Matthew L. Fidler

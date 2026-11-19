@@ -1,4 +1,5 @@
 test_that("saemix continuous PK model comparison", {
+  skip_if_not_installed("saemix")
   skip_on_cran()
   # 1. Direct saemix run on theo.saemix
   data(theo.saemix, package = "saemix")
@@ -77,6 +78,7 @@ test_that("saemix continuous PK model comparison", {
 })
 
 test_that("saemix discrete likelihood model comparison", {
+  skip_if_not_installed("saemix")
   # 1. Direct saemix run on toenail.saemix
   skip_on_cran()
   data(toenail.saemix, package = "saemix")
@@ -145,6 +147,7 @@ test_that("saemix discrete likelihood model comparison", {
 })
 
 test_that("saemix fits linCmt() models and thetas without etas (#212)", {
+  skip_if_not_installed("saemix")
   skip_on_cran()
 
   ctl <- saemixControl(seed = 632545, nbiter.saemix = c(10, 5),
@@ -309,6 +312,7 @@ test_that("saemix refuses models it would fit with a different error model (#212
 })
 
 test_that("saemix fits lnorm() with its exponential error model (#212)", {
+  skip_if_not_installed("saemix")
   skip_on_cran()
 
   linLnorm <- function() {
@@ -341,6 +345,7 @@ test_that("saemix fits lnorm() with its exponential error model (#212)", {
 })
 
 test_that("saemix prop() and add() + prop() match focei (#212)", {
+  skip_if_not_installed("saemix")
   skip_on_cran()
 
   mod <- function(err) {

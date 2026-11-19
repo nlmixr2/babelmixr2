@@ -138,3 +138,30 @@ test_that("nlmer jump sensitivities give correct dosing-parameter gradients", {
   expect_lt(max(abs(res$anaJump - res$centralFD)),
             max(abs(res$anaFD - res$centralFD)))
 })
+test_that("nlmer fits linCmt() models", {
+  skip_on_cran()
+  skip_if_not_installed("lme4")
+  lin <- function() {
+    ini({
+      tka <- 0.0
+      tv <- 2.99573227355399
+      tcl <- -0.693147180559945
+      eta.ka ~ 1.0
+      eta.v ~ 1.0
+      eta.cl ~ 1.0
+      add.sd <- 1.0
+    })
+    model({
+      ka <- exp(tka + eta.ka)
+      v <- exp(tv + eta.v)
+      cl <- exp(tcl + eta.cl)
+      cp <- linCmt()
+      cp ~ add(add.sd)
+    })
+  }
+  fit <- suppressMessages(
+    nlmixr2(lin, nlmixr2data::theo_sd, est="nlmer",
+            nlmerControl(tolPwrss=1e-6, optCtrl=list(maxfun=10), returnNlmer=FALSE)))
+  expect_true(inherits(fit, "nlmixr2FitData"))
+  expect_true(is.finite(fit$objective))
+})

@@ -40,19 +40,32 @@ nmGetDistributionMonolixLines.rxUi <- function(line) {
 
 .monolixResponses <- NULL
 
+#' Monolix name of an endpoint variable
+#'
+#' Monolix names cannot have dots, so `concentration.in.plasma` is
+#' `concentration__in__plasma` (as in the model file).
+#'
+#' @param var endpoint variable name(s) (like `predDf$var`)
+#' @return Monolix name(s)
+#' @noRd
+.monolixVar <- function(var) {
+  gsub("[.]", "__", var)
+}
+
 #' @rdname nmGetDistributionMonolixLines
 #' @export
 nmGetDistributionMonolixLines.norm <- function(line) {
   .rx <- line[[1]]
   .pred1 <- line[[2]]
   if (.pred1[["linCmt"]]) {
-    stop("linCmt() translation not supported (yet)",
+    stop("linCmt() models are translated when fit with nlmixr2(..., est=\"monolix\"); to translate the model directly, first convert it with rxode2::linToOde()",
          call.=FALSE)
   }
   .var <- str2lang(.pred1[["var"]])
   .varp <- str2lang(paste0("rx_pred_", .pred1[["var"]]))
   assignInMyNamespace(".monolixResponses",
-                      c(.monolixResponses, .varp))
+                      c(.monolixResponses,
+                        paste0("rx_pred_", .monolixVar(.pred1[["var"]]))))
   return(list(bquote(.(.varp) <- .(.var))))
 }
 

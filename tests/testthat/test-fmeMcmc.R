@@ -171,3 +171,27 @@ test_that("fmeMcmc samples with ini({}) priors (#208)", {
                       control=fmeMcmcControl(print=0)),
                "population estimates")
 })
+
+test_that("fmeMcmc fits linCmt() models", {
+  skip_if_not_installed("FME")
+  skip_if_not_installed("coda")
+  skip_on_cran()
+  lin <- function() {
+    ini({
+      tka <- 0.45
+      tcl <- 1
+      tv <- 3.45
+      add.sd <- 0.7
+    })
+    model({
+      ka <- exp(tka)
+      cl <- exp(tcl)
+      v <- exp(tv)
+      cp <- linCmt()
+      cp ~ add(add.sd)
+    })
+  }
+  fit <- suppressMessages(nlmixr(lin, nlmixr2data::theo_sd, est="fmeMcmc",
+                                 control=fmeMcmcControl(print=0, niter=50)))
+  expect_s3_class(fit, "nlmixr2.fmeMcmc")
+})

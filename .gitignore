@@ -19,3 +19,5 @@ docs
 /pharmml-plan.md
 /pharmml-implementation-plan.md
 /pr-body.md
+tests/testthat/_problems/
+tests/testthat/testthat-problems.rds

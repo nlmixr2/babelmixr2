@@ -88,6 +88,11 @@ test_that("a Monolix 2024R1 export with a mu-referenced covariate is read", {
   expect_equal(sqrt(.f$cov["tka", "tka"]), 0.309228983715958 / 1.56549133958774, tolerance=0.05)
   expect_equal(.f$theta[["cl.wt"]], 0.5653053, tolerance=1e-5)
   expect_equal(exp(.f$theta[["tka"]]), 1.565491, tolerance=1e-5)
+  # the observations Monolix used, for the objective function
+  .d <- .mlx2024Data()
+  .n <- sum(.d[[grep("^evid$", names(.d), ignore.case = TRUE)]] == 0 &
+              !is.na(.d[[grep("^dv$", names(.d), ignore.case = TRUE)]]))
+  expect_equal(.f$nobs, .n)
 })
 
 test_that("Monolix 2024R1 MAP estimates follow the ini() priors", {
@@ -144,6 +149,35 @@ test_that("a Monolix fit uses the SAEM etas, like nlmixr2est's saem", {
   .eta <- .f$eta[.f$eta$ID == 1, ]
   expect_equal(.eta$eta.ka, 0.0910101, tolerance=1e-6)
   expect_equal(.eta$eta.cl, -0.529241, tolerance=1e-6)
+})
+
+test_that("a Monolix fit works with tableControl(cwres=TRUE) (#94)", {
+  skip_if_not(file.exists(test_path("monolix2024-priors.zip")))
+  .zip <- normalizePath(test_path("monolix2024-priors.zip"))
+  .u <- .mlx2024Ui("mle")
+  withr::with_tempdir({
+    utils::unzip(.zip)
+    setwd(file.path("monolix2024", "mle"))
+    .f <- suppressWarnings(suppressMessages(
+      nlmixr2(
+        .u,
+        .mlx2024Data(),
+        "monolix",
+        monolixControl(modelName = "mle"),
+        table = tableControl(cwres = TRUE)
+      )
+    ))
+  })
+  expect_true(inherits(.f, "nlmixr2FitData"))
+  expect_true("CWRES" %in% names(.f))
+  # the Monolix objective stays in use alongside nlmixr2's FOCEi objective
+  expect_true("FOCEi" %in% row.names(.f$objDf))
+  expect_equal(nrow(.f$objDf), 2L)
+  expect_false(.f$ofvType == "FOCEi")
+  expect_equal(.f$objective, .f$objDf[.f$ofvType, "OBJF"])
+  expect_equal(AIC(.f), .f$objDf[.f$ofvType, "AIC"])
+  expect_equal(BIC(.f), .f$objDf[.f$ofvType, "BIC"])
+  expect_equal(as.numeric(logLik(.f)), .f$objDf[.f$ofvType, "Log-likelihood"])
 })
 
 test_that("the PRED absolute difference to Monolix is absolute", {
