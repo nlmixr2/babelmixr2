@@ -1,5 +1,8 @@
 # babelmixr2 (development version)
 
+* `as.nlmixr2()` on a nonmem2rx import whose run wrote no `$TABLE` with its
+  etas uses zero etas, with the existing warning, instead of stopping with
+  "Must be of type 'data.frame', not 'list'" (#268)
 * `as.nlmixr2()` on a nonmem2rx import reports NONMEM's objective as the
   OBJF and a log-likelihood, AIC and BIC that include the normal constant
   n log(2 pi), like `nlmixr2(est = "nonmem")`; they were off by that
