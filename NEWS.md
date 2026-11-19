@@ -1,5 +1,23 @@
 # babelmixr2 (development version)
 
+* `as.nlmixr2()` on a nonmem2rx import reports NONMEM's objective as the
+  OBJF and a log-likelihood, AIC and BIC that include the normal constant
+  n log(2 pi), like `nlmixr2(est = "nonmem")`; they were off by that
+  constant (#267)
+* `as.nlmixr2()` on a monolix2rx import counts only the observations of
+  the outputs the project fits for `nobs` and the n log(2 pi) constant of
+  the OBJF; it counted every output in the data. Censored observations
+  are still counted, as in nlmixr2est and `est = "monolix"` (#270)
+
+* PopED designs of a `combined1()` add + prop error model now fix the
+  residuals (`fixRes = TRUE`) with a warning; they were translated as
+  combined2 (#151)
+
+* `popedControl(fixRes = TRUE)` takes the prediction and residual weight
+  from the model function's own return; it read the last stored solve,
+  which the memoised model function can leave stale, so the random-effect
+  block of the FIM was wrong and the design OFV was `-Inf`
+
 * `pkncaControl(dvParam = NULL)` uses the variable on the left of the residual
   error line for the unit conversion; the auto-detection could not be reached
   and failed when it found a DV (#260)
