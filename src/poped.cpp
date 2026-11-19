@@ -20,6 +20,8 @@
 #include <set>
 
 #include "timeIndexer.h"
+#include "rxode2Optional.h"
+#include <cstring>
 
 // Intentionally global; R is single-threaded.
 timeIndexer globalTimeIndexer;
@@ -234,6 +236,55 @@ Rcpp::NumericVector popedMultipleEndpointParam(Rcpp::NumericVector p,
 extern "C" {
 #define iniRxodePtrs _babelmixr2_iniRxodePtrs
   iniRxode2ptr
+
+  bmSetIndNewind_t bmSetIndNewind = NULL;
+
+  // The entry points of rxode2Optional.h: the label .rxode2Optional() reports
+  // it by, its slot in rxode2's pointer table and that slot's name there
+  // (names(rxode2::.rxode2ptrs())), and the pointer it is loaded into
+  typedef struct {
+    const char *label;
+    int slot;
+    const char *name;
+    DL_FUNC *fn;
+  } rxode2OptionalSlot;
+
+  static rxode2OptionalSlot rxode2OptionalSlots[] = {
+    // remove with test-dependency-workarounds.R's slot-104 block
+    {"setIndNewind", 104, "rxode2setIndNewind", (DL_FUNC *) &bmSetIndNewind},
+  };
+  static const int rxode2OptionalN =
+    (int)(sizeof(rxode2OptionalSlots) / sizeof(rxode2OptionalSlots[0]));
+
+  // Loads each one the table `p` (rxode2::.rxode2ptrs()) has: a slot past the
+  // end of an older rxode2's table, or holding another name, leaves it NULL
+  SEXP _babelmixr2_iniRxode2Optional(SEXP p) {
+    SEXP nm = Rf_getAttrib(p, R_NamesSymbol);
+    R_xlen_t n = TYPEOF(p) == VECSXP ? Rf_xlength(p) : 0;
+    for (int i = 0; i < rxode2OptionalN; ++i) {
+      rxode2OptionalSlot *s = &rxode2OptionalSlots[i];
+      *(s->fn) = NULL;
+      if (s->slot >= n || TYPEOF(nm) != STRSXP || Rf_xlength(nm) != n) continue;
+      if (strcmp(CHAR(STRING_ELT(nm, s->slot)), s->name) != 0) continue;
+      SEXP e = VECTOR_ELT(p, s->slot);
+      if (TYPEOF(e) != EXTPTRSXP) continue;
+      *(s->fn) = R_ExternalPtrAddrFn(e);
+    }
+    return R_NilValue;
+  }
+
+  // Which of them the installed rxode2 has, as a named logical vector
+  SEXP _babelmixr2_rxode2Optional(void) {
+    SEXP ret = PROTECT(Rf_allocVector(LGLSXP, rxode2OptionalN));
+    SEXP nms = PROTECT(Rf_allocVector(STRSXP, rxode2OptionalN));
+    for (int i = 0; i < rxode2OptionalN; ++i) {
+      LOGICAL(ret)[i] = *(rxode2OptionalSlots[i].fn) != NULL;
+      SET_STRING_ELT(nms, i, Rf_mkChar(rxode2OptionalSlots[i].label));
+    }
+    Rf_setAttrib(ret, R_NamesSymbol, nms);
+    UNPROTECT(2);
+    return ret;
+  }
 }
 
 using namespace arma;
@@ -507,6 +558,17 @@ static inline bool solveCached(NumericVector &theta, int &id) {
   return as<bool>(all(last == theta));
 }
 
+// calc_lhs does not advance newind; rxode2's own output walk leaves it at 2
+// after each record, so only a subject's first record sees newind == 1.
+// setIndNewind() is rxode2's accessor, so the field offset is not compiled in;
+// an rxode2 without it leaves newind as it was (the NULL check goes with
+// test-dependency-workarounds.R's slot-104 block).
+static inline void popedCalcLhs(int id, double curT, rx_solving_options_ind *ind,
+                                rx_solving_options *op, int j, double *lhs) {
+  rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+  if (bmSetIndNewind != NULL) bmSetIndNewind(ind, 2);
+}
+
 void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, int nend) {
   // arma::vec ret(retD, nobs, false, true);
   rx_solving_options_ind *ind =  updateParamRetInd(theta, id);
@@ -525,11 +587,11 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
     isMT = evid >= 10 && evid <= 99;
     // REprintf("curT: %f; evid: %d; isMT: %d; kk: %d\n", curT, evid, isMT, kk);
     if (isDose(getIndEvid(ind, kk))) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      popedCalcLhs(id, curT, ind, op, j, lhs);
       continue;
     } else if (isMT) {
       // mtimes to calculate information
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      popedCalcLhs(id, curT, ind, op, j, lhs);
       if (ISNA(lhs[0])) {
         popedOp.naZero=1;
         lhs[0] = 0.0;
@@ -544,7 +606,7 @@ void popedSolveFidMat(arma::mat &matMT, NumericVector &theta, int id, int nrow, 
         return; // vector has been created, break
       }
     } else if (getIndEvid(ind, kk) == 0) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      popedCalcLhs(id, curT, ind, op, j, lhs);
       if (ISNA(lhs[0])) {
         popedOp.naZero=1;
         lhs[0] = 0.0;
@@ -630,10 +692,10 @@ void popedSolveFidMat2(arma::mat &matMT, NumericVector &theta, int id, int nrow,
     curT = getTime(kk, ind);
     double *lhs = getIndLhs(ind);
     if (isDose(getIndEvid(ind, kk))) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      popedCalcLhs(id, curT, ind, op, j, lhs);
       continue;
     } else if (getIndEvid(ind, kk) == 0) {
-      rxInner.calc_lhs(id, curT, getOpIndSolve(op, ind, j), lhs);
+      popedCalcLhs(id, curT, ind, op, j, lhs);
       if (ISNA(lhs[0])) {
         popedOp.naZero=1;
         lhs[0] = 0.0;

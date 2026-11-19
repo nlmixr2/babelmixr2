@@ -1,5 +1,11 @@
 # babelmixr2 (development version)
 
+* `est="poped"` designs of a model that reads `newind` now see `newind == 2`
+  after a subject's first record, as `rxSolve()` does; every record saw
+  `newind == 1`, so the design was computed for a different model.  This
+  takes effect with an rxode2 that has `setIndNewind()` in its C pointer
+  table; with an older rxode2 the designs read `newind` as before
+
 * `as.nlmixr2()` on a nonmem2rx import reports NONMEM's objective as the
   OBJF and a log-likelihood, AIC and BIC that include the normal constant
   n log(2 pi), like `nlmixr2(est = "nonmem")`; they were off by that

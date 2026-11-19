@@ -18,6 +18,21 @@ rxode2.api <- names(rxode2::.rxode2ptrs())
   }
   .Call(`_babelmixr2_iniRxodePtrs`, .ptr,
         PACKAGE = "babelmixr2")
+  # the entry points newer than the oldest rxode2 babelmixr2 supports, when
+  # this rxode2 has them (src/rxode2Optional.h)
+  .Call(`_babelmixr2_iniRxode2Optional`, .ptr, PACKAGE = "babelmixr2")
+}
+
+# Which rxode2 entry points newer than the oldest supported rxode2 the
+# installed rxode2 provides (src/rxode2Optional.h): a named logical vector
+.rxode2Optional <- function() {
+  .Call(`_babelmixr2_rxode2Optional`, PACKAGE = "babelmixr2")
+}
+
+# The installed rxode2's version, which test-dependency-workarounds.R compares
+# with the version each work-around waits for
+.rxode2Version <- function() {
+  utils::packageVersion("rxode2")
 }
 
 

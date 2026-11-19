@@ -190,6 +190,8 @@ test_that("as.nlmixr2 on a nonmem2rx import keeps NONMEM's objective and adds th
   expect_equal(as.numeric(ll), -(nmObj + 2280 * log(2 * pi)) / 2)
   expect_equal(AIC(fit), -2 * as.numeric(ll) + 2 * attr(ll, "df"))
   expect_equal(BIC(fit), -2 * as.numeric(ll) + log(2280) * attr(ll, "df"))
+})
+
 test_that("as.nlmixr2 on a monolix2rx import counts the observations of the fitted outputs (#270)", {
   skip_on_cran()
 
