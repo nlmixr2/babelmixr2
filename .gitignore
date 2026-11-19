@@ -17,3 +17,5 @@ inst/doc
 docs
 /.vexp/
 /src/*.d
+tests/testthat/_problems/
+tests/testthat/testthat-problems.rds

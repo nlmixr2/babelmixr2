@@ -68,6 +68,8 @@
   "phi" = c("normcdf(", ")"),
   "pnorm" = c("normcdf(", ")"),
   "qnorm"=c("probit(", ")"),
+  # probitInv() is normalized to erf(); erf(x) = 2*normcdf(sqrt(2)*x) - 1
+  "erf"=c("(2*normcdf(1.414213562373095145475*(", "))-1)"),
   "fabs"=c("abs(", ")")
 )
 
@@ -120,8 +122,12 @@
 #' @noRd
 .monolixSetAdm <- function(ui, state, param, type="f") {
   .adm <- .monolixGetAdm(ui)
-  .w <- .rxGetCmtNumber(state, ui, error=FALSE)
-  if (is.na(.w)) return(invisible())
+  .cmt <- .rxGetCmtNumber(state, ui, error=FALSE)
+  if (is.na(.cmt)) return(invisible())
+  # the administrations dosing this compartment; a property of a
+  # compartment without doses has no effect
+  .w <- which(.adm$cmt == .cmt)
+  if (length(.w) == 0L) return(invisible())
   if (type == "f") {
     .adm[.w, "f"] <- param
   } else if (type == "dur") {
@@ -132,6 +138,47 @@
     .adm[.w, "rate"] <- param
   }
   rxode2::rxAssignControlValue(ui, ".adm", .adm)
+}
+
+#' Defaults of generated compartment property variables
+#'
+#' Lines like `rx_f_depot = 1` that go at the top of Monolix's
+#' `EQUATION:` so a property only set inside a conditional keeps
+#' rxode2's default otherwise.
+#'
+#' @noRd
+.monolixCmtPropDefaults <- NULL
+
+#' Translate a compartment property (f, alag, rate, dur) to Monolix
+#'
+#' Monolix sets these in the `PK:` macros, which take a single
+#' variable.  The property is assigned in `EQUATION:` to a generated
+#' variable (like `rx_f_depot`) that the macro then uses, so
+#' expressions (issue #115) and conditional assignments translate.
+#' When the property is set inside a conditional, every branch sets it
+#' (see `.monolixCompleteIfProps()`).
+#'
+#' @param x assignment expression, like `f(depot) <- exp(lfdepot)`
+#' @param prop the property name (`"f"`, `"F"`, `"alag"`, `"lag"`,
+#'   `"rate"` or `"dur"`)
+#' @param ui rxode2 ui
+#' @return Monolix `EQUATION:` line(s)
+#' @author Matthew L. Fidler
+#' @noRd
+.rxToMonolixCmtProp <- function(x, prop, ui) {
+  .type <- switch(prop, alag = "lag", F = "f", prop)
+  .state <- as.character(x[[2]][[2]])
+  .var <- paste0("rx_", .type, "_", gsub("[.]", "__", .state))
+  .monolixSetAdm(ui, .state, .var, type = .type)
+  .val <- .rxToMonolix(x[[3]], ui = ui)
+  paste0(
+    .rxToMonolixGetIndent(ui),
+    ";",
+    prop,
+    " defined in PK section\n",
+    .rxToMonolixFlushPrefixLines(ui),
+    paste(.rxToMonolixGetIndent(ui), .var, "=", .val)
+  )
 }
 
 .rxToMonolixHandleBinaryOperator <- function(x, ui) {
@@ -188,19 +235,125 @@
     .rxToMonolixUnIndent(ui)
   }
   .nindent <- rxode2::rxGetControl(ui, ".mIndent", 0)
-  paste(vapply(seq(1, .nindent), function(x) " ", character(1), USE.NAMES=FALSE), collapse="")
+  # top-level statements (.mIndent 0) are indented 2 spaces, like nested ones
+  strrep(" ", max(2, .nindent))
 }
 
 
+#' Get (and clear) the lines that need to be written before a line
+#'
+#' @param ui rxode2 ui
+#' @return the prefix lines followed by a new line, or `""` when there
+#'   are no prefix lines
+#' @noRd
+#' @author Matthew L. Fidler
+.rxToMonolixFlushPrefixLines <- function(ui) {
+  # the indicator variables are only reused within the same line
+  rxode2::rxAssignControlValue(ui, ".mLogicalDf", NULL)
+  .prefixLines <- rxode2::rxGetControl(ui, ".mPrefixLines", NULL)
+  if (is.null(.prefixLines)) {
+    return("")
+  }
+  rxode2::rxAssignControlValue(ui, ".mPrefixLines", NULL)
+  paste0(paste(.prefixLines, collapse = "\n"), "\n")
+}
+
+#' Translate a condition (like in `if ()`) to Monolix
+#'
+#' @param x rxode2 condition expression
+#' @param ui rxode2 ui
+#' @return Monolix logical expression
+#' @noRd
+#' @author Matthew L. Fidler
+.rxToMonolixCondition <- function(x, ui) {
+  if (is.call(x)) {
+    if (identical(x[[1]], quote(`(`))) {
+      return(paste0("(", .rxToMonolixCondition(x[[2]], ui), ")"))
+    }
+    if (identical(x[[1]], quote(`!`))) {
+      return(paste0("~", .rxToMonolixCondition(x[[2]], ui)))
+    }
+    .op <- as.character(x[[1]])
+    if (length(x) == 3L && .op %in% c("&&", "||", "&", "|")) {
+      return(paste0(
+        .rxToMonolixCondition(x[[2]], ui),
+        .op,
+        .rxToMonolixCondition(x[[3]], ui)
+      ))
+    }
+    if (length(x) == 3L && .rxIsLogicalOperator(x[[1]])) {
+      ## Use "preferred" monolix syntax
+      return(paste0(
+        .rxToMonolix(x[[2]], ui = ui),
+        .op,
+        .rxToMonolix(x[[3]], ui = ui)
+      ))
+    }
+  }
+  .rxToMonolix(x, ui = ui)
+}
+
+#' Translate a logical expression used as a number to Monolix
+#'
+#' Pruned `if`/`else` branches use logical expressions (like
+#' `(WT > 70)`) as numbers.  This writes a 0/1 indicator variable in
+#' the lines before the current line and uses that variable instead.
+#'
+#' @param x rxode2 logical expression
+#' @param ui rxode2 ui
+#' @return Monolix indicator variable name
+#' @noRd
+#' @author Matthew L. Fidler
+.rxToMonolixLogicalIndicator <- function(x, ui) {
+  .cond <- .rxToMonolixCondition(x, ui)
+  .df <- rxode2::rxGetControl(
+    ui,
+    ".mLogicalDf",
+    data.frame(cond = character(0), nm = character(0))
+  )
+  .w <- which(.df$cond == .cond)
+  if (length(.w) == 1L) {
+    return(.df$nm[.w])
+  }
+  .num <- rxode2::rxGetControl(ui, ".mVarLNum", 1)
+  .newVar <- sprintf("rx_l%03d", .num)
+  rxode2::rxAssignControlValue(ui, ".mVarLNum", .num + 1)
+  .indent <- .rxToMonolixGetIndent(ui)
+  .prefixLines <- c(
+    rxode2::rxGetControl(ui, ".mPrefixLines", NULL),
+    paste0(.indent, .newVar, " = 0"),
+    paste0(.indent, "if ", .cond),
+    paste0(.indent, "  ", .newVar, " = 1"),
+    paste0(.indent, "end")
+  )
+  rxode2::rxAssignControlValue(ui, ".mPrefixLines", .prefixLines)
+  rxode2::rxAssignControlValue(
+    ui,
+    ".mLogicalDf",
+    rbind(.df, data.frame(cond = .cond, nm = .newVar))
+  )
+  .newVar
+}
+
 .rxToMonolixHandleIfExpressions <- function(x, ui) {
-  .ret <- paste0(.rxToMonolixGetIndent(ui), "if ", .rxToMonolix(x[[2]], ui=ui), "\n")
+  .cond <- .rxToMonolixCondition(x[[2]], ui)
+  .ret <- paste0(.rxToMonolixFlushPrefixLines(ui),
+                 .rxToMonolixGetIndent(ui), "if ", .cond, "\n")
   .rxToMonolixIndent(ui)
   .ret <- paste0(.ret, .rxToMonolix(x[[3]], ui=ui))
   x <- x[-c(1:3)]
   if (length(x) == 1) x <- x[[1]]
   while(identical(x[[1]], quote(`if`))) {
+    .cond <- .rxToMonolixCondition(x[[2]], ui)
+    if (!identical(rxode2::rxGetControl(ui, ".mPrefixLines", NULL), NULL)) {
+      stop(
+        "an `else if` condition cannot use a logical expression as a ",
+        "number in Monolix; prune with `monolixControl(prune=TRUE)`",
+        call. = FALSE
+      )
+    }
     .ret <- paste0(.ret, "\n",
-                   .rxToMonolixGetIndent(ui, FALSE), "elseif ", .rxToMonolix(x[[2]], ui=ui), "\n")
+                   .rxToMonolixGetIndent(ui, FALSE), "elseif ", .cond, "\n")
     .rxToMonolixIndent(ui)
     .ret <- paste0(.ret, .rxToMonolix(x[[3]], ui=ui))
     x <- x[-c(1:3)]
@@ -218,6 +371,48 @@
                    .rxToMonolixGetIndent(ui, FALSE), "end\n")
   }
   return(.ret)
+}
+
+#' Mu-referenced theta to Monolix variable name map
+#'
+#' Monolix variable names cannot contain `.`; `.rxToMonolix()` spells
+#' them with `__` in the equations, so every other Monolix section
+#' (and the output readers) must use the same spelling.
+#'
+#' @param ui rxode2 ui
+#' @return named character vector; names are the thetas, values are
+#'   the Monolix variable names
+#' @author Matthew L. Fidler
+#' @noRd
+.monolixMuRef <- function(ui) {
+  .split <- ui$getSplitMuModel
+  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  setNames(gsub("[.]", "__", .muRef), names(.muRef))
+}
+
+#' Transformations of the Monolix individual parameters
+#'
+#' Like `ui$muRefCurEval`, but a "tainted" mu-referenced parameter (like
+#' `tcl` in `cl <- exp(tcl + eta.cl) * (CRCL/100)^cl.crcl`) is linear:
+#' Monolix only gets `rx__tcl <- tcl` and the model keeps the `exp()`,
+#' so a log-normal distribution would apply the `exp()` twice.
+#'
+#' @param ui rxode2 ui
+#' @return `muRefCurEval` data frame
+#' @noRd
+.monolixMuRefCurEval <- function(ui) {
+  .ret <- ui$muRefCurEval
+  .taint <- names(ui$getSplitMuModel$taintMuRef)
+  if (length(.taint) == 0L) {
+    return(.ret)
+  }
+  .mrt <- ui$muRefTable
+  .eta <- .mrt$eta[.mrt$theta %in% .taint]
+  .w <- .ret$parameter %in% c(.taint, .eta)
+  .ret$curEval[.w] <- ""
+  .ret$low[.w] <- NA_real_
+  .ret$hi[.w] <- NA_real_
+  .ret
 }
 
 .rxToMonolix <- function(x, ui) {
@@ -245,6 +440,11 @@
       }
     }
   } else if (is.call(x)) {
+    if (length(x) == 3L &&
+          (identical(x[[1]], quote(`Rx_pow_di`)) || identical(x[[1]], quote(`Rx_pow`)))) {
+      # rxode2's normalized powers
+      return(paste0("(", .rxToMonolix(x[[2]], ui=ui), ")^(", .rxToMonolix(x[[3]], ui=ui), ")"))
+    }
     if (identical(x[[1]], quote(`(`))) {
       return(paste0("(", .rxToMonolix(x[[2]], ui=ui), ")"))
     } else if (identical(x[[1]], quote(`{`))) {
@@ -265,61 +465,21 @@
       }
     } else if (identical(x[[1]], quote(`if`))) {
       return(.rxToMonolixHandleIfExpressions(x, ui))
-    } else if (.rxIsLogicalOperator(x[[1]])) {
-        ## Use "preferred" monolix syntax
-      return(paste0(.rxToMonolix(x[[2]], ui=ui), as.character(x[[1]]), .rxToMonolix(x[[3]], ui=ui)))
-    } else if (identical(x[[1]], quote(`!`)) ) {
-      return(paste0("~", .rxToMonolix(x[[2]], ui=ui)))
+    } else if (.rxIsLogicalOperator(x[[1]]) || identical(x[[1]], quote(`!`))) {
+      # a logical expression used as a number
+      return(.rxToMonolixLogicalIndicator(x, ui))
     } else if (identical(x[[1]], quote(`**`)) ) {
       return(paste(.rxToMonolix(x[[2]], ui=ui), "^", .rxToMonolix(x[[3]], ui=ui)))
     } else if (.rxIsAssignmentOperator(x[[1]])) {
-      if (any(as.character(x[[2]])[1] == c("alag", "lag", "F", "f", "rate", "dur"))) {
-        if (any(as.character(x[[2]])[1] == c("alag", "lag"))) {
-          .state <- as.character(x[[2]][[2]])
-          if (length(x[[3]]) == 1L) {
-            .extra <- .rxToMonolix(x[[3]], ui=ui)
-            .monolixSetAdm(ui, .state, .extra, type="lag")
-          } else {
-            stop("the complex lag time is not supported by babelmixr2",
-                 call.=FALSE)
-          }
-        }
-        if (any(as.character(x[[2]])[1] == c("F", "f"))) {
-          .state <- as.character(x[[2]][[2]])
-          if (length(x[[3]]) == 1L) {
-            .extra <- .rxToMonolix(x[[3]], ui=ui)
-            .monolixSetAdm(ui, .state, .extra, type="f")
-          } else {
-            stop("the complex F is not supported by babelmixr2",
-                 call.=FALSE)
-          }
-        }
-        if (as.character(x[[2]])[1] == "rate") {
-          .state <- as.character(x[[2]][[2]])
-          if (length(x[[3]]) == 1L) {
-            .extra <- .rxToMonolix(x[[3]], ui=ui)
-            .monolixSetAdm(ui, .state, .extra, type="rate")
-          } else {
-            stop("the complex rate is not supported by babelmixr2",
-                 call.=FALSE)
-          }
-        }
-        if (as.character(x[[2]])[1] == "dur") {
-          .state <- as.character(x[[2]][[2]])
-          if (length(x[[3]]) == 1L) {
-            .extra <- .rxToMonolix(x[[3]], ui=ui)
-            .monolixSetAdm(ui, .state, .extra, type="dur")
-          } else {
-            stop("the complex dur is not supported by babelmixr2",
-                 call.=FALSE)
-          }
-        }
-        return(paste0(.rxToMonolixGetIndent(ui),
-                      ";", as.character(x[[2]])[1], " defined in PK section"))
+      .prop <- as.character(x[[2]])[1]
+      if (is.call(x[[2]]) &&
+            any(.prop == c("alag", "lag", "F", "f", "rate", "dur"))) {
+        return(.rxToMonolixCmtProp(x, .prop, ui))
       }
       .var <- .rxToMonolix(x[[2]], ui=ui)
-      return(paste(.rxToMonolixGetIndent(ui),
-                   .var, "=", .rxToMonolix(x[[3]], ui=ui)))
+      .val <- .rxToMonolix(x[[3]], ui = ui)
+      return(paste0(.rxToMonolixFlushPrefixLines(ui),
+                    paste(.rxToMonolixGetIndent(ui), .var, "=", .val)))
     } else if (identical(x[[1]], quote(`[`))) {
       .type <- toupper(as.character(x[[2]]))
       if (any(.type == c("THETA", "ETA"))) {
@@ -531,7 +691,7 @@ rxToMonolix <- function(x, ui) {
     x <- substitute(x)
     if (length(.xc == 1)) {
       .found <- FALSE
-      .frames <- seq(1, sys.nframe())
+      .frames <- seq_len(sys.nframe())
       .frames <- .frames[.frames != 0]
       for (.f in .frames) {
         .env <- parent.frame(.f)
@@ -550,4 +710,261 @@ rxToMonolix <- function(x, ui) {
   }
   return(.rxToMonolix(eval(parse(text = paste0("quote({", x, "})"))),
                       ui=ui))
+}
+
+#' Replace variables in a model expression
+#'
+#' @param x model expression
+#' @param map named list of new names (symbols), by old name
+#' @return the expression with the variables replaced
+#' @noRd
+.monolixSubst <- function(x, map) {
+  if (length(map) == 0L) {
+    return(x)
+  }
+  if (is.name(x)) {
+    .n <- as.character(x)
+    if (.n %in% names(map)) {
+      return(map[[.n]])
+    }
+    return(x)
+  }
+  if (is.call(x)) {
+    for (.i in seq_along(x)[-1]) {
+      if (!is.null(x[[.i]])) x[[.i]] <- .monolixSubst(x[[.i]], map)
+    }
+  }
+  x
+}
+
+#' Variables assigned (with `<-` or `=`) in a model expression
+#'
+#' @param x model expression
+#' @return character vector of the assigned variables
+#' @noRd
+.monolixAssigned <- function(x) {
+  if (!is.call(x)) {
+    return(character(0))
+  }
+  .ret <- unlist(lapply(as.list(x)[-1], .monolixAssigned))
+  if ((identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) &&
+        is.name(x[[2]])) {
+    .ret <- c(as.character(x[[2]]), .ret)
+  }
+  unique(.ret)
+}
+
+#' Give every reassignment a new variable for Monolix
+#'
+#' Monolix variables are assigned once ("Conflicting variable
+#' definition"), so `cl <- cl * 1.2` after `cl` is defined (or is an
+#' individual parameter) becomes `cl_rx1 <- cl * 1.2`, and the rest of
+#' the model uses `cl_rx1`.  `if`/`else` statements that change a
+#' defined variable are pruned first (see `.bblIfReassigns()`).
+#'
+#' @param lstExpr model lines
+#' @param defined variables already defined (individual parameters,
+#'   regressors)
+#' @param keep variables never renamed (the endpoints)
+#' @return model lines
+#' @noRd
+.monolixSsa <- function(lstExpr, defined, keep = character(0)) {
+  .map <- list()
+  .count <- integer(0)
+  for (.i in seq_along(lstExpr)) {
+    .e <- lstExpr[[.i]]
+    if (identical(.e, quote(`_drop`))) next
+    if ((identical(.e[[1]], quote(`<-`)) || identical(.e[[1]], quote(`=`))) &&
+          is.name(.e[[2]])) {
+      .v <- as.character(.e[[2]])
+      .rhs <- .monolixSubst(.e[[3]], .map)
+      if (.v %in% defined && !(.v %in% keep)) {
+        .count[.v] <- ifelse(is.na(.count[.v]), 1L, .count[.v] + 1L)
+        .new <- as.name(paste0(.v, "_rx", .count[.v]))
+        .map[[.v]] <- .new
+        .e <- as.call(list(.e[[1]], .new, .rhs))
+      } else {
+        .e[[3]] <- .rhs
+        defined <- c(defined, .v)
+      }
+    } else {
+      .e <- .monolixSubst(.e, .map)
+      defined <- c(defined, .monolixAssigned(.e))
+    }
+    lstExpr[[.i]] <- .e
+  }
+  lstExpr
+}
+
+#' Does a model line set a compartment property (f, alag, rate, dur)?
+#'
+#' @param x model line
+#' @return boolean
+#' @noRd
+.monolixSetsCmtProp <- function(x) {
+  if (!is.call(x)) {
+    return(FALSE)
+  }
+  if (
+    (identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) &&
+      is.call(x[[2]]) &&
+      as.character(x[[2]][[1]])[1] %in%
+        c("f", "F", "alag", "lag", "rate", "dur")
+  ) {
+    return(TRUE)
+  }
+  any(vapply(as.list(x)[-1], .monolixSetsCmtProp, logical(1)))
+}
+
+#' Is a model line an ODE (`d/dt(state) <- ...`)?
+#'
+#' @param x model line
+#' @return boolean
+#' @noRd
+.monolixIsOde <- function(x) {
+  is.call(x) &&
+    (identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) &&
+    is.call(x[[2]]) &&
+    identical(x[[2]][[1]], quote(`/`))
+}
+
+#' Variables a model line uses (not the targets it assigns)
+#'
+#' @param x model line
+#' @return character vector
+#' @noRd
+.monolixUsedVars <- function(x) {
+  if (is.name(x)) {
+    return(as.character(x))
+  }
+  if (!is.call(x)) {
+    return(character(0))
+  }
+  if (identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) {
+    return(.monolixUsedVars(x[[3]]))
+  }
+  unique(unlist(lapply(as.list(x)[-1], .monolixUsedVars)))
+}
+
+#' Move the compartment properties before the ODEs for Monolix
+#'
+#' Monolix's PK macros use the properties, and the macros come before the
+#' ODEs, so `f(depot) <- ...` written after the ODEs (allowed in rxode2)
+#' is moved before them when it does not depend on the ODEs.
+#'
+#' @param lstExpr model lines
+#' @param ui rxode2 ui
+#' @return model lines
+#' @noRd
+.monolixPropsBeforeOde <- function(lstExpr, ui) {
+  .ode <- which(vapply(lstExpr, .monolixIsOde, logical(1)))
+  if (length(.ode) == 0L) {
+    return(lstExpr)
+  }
+  .q <- .ode[1]
+  .prop <- which(vapply(lstExpr, .monolixSetsCmtProp, logical(1)))
+  .prop <- .prop[.prop > .q]
+  if (length(.prop) == 0L) {
+    return(lstExpr)
+  }
+  .after <- unique(c(
+    rxode2::rxState(ui),
+    unlist(lapply(lstExpr[.q:max(.prop)], .monolixAssigned))
+  ))
+  for (.p in .prop) {
+    .needs <- setdiff(
+      .monolixUsedVars(lstExpr[[.p]]),
+      .monolixAssigned(lstExpr[[.p]])
+    )
+    if (
+      any(.needs %in% .after) || any(ui$predDf$line > .q & ui$predDf$line < .p)
+    ) {
+      stop(
+        "Monolix needs the compartment properties (f, alag, dur, rate) ",
+        "defined before the ODEs, without using them",
+        call. = FALSE
+      )
+    }
+  }
+  c(
+    lstExpr[seq_len(.q - 1L)],
+    lstExpr[.prop],
+    lstExpr[setdiff(seq.int(.q, length(lstExpr)), .prop)]
+  )
+}
+
+#' Compartment properties an `if`/`else` branch sets
+#'
+#' @param x model line(s)
+#' @return named list of the property targets (like `f(depot)`), by
+#'   their deparsed text
+#' @noRd
+.monolixPropTargets <- function(x) {
+  if (is.list(x)) {
+    return(do.call(c, lapply(x, .monolixPropTargets)))
+  }
+  if (!is.call(x)) {
+    return(list())
+  }
+  if (
+    (identical(x[[1]], quote(`<-`)) || identical(x[[1]], quote(`=`))) &&
+      is.call(x[[2]]) &&
+      as.character(x[[2]][[1]])[1] %in% c("f", "F", "alag", "lag")
+  ) {
+    return(setNames(list(x[[2]]), deparse1(x[[2]])))
+  }
+  do.call(c, lapply(as.list(x)[-1], .monolixPropTargets))
+}
+
+#' Set a compartment property in every branch of an `if`/`else`
+#'
+#' Monolix assigns each variable once, so a property set in only some
+#' branches cannot start from a default assigned before the `if`.  Each
+#' branch that does not set it gets rxode2's default (`f()` 1, `alag()`
+#' 0), adding an `else` when needed.
+#'
+#' @param x model line
+#' @return model line
+#' @noRd
+.monolixCompleteIfProps <- function(x) {
+  if (!is.call(x) || !identical(x[[1]], quote(`if`))) {
+    return(x)
+  }
+  .targets <- .monolixPropTargets(x)
+  if (length(.targets) == 0L) {
+    return(x)
+  }
+  .branch <- function(b) {
+    .lines <- if (is.null(b)) {
+      list()
+    } else if (is.call(b) && identical(b[[1]], quote(`{`))) {
+      as.list(b)[-1]
+    } else {
+      list(b)
+    }
+    .lines <- lapply(.lines, .monolixCompleteIfProps)
+    .have <- names(.monolixPropTargets(.lines))
+    for (.t in setdiff(names(.targets), .have)) {
+      .fun <- as.character(.targets[[.t]][[1]])
+      .lines <- c(
+        .lines,
+        list(call("<-", .targets[[.t]], if (.fun %in% c("f", "F")) 1 else 0))
+      )
+    }
+    as.call(c(quote(`{`), .lines))
+  }
+  x[[3]] <- .branch(x[[3]])
+  if (length(x) < 4L) {
+    x[[4]] <- .branch(NULL)
+  } else if (is.call(x[[4]]) && identical(x[[4]][[1]], quote(`if`))) {
+    # else if: the chain sets the same properties
+    x[[4]] <- .monolixCompleteIfProps(x[[4]])
+    .missing <- setdiff(names(.targets), names(.monolixPropTargets(x[[4]])))
+    if (length(.missing) > 0L) {
+      x[[4]] <- .branch(x[[4]])
+    }
+  } else {
+    x[[4]] <- .branch(x[[4]])
+  }
+  x
 }

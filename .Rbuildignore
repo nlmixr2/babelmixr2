@@ -15,3 +15,11 @@
 ^_pkgdown\.yml$
 ^\.vexp$
 ^src/.*[.]d$
+^air\.toml$
+^CLAUDE\.md$
+^README\.Rmd$
+^\.claude$
+^\.habit-hooks$
+^\.RData$
+^\.Rhistory$
+^src/compile_commands\.json$

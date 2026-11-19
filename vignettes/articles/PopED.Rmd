@@ -165,6 +165,9 @@ poped_db_ode_pkpdsim <- create.poped.database(poped_db_analytic,ff_fun = ff_ode_
 
 `babelmixr2` now introduces a new method that takes `rxode2`/`nlmixr2`
 models converts them to a `PopED` database to help with optimal design.
+This approach was presented at ACoP 2024 ([Fidler et al
+2024](https://doi.org/10.70534/XUMG6226)); please cite it when you use
+`babelmixr2` with `PopED` (see `citation("babelmixr2")`).
 
 As in the [PopED vignette comparing ODE
 solvers](https://andrewhooker.github.io/PopED/articles/model_def_other_pkgs.html#speed-of-fim-computation)

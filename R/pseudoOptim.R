@@ -15,8 +15,20 @@
 #' @param centroid Number of elements from which to estimate a new
 #'   parameter vector.  The default is 3.
 #'
-#' @param varleft relative variation remaining; if below this value,
-#'   the algorithm stops.  Defaults to 1e-8.
+#' @param varleft relative variation remaining; if below this value, the
+#'   algorithm stops.  When `NULL` (the default) it is derived from `sigdig`,
+#'   keeping the `FME::pseudoOptim()` default of `1e-8` at the default
+#'   `sigdig = 4` and tightening/loosening it one order of magnitude per
+#'   significant digit.
+#'
+#' @param indTolRelax when `TRUE` (default) a subject whose ODE solve had to
+#'   be retried with a relaxed tolerance keeps that relaxed tolerance for the
+#'   rest of the fit instead of resetting it every evaluation
+#'
+#' @param eventSens method used for the dosing-parameter (alag/F/rate/dur)
+#'   sensitivities: `"jump"` routes them through rxode2's analytic event
+#'   jumps; `"fd"` falls back to Shi2021 finite differences.  See
+#'   [nlmixr2est::nlmControl()].
 #'
 #' @param verbose If TRUE, print information about the optimization
 #'   from `FME::pseudoOptim`.  Default is FALSE.
@@ -60,7 +72,7 @@
 pseudoOptimControl <- function(npop=NULL, # Number of elements in the pouplation
                                numiter=10000, # Number of iterations
                                centroid=3, # Centroid for the population
-                               varleft=1e-8,
+                               varleft=NULL,
                                verbose=FALSE,
                            returnPseudoOptim=FALSE,
 
@@ -69,6 +81,7 @@ pseudoOptimControl <- function(npop=NULL, # Number of elements in the pouplation
                            stickyRecalcN=4,
                            maxOdeRecalc=5,
                            odeRecalcFactor=10^(0.5),
+                           indTolRelax=TRUE,
 
                            useColor = NULL,
                            printNcol = NULL, #
@@ -88,7 +101,8 @@ pseudoOptimControl <- function(npop=NULL, # Number of elements in the pouplation
                            addProp = c("combined2", "combined1"),
                            calcTables=TRUE, compress=TRUE,
                            covMethod=c("r", ""),
-                           adjObf=TRUE, ci=0.95, sigdig=4, sigdigTable=NULL, ...) {
+                           adjObf=TRUE, ci=0.95, sigdig=4, sigdigTable=NULL,
+                           eventSens=c("jump", "fd"), ...) {
 
 
   checkmate::assertLogical(optExpression, len=1, any.missing=FALSE)
@@ -99,6 +113,14 @@ pseudoOptimControl <- function(npop=NULL, # Number of elements in the pouplation
   checkmate::assertLogical(calcTables, len=1, any.missing=FALSE)
   checkmate::assertLogical(compress, len=1, any.missing=TRUE)
   checkmate::assertLogical(adjObf, len=1, any.missing=TRUE)
+  checkmate::assertLogical(indTolRelax, len=1, any.missing=FALSE)
+  eventSens <- match.arg(eventSens)
+  # the remaining-variation stopping rule follows `sigdig` the way the
+  # nlmixr2est optimizer tolerances do, keeping FME's 1e-8 at sigdig=4
+  if (is.null(varleft)) {
+    varleft <- if (is.null(sigdig)) 1e-8 else .sigdigScale(1e-8, sigdig)
+  }
+  checkmate::assertNumeric(varleft, len=1, lower=0, any.missing=FALSE)
 
   .xtra <- list(...)
   .bad <- names(.xtra)
@@ -113,33 +135,11 @@ pseudoOptimControl <- function(npop=NULL, # Number of elements in the pouplation
   checkmate::assertIntegerish(maxOdeRecalc, any.missing=FALSE, len=1)
   checkmate::assertNumeric(odeRecalcFactor, len=1, lower=1, any.missing=FALSE)
 
-  .genRxControl <- FALSE
-  if (!is.null(.xtra$genRxControl)) {
-    .genRxControl <- .xtra$genRxControl
-  }
-  if (is.null(rxControl)) {
-    if (!is.null(sigdig)) {
-      rxControl <- rxode2::rxControl(sigdig=sigdig)
-    } else {
-      rxControl <- rxode2::rxControl(atol=1e-4, rtol=1e-4)
-    }
-    .genRxControl <- TRUE
-  } else if (inherits(rxControl, "rxControl")) {
-  } else if (is.list(rxControl)) {
-    rxControl <- do.call(rxode2::rxControl, rxControl)
-  } else {
-    stop("solving options 'rxControl' needs to be generated from 'rxode2::rxControl'", call=FALSE)
-  }
-  if (!is.null(sigdig)) {
-    checkmate::assertNumeric(sigdig, lower=1, finite=TRUE, any.missing=TRUE, len=1)
-    if (is.null(sigdigTable)) {
-      sigdigTable <- round(sigdig)
-    }
-  }
-  if (is.null(sigdigTable)) {
-    sigdigTable <- 3
-  }
-  checkmate::assertIntegerish(sigdigTable, lower=1, len=1, any.missing=FALSE)
+  .rx <- .babelmixr2RxControlFromSigdig(rxControl, sigdig, .xtra$genRxControl)
+  rxControl <- .rx$rxControl
+  .genRxControl <- .rx$genRxControl
+
+  sigdigTable <- .babelmixr2SigdigTable(sigdigTable, sigdig)
 
   .iterPrintControl <- nlmixr2est::.absorbIterPrintControl(print = print,
                                                            printNcol = printNcol,
@@ -183,6 +183,8 @@ pseudoOptimControl <- function(npop=NULL, # Number of elements in the pouplation
     stickyRecalcN=as.integer(stickyRecalcN),
     maxOdeRecalc=as.integer(maxOdeRecalc),
     odeRecalcFactor=odeRecalcFactor,
+    indTolRelax=indTolRelax,
+    eventSens=eventSens,
 
     iterPrintControl=.iterPrintControl,
     scaleType=scaleType,
@@ -269,7 +271,9 @@ getValidNlmixrCtl.pseudoOptim <- function(control) {
                                 interaction=0L,
                                 compress=.pseudoOptimControl$compress,
                                 ci=.pseudoOptimControl$ci,
-                                sigdigTable=.pseudoOptimControl$sigdigTable)
+                                sigdigTable=.pseudoOptimControl$sigdigTable,
+                                indTolRelax=.pseudoOptimControl$indTolRelax,
+                                eventSens=.pseudoOptimControl$eventSens)
   if (assign) env$control <- .foceiControl
   .foceiControl
 }

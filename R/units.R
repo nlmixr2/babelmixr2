@@ -9,14 +9,16 @@
 #' @return The units specified with units that are in both the numerator and
 #'   denominator cancelled.
 #' @family Unit conversion
-#' @examples
+#' @examplesIf requireNamespace("units", quietly = TRUE)
 #' simplifyUnit("kg", "kg/mL")
 #' # units that don't match exactly are not cancelled
 #' simplifyUnit("kg", "g/mL")
 #' @export
 simplifyUnit <- function(numerator="", denominator="") {
-  checkmate::expect_character(numerator, len = 1)
-  checkmate::expect_character(denominator, len = 1)
+  # assert_*() (expect_*() are testthat expectations, needing testthat)
+  checkmate::assert_character(numerator, len = 1)
+  checkmate::assert_character(denominator, len = 1)
+  rxode2::rxReq("units")
   if (is.na(numerator)) numerator <- ""
   if (is.na(denominator)) denominator <- ""
   hasNumeratorInput <- nchar(numerator) > 0
@@ -75,7 +77,7 @@ simplifyUnit <- function(numerator="", denominator="") {
 #'   multiply the modeled estimate (for example, \code{cp}) so that the model is
 #'   consistent with the data units.
 #' @family Unit conversion
-#' @examples
+#' @examplesIf requireNamespace("units", quietly = TRUE)
 #' modelUnitConversion(dvu = "ng/mL", amtu = "mg", timeu = "hr", volumeu = "L")
 #' @export
 modelUnitConversion <- function(dvu = NA_character_, amtu = NA_character_, timeu = NA_character_, volumeu = NA_character_) {
@@ -83,6 +85,7 @@ modelUnitConversion <- function(dvu = NA_character_, amtu = NA_character_, timeu
   checkmate::assert_character(amtu, min.chars = 1, len = 1, null.ok = FALSE, any.missing = TRUE)
   checkmate::assert_character(timeu, min.chars = 1, len = 1, null.ok = FALSE, any.missing = TRUE)
   checkmate::assert_character(volumeu, min.chars = 1, len = 1, null.ok = FALSE, any.missing = TRUE)
+  rxode2::rxReq("units")
 
   dvuConversion <- 1
   dvuBase <- NA_character_

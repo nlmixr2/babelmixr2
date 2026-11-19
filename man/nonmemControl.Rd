@@ -7,6 +7,8 @@
 nonmemControl(
   est = c("focei", "imp", "its", "posthoc"),
   advanOde = c("advan13", "advan8", "advan6"),
+  linCmt = c("advan", "ode"),
+  prune = "auto",
   cov = c("r,s", "r", "s", ""),
   maxeval = 1e+05,
   tol = 6,
@@ -21,6 +23,7 @@ nonmemControl(
   runCommand = getOption("babelmixr2.nonmem", ""),
   iniSigDig = 5,
   protectZeros = FALSE,
+  protect = getOption("babelmixr2.nmProtect", TRUE),
   muRef = TRUE,
   addProp = c("combined2", "combined1"),
   rxControl = NULL,
@@ -49,11 +52,35 @@ nonmemControl(
 )
 }
 \arguments{
-\item{est}{NONMEM estimation method}
+\item{est}{NONMEM estimation method: \code{"focei"} (\code{METHOD=1
+INTER}), \code{"imp"} (importance sampling, \code{METHOD=IMP
+INTERACTION}), \code{"its"} (iterative two stage, \code{METHOD=ITS
+INTERACTION}) or \code{"posthoc"} (\code{METHOD=0 MAXEVALS=0
+POSTHOC})}
 
 \item{advanOde}{The ODE solving method for NONMEM}
 
-\item{cov}{The NONMEM covariance method}
+\item{linCmt}{How a \code{linCmt()} model is written for NONMEM:
+\code{"advan"} uses NONMEM's closed-form solutions
+(\code{ADVAN1}-\code{ADVAN4}, \code{ADVAN11} or \code{ADVAN12}
+with \code{TRANS1} micro-constants) when the model allows it and
+otherwise translates the model to ODEs; \code{"ode"} always
+translates the model to ODEs (with \code{rxode2::linToOde()}) and
+solves it with \code{advanOde}}
+
+\item{prune}{How \code{if}/\verb{else} statements are written for NONMEM:
+\code{"auto"} (default) writes a model whose \code{if} blocks are simple
+(no \verb{else}, \verb{else if}, nesting or \code{ifelse()}) as NONMEM \code{IF}
+blocks, and otherwise prunes the \code{if}/\verb{else} branches; \code{TRUE}
+always prunes a model with \code{if}/\verb{else} statements and \code{FALSE}
+never prunes (so NONMEM can only use simple \code{if} blocks).  Pruning
+uses \code{rxode2}'s branch pruning (the same pruning \code{nlmixr2} uses for
+its symbolic derivatives), which writes each branch as an
+arithmetic expression; this allows the nested \code{if}/\verb{else if}/\verb{else} statements NONMEM models cannot otherwise use.  A pruned
+fit contains the pruned model.}
+
+\item{cov}{The NONMEM covariance method; \code{""} skips the covariance
+step}
 
 \item{maxeval}{NONMEM's maxeval (for non posthoc methods)}
 
@@ -84,7 +111,17 @@ listing}
 and $OMEGA when the estimate is zero.  Also controls the zero
 protection numbers}
 
-\item{protectZeros}{Add methods to protect divide by zero}
+\item{protectZeros}{Add babelmixr2's own code to protect divide
+by zero (and the domains of \code{log()}, \code{sqrt()} and similar
+functions) in the control stream.  This is only used when
+\code{protect=FALSE} (for example with NONMEM before 7.4); with
+\code{protect=TRUE}, NONMEM's \verb{$ABBR PROTECT} protects these instead}
+
+\item{protect}{Add \verb{$ABBR PROTECT} to the control stream so NM-TRAN
+replaces \code{LOG}, \code{EXP}, \code{SQRT}, division and powers with NONMEM's
+protected functions (\code{PLOG}, \code{PEXP}, \code{PSQRT}, \code{PDZ}); this requires
+NONMEM 7.4 or later.  The default comes from the
+\code{babelmixr2.nmProtect} option, which is \code{TRUE} when unset}
 
 \item{muRef}{Automatically mu-reference the control stream}
 
@@ -101,9 +138,9 @@ due to an apparent failed optimization}
 
 \item{niter}{number of iterations in NONMEM estimation methods}
 
-\item{isample}{Isample argument for NONMEM ITS estimation method}
+\item{isample}{Isample argument for NONMEM IMP estimation method}
 
-\item{iaccept}{Iaccept for NONMEM ITS estimation methods}
+\item{iaccept}{Iaccept for NONMEM IMP estimation method}
 
 \item{iscaleMin}{parameter for IMP NONMEM method (ISCALE_MIN)}
 

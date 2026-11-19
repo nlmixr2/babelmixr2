@@ -33,7 +33,8 @@ initial estimates for vp, q, vp2, and q2}
 
 \item{dvParam}{The parameter name in the model that should be modified for
 concentration unit conversions.  It must be assigned on a line by itself,
-separate from the residual error model line.}
+separate from the residual error model line.  With \code{NULL}, the variable on
+the left of the residual error line is used.}
 
 \item{groups}{Grouping columns for NCA summaries by group (required if
 \code{sparse = TRUE})}
@@ -47,7 +48,8 @@ when a subset of the original data are informative for NCA.}
 
 \item{ncaResults}{Already computed NCA results (a PKNCAresults object) to
 bypass automatic calculations.  At least the following parameters must be
-calculated in the NCA: tmax, cmax.dn, cl.last}
+calculated in the NCA: cmax.dn, cl.last, and tmax (without tmax, ka is not
+updated)}
 
 \item{rxControl}{Control options sent to \code{rxode2::rxControl()}}
 }

@@ -26,7 +26,7 @@ rxUiGet.nonmemExportPath <- function(x, ...) {
   }
   .extra <- ""
   if (exists(".num", .ui)) {
-    .num <- get(".num", .num, .ui)
+    .num <- get(".num", envir=.ui)
   } else {
     .num <- rxode2::rxGetControl(.ui, ".modelNumber", 0)
   }

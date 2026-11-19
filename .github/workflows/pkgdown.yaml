@@ -21,6 +21,11 @@ name: pkgdown.yaml
 
 permissions: read-all
 
+# a new commit on a pull request cancels that pull request's earlier run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.issue.number || github.ref }}${{ ((github.event_name == 'pull_request_review' && !(github.event.review.state == 'approved' && contains(github.event.review.body, 'ready to be merged'))) || (github.event_name == 'issue_comment' && !(github.event.issue.pull_request && startsWith(github.event.comment.body, '/ci') && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))) && format('-noop-{0}', github.run_id) || '' }}
+  cancel-in-progress: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_review' || github.event_name == 'issue_comment') }}
+
 jobs:
   pkgdown:
     if: ((github.event_name != 'pull_request' && github.event_name != 'pull_request_review' && github.event_name != 'issue_comment') || github.event.action != 'edited' || github.event.changes.base) && ((github.event_name != 'pull_request_review' && github.event_name != 'issue_comment') || (github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && contains(github.event.review.body, 'ready to be merged') && contains(fromJSON('["main","master"]'), github.event.pull_request.base.ref)) || (github.event_name == 'issue_comment' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ci') && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
@@ -70,10 +75,12 @@ jobs:
             nlmixr2/lotri
             nlmixr2/dparser-R
             nlmixr2/rxode2ll
+            nlmixr2/rxode2lincmt
             nlmixr2/rxode2
             nlmixr2/nonmem2rx
             nlmixr2/monolix2rx
             nlmixr2/nlmixr2est
+            nlmixr2/nlmixr2
             nlmixr2/nlmixr2rpt
             mrgsolve
             PKPDsim

@@ -70,7 +70,13 @@ rxUiGet.nonmemFullTheta <- function(x, ...) {
   if (is.null(.ext$theta)) {
     stop('cannot locate NONMEM output', call.=FALSE)
   }
-  .ret <- setNames(.ext$theta, .getThetaNames(.ui))
+  .n <- .getThetaNames(.ui)
+  .theta <- .ext$theta
+  if (!exists("file", envir=.ui) && .nonmemHasPriors(.ui)) {
+    # NWPRI's own prior values are THETAs after the model's
+    .theta <- .theta[seq_along(.n)]
+  }
+  .ret <- setNames(.theta, .n)
   if (exists("file", envir=.ui)) {
     .iniDf <- .ui$iniDf
     # use same ordering of ui
@@ -122,6 +128,10 @@ rxUiGet.nonmemOutputOmega <- function(x, ...) {
   .n <- .getEtaNames(.ui)
   .ext <- rxUiGet.nonmemOutputLst(x, ...)
   .omega <- .ext$omega
+  if (!exists("file", envir=.ui) && .nonmemHasPriors(.ui)) {
+    # NWPRI's own prior variances are OMEGAs after the model's
+    .omega <- .omega[seq_along(.n), seq_along(.n), drop=FALSE]
+  }
   dimnames(.omega) <- list(.n, .n)
   if (exists("file", envir=.ui)) {
     # here we are unsure of the eta name order since it could have
@@ -173,14 +183,27 @@ rxUiGet.nonmemEtaObf <- function(x, ...) {
 }
 attr(rxUiGet.nonmemEtaObf, "rstudio") <- NA
 
-.getNonmemOrderNames <- function(ui) {
+.getNonmemOrderNames <- function(ui, cols=NULL) {
   .t <- .getThetaNames(ui)
   .s <- "_sigma"
   .e0 <- .getEtaNames(ui)
+  if (!is.null(cols) && !exists("file", envir=ui) && .nonmemHasPriors(ui)) {
+    # NWPRI's own prior values are THETAs and OMEGAs after the model's;
+    # name them so they are never mistaken for model parameters
+    .nt <- sum(grepl("^THETA", cols))
+    if (.nt > length(.t)) {
+      .t <- c(.t, paste0("_nwpri_theta", seq_len(.nt - length(.t))))
+    }
+    .no <- sum(grepl("^OMEGA", cols))
+    .ne <- round((sqrt(1 + 8 * .no) - 1) / 2)
+    if (.ne > length(.e0)) {
+      .e0 <- c(.e0, paste0("_nwpri_eta", seq_len(.ne - length(.e0))))
+    }
+  }
   .ef <- NULL
   .iniDf <- ui$iniDf
   for (.i in seq_along(.e0)) {
-    for (.j in seq(1, .i)) {
+    for (.j in seq_len(.i)) {
       if (.i == .j) {
         .ef <- c(.ef, .e0[.i])
       } else {
@@ -206,7 +229,7 @@ rxUiGet.nonmemCovariance <- function(x, ...) {
     if (!file.exists(file.path(.exportPath, .covFile))) return(NULL)
     .ret <- as.matrix(withr::with_dir(.exportPath,
                                       nonmem2rx::nmcov(.covFile)))
-    .d <- .getNonmemOrderNames(.ui)
+    .d <- .getNonmemOrderNames(.ui, colnames(.ret))
     dimnames(.ret) <- list(.d, .d)
     .t <- .getThetaNames(.ui)
     .ret[.t, .t]
@@ -229,9 +252,13 @@ rxUiGet.nonmemParHistory <- function(x, ...) {
   .ret <- withr::with_dir(.exportPath,
                           nonmem2rx::nmtab(.ext))
   .ret <- .ret[.ret$NMREP ==1, names(.ret) != "NMREP"]
-  .d <- c("iter", .getNonmemOrderNames(.ui), "objf")
+  .d <- c("iter", .getNonmemOrderNames(.ui, names(.ret)), "objf")
   names(.ret) <- .d
   .ret <- .ret[.ret$iter > 0, names(.ret) != "_sigma"]
+  if (nrow(.ret) == 0L) {
+    # no iterations (posthoc, MAXEVALS=0)
+    return(NULL)
+  }
   .n <- c("iter", .ui$iniDf$name, "objf")
   .ret <- .ret[, .n]
   .ret$type <- "Unscaled"
@@ -247,14 +274,20 @@ rxUiGet.nonmemObjfType <- function(x, ...) {
   }
   .est <- rxode2::rxGetControl(.ui, "est", "focei")
   if (.est %in% c("focei", "posthoc")) {
-    return("nonmem focei")
+    .ret <- ifelse(.nonmemHasCens(.ui), "nonmem laplace", "nonmem focei")
   } else if (.est %in% "imp") {
-    return("nonmem imp")
+    .ret <- "nonmem imp"
   } else if (.est %in% "its") {
-    return("nonmem its")
+    .ret <- "nonmem its"
   } else {
     stop("unknown objective type", call.=FALSE)
   }
+  if (.nonmemHasPriors(.ui)) {
+    # NONMEM's objective function includes the NWPRI prior, so it is
+    # not comparable to one without it
+    .ret <- paste(.ret, "nwpri")
+  }
+  .ret
 }
 attr(rxUiGet.nonmemObjfType, "rstudio") <- "nonmemObjfType"
 
@@ -327,16 +360,99 @@ attr(rxUiGet.nonmemTermMessage, "rstudio") <- "nonmemTermMessage"
 #' @export
 rxUiGet.nonmemSuccessful <- function(x, ...) {
   .term <- rxUiGet.nonmemTermMessage(x, ...)
-  (regexpr("0MINIMIZATION SUCCESSFUL", .term) != -1)
+  if (is.null(.term)) {
+    return(FALSE)
+  }
+  if (all(is.na(.term))) {
+    # MAXEVALS=0 (posthoc) has no #TERM: block; NONMEM finished if it
+    # wrote its output
+    return(identical(rxode2::rxGetControl(x[[1]], "est", "focei"), "posthoc"))
+  }
+  .term <- .term[!is.na(.term)]
+  # IMP/ITS finish with "OPTIMIZATION WAS NOT TESTED FOR CONVERGENCE"
+  # (no convergence test requested) or "OPTIMIZATION WAS COMPLETED"
+  .ok <- paste0(
+    "0MINIMIZATION SUCCESSFUL|",
+    "OPTIMIZATION WAS (NOT TESTED FOR CONVERGENCE|COMPLETED)"
+  )
+  any(regexpr(.ok, .term) != -1)
 }
 attr(rxUiGet.nonmemSuccessful, "rstudio") <- "nonmemSuccessful"
 
 #' @export
 rxUiGet.nonmemRoundingErrors <- function(x, ...) {
   .term <- rxUiGet.nonmemTermMessage(x, ...)
-  (regexpr("DUE TO ROUNDING ERRORS", .term) != -1)
+  if (is.null(.term)) {
+    return(FALSE)
+  }
+  any(regexpr("DUE TO ROUNDING ERRORS", .term) != -1)
 }
 attr(rxUiGet.nonmemRoundingErrors, "rstudio") <- "nonmemRoundingErrors"
+
+#' Rows NONMEM treats as a likelihood (`F_FLAG=1`)
+#'
+#' NONMEM's `PRED` is the likelihood for these rows (not the
+#' population prediction), so they cannot be compared to nlmixr2's
+#' `PRED`
+#'
+#' @param fit nlmixr2 fit
+#' @return `RXROW` values of the censored or limited observations
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemFlagRows <- function(fit) {
+  if (!exists("nonmemData", envir = fit$env)) {
+    return(integer(0))
+  }
+  .d <- get("nonmemData", envir = fit$env)
+  if (!any(names(.d) == "CENS")) {
+    return(integer(0))
+  }
+  .flag <- .d$CENS != 0
+  if (any(names(.d) == "LIMIT")) {
+    .flag <- .flag | abs(.d$LIMIT) < 1000000
+  }
+  .d$nlmixrRowNums[.d$EVID == 0 & .flag]
+}
+
+#' Undo the residual transformation of NONMEM's predictions
+#'
+#' With a transformed residual error (like `lnorm()` or `boxCox()`)
+#' NONMEM's `IPRED`/`PRED` are on the transformed scale; nlmixr2's are
+#' not.
+#'
+#' @param x NONMEM `IPRED` or `PRED`
+#' @param endpoint endpoint (`predDf$cond`) of each value; `NULL` when
+#'   there is one endpoint
+#' @param ui final model (with the estimated transformation parameters)
+#' @return `x` on the untransformed scale
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemUntransformPred <- function(x, endpoint, ui) {
+  .predDf <- ui$predDf
+  .lambda <- .bblGetLambda(ui)$lambda
+  for (.i in seq_along(.predDf$cond)) {
+    .w <- if (is.null(endpoint)) {
+      seq_along(x)
+    } else {
+      which(endpoint == .predDf$cond[.i])
+    }
+    .x <- x[.w]
+    x[.w] <- switch(
+      paste(.predDf$transform[.i]),
+      "lnorm" = exp(.x),
+      "boxCox" = rxode2::boxCoxInv(.x, .lambda[.i]),
+      "yeoJohnson" = rxode2::yeoJohnsonInv(.x, .lambda[.i]),
+      "logit" = rxode2::expit(.x, .predDf$trLow[.i], .predDf$trHi[.i]),
+      "logit + yeoJohnson" = rxode2::expit(
+        rxode2::yeoJohnsonInv(.x, .lambda[.i]),
+        .predDf$trLow[.i],
+        .predDf$trHi[.i]
+      ),
+      .x
+    )
+  }
+  x
+}
 
 .nonmemMergePredsAndCalcRelativeErr <- function(fit) {
   .np <- fit$ui$nonmemPreds
@@ -350,6 +466,14 @@ attr(rxUiGet.nonmemRoundingErrors, "rstudio") <- "nonmemRoundingErrors"
   .tmp$RXROW <- fit$env$.rownum
   .by <- c("ID", "TIME", "RXROW")
   .ret <- merge(.np, .tmp, by=.by)
+  .ret$nonmemPRED[.ret$RXROW %in% .nonmemFlagRows(fit)] <- NA_real_
+  if (any(fit$ui$predDf$transform != "untransformed")) {
+    .endpoint <- if (length(fit$ui$predDf$cond) == 1L) NULL else paste(.ret$CMT)
+    .ret$nonmemIPRED <- .nonmemUntransformPred(.ret$nonmemIPRED, .endpoint,
+                                               fit$ui)
+    .ret$nonmemPRED <- .nonmemUntransformPred(.ret$nonmemPRED, .endpoint,
+                                              fit$ui)
+  }
   .ci0 <- fit$nonmemControl$ci
   .ci <- (1 - .ci0) / 2
   .q <- c(0, .ci, 0.5, 1 - .ci, 1)

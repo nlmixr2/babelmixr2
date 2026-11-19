@@ -30,7 +30,7 @@ jobs:
       matrix:
         # Must match the number of entries in `.slowBatches` in
         # tests/testthat.R.
-        batch: [1, 2]
+        batch: [1, 2, 3]
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -58,11 +58,11 @@ jobs:
             nlmixr2/dparser-R
             nlmixr2/lotri
             nlmixr2/rxode2ll
+            nlmixr2/rxode2lincmt
             nlmixr2/rxode2
             nlmixr2/nlmixr2est
             nlmixr2/nlmixr2extra
             nlmixr2/nlmixr2plot
-            nlmixr2/nlmixr2
             nlmixr2/nonmem2rx
             nlmixr2/monolix2rx
             lixoftConnectors=?ignore

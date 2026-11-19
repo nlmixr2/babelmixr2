@@ -60,9 +60,8 @@ rxUiGet.monolixParHistory <- function(x, ...) {
   if (!is.null(.raw)) {
     .ui <- x[[1]]
     .iniDf <- .ui$iniDf
-    .split <- .ui$getSplitMuModel
-    .muRef <- c(.split$pureMuRef, .split$taintMuRef)
-    .muRefCurEval <- .ui$muRefCurEval
+    .muRef <- .monolixMuRef(.ui)
+    .muRefCurEval <- .monolixMuRefCurEval(.ui)
     .eta <- .iniDf[is.na(.iniDf$ntheta), ]
     .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
     .r <- .getOmegaR(.ui)
@@ -132,9 +131,8 @@ rxUiGet.monolixOmega <- function(x, ...) {
   .pop <- rxUiGet.monolixPopulationParameters(x, ...)
   if (is.null(.pop)) return(NULL)
   .iniDf <- .ui$iniDf
-  .split <- .ui$getSplitMuModel
-  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
-  .muRefCurEval <- .ui$muRefCurEval
+  .muRef <- .monolixMuRef(.ui)
+  .muRefCurEval <- .monolixMuRefCurEval(.ui)
   .eta <- .iniDf[is.na(.iniDf$ntheta), ]
   .r <- .getOmegaR(.ui)
   for (.i in seq_along(.eta$name)) {
@@ -176,11 +174,27 @@ rxUiGet.monolixOmega <- function(x, ...) {
 }
 attr(rxUiGet.monolixOmega, "rstudio") <- lotri::lotri(a~0.1)
 
+#' Monolix name of an nlmixr2 population parameter
+#'
+#' @param name nlmixr2 theta name
+#' @param muRef mu-referenced theta to Monolix variable names
+#' @param covDataFrame mu-referenced covariate data frame
+#' @return `beta_<var>_<covariate>` for a mu-referenced covariate effect,
+#'   otherwise `<var>_pop`
+#' @noRd
+.monolixPopParName <- function(name, muRef, covDataFrame) {
+  .w <- which(covDataFrame$covariateParameter == name)
+  if (length(.w) == 1) {
+    return(paste0("beta_", muRef[covDataFrame$theta[.w]], "_",
+                  covDataFrame$covariate[.w]))
+  }
+  paste0(muRef[name], "_pop")
+}
+
 .monolixGetPopParValue <- function(name, muRefCurEval, muRef, covDataFrame, pop) {
   .w <- which(covDataFrame$covariateParameter == name)
   if (length(.w) == 1) {
-    .par <- paste0("beta_", muRef[covDataFrame$theta[.w]], "_",
-                   covDataFrame$covariate[.w])
+    .par <- .monolixPopParName(name, muRef, covDataFrame)
     .w <- which(pop$parameter == .par)
     if (length(.w) != 1) return(NA_real_)
     return(pop$value[.w])
@@ -228,9 +242,8 @@ rxUiGet.monolixFullTheta <- function(x, ...) {
   if (is.null(.pop)) return(NULL)
   .iniDf <- .ui$iniDf
   .theta <- .iniDf[!is.na(.iniDf$ntheta), ]
-  .muRefCurEval <- .ui$muRefCurEval
-  .split <- .ui$getSplitMuModel
-  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  .muRefCurEval <- .monolixMuRefCurEval(.ui)
+  .muRef <- .monolixMuRef(.ui)
   .covDataFrame <- .ui$saemMuRefCovariateDataFrame
   .fullTheta <- setNames(vapply(seq_along(.theta$name),
                                 function(i) {
@@ -342,10 +355,12 @@ rxUiGet.monolixEtaObf <- function(x, ...) {
   .ui <- x[[1]]
   .etas <- .ui$iniDf[!is.na(.ui$iniDf$neta1), ]
   .etas <- .etas[.etas$neta1 == .etas$neta2, ]
-  .split <- .ui$getSplitMuModel
-  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  .muRef <- .monolixMuRef(.ui)
   .etaMonolix <- rxUiGet.monolixIndividualParameters(x, ...)
   if (is.null(.etaMonolix)) return(NULL)
+  # the SAEM etas (posterior means from the last SAEM iterations), like
+  # nlmixr2est's own saem; the conditional mode (`_mode`) is the FOCEi
+  # family's kind of empirical Bayes estimate
   .n <- c("id", vapply(.etas$neta1, function(i) {
     paste0("eta_",   .mlxtranGetIndividualMuRefEtaMonolixName(.ui, i, .muRef), "_SAEM")
   }, character(1), USE.NAMES=FALSE))
@@ -446,19 +461,26 @@ rxUiGet.monolixCovarianceEstimatesSA <- function(x, ...) {
 rxUiGet.monolixCovariance <- function(x, ...) {
   .cov <- rxUiGet.monolixCovarianceEstimatesSA(x, ...)
   .ui <- x[[1]]
-  .split <- .ui$getSplitMuModel
-
-  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  .muRef <- .monolixMuRef(.ui)
   .sa <- TRUE
   if (is.null(.cov)) {
     .cov <- rxUiGet.monolixCovarianceEstimatesLin(x, ...)
     .sa <- FALSE
   }
   .j <- rxUiGet.monolixJacobian(x, ...)
-  .n <- vapply(dimnames(.j)[[1]], function(n){
-    paste0(.muRef[n], "_pop")
-  }, character(1), USE.NAMES=FALSE)
-  .cov <- .cov[.n, .n]
+  # a covariate effect is beta_<var>_<covariate>, not <var>_pop
+  .covDataFrame <- .ui$saemMuRefCovariateDataFrame
+  .n <- vapply(dimnames(.j)[[1]], .monolixPopParName, character(1),
+               muRef=.muRef, covDataFrame=.covDataFrame, USE.NAMES=FALSE)
+  # Monolix's covariance has only the estimated parameters (not fixed
+  # ones like `tfdepot <- fix(0.8)`)
+  .keep <- .n %in% dimnames(.cov)[[1]]
+  .j <- .j[.keep, .keep, drop = FALSE]
+  .n <- .n[.keep]
+  .cov <- .cov[.n, .n, drop = FALSE]
+  # nlmixr2's parameter names whichever Monolix version wrote the matrix
+  # (only the pre-2020/2021 conversion below used to rename it)
+  dimnames(.cov) <- dimnames(.j)
   .ui <- x[[1]]
   rxode2::rxAssignControlValue(.ui, ".covMethod", ifelse(.sa, "MonolixSA", "MonolixLin"))
   if (.monolixCovarianceNeedsConversion(x, .sa)) {
@@ -514,7 +536,7 @@ rxUiGet.monolixPreds <- function(x, ...) {
     if (length(.predDf$var) > 1) {
       do.call("rbind", lapply(seq_along(.predDf$var),
                               function(i) {
-                                .var <- .predDf$var[i]
+                                .var <- .monolixVar(.predDf$var[i])
                                 .file <- file.path(.exportPath,
                                                    paste0("predictions_rx_prd_", .var, ".txt"))
                                 .monolixWaitForFile(.file)
@@ -526,7 +548,7 @@ rxUiGet.monolixPreds <- function(x, ...) {
                                 .ret
                               }))
     } else {
-      .var <- .predDf$var
+      .var <- .monolixVar(.predDf$var)
       .file <- file.path(.exportPath,"predictions.txt")
       .monolixWaitForFile(.file)
       .ret <- read.csv(.file)
@@ -549,12 +571,14 @@ rxUiGet.monolixPreds <- function(x, ...) {
     .tmp$CMT <- paste(.tmp$CMT)
   }
   .ret <- merge(fit$ui$monolixPreds, .tmp, by=.by)
+  # the same (SAEM) individual estimates the fit's etas came from
+  .ipred <- .ret$indivPred_SAEM
   .ci <- (1 - fit$monolixControl$ci) / 2
   .q <- c(0, .ci, 0.5, 1 - .ci, 1)
-  .qi <- stats::quantile(with(.ret, 100*abs((IPRED-indivPred_SAEM)/indivPred_SAEM)), .q, na.rm=TRUE)
+  .qi <- stats::quantile(100*abs((.ret$IPRED - .ipred)/.ipred), .q, na.rm=TRUE)
   .qp <- stats::quantile(with(.ret, 100*abs((PRED-popPred)/popPred)), .q, na.rm=TRUE)
-  .qai <- stats::quantile(with(.ret, abs(IPRED-indivPred_SAEM)), .q, na.rm=TRUE)
-  .qap <- stats::quantile(with(.ret, abs((PRED-popPred)/popPred)), .q, na.rm=TRUE)
+  .qai <- stats::quantile(abs(.ret$IPRED - .ipred), .q, na.rm=TRUE)
+  .qap <- stats::quantile(with(.ret, abs(PRED-popPred)), .q, na.rm=TRUE)
   .sigdig <- 3
   .msg <- c(paste0("IPRED relative difference compared to Monolix IPRED: ", round(.qi[3], 2),
                  "%; ", fit$monolixControl$ci * 100,"% percentile: (",
@@ -569,7 +593,7 @@ rxUiGet.monolixPreds <- function(x, ...) {
             paste0("PRED absolute difference compared to Monolix PRED: atol=",
                    signif(.qap[3], digits=.sigdig),
                    "; ", fit$monolixControl$ci * 100,"% percentile: (",
-                   signif(.qap[2], digits=.sigdig), ", ", signif(.qp[4], digits=.sigdig), ")"))
+                   signif(.qap[2], digits=.sigdig), ", ", signif(.qap[4], digits=.sigdig), ")"))
   list(individualRel=.qi , popRel=.qp,
        individualAbs=.qai, popAbs=.qap,
        message=.msg)

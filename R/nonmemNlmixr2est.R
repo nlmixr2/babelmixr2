@@ -17,6 +17,55 @@
   assign("control", .control, envir=.ui)
 }
 
+#' Keep the censoring columns NONMEM needs for the data
+#'
+#' The `CENS` and `LIMIT` columns are only kept when they change the
+#' likelihood of an observation.  A finite `LIMIT` without a `CENS`
+#' column gets a `CENS` column of zeros so the same `$ERROR` handles
+#' all of the censoring methods.
+#'
+#' @param data NONMEM data from `bblDatToNonmem()`
+#' @param ui rxode2 ui
+#' @return data with the `CENS` and `LIMIT` columns that are needed;
+#'   the number of observations with a likelihood (`F_FLAG=1`) is
+#'   stored in the `".nFlag"` control value
+#' @author Matthew L. Fidler
+#' @noRd
+.nonmemFormatCensData <- function(data, ui) {
+  .n <- names(data)
+  .obs <- data$EVID == 0
+  .cens <- rep(0, length(.obs))
+  if (any(.n == "CENS")) {
+    .cens <- data$CENS
+  }
+  .cens[is.na(.cens)] <- 0
+  .limit <- rep(FALSE, length(.obs))
+  if (any(.n == "LIMIT")) {
+    # this is the NONMEM value of infinity from bblDatToNonmem()
+    .limit <- !is.na(data$LIMIT) & abs(data$LIMIT) < 1000000
+  }
+  .censored <- .obs & .cens != 0
+  .hasLimit <- any(.obs & .limit)
+  if (!any(.censored) && !.hasLimit) {
+    rxode2::rxAssignControlValue(ui, ".nFlag", 0L)
+    return(data[, !(.n %in% c("CENS", "LIMIT"))])
+  }
+  if (any(ui$predDf$transform != "untransformed")) {
+    stop(
+      "censoring (CENS/LIMIT) is not supported with transformed ",
+      "endpoints in babelmixr2 NONMEM",
+      call. = FALSE
+    )
+  }
+  rxode2::rxAssignControlValue(ui, ".nFlag", sum(.censored | (.obs & .limit)))
+  data$CENS <- .cens
+  if (!.hasLimit) {
+    return(data[, names(data) != "LIMIT"])
+  }
+  .n <- setdiff(names(data), c("CENS", "LIMIT", "nlmixrRowNums"))
+  data[, c(.n, "CENS", "LIMIT", "nlmixrRowNums")]
+}
+
 .nonmemFormatData <- function(data, ui) {
   .ret <- data
   if (any(names(.ret) == "SS")) {
@@ -25,6 +74,7 @@
       .ret <- .ret[, !(names(.ret) %in% c("SS", "II"))]
     }
   }
+  .ret <- .nonmemFormatCensData(.ret, ui)
   .n <- names(.ret)
   rxode2::rxAssignControlValue(ui, ".hasRate", any(.n == "RATE"))
   rxode2::rxAssignControlValue(ui, ".hasCens", any(.n == "CENS"))
@@ -89,7 +139,11 @@
   #env$ofvType
   env$ofvType <- .ui$nonmemObjfType
   # Add parameter history
-  env$parHistData <- .ui$nonmemParHistory
+  # a posthoc run (MAXEVALS=0) has no parameter history
+  .parHist <- .ui$nonmemParHistory
+  if (!is.null(.parHist)) {
+    env$parHistData <- .parHist
+  }
   env$nobs <- .lastNobs
   env$nobs2<- .lastNobs
   # Run before converting to nonmemControl
@@ -97,6 +151,10 @@
   # When running the focei problem to create the nlmixr object, you also need a
   #  foceiControl object
   .nonmemControlToFoceiControl(env, TRUE)
+  # nlmixr2CreateOutputFromUi() may add its own objective (like FOCEi
+  # with tableControl(cwres=TRUE)) and switch env$ofvType to it, so keep
+  # the NONMEM objective type here (#94)
+  .ofvType <- env$ofvType
   env <- nlmixr2est::nlmixr2CreateOutputFromUi(env$ui, data=env$origData,
                                                control=env$control, table=env$table,
                                                env=env, est="nonmem")
@@ -119,7 +177,7 @@
   assign("time",
          cbind(.time, data.frame(NONMEM=.ui$nonmemRunTime)),
          .env)
-  nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .env$ofvType)
+  nlmixr2est::nlmixrAddObjectiveFunctionDataFrame(env, .tmp, .ofvType)
   env
 }
 
@@ -132,6 +190,13 @@
   .ret$nonmemControl <- .control
   .tmp  <- bblDatToNonmem(.ui, .data, table=env$table, rxControl=.control$rxControl, env=.ret)
   .ret$nonmemData <- .nonmemFormatData(.tmp, .ui)
+  # NONMEM's objective omits log(2*pi) for the normal observations
+  # (F_FLAG=0) but an observation with a likelihood (F_FLAG=1) is the
+  # full -2*log(Y).  Since the finalized objective adds log(2*pi) for
+  # every observation, remove it here for the F_FLAG=1 observations so
+  # logLik is the log-likelihood of the censored data
+  .ret$nmLikAdj <- .ret$nmLikAdj -
+    rxode2::rxGetControl(.ui, ".nFlag", 0L) * log(2 * pi)
   rxode2::rxAssignControlValue(.ui, ".cmtCnt", env$nmNcmt)
 
   # Now make sure time varying covariates are not considered
@@ -139,12 +204,12 @@
   .et <- rxode2::etTrans(.ret$dataSav, .ui$mv0, addCmt=TRUE)
   .nTv <- attr(class(.et), ".rxode2.lst")$nTv
   if (is.null(.nTv)) {
-    .tv <- names(.et)[-seq(1, 6)]
+    .tv <- names(.et)[-seq_len(6)]
     .nTv <- length(.tv)
   } else {
     .tv <- character(0)
     if (.nTv != 0) {
-      .tv <- names(.et)[-seq(1, 6)]
+      .tv <- names(.et)[-seq_len(6)]
     }
   }
   .muRefCovariateDataFrame <- .ui$muRefCovariateDataFrame
@@ -177,6 +242,8 @@
       } else {
         .num <- rxode2::rxGetControl(.ui, ".modelNumber", 0) + 1
         rxode2::rxAssignControlValue(.ui, ".modelNumber", .num)
+        # nonmemExportPath caches the number in the ui
+        assign(".num", .num, envir=.ui)
         .hashFile <- file.path(.ui$nonmemExportPath, .ui$nonmemHashFile)
       }
     }
@@ -189,6 +256,8 @@
   .contraFile <- file.path(.exportPath, .ui$nonmemContraName)
   .ccontraFile <- file.path(.exportPath, .ui$nonmemCcontraName)
   .qs <- file.path(.exportPath, .ui$nonmemQs)
+  # the files written, for as.nonmem()
+  .bblAsToolFiles$files <- c(nmctl=.nmctlFile, csv=.csv)
 
   .cachedFit <- .babelmixr2LoadFitCache(.qs)
   if (!is.null(.cachedFit)) {
@@ -213,11 +282,18 @@
     .minfo("only exported NONMEM control stream/data")
     return(invisible(.ui))
   }
+  .status <- NULL
   if (!file.exists(file.path(.exportPath, .ui$nonmemXml))) {
-    print(file.path(.exportPath, .ui$nonmemXml))
-    .nonmemRunner(ui=.ui)
+    .status <- .nonmemRunner(ui = .ui)
   }
-  .read <- .ui$nonmemSuccessful
+  .read <- tryCatch(.ui$nonmemSuccessful, error = function(e) {
+    .nonmemCheckRun(.ui, .status, readError = e)
+  })
+  if (!.read) {
+    # tell the user why NONMEM failed when it did not finish; a
+    # finished run that did not converge continues below
+    .nonmemCheckRun(.ui, .status)
+  }
   .readRounding <- rxode2::rxGetControl(.ui, "readRounding", FALSE)
   .roundingErrors <- .ui$nonmemRoundingErrors
   if (!.read && .roundingErrors && .readRounding) {
@@ -247,7 +323,8 @@
     stop("nonmem minimization not successful",
          call.=FALSE)
   }
-  .ret <- .nonmemFinalizeEnv(.ret, .ui)
+  .ret <- .nonmemFinalizeOrExplain(.ret, .ui, .status)
+  .nonmemWarnStatus(.status)
   if (inherits(.ret, "nlmixr2FitData")) {
     .msg <- .nonmemMergePredsAndCalcRelativeErr(.ret)
     .prderrPath <- file.path(.exportPath, "PRDERR")
@@ -276,12 +353,21 @@
 .nonmemRunner <- function(ui) {
   cmd <- rxode2::rxGetControl(ui, "runCommand", "")
   if (is.character(cmd)) {
+    if (cmd == "") {
+      .nonmemRunCommandUnset(ui)
+    }
     cmd <- .nonmemRunCommand
   } else if (!is.function(cmd)) {
-    stop("invalid value for nonmemControl(runCommand=)",
-         call.=FALSE)
+    stop("invalid value for nonmemControl(runCommand=)", call. = FALSE)
   }
-  cmd(ctl=ui$nonmemNmctl, directory=ui$nonmemExportPath, ui=ui)
+  # only once NONMEM will run, so output from running it manually is
+  # kept when it cannot
+  .nonmemRemoveOldOutput(ui)
+  .status <- cmd(ctl = ui$nonmemNmctl, directory = ui$nonmemExportPath, ui = ui)
+  if (identical(cmd, .nonmemRunCommand)) {
+    return(.status)
+  }
+  # the exit status is unknown for a user function
   NULL
 }
 
@@ -292,8 +378,17 @@
     .minfo(paste0("run NONMEM: ", fullCmd))
     withr::with_dir(ui$nonmemExportPath, system(fullCmd))
   } else {
-    stop("run NONMEM manually and rerun nlmixr() or setup NONMEM's run command")
+    .nonmemRunCommandUnset(ui)
   }
+}
+
+.nonmemRunCommandUnset <- function(ui) {
+  stop(
+    "NONMEM's run command is not set; set nonmemControl(runCommand=) (for example to the path of 'nmfe75'), or run NONMEM manually in '",
+    ui$nonmemExportPath,
+    "' and rerun nlmixr()",
+    call. = FALSE
+  )
 }
 
 #' @export
@@ -301,8 +396,26 @@ nlmixr2Est.nonmem <- function(env, ...) {
   .ui <- env$ui
   rxode2::assertRxUiTransformNormal(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
+  # without random effects NONMEM treats the data as single-subject
+  # data, where METHOD=COND is invalid
+  rxode2::assertRxUiMixedOnly(.ui, " for the estimation routine 'nonmem'",
+                              .var.name = .ui$modelName)
   rxode2::assertRxUiEstimatedResiduals(.ui, " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
+  # the residual transformations babelmixr2 can write for NONMEM
+  rxode2::assertRxUiTransform(.ui, c("untransformed", "boxCox", "yeoJohnson", "lnorm",
+                                     "logit", "logit + yeoJohnson"),
+                              " for the estimation routine 'nonmem'", .var.name=.ui$modelName)
+  # refuse a prior NWPRI cannot express before anything is written
+  .nonmemPriorSpec(.ui)
+  # linCmt() is written as NONMEM's closed-form ADVAN or as ODEs
+  .micro <- .bblLinCmtToOde(env, "NONMEM",
+                            native=(.bblLinCmtControl(env$control, "advan") == "advan"))
+  # nested if/else branches are pruned (written as arithmetic), as
+  # set by the prune option of nonmemControl
+  if (.bblPruneControl(env, nested = FALSE)) .bblPruneIf(env, "NONMEM")
+  .ui <- env$ui
   .nonmemFamilyControl(env, ...)
+  rxode2::rxAssignControlValue(.ui, ".linCmtMicro", .micro)
   on.exit({
     if (exists("control", envir=.ui)) {
       rm("control", envir=.ui)
@@ -312,6 +425,8 @@ nlmixr2Est.nonmem <- function(env, ...) {
 }
 attr(nlmixr2Est.nonmem, "covPresent") <- TRUE
 attr(nlmixr2Est.nonmem, "type") <- "External"
+# normal priors and omega degrees of freedom, through $PRIOR NWPRI
+attr(nlmixr2Est.nonmem, "nlmixr2Priors") <- "nwpri"
 attr(nlmixr2Est.nonmem, "description") <- "NONMEM (external software)"
 attr(nlmixr2Est.nonmem, "mu") <- function(control) {
   isTRUE(control$muRefCovAlg)

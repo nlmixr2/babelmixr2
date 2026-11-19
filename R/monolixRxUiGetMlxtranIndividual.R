@@ -5,7 +5,7 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .mlxTranCurEvalToDistribution <- function(curEval) {
-  .ret <- switch(ifelse(curEval %in% c("", "*", "**", "/", "^", "+", "-"),
+  .ret <- switch(ifelse(curEval %in% c("", "*", "**", "/", "^", "+", "-", "("),
                         "add", curEval),
                  exp="logNormal",
                  expit="logitNormal",
@@ -13,7 +13,8 @@
                  add="normal",
                  NA_character_)
   if (is.na(.ret))
-    stop(paste0("monolix translation of '", curEval, "' is unknown"),
+    stop(paste0("monolix does not support the parameter transformation '", curEval,
+                "' (supported: exp(), expit(), probitInv() and linear)"),
          call.=FALSE)
   paste0("distribution=", .ret)
 }
@@ -72,8 +73,10 @@
   if (length(.covs$covariate) == 0) return(NULL)
   .cov <- paste0("covariate = {", paste(.covs$covariate, collapse=", "), "}")
   .coef <- paste0("beta_", var, "_", .covs$covariate)
+  # Monolix needs the covariates themselves as [INDIVIDUAL] inputs too,
+  # otherwise it stops with "Undefined variable"
   assignInMyNamespace(".mlxTranInputForIndividual",
-                      c(.mlxTranInputForIndividual, .coef))
+                      unique(c(.mlxTranInputForIndividual, .covs$covariate, .coef)))
   .coef <- paste0("coefficient = {", paste(.coef, collapse=", "), "}")
   c(.cov, .coef)
 }
@@ -173,14 +176,13 @@
 #' @export
 rxUiGet.mlxtranModelIndividual <- function(x, ...) {
   .ui <- x[[1]]
-  .split <- .ui$getSplitMuModel
-  .muRef <- c(.split$pureMuRef, .split$taintMuRef)
+  .muRef <- .monolixMuRef(.ui)
   assignInMyNamespace(".mlxTranInputForIndividual", NULL)
   .muRefCov <- .ui$saemMuRefCovariateDataFrame
   .def <- vapply(seq_along(.muRef), function(.i){
     .est <- names(.muRef)[.i]
     .var <- setNames(.muRef[.i], NULL)
-    .mlxtranIndividualDef(.var, .est, .ui$muRefCurEval, .ui$muRefTable, .muRefCov)
+    .mlxtranIndividualDef(.var, .est, .monolixMuRefCurEval(.ui), .ui$muRefTable, .muRefCov)
   }, character(1), USE.NAMES=FALSE)
   .def <- paste(.def, collapse="\n")
   .cor <- .mlxtranIndividualCor(.ui, .muRef)

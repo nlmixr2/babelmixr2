@@ -92,9 +92,9 @@ test_that("warfarin NONMEM reading", {
     # In addition to dropping the problematic parameters, this will
     # restart the fit at the final initial estimates
 
-    f2 <- f %>% model(ktr <- exp(tktr)) %>%
-      model(ka <- exp(tka)) %>%
-      model(emax = expit(temax)) %>%
+    f2 <- f |> model(ktr <- exp(tktr)) |>
+      model(ka <- exp(tka)) |>
+      model(emax = expit(temax)) |>
       .nlmixr(data=nlmixr2data::warfarin, est="nonmem",
              control=nonmemControl(readRounding=FALSE,
                                    modelName="pk.turnover.emax4")) ->
@@ -134,6 +134,92 @@ test_that("pheno NONMEM reading", {
     f <- .nlmixr(pheno, nlmixr2data::pheno_sd, "nonmem",
                          control=nonmemControl(modelName="pheno"))
     expect_true(inherits(f, "nlmixr2FitData"))
+  })
+})
+
+test_that("pheno NONMEM reading with tableControl(cwres=TRUE) (#94)", {
+  pheno <- function() {
+    ini({
+      tcl <- log(0.008)
+      tv <- log(0.6)
+      eta.cl + eta.v ~ c(1, 0.01, 1)
+      add.err <- 0.1
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      ke <- cl / v
+      d/dt(A1) <- -ke * A1
+      cp <- A1 / v
+      cp ~ add(add.err)
+    })
+  }
+
+  skip_if_not(file.exists("pheno-nonmem.zip"))
+  .path <- normalizePath("pheno-nonmem.zip")
+  withr::with_tempdir({
+    unzip(.path)
+    f <- .nlmixr(
+      pheno,
+      nlmixr2data::pheno_sd,
+      "nonmem",
+      control = nonmemControl(modelName = "pheno"),
+      table = tableControl(cwres = TRUE)
+    )
+    expect_true(inherits(f, "nlmixr2FitData"))
+    expect_true(all(c("CWRES", "WRES") %in% names(f)))
+    # both the NONMEM and nlmixr2's FOCEi objective are kept, with the
+    # NONMEM objective still the one in use
+    expect_setequal(row.names(f$objDf), c("nonmem focei", "FOCEi"))
+    expect_equal(f$ofvType, "nonmem focei")
+    expect_equal(f$objective, f$objDf["nonmem focei", "OBJF"])
+    expect_equal(AIC(f), f$objDf["nonmem focei", "AIC"])
+    expect_equal(BIC(f), f$objDf["nonmem focei", "BIC"])
+    expect_equal(
+      as.numeric(logLik(f)),
+      f$objDf["nonmem focei", "Log-likelihood"]
+    )
+    expect_equal(
+      f$objDf["FOCEi", "OBJF"],
+      f$objDf["nonmem focei", "OBJF"],
+      tolerance = 1e-4
+    )
+  })
+})
+
+test_that("pheno NONMEM reading with NWPRI priors (#205)", {
+
+  pheno <- function() {
+    ini({
+      tcl <- log(0.008)
+      tv <-  log(0.6)
+      eta.cl + eta.v ~ c(1,
+                         0.01, 1)
+      add.err <- 0.1
+      prior(tcl) ~ dnorm(-4.8, 1)
+      prior(eta.cl, eta.v) ~ invWishart(10)
+    })
+    model({
+      cl <- exp(tcl + eta.cl)
+      v <- exp(tv + eta.v)
+      ke <- cl / v
+      d/dt(A1) = - ke * A1
+      cp = A1 / v
+      cp ~ add(add.err)
+    })
+  }
+
+  skip_if_not(file.exists("pheno-nonmem.zip"))
+  .path <- normalizePath("pheno-nonmem.zip")
+  withr::with_tempdir({
+    unzip(.path)
+    f <- .nlmixr(pheno, nlmixr2data::pheno_sd, "nonmem",
+                 control=nonmemControl(modelName="pheno"))
+    expect_true(inherits(f, "nlmixr2FitData"))
+    # NONMEM's objective includes the prior
+    expect_equal(row.names(f$objDf), "nonmem focei nwpri")
+    expect_equal(names(fixef(f)), c("tcl", "tv", "add.err"))
+    expect_equal(dimnames(f$omega), list(c("eta.cl", "eta.v"), c("eta.cl", "eta.v")))
   })
 })
 
@@ -211,10 +297,10 @@ test_that("wbc NONMEM reading", {
     expect_true(inherits(f, "nlmixr2FitData"))
 
     # One way to take care of this is by removing the 100% shrinkage etas:
-    f2 <-f %>%
-      model(SLOPU =  exp(log_SLOPU)) %>%
-      model(MTT =  exp(log_MTT)) %>%
-      .nlmixr2(., nlmixr2data::wbcSim, "nonmem",
+    f2 <- f |>
+      model(SLOPU =  exp(log_SLOPU)) |>
+      model(MTT =  exp(log_MTT)) |>
+      .nlmixr2(nlmixr2data::wbcSim, "nonmem",
               control=nonmemControl(modelName="wbc2"))
 
     expect_true(inherits(f, "nlmixr2FitData"))

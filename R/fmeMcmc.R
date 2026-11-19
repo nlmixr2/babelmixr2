@@ -6,8 +6,26 @@
 #'
 #' @inheritParams FME::modMCMC
 #'
+#' @param prior -2 * log(prior parameter probability), either a function
+#'   called as `prior(p)` with the parameter vector [FME::modMCMC()]
+#'   samples (which is the scaled space when `scaleType` rescales the
+#'   parameters), or `NULL` for a non-informative prior.  When the model
+#'   declares priors in its `ini({})` block (for example
+#'   `prior(tka) ~ dnorm(0, 10)`) this function is generated from them,
+#'   evaluated on the natural (unscaled) parameter scale, and `prior` must
+#'   be left `NULL`; supplying both is an error.
+#'
 #' @param returnFmeMcmc return the fmeMcmc output instead of the nlmixr2
 #'   fit
+#'
+#' @param indTolRelax when `TRUE` (default) a subject whose ODE solve had to
+#'   be retried with a relaxed tolerance keeps that relaxed tolerance for the
+#'   rest of the fit instead of resetting it every evaluation
+#'
+#' @param eventSens method used for the dosing-parameter (alag/F/rate/dur)
+#'   sensitivities: `"jump"` routes them through rxode2's analytic event
+#'   jumps; `"fd"` falls back to Shi2021 finite differences.  See
+#'   [nlmixr2est::nlmControl()].
 #'
 #' @param seed an integer seed used for the mcmc chain.  The chain is
 #'   fully determined by this seed, so a fixed value makes the fit
@@ -77,6 +95,7 @@ fmeMcmcControl <- function(jump=NULL,
                            stickyRecalcN=4,
                            maxOdeRecalc=5,
                            odeRecalcFactor=10^(0.5),
+                           indTolRelax=TRUE,
 
                            useColor = NULL,
                            printNcol = NULL, #
@@ -96,7 +115,8 @@ fmeMcmcControl <- function(jump=NULL,
                            addProp = c("combined2", "combined1"),
                            calcTables=TRUE, compress=TRUE,
                            covMethod=c("mcmc", "r", ""),
-                           adjObf=TRUE, ci=0.95, sigdig=4, sigdigTable=NULL, ...) {
+                           adjObf=TRUE, ci=0.95, sigdig=4, sigdigTable=NULL,
+                           eventSens=c("jump", "fd"), ...) {
 
 
   checkmate::assertLogical(optExpression, len=1, any.missing=FALSE)
@@ -107,6 +127,8 @@ fmeMcmcControl <- function(jump=NULL,
   checkmate::assertLogical(calcTables, len=1, any.missing=FALSE)
   checkmate::assertLogical(compress, len=1, any.missing=TRUE)
   checkmate::assertLogical(adjObf, len=1, any.missing=TRUE)
+  checkmate::assertLogical(indTolRelax, len=1, any.missing=FALSE)
+  eventSens <- match.arg(eventSens)
 
   .xtra <- list(...)
   .bad <- names(.xtra)
@@ -122,33 +144,11 @@ fmeMcmcControl <- function(jump=NULL,
   checkmate::assertIntegerish(maxOdeRecalc, any.missing=FALSE, len=1)
   checkmate::assertNumeric(odeRecalcFactor, len=1, lower=1, any.missing=FALSE)
 
-  .genRxControl <- FALSE
-  if (!is.null(.xtra$genRxControl)) {
-    .genRxControl <- .xtra$genRxControl
-  }
-  if (is.null(rxControl)) {
-    if (!is.null(sigdig)) {
-      rxControl <- rxode2::rxControl(sigdig=sigdig)
-    } else {
-      rxControl <- rxode2::rxControl(atol=1e-4, rtol=1e-4)
-    }
-    .genRxControl <- TRUE
-  } else if (inherits(rxControl, "rxControl")) {
-  } else if (is.list(rxControl)) {
-    rxControl <- do.call(rxode2::rxControl, rxControl)
-  } else {
-    stop("solving options 'rxControl' needs to be generated from 'rxode2::rxControl'", call=FALSE)
-  }
-  if (!is.null(sigdig)) {
-    checkmate::assertNumeric(sigdig, lower=1, finite=TRUE, any.missing=TRUE, len=1)
-    if (is.null(sigdigTable)) {
-      sigdigTable <- round(sigdig)
-    }
-  }
-  if (is.null(sigdigTable)) {
-    sigdigTable <- 3
-  }
-  checkmate::assertIntegerish(sigdigTable, lower=1, len=1, any.missing=FALSE)
+  .rx <- .babelmixr2RxControlFromSigdig(rxControl, sigdig, .xtra$genRxControl)
+  rxControl <- .rx$rxControl
+  .genRxControl <- .rx$genRxControl
+
+  sigdigTable <- .babelmixr2SigdigTable(sigdigTable, sigdig)
 
   .iterPrintControl <- nlmixr2est::.absorbIterPrintControl(print = print,
                                                            printNcol = printNcol,
@@ -198,6 +198,8 @@ fmeMcmcControl <- function(jump=NULL,
     stickyRecalcN=as.integer(stickyRecalcN),
     maxOdeRecalc=as.integer(maxOdeRecalc),
     odeRecalcFactor=odeRecalcFactor,
+    indTolRelax=indTolRelax,
+    eventSens=eventSens,
 
     iterPrintControl=.iterPrintControl,
     scaleType=scaleType,
@@ -284,7 +286,9 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
                                 interaction=0L,
                                 compress=.fmeMcmcControl$compress,
                                 ci=.fmeMcmcControl$ci,
-                                sigdigTable=.fmeMcmcControl$sigdigTable)
+                                sigdigTable=.fmeMcmcControl$sigdigTable,
+                                indTolRelax=.fmeMcmcControl$indTolRelax,
+                                eventSens=.fmeMcmcControl$eventSens)
   if (assign) env$control <- .foceiControl
   .foceiControl
 }
@@ -301,6 +305,90 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
 .fmeMcmcF <- function(p) {
   # This returns -2* LL, as required from FME::modMCMC
   2*nlmixr2est::.nlmixrOptimFunC(p)
+}
+
+#' Does the model declare any `ini({})` priors?
+#'
+#' @param ui rxode2 ui
+#' @return logical
+#' @noRd
+#' @author Matthew L. Fidler
+.fmeMcmcHasIniPriors <- function(ui) {
+  .iniDf <- ui$iniDf
+  any(names(.iniDf) == "prior") && any(!is.na(.iniDf$prior))
+}
+
+#' Refuse a model that declares `ini({})` priors when `fmeMcmcControl(prior=)`
+#' is also supplied
+#'
+#' Silently preferring one over the other would sample a posterior the user
+#' did not ask for.
+#'
+#' @param ui rxode2 ui
+#' @param prior the user-supplied `fmeMcmcControl(prior=)`
+#' @return nothing, called for the error
+#' @noRd
+#' @author Matthew L. Fidler
+.fmeMcmcAssertOnePrior <- function(ui, prior) {
+  if (!is.null(prior) && .fmeMcmcHasIniPriors(ui)) {
+    stop("the model declares priors in `ini({})` and `fmeMcmcControl(prior=)` was also supplied;\n",
+         "use one or the other",
+         call.=FALSE)
+  }
+  invisible()
+}
+
+#' Build the `prior` function handed to `FME::modMCMC()`
+#'
+#' FME wants a function of the sampled parameter vector returning
+#' `-2*log(prior)`.  When the model declares priors in `ini({})` this is
+#' generated from them with `rxode2::rxPriorLogDensity()`, the same shared
+#' log-density kernel the other nlmixr2 estimation methods use.
+#'
+#' `FME::modMCMC()` samples the internal *scaled* parameter space, so every
+#' proposed vector is unscaled back to the natural scale before the prior is
+#' evaluated; a prior evaluated on the scaled vector would be a different
+#' prior than the one the model declares.  No Jacobian term is needed for
+#' that change of variables: every nlm scaling is a per-parameter affine map
+#' with constants fixed for the whole run, so its Jacobian is a constant that
+#' cancels in the Metropolis-Hastings acceptance ratio.
+#'
+#' @param ui rxode2 ui
+#' @param prior the user-supplied `fmeMcmcControl(prior=)`
+#' @param env the nlm environment from `nlmixr2est::.nlmSetupEnv()`
+#' @return a function for `FME::modMCMC(prior=)`, or `prior` itself when
+#'   the model declares no priors
+#' @noRd
+#' @author Matthew L. Fidler
+.fmeMcmcPrior <- function(ui, prior, env) {
+  if (!.fmeMcmcHasIniPriors(ui)) {
+    return(prior)
+  }
+  .fmeMcmcAssertOnePrior(ui, prior)
+  .ns <- asNamespace("rxode2")
+  if (!exists("rxPriorLogDensity", envir=.ns, inherits=FALSE)) {
+    stop("`ini({})` priors with est=\"fmeMcmc\" need a newer 'rxode2'",
+         call.=FALSE)
+  }
+  .logDensity <- get("rxPriorLogDensity", envir=.ns)
+  .unscalePar <- get("nlmUnscalePar", envir=asNamespace("nlmixr2est"))
+  # `p` holds only the estimated parameters; that is every parameter a prior
+  # can be on, since rxode2 refuses a prior on a `fix()`ed parameter.
+  .parNames <- env$thetaNames
+  .ui <- ui
+  .f <- function(p) {
+    .theta <- .unscalePar(setNames(p, .parNames))
+    -2 * .logDensity(.ui, theta=.theta)$value
+  }
+  # Evaluate once at the initial estimates: this validates the priors before
+  # any sampling starts, and a chain started where the prior has no density
+  # would never mix.
+  .p0 <- .f(env$par.ini)
+  if (!is.finite(.p0)) {
+    stop("the `ini({})` priors have no density at the initial estimates",
+         call.=FALSE)
+  }
+  .f
 }
 
 .fmeMcmcFitModel <- function(ui, dataSav) {
@@ -323,12 +411,13 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
   if (is.null(.ctl$covscale)) {
     .ctl$covscale <- 2.4^2 / length(.env$par.ini)
   }
+  .prior <- .fmeMcmcPrior(ui, .ctl$prior, .env)
   .mcmcCall <- bquote(FME::modMCMC(
     f=.(babelmixr2::.fmeMcmcF),
     p=.(.env$par.ini),
     lower=.(.env$lower),
     upper=.(.env$upper),
-    prior=.(.ctl$prior),
+    prior=.(.prior),
     niter=.(.ctl$niter),
     outputlength=.(.ctl$outputlength),
     burninlength=.(.ctl$burninlength),
@@ -474,12 +563,18 @@ nlmixr2Est.fmeMcmc <- function(env, ...) {
   rxode2::assertRxUiRandomOnIdOnly(.ui, " for the estimation routine 'fmeMcmc'", .var.name=.ui$modelName)
   .fmeMcmcFamilyControl(env, ...)
   on.exit({if (exists("control", envir=.ui)) rm("control", envir=.ui)}, add=TRUE)
+  .fmeMcmcAssertOnePrior(.ui, .ui$control$prior)
   .fmeMcmcFamilyFit(env,  ...)
 }
 attr(nlmixr2Est.fmeMcmc, "covPresent") <- TRUE
 attr(nlmixr2Est.fmeMcmc, "unbounded") <- TRUE
 attr(nlmixr2Est.fmeMcmc, "type") <- "External"
 attr(nlmixr2Est.fmeMcmc, "description") <- "FME MCMC (Bayesian)"
+# `ini({})` priors become the `prior` function `FME::modMCMC()` samples with
+# (see `.fmeMcmcPrior()`).  An MCMC sampler can evaluate any log-density, so
+# everything the shared prior kernel accepts is supported; omega priors cannot
+# reach it because the method is population-only.
+attr(nlmixr2Est.fmeMcmc, "nlmixr2Priors") <- "all"
 
 as.mcmc.nlmixr2.fmeMcmc <- function(x, ...) {
   if (!inherits(x, "nlmixr2.fmeMcmc")) {

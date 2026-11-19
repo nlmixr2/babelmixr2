@@ -38,7 +38,10 @@ if (.onCran && requireNamespace("rxode2", quietly = TRUE)) {
   # by far the heaviest file.
   c("saemix"),
   # batch 2 -- nonmem2rx/monolix2rx conversions + PopED design fits.
-  c("nonmem-read", "monolix-read", "poped", "as-nlmixr2")
+  c("nonmem-read", "monolix-read", "poped", "as-nlmixr2"),
+  # batch 3 -- NONMEM/Monolix translation stress test (inst/stress) and
+  # the nlmixr2lib model sweep.
+  c("nonmem-monolix-stress", "nonmem-monolix-nlmixr2lib")
 )
 .slowAll <- unlist(.slowBatches)
 

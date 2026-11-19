@@ -1,6 +1,4 @@
+      ; log(), with rxode2's floor of sqrt(DBL_EPSILON)
       IPRED = RX_PRED_F_
-      IF (IPRED .EQ. 0.0) THEN
-         IPRED = -1000000000
-      ELSE
-         IPRED = DLOG(IPRED)
-      END IF
+      IF (IPRED .LE. 1.4901161E-8) IPRED = 1.4901161E-8
+      IPRED = DLOG(IPRED)

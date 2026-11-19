@@ -2,6 +2,19 @@
 #'
 #' @param nbSSDoses Number of steady state doses (default 7)
 #' @param stiff boolean for using the stiff ODE solver
+#' @param linCmt How a `linCmt()` model is written for Monolix:
+#'   `"pkmodel"` uses Monolix's closed-form `pkmodel()` macro when the
+#'   model allows it and otherwise translates the model to ODEs;
+#'   `"ode"` always translates the model to ODEs (with
+#'   `rxode2::linToOde()`)
+#' @param prune How `if`/`else` statements are written for Monolix:
+#'   `"auto"` (default) writes `if`/`elseif`/`else` statements as
+#'   Monolix `if` blocks and prunes the `if`/`else` branches only when
+#'   the model uses `ifelse()` (which Monolix cannot write); `TRUE`
+#'   always prunes a model with `if`/`else` statements and `FALSE`
+#'   never prunes.  Pruning uses `rxode2`'s branch pruning, which writes
+#'   each branch as an arithmetic expression.  A pruned fit contains the
+#'   pruned model.
 #' @param exploratoryAutoStop logical to turn on or off exploratory
 #'   phase auto-stop of SAEM (default 250)
 #' @param exploratoryIterations Number of iterations for exploratory
@@ -72,6 +85,8 @@
 monolixControl <- function(nbSSDoses=7,
                            useLinearization=FALSE,
                            stiff=FALSE,
+                           linCmt=c("pkmodel", "ode"),
+                           prune = "auto",
                            addProp = c("combined2", "combined1"),
                            exploratoryAutoStop=FALSE,
                            smoothingAutoStop=FALSE,
@@ -178,7 +193,14 @@ monolixControl <- function(nbSSDoses=7,
     }
   }
 
+  if (!(checkmate::testLogical(prune, any.missing = FALSE, len = 1) ||
+          identical(prune, "auto"))) {
+    stop("'prune' must be \"auto\", TRUE or FALSE", call. = FALSE)
+  }
+
   .ret <- list(nbSSDoses=as.integer(nbSSDoses), stiff=stiff,
+               linCmt=match.arg(linCmt),
+               prune = prune,
                exploratoryAutoStop=exploratoryAutoStop,
                smoothingAutoStop=smoothingAutoStop,
                addProp=addProp,
