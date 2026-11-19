@@ -217,8 +217,13 @@ as.nlmixr2.nonmem2rx <- function(
         # - $covMethod for the method of calculating the covariance
         env$covMethod <- "nonmem2rx"
       }
-      # - $objective objective function value
-      env$objective <- .ui$nonmemObjf
+      env$nobs <- x$dfObs
+      env$nobs2 <- x$dfObs
+      # - $objective objective function value: nlmixr2est takes it as the
+      # -2 log-likelihood with the normal constant and reports the OBJF as
+      # objective - nobs log(2 pi), so NONMEM's constant-free objective
+      # gets the constant here, as the est="nonmem" path does (#267)
+      env$objective <- .ui$nonmemObjf + env$nobs * log(2 * pi)
       # - $extra Extra print information
       env$extra <- paste0(" reading NONMEM ver ", env$ui$nonmemOutputVersion)
       # - $method Estimation method (for printing)
@@ -242,8 +247,6 @@ as.nlmixr2.nonmem2rx <- function(
       if (!is.null(.parHist)) {
         env$parHistData <- .parHist
       }
-      env$nobs <- x$dfObs
-      env$nobs2 <- x$dfObs
       # Run before converting to nonmemControl
       .objf <- .ui$nonmemObjf
       # Start from the imported etas; otherwise nlmixr2est may start from
