@@ -1,5 +1,12 @@
 # babelmixr2 (development version)
 
+* babelmixr2's estimation methods (`nonmem`, `monolix`, `saemix`, `nlmer`,
+  `fmeMcmc` and `pseudoOptim`) register how to cap their iterations with
+  `nlmixr2extra::coreTimingRegister()`, so `nlmixr2extra::coreTiming()` can
+  time them across thread counts.  NONMEM and Monolix set their own threads
+  through `runCommand`, so for them only the R-side threads vary, with a
+  warning (nlmixr2/nlmixr2extra#153)
+
 * `as.nlmixr2()` on a nonmem2rx import reports NONMEM's objective as the
   OBJF and a log-likelihood, AIC and BIC that include the normal constant
   n log(2 pi), like `nlmixr2(est = "nonmem")`; they were off by that
