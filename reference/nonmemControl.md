@@ -812,6 +812,36 @@ nonmemControl()
 #> $tieOrder
 #> [1] "evid"
 #> 
+#> $rateAtDoseTime
+#> [1] FALSE
+#> 
+#> $durAtDoseTime
+#> [1] FALSE
+#> 
+#> $resetCancelsPending
+#> [1] TRUE
+#> 
+#> $ssMethod
+#> [1] 1
+#> 
+#> $doseAtRecord
+#> [1] FALSE
+#> 
+#> $addlCovAtTime
+#> [1] TRUE
+#> 
+#> $gpuBackend
+#> [1] "auto"
+#> 
+#> $gpuDevice
+#> NULL
+#> 
+#> $gpuPrecision
+#> [1] "double"
+#> 
+#> $gpuBatch
+#> [1] 16384
+#> 
 #> attr(,"class")
 #> [1] "rxControl"
 #> 

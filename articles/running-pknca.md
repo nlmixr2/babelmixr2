@@ -30,10 +30,10 @@ library(nlmixr2)
 #>   method      from     
 #>   print.minqa RcppTrust
 #> ── Attaching packages ───────────────────────────────────────── nlmixr2 7.0.1 ──
-#> ◯ admixr2         0.4.1           ◯ PopED           0.7.0      
+#> ◯ admixr2         0.4.2           ◯ PopED           0.7.0      
 #> ◯ babelmixr2      0.1.12.9000     ◯ posologyr       1.2.8      
 #> ◯ FME             1.3.6.4         ◯ shinyMixR       0.5.3      
-#> ◯ ggPMX           1.3.2           ◯ xpose.nlmixr2   0.4.2      
+#> ◯ ggPMX           1.3.3           ◯ xpose.nlmixr2   0.4.2      
 #> ◯ monolix2rx      0.0.7           ★ lotri           1.0.5      
 #> ◯ nlmixr2auto     1.0.0           ★ nlmixr2data     2.0.10     
 #> ◯ nlmixr2autoinit 1.0.1           ★ nlmixr2save     0.2.1      
@@ -43,9 +43,36 @@ library(nlmixr2)
 #> ◯ nonmem2rx       0.1.12.9000     ★ rxode2          5.1.8.9000 
 #> ◯ pmxNODE         0.2.1
 #> ── Conflicts ───────────────────────────────────────────── nlmixr2conflicts() ──
-#> ✖ rxode2::boxCox()         masks nlmixr2est::boxCox()
-#> ✖ nlmixr2plot::traceplot() masks coda::traceplot(), babelmixr2::traceplot()
-#> ✖ rxode2::yeoJohnson()     masks nlmixr2est::yeoJohnson()
+#> ✖ rxode2::addBaseline1exp()    masks nlmixr2lib::addBaseline1exp()
+#> ✖ rxode2::addBaselineConst()   masks nlmixr2lib::addBaselineConst()
+#> ✖ rxode2::addBaselineExp()     masks nlmixr2lib::addBaselineExp()
+#> ✖ rxode2::addBaselineLin()     masks nlmixr2lib::addBaselineLin()
+#> ✖ rxode2::addBioavailability() masks nlmixr2lib::addBioavailability()
+#> ✖ rxode2::addCmtProp()         masks nlmixr2lib::addCmtProp()
+#> ✖ rxode2::addDepot()           masks nlmixr2lib::addDepot()
+#> ✖ rxode2::addDirectLin()       masks nlmixr2lib::addDirectLin()
+#> ✖ rxode2::addEffectCmtLin()    masks nlmixr2lib::addEffectCmtLin()
+#> ✖ rxode2::addEta()             masks nlmixr2lib::addEta()
+#> ✖ rxode2::addIndirectLin()     masks nlmixr2lib::addIndirectLin()
+#> ✖ rxode2::addLogEstimates()    masks nlmixr2lib::addLogEstimates()
+#> ✖ rxode2::addResErr()          masks nlmixr2lib::addResErr()
+#> ✖ rxode2::addTransit()         masks nlmixr2lib::addTransit()
+#> ✖ rxode2::addWeibullAbs()      masks nlmixr2lib::addWeibullAbs()
+#> ✖ rxode2::boxCox()             masks nlmixr2est::boxCox()
+#> ✖ rxode2::convertEmax()        masks nlmixr2lib::convertEmax()
+#> ✖ rxode2::convertEmaxHill()    masks nlmixr2lib::convertEmaxHill()
+#> ✖ rxode2::convertKinR0()       masks nlmixr2lib::convertKinR0()
+#> ✖ rxode2::convertLogLin()      masks nlmixr2lib::convertLogLin()
+#> ✖ rxode2::convertMM()          masks nlmixr2lib::convertMM()
+#> ✖ rxode2::convertQuad()        masks nlmixr2lib::convertQuad()
+#> ✖ rxode2::fakeCc()             masks nlmixr2lib::fakeCc()
+#> ✖ rxode2::pkTrans()            masks nlmixr2lib::pkTrans()
+#> ✖ rxode2::removeDepot()        masks nlmixr2lib::removeDepot()
+#> ✖ rxode2::removeLinesAndInis() masks nlmixr2lib::removeLinesAndInis()
+#> ✖ rxode2::removeTransit()      masks nlmixr2lib::removeTransit()
+#> ✖ rxode2::searchReplace()      masks nlmixr2lib::searchReplace()
+#> ✖ nlmixr2plot::traceplot()     masks coda::traceplot(), babelmixr2::traceplot()
+#> ✖ rxode2::yeoJohnson()         masks nlmixr2est::yeoJohnson()
 library(babelmixr2)
 one.compartment <- function() {
   ini({
@@ -172,7 +199,7 @@ fit <- nlmixr(prepared, data = theo_sd, est = "focei", control = list(print = 0)
 #> → compiling events FD model...
 #> ✔ done
 #> calculating covariance matrix
-#> [====|====|====|====|====|====|====|====|====|====] 0:00:01 
+#> [====|====|====|====|====|====|====|====|====|====] 0:00:00 
 #> done
 #> → Calculating residuals/tables
 #> ✔ done

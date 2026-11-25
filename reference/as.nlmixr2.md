@@ -209,8 +209,8 @@ print(fit)
 #> 
 #> ── Time (sec $time): ──
 #> 
-#>           setup postprocess table compress NONMEM as.nlmixr2
-#> elapsed 0.13924       0.027 0.054    0.001 100.95      1.086
+#>             setup postprocess table compress NONMEM as.nlmixr2
+#> elapsed 0.1018328       0.017 0.034    0.001 100.95      0.865
 #> 
 #> ── Population Parameters ($parFixed or $parFixedDf): ──
 #> 
@@ -241,8 +241,8 @@ print(fit)
 #> 
 #>     IPRED relative difference compared to Nonmem IPRED: 0%; 95% percentile: (0%,0%); rtol=6.43e-06
 #>     PRED relative difference compared to Nonmem PRED: 0%; 95% percentile: (0%,0%); rtol=6.41e-06
-#>     IPRED absolute difference compared to Nonmem IPRED: 95% percentile: (2.25e-05, 0.0418); atol=0.00167
-#>     PRED absolute difference compared to Nonmem PRED: 95% percentile: (1.41e-07,0.00382); atol=6.41e-06
+#>     IPRED absolute difference compared to Nonmem IPRED: 95% percentile: (2.14e-05, 0.0418); atol=0.00167
+#>     PRED absolute difference compared to Nonmem PRED: 95% percentile: (1.4e-07,0.00382); atol=6.41e-06
 #>     nonmem2rx model file: '/home/runner/work/_temp/Library/nonmem2rx/mods/cpt/runODE032.ctl' 
 #> 
 #> ── Fit Data (object is a modified tibble): ──
