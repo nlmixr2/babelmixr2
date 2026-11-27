@@ -176,6 +176,26 @@ test_that("nlmixr2 translation from monolix2rx", {
   expect_true(inherits(fit, "nlmixr2FitData"))
 })
 
+test_that("as.nlmixr2 on a monolix2rx import with covariates (#269)", {
+  skip_on_cran()
+
+  for (.p in c("cov/phenobarbital_project.mlxtran",
+               "cov/warfarin_covariate2_project.mlxtran",
+               "cov/warfarin_covariate3_project.mlxtran")) {
+    fit <- .as.nlmixr2(.monolix2rx(system.file(.p, package = "monolix2rx")))
+    expect_true(inherits(fit, "nlmixr2FitData"), info = .p)
+    expect_false(anyNA(fit$theta), info = .p)
+  }
+
+  # phenobarbital: V has a categorical tAPGAR covariate, k has none
+  fit <- .as.nlmixr2(.monolix2rx(system.file("cov/phenobarbital_project.mlxtran", package = "monolix2rx")))
+  expect_equal(fit$theta[["V_pop"]], log(1.24689732935331))
+  expect_equal(fit$theta[["beta_V_tAPGAR_High"]], 0.260578209875729)
+  expect_equal(fit$omega["omega_V", "omega_V"], 0.401481325663058^2)
+  expect_equal(fit$eta$omega_V[fit$eta$ID == 1], 0.0889532)
+  expect_true("beta_V_tAPGAR_High" %in% dimnames(fit$cov)[[1]])
+})
+
 test_that("as.nlmixr2 on a nonmem2rx import keeps NONMEM's objective and adds the constant to the likelihood (#267)", {
   skip_on_cran()
 
@@ -190,6 +210,8 @@ test_that("as.nlmixr2 on a nonmem2rx import keeps NONMEM's objective and adds th
   expect_equal(as.numeric(ll), -(nmObj + 2280 * log(2 * pi)) / 2)
   expect_equal(AIC(fit), -2 * as.numeric(ll) + 2 * attr(ll, "df"))
   expect_equal(BIC(fit), -2 * as.numeric(ll) + log(2280) * attr(ll, "df"))
+})
+
 test_that("as.nlmixr2 on a monolix2rx import counts the observations of the fitted outputs (#270)", {
   skip_on_cran()
 

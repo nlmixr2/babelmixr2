@@ -1,5 +1,10 @@
 # babelmixr2 (development version)
 
+* `as.nlmixr2()` on a monolix2rx import whose parameters have covariates
+  no longer stops with "undefined columns selected"; the Monolix output
+  names (`V_pop`, `omega_V`, `eta_V_SAEM`) come from the project's own
+  `[INDIVIDUAL]` definitions, and a categorical covariate coefficient
+  (`beta_V_tAPGAR_High`) is read under its own name (#269)
 * `as.nlmixr2()` on a nonmem2rx import reports NONMEM's objective as the
   OBJF and a log-likelihood, AIC and BIC that include the normal constant
   n log(2 pi), like `nlmixr2(est = "nonmem")`; they were off by that
