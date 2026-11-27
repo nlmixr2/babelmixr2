@@ -195,3 +195,82 @@ test_that("fmeMcmc fits linCmt() models", {
                                  control=fmeMcmcControl(print=0, niter=50)))
   expect_s3_class(fit, "nlmixr2.fmeMcmc")
 })
+
+test_that("fmeMcmc honors jump and moves zero initial estimates (#276)", {
+  skip_if_not_installed("FME")
+  skip_on_cran()
+
+  d <- rxode2::rxWithSeed(1, {
+    .d <- data.frame(id = 1, time = 1:20)
+    .d$dv <- 1 + 0.5 * .d$time + rnorm(20, sd = 0.3)
+    .d
+  })
+
+  mod <- function() {
+    ini({
+      a <- 0
+      b <- 0.4
+      add.sd <- fix(0.3)
+    })
+    model({
+      y <- a + b * time
+      y ~ add(add.sd)
+    })
+  }
+
+  # Default jump = NULL must still move a parameter initialized at 0
+  fitDefault <- suppressMessages(nlmixr(
+    mod, d, est = "fmeMcmc",
+    control = fmeMcmcControl(niter = 400, print = 0, seed = 99)
+  ))
+  expect_gt(length(unique(fitDefault$fmeMcmc$pars[, "a"])), 10L)
+
+  # User-supplied vector jump is honored and changes the sampled chain
+  fitVec <- suppressMessages(nlmixr(
+    mod, d, est = "fmeMcmc",
+    control = fmeMcmcControl(niter = 400, jump = c(0.2, 0.05), print = 0, seed = 99)
+  ))
+  expect_gt(length(unique(fitVec$fmeMcmc$pars[, "a"])), 10L)
+  expect_false(isTRUE(all.equal(fitDefault$fmeMcmc$pars, fitVec$fmeMcmc$pars)))
+
+  # Natural-scale vector jump maps through parameter scaling to produce the
+  # same natural-scale chain under scaleType = "nlmixr2"
+  fitVecScaled <- suppressMessages(nlmixr(
+    mod, d, est = "fmeMcmc",
+    control = fmeMcmcControl(
+      niter = 400, jump = c(0.2, 0.05), scaleType = "nlmixr2", print = 0, seed = 99
+    )
+  ))
+  expect_equal(fitVecScaled$fmeMcmc$pars, fitVec$fmeMcmc$pars, tolerance = 1e-10)
+
+  # Covariance matrix jump is honored and invariant across scaleType
+  .covJump <- matrix(c(0.04, -0.002, -0.002, 0.0025), nrow = 2)
+  fitMat <- suppressMessages(nlmixr(
+    mod, d, est = "fmeMcmc",
+    control = fmeMcmcControl(niter = 400, jump = .covJump, print = 0, seed = 99)
+  ))
+  fitMatScaled <- suppressMessages(nlmixr(
+    mod, d, est = "fmeMcmc",
+    control = fmeMcmcControl(
+      niter = 400, jump = .covJump, scaleType = "nlmixr2", print = 0, seed = 99
+    )
+  ))
+  expect_gt(length(unique(fitMat$fmeMcmc$pars[, "a"])), 10L)
+  expect_equal(fitMatScaled$fmeMcmc$pars, fitMat$fmeMcmc$pars, tolerance = 1e-10)
+
+  # Scalar jump applies to all parameters
+  fitScalar <- suppressMessages(nlmixr(
+    mod, d, est = "fmeMcmc",
+    control = fmeMcmcControl(niter = 100, jump = 0.05, print = 0, seed = 99)
+  ))
+  expect_gt(length(unique(fitScalar$fmeMcmc$pars[, "a"])), 5L)
+
+  # Invalid jump dimensions error clearly
+  expect_error(
+    suppressMessages(nlmixr(
+      mod, d, est = "fmeMcmc",
+      control = fmeMcmcControl(niter = 50, jump = c(0.1, 0.2, 0.3), print = 0)
+    )),
+    "jump"
+  )
+})
