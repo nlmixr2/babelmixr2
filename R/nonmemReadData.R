@@ -158,7 +158,9 @@ attr(rxUiGet.nonmemIniDf, "rstudio") <- NA
 #' @export
 rxUiGet.nonmemEtaObf <- function(x, ...) {
   .ui <- x[[1]]
-  if (exists("etaData", envir=.ui)) {
+  # a run without an eta $TABLE leaves nonmem2rx's etaData as NULL; the
+  # import then falls back to zero etas (#268)
+  if (exists("etaData", envir=.ui) && !is.null(.ui$etaData)) {
     .dat <- .ui$etaData
     .iniDf <- .ui$iniDf
     .iniDf <- .iniDf[is.na(.iniDf$ntheta), ]
