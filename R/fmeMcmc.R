@@ -174,6 +174,9 @@ fmeMcmcControl <- function(jump=NULL,
     checkmate::assertNumeric(scaleC, lower=0, any.missing=FALSE)
   }
   checkmate::assertNumeric(scaleTo, len=1, lower=0, any.missing=FALSE)
+  if (!is.null(jump) && !is.numeric(jump) && !is.function(jump)) {
+    stop("`jump` must be NULL, a numeric vector, a numeric matrix, or a function", call.=FALSE)
+  }
 
   .ret <- list(
     jump=jump,
@@ -391,6 +394,61 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
   .f
 }
 
+#' Build the `jump` argument handed to `FME::modMCMC()`
+#'
+#' `FME::modMCMC()` samples the internal scaled parameter space, so a user
+#' `jump` given on the natural scale is mapped through the linear factor of the
+#' per-parameter affine scaling (`abs(s) * jump` for proposal SDs,
+#' `outer(s, s) * jump` for a proposal covariance matrix).  When `jump` is
+#' `NULL` (or has negative entries requesting FME's default), zero-valued
+#' scaled initial estimates receive a proposal SD of `0.1` instead of FME's
+#' `0.1 * abs(0) == 0`, which would freeze the chain at its starting value.
+#'
+#' @param jump the user-supplied `fmeMcmcControl(jump=)`
+#' @param env the nlm environment from `nlmixr2est::.nlmSetupEnv()`
+#' @return `jump` mapped to the scaled space for `FME::modMCMC(jump=)`
+#' @noRd
+.fmeMcmcJump <- function(jump, env) {
+  .p <- env$par.ini
+  .n <- length(.p)
+  .default <- ifelse(.p == 0, 0.1, 0.1 * abs(.p))
+  if (is.null(jump)) {
+    return(.default)
+  }
+  if (is.function(jump)) {
+    return(jump)
+  }
+  .scalePar <- get("nlmScalePar", envir=asNamespace("nlmixr2est"))
+  .s <- as.numeric(.scalePar(rep(1, .n)) - .scalePar(rep(0, .n)))
+  if (is.matrix(jump)) {
+    if (!is.numeric(jump) || nrow(jump) != .n || ncol(jump) != .n) {
+      stop("`jump` matrix must be a ", .n, " x ", .n, " numeric matrix", call.=FALSE)
+    }
+    if (anyNA(jump)) {
+      stop("`jump` must not contain missing values", call.=FALSE)
+    }
+    return(outer(.s, .s) * jump)
+  }
+  if (is.numeric(jump)) {
+    if (anyNA(jump)) {
+      stop("`jump` must not contain missing values", call.=FALSE)
+    }
+    if (length(jump) == 1L) {
+      jump <- rep(jump, .n)
+    } else if (length(jump) != .n) {
+      stop("`jump` must have length 1 or ", .n, " (number of estimated parameters)", call.=FALSE)
+    }
+    if (!is.null(names(jump)) && all(env$thetaNames %in% names(jump))) {
+      jump <- jump[env$thetaNames]
+    }
+    .neg <- jump < 0
+    .res <- abs(.s) * unname(jump)
+    .res[.neg] <- .default[.neg]
+    return(.res)
+  }
+  stop("`jump` must be NULL, a numeric vector, a numeric matrix, or a function", call.=FALSE)
+}
+
 .fmeMcmcFitModel <- function(ui, dataSav) {
   # Use nlmEnv and function for DRY principle
   rxode2::rxReq("FME")
@@ -412,9 +470,11 @@ getValidNlmixrCtl.fmeMcmc <- function(control) {
     .ctl$covscale <- 2.4^2 / length(.env$par.ini)
   }
   .prior <- .fmeMcmcPrior(ui, .ctl$prior, .env)
+  .jump <- .fmeMcmcJump(.ctl$jump, .env)
   .mcmcCall <- bquote(FME::modMCMC(
     f=.(babelmixr2::.fmeMcmcF),
     p=.(.env$par.ini),
+    jump=.(.jump),
     lower=.(.env$lower),
     upper=.(.env$upper),
     prior=.(.prior),
