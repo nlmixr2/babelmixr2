@@ -11,6 +11,8 @@ SEXP _babelmixr2_transDv(SEXP, SEXP, SEXP, SEXP, SEXP,
                          SEXP, SEXP);
 
 SEXP _babelmixr2_iniRxodePtrs(SEXP in);
+SEXP _babelmixr2_iniRxode2Optional(SEXP in);
+SEXP _babelmixr2_rxode2Optional(void);
 
 SEXP _babelmixr2_popedFree(void);
 SEXP _babelmixr2_popedSetup(SEXP eSEXP, SEXP e2SEXP, SEXP fullSEXP);
@@ -36,6 +38,8 @@ static const R_CallMethodDef CallEntries[] = {
   {"_babelmixr2_popedSolveIdME", (DL_FUNC) &_babelmixr2_popedSolveIdME, 7},
   {"_babelmixr2_popedSolveIdME2", (DL_FUNC) &_babelmixr2_popedSolveIdME2, 7},
   {"_babelmixr2_iniRxodePtrs", (DL_FUNC) &_babelmixr2_iniRxodePtrs, 1},
+  {"_babelmixr2_iniRxode2Optional", (DL_FUNC) &_babelmixr2_iniRxode2Optional, 1},
+  {"_babelmixr2_rxode2Optional", (DL_FUNC) &_babelmixr2_rxode2Optional, 0},
   {"_babelmixr2_convertDataBack", (DL_FUNC) &_babelmixr2_convertDataBack, 13},
   {"_babelmixr2_transDv", (DL_FUNC) &_babelmixr2_transDv, 7},
   {NULL, NULL, 0}
