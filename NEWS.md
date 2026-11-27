@@ -1,5 +1,10 @@
 # babelmixr2 (development version)
 
+* `est="pknca"` and `est="poped"` accept a model with a repeated (`same()`)
+  omega block, which they take as given; `nlmixr2est` refuses the block to an
+  estimation method that does not say it keeps the tie.  `est="nonmem"`,
+  `"monolix"`, `"saemix"` and `"nlmer"` are still refused it.
+
 * `as.nlmixr2()` on a nonmem2rx import reports NONMEM's objective as the
   OBJF and a log-likelihood, AIC and BIC that include the normal constant
   n log(2 pi), like `nlmixr2(est = "nonmem")`; they were off by that

@@ -1,5 +1,8 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+# Stacked PRs (based on another PR's branch) skip CI; a PR runs once it
+# targets main, including when it is retargeted there (edited, base
+# changed).  Other PR edits start a run whose jobs are all skipped.
 on:
   push:
     branches: [main, master]
@@ -20,12 +23,12 @@ permissions: read-all
 # Auto-cancel superseded in-progress runs for the same ref so stale runs don't
 # pile up and starve the runner pool.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.issue.number || github.ref }}${{ ((github.event_name == 'pull_request_review' && !(github.event.review.state == 'approved' && contains(github.event.review.body, 'ready to be merged'))) || (github.event_name == 'issue_comment' && !(github.event.issue.pull_request && startsWith(github.event.comment.body, '/ci') && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))) && format('-noop-{0}', github.run_id) || '' }}
+  group: ${{ github.workflow }}-${{ github.event.issue.number || github.ref }}${{ github.event.action == 'edited' && !github.event.changes.base && format('-{0}', github.run_id) || '' }}${{ ((github.event_name == 'pull_request_review' && !(github.event.review.state == 'approved' && contains(github.event.review.body, 'ready to be merged'))) || (github.event_name == 'issue_comment' && !(github.event.issue.pull_request && startsWith(github.event.comment.body, '/ci') && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))) && format('-noop-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 jobs:
   R-CMD-check:
-    if: ((github.event_name != 'pull_request_review' && github.event_name != 'issue_comment') || (github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && contains(github.event.review.body, 'ready to be merged')) || (github.event_name == 'issue_comment' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ci') && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
+    if: ((github.event_name != 'pull_request' && github.event_name != 'pull_request_review' && github.event_name != 'issue_comment') || github.event.action != 'edited' || github.event.changes.base) && ((github.event_name != 'pull_request_review' && github.event_name != 'issue_comment') || (github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && contains(github.event.review.body, 'ready to be merged') && contains(fromJSON('["main","master"]'), github.event.pull_request.base.ref)) || (github.event_name == 'issue_comment' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ci') && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
     # statuses: write lets a /ci run report back to the PR
     permissions:
       actions: read
